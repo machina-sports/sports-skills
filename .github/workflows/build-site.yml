@@ -3,31 +3,80 @@ name: Sports Skills Site Build
 on:
   push:
     tags:
-      - "site-v*.*.*"
+      - "v*.*.*"
+
+env:
+  APP_NAME: sports-skills-site
+  AKS_CLUSTER_NAME: mks-community-cluster
+  AKS_RESOURCE_GROUP: mks-community-group
+  DEPLOYMENT_NAME: sports-skills-site-deployment
+  CONTAINER_NAME: sports-skills-site
+  NAMESPACE: default
 
 jobs:
-  build-and-push:
+  build-and-deploy:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Setup Git
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
-      - name: Extract version from tag
-        id: version
-        run: echo "VERSION=${GITHUB_REF_NAME#site-v}" >> $GITHUB_ENV
+      - name: Get tag name as release version
+        run: echo "RELEASE_NAME=${GITHUB_REF#refs/tags/}" >> $GITHUB_ENV
 
       - name: Login to Docker Hub
-        uses: docker/login-action@v3
+        uses: docker/login-action@v1
         with:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
 
       - name: Build and push Docker image
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v2
         with:
           context: ./site
           file: ./site/Dockerfile
           push: true
           tags: |
-            ${{ secrets.REGISTRY_URL }}/sports-skills-site:${{ env.VERSION }}
-            ${{ secrets.REGISTRY_URL }}/sports-skills-site:latest
+            ${{ secrets.REGISTRY_URL }}/${{ env.APP_NAME }}:${{ env.RELEASE_NAME }}
+
+      - name: Login to Azure
+        uses: azure/login@v1
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Get AKS credentials
+        uses: azure/aks-set-context@v3
+        with:
+          cluster-name: ${{ env.AKS_CLUSTER_NAME }}
+          resource-group: ${{ env.AKS_RESOURCE_GROUP }}
+
+      - name: Deploy to AKS
+        run: |
+          kubectl set image deployment/${{ env.DEPLOYMENT_NAME }} ${{ env.CONTAINER_NAME }}=${{ secrets.REGISTRY_URL }}/${{ env.APP_NAME }}:${{ env.RELEASE_NAME }} -n ${{ env.NAMESPACE }}
+          kubectl rollout status deployment/${{ env.DEPLOYMENT_NAME }} -n ${{ env.NAMESPACE }}
+
+      - name: Notify Slack - Build Success
+        uses: rtCamp/action-slack-notify@v2
+        env:
+          SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
+          SLACK_CHANNEL: your-slack-channel
+          SLACK_USERNAME: GitHub Actions
+          SLACK_COLOR: 'good'
+          SLACK_TITLE: 'Sports Skills Site Build Successful'
+          SLACK_MESSAGE: 'Build of ${{ env.APP_NAME }}:${{ env.RELEASE_NAME }} completed successfully and pushed to registry.'
+          SLACK_ICON: ':heavy_check_mark:'
+        if: success()
+
+      - name: Notify Slack - Build Failed
+        uses: rtCamp/action-slack-notify@v2
+        env:
+          SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
+          SLACK_CHANNEL: your-slack-channel
+          SLACK_USERNAME: GitHub Actions
+          SLACK_COLOR: 'danger'
+          SLACK_TITLE: 'Sports Skills Site Build Failed'
+          SLACK_MESSAGE: 'Build of ${{ env.APP_NAME }}:${{ env.RELEASE_NAME }} failed.'
+          SLACK_ICON: ':x:'
+        if: failure()
