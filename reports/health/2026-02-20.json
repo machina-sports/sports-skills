@@ -1,0 +1,342 @@
+{
+  "date": "2026-02-20",
+  "run_at": "2026-02-20T10:00:15+00:00",
+  "timeout_s": 10,
+  "degraded_threshold_ms": 3000,
+  "sources": {
+    "espn": {
+      "status": "ok",
+      "response_time_ms": 124,
+      "error": null,
+      "sample_data": {
+        "leagues_checked": 12,
+        "ok": 12,
+        "degraded": 0,
+        "down": 0
+      },
+      "per_league": {
+        "premier-league": {
+          "status": "ok",
+          "response_time_ms": 267,
+          "sample_data": {
+            "event_count": 5,
+            "first_event": "Leeds United at Aston Villa"
+          },
+          "url": "https://site.api.espn.com/apis/site/v2/sports/soccer/eng.1/scoreboard"
+        },
+        "la-liga": {
+          "status": "ok",
+          "response_time_ms": 82,
+          "sample_data": {
+            "event_count": 1,
+            "first_event": "Elche at Athletic Club"
+          },
+          "url": "https://site.api.espn.com/apis/site/v2/sports/soccer/esp.1/scoreboard"
+        },
+        "bundesliga": {
+          "status": "ok",
+          "response_time_ms": 92,
+          "sample_data": {
+            "event_count": 1,
+            "first_event": "Hamburg SV at Mainz"
+          },
+          "url": "https://site.api.espn.com/apis/site/v2/sports/soccer/ger.1/scoreboard"
+        },
+        "serie-a": {
+          "status": "ok",
+          "response_time_ms": 90,
+          "sample_data": {
+            "event_count": 1,
+            "first_event": "Hellas Verona at Sassuolo"
+          },
+          "url": "https://site.api.espn.com/apis/site/v2/sports/soccer/ita.1/scoreboard"
+        },
+        "ligue-1": {
+          "status": "ok",
+          "response_time_ms": 86,
+          "sample_data": {
+            "event_count": 1,
+            "first_event": "Marseille at Brest"
+          },
+          "url": "https://site.api.espn.com/apis/site/v2/sports/soccer/fra.1/scoreboard"
+        },
+        "championship": {
+          "status": "ok",
+          "response_time_ms": 179,
+          "sample_data": {
+            "event_count": 1,
+            "first_event": "Preston North End at Blackburn Rovers"
+          },
+          "url": "https://site.api.espn.com/apis/site/v2/sports/soccer/eng.2/scoreboard"
+        },
+        "eredivisie": {
+          "status": "ok",
+          "response_time_ms": 91,
+          "sample_data": {
+            "event_count": 1,
+            "first_event": "Excelsior at Fortuna Sittard"
+          },
+          "url": "https://site.api.espn.com/apis/site/v2/sports/soccer/ned.1/scoreboard"
+        },
+        "primeira-liga": {
+          "status": "ok",
+          "response_time_ms": 116,
+          "sample_data": {
+            "event_count": 1,
+            "first_event": "Tondela at Estrela"
+          },
+          "url": "https://site.api.espn.com/apis/site/v2/sports/soccer/por.1/scoreboard"
+        },
+        "serie-a-brazil": {
+          "status": "ok",
+          "response_time_ms": 87,
+          "sample_data": {
+            "event_count": 1,
+            "first_event": "Corinthians at Athletico Paranaense"
+          },
+          "url": "https://site.api.espn.com/apis/site/v2/sports/soccer/bra.1/scoreboard"
+        },
+        "mls": {
+          "status": "ok",
+          "response_time_ms": 190,
+          "sample_data": {
+            "event_count": 13,
+            "first_event": "Charlotte FC at St. Louis CITY SC"
+          },
+          "url": "https://site.api.espn.com/apis/site/v2/sports/soccer/usa.1/scoreboard"
+        },
+        "champions-league": {
+          "status": "ok",
+          "response_time_ms": 96,
+          "sample_data": {
+            "event_count": 4,
+            "first_event": "Newcastle United at FK Qarabag"
+          },
+          "url": "https://site.api.espn.com/apis/site/v2/sports/soccer/uefa.champions/scoreboard"
+        },
+        "world-cup": {
+          "status": "ok",
+          "response_time_ms": 123,
+          "sample_data": {
+            "event_count": 2,
+            "first_event": "South Africa at Mexico"
+          },
+          "url": "https://site.api.espn.com/apis/site/v2/sports/soccer/fifa.world/scoreboard"
+        }
+      }
+    },
+    "espn_nfl": {
+      "status": "ok",
+      "response_time_ms": 99,
+      "sample_data": {
+        "event_count": 1,
+        "first_event": "Seattle Seahawks at New England Patriots"
+      },
+      "url": "https://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard"
+    },
+    "espn_nba": {
+      "status": "ok",
+      "response_time_ms": 178,
+      "sample_data": {
+        "event_count": 10,
+        "first_event": "Houston Rockets at Charlotte Hornets"
+      },
+      "url": "https://site.api.espn.com/apis/site/v2/sports/basketball/nba/scoreboard"
+    },
+    "espn_wnba": {
+      "status": "ok",
+      "response_time_ms": 130,
+      "sample_data": {
+        "event_count": 3,
+        "first_event": "Connecticut Sun at New York Liberty"
+      },
+      "url": "https://site.api.espn.com/apis/site/v2/sports/basketball/wnba/scoreboard"
+    },
+    "espn_nhl": {
+      "status": "ok",
+      "response_time_ms": 102,
+      "sample_data": {
+        "event_count": 8,
+        "first_event": "Buffalo Sabres at New Jersey Devils"
+      },
+      "url": "https://site.api.espn.com/apis/site/v2/sports/hockey/nhl/scoreboard"
+    },
+    "espn_mlb": {
+      "status": "ok",
+      "response_time_ms": 87,
+      "sample_data": {
+        "event_count": 5,
+        "first_event": "New York Yankees at Baltimore Orioles"
+      },
+      "url": "https://site.api.espn.com/apis/site/v2/sports/baseball/mlb/scoreboard"
+    },
+    "espn_atp": {
+      "status": "ok",
+      "response_time_ms": 197,
+      "sample_data": {
+        "event_count": 4,
+        "first_event": "Dubai Duty Free Tennis Championships"
+      },
+      "url": "https://site.api.espn.com/apis/site/v2/sports/tennis/atp/scoreboard"
+    },
+    "espn_wta": {
+      "status": "ok",
+      "response_time_ms": 204,
+      "sample_data": {
+        "event_count": 4,
+        "first_event": "Dubai Duty Free Tennis Championships"
+      },
+      "url": "https://site.api.espn.com/apis/site/v2/sports/tennis/wta/scoreboard"
+    },
+    "espn_cfb": {
+      "status": "ok",
+      "response_time_ms": 89,
+      "sample_data": {
+        "event_count": 63,
+        "first_event": "North Carolina Tar Heels at TCU Horned Frogs"
+      },
+      "url": "https://site.api.espn.com/apis/site/v2/sports/football/college-football/scoreboard"
+    },
+    "espn_cbb": {
+      "status": "ok",
+      "response_time_ms": 222,
+      "sample_data": {
+        "event_count": 53,
+        "first_event": "Vermont Catamounts at UMBC Retrievers"
+      },
+      "url": "https://site.api.espn.com/apis/site/v2/sports/basketball/mens-college-basketball/scoreboard"
+    },
+    "espn_golf_pga": {
+      "status": "ok",
+      "response_time_ms": 124,
+      "sample_data": {
+        "event_count": 1,
+        "first_event": "The Genesis Invitational"
+      },
+      "url": "https://site.api.espn.com/apis/site/v2/sports/golf/pga/scoreboard"
+    },
+    "espn_golf_lpga": {
+      "status": "ok",
+      "response_time_ms": 170,
+      "sample_data": {
+        "event_count": 1,
+        "first_event": "Honda LPGA Thailand"
+      },
+      "url": "https://site.api.espn.com/apis/site/v2/sports/golf/lpga/scoreboard"
+    },
+    "fpl": {
+      "status": "ok",
+      "response_time_ms": 339,
+      "sample_data": {
+        "players": 817,
+        "teams": 20,
+        "first_player": "David Raya Mart\u00edn"
+      },
+      "url": "https://fantasy.premierleague.com/api/bootstrap-static/"
+    },
+    "understat": {
+      "status": "ok",
+      "response_time_ms": 780,
+      "error": null,
+      "sample_data": {
+        "leagues_checked": 5,
+        "ok": 5,
+        "degraded": 0,
+        "down": 0
+      },
+      "per_league": {
+        "EPL": {
+          "status": "ok",
+          "response_time_ms": 1157,
+          "sample_data": {
+            "bytes": 18653,
+            "has_datesData": false
+          },
+          "url": "https://understat.com/league/EPL/2026"
+        },
+        "La_Liga": {
+          "status": "ok",
+          "response_time_ms": 736,
+          "sample_data": {
+            "bytes": 18669,
+            "has_datesData": false
+          },
+          "url": "https://understat.com/league/La_Liga/2026"
+        },
+        "Bundesliga": {
+          "status": "ok",
+          "response_time_ms": 638,
+          "sample_data": {
+            "bytes": 18681,
+            "has_datesData": false
+          },
+          "url": "https://understat.com/league/Bundesliga/2026"
+        },
+        "Serie_A": {
+          "status": "ok",
+          "response_time_ms": 662,
+          "sample_data": {
+            "bytes": 18669,
+            "has_datesData": false
+          },
+          "url": "https://understat.com/league/Serie_A/2026"
+        },
+        "Ligue_1": {
+          "status": "ok",
+          "response_time_ms": 710,
+          "sample_data": {
+            "bytes": 18669,
+            "has_datesData": false
+          },
+          "url": "https://understat.com/league/Ligue_1/2026"
+        }
+      }
+    },
+    "kalshi": {
+      "status": "ok",
+      "response_time_ms": 361,
+      "sample_data": {
+        "market_count": 5,
+        "first_ticker": "KXMVESPORTSMULTIGAMEEXTENDED-S202634D5372BFD6-AC92CDB2CE7",
+        "first_title": "yes Rudy Gobert: 3+,yes Lauri Markkanen: 3+"
+      },
+      "url": "https://api.elections.kalshi.com/trade-api/v2/markets?limit=5"
+    },
+    "polymarket_gamma": {
+      "status": "ok",
+      "response_time_ms": 154,
+      "sample_data": {
+        "market_count": 5,
+        "first_question": "Will Joe Biden get Coronavirus before the election?"
+      },
+      "url": "https://gamma-api.polymarket.com/markets?limit=5&active=true"
+    },
+    "polymarket_clob": {
+      "status": "ok",
+      "response_time_ms": 1168,
+      "sample_data": {
+        "market_count": 1000,
+        "first_condition_id": "0x49686d26fb7125\u2026"
+      },
+      "url": "https://clob.polymarket.com/sampling-markets?count=5"
+    },
+    "fastf1": {
+      "status": "ok",
+      "response_time_ms": 1376,
+      "sample_data": {
+        "events_in_schedule": 25,
+        "year": 2024
+      }
+    },
+    "bbc_rss": {
+      "status": "ok",
+      "response_time_ms": 442,
+      "sample_data": {
+        "items_found": 73,
+        "bytes": 57478,
+        "first_headline": "BBC Sport"
+      },
+      "url": "https://feeds.bbci.co.uk/sport/rss.xml"
+    }
+  }
+}
