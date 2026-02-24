@@ -1028,6 +1028,12 @@ class TestParamType:
         assert _param_type("team_id") == "string"
         assert _param_type("query") == "string"
 
+    def test_list_param(self):
+        from sports_skills.cli import _param_type
+
+        assert _param_type("tm_player_ids") == "array"
+        assert _param_type("token_ids") == "array"
+
 
 class TestGenerateSchema:
     """Tests for _generate_schema Anthropic tool schema generator."""
@@ -1111,3 +1117,78 @@ class TestGenerateSchema:
         injuries = next(t for t in schema["tools"] if t["name"] == "nfl_get_injuries")
         assert injuries["input_schema"]["properties"] == {}
         assert injuries["input_schema"]["required"] == []
+
+    def test_list_param_has_array_type_and_items(self):
+        from sports_skills.cli import _generate_schema
+
+        schema = _generate_schema("polymarket")
+        market_prices = next(
+            t for t in schema["tools"] if t["name"] == "polymarket_get_market_prices"
+        )
+        prop = market_prices["input_schema"]["properties"]["token_ids"]
+        assert prop["type"] == "array"
+        assert prop["items"] == {"type": "string"}
+
+    def test_param_descriptions_from_docstrings(self):
+        from sports_skills.cli import _generate_schema
+
+        schema = _generate_schema("nfl")
+        roster = next(t for t in schema["tools"] if t["name"] == "nfl_get_team_roster")
+        team_id_prop = roster["input_schema"]["properties"]["team_id"]
+        assert "description" in team_id_prop
+        assert len(team_id_prop["description"]) > 0
+
+
+class TestParseDocstringArgs:
+    """Tests for _parse_docstring_args helper."""
+
+    def test_simple_args(self):
+        from sports_skills.cli import _parse_docstring_args
+
+        doc = """Get team roster.
+
+        Args:
+            team_id: ESPN team ID.
+        """
+        result = _parse_docstring_args(doc)
+        assert result["team_id"] == "ESPN team ID."
+
+    def test_multiline_description(self):
+        from sports_skills.cli import _parse_docstring_args
+
+        doc = """Get player stats.
+
+        Args:
+            player_id: ESPN athlete ID.
+            league_slug: ESPN league slug (e.g. "eng.1" for Premier League,
+                "esp.1" for La Liga). Defaults to "eng.1".
+        """
+        result = _parse_docstring_args(doc)
+        assert result["player_id"] == "ESPN athlete ID."
+        assert "eng.1" in result["league_slug"]
+        assert "La Liga" in result["league_slug"]
+
+    def test_no_args_section(self):
+        from sports_skills.cli import _parse_docstring_args
+
+        doc = """Get all teams."""
+        result = _parse_docstring_args(doc)
+        assert result == {}
+
+    def test_empty_docstring(self):
+        from sports_skills.cli import _parse_docstring_args
+
+        assert _parse_docstring_args("") == {}
+        assert _parse_docstring_args(None) == {}
+
+
+class TestLoadModuleRaisesExceptions:
+    """Tests that _load_module raises clean exceptions instead of sys.exit."""
+
+    def test_unknown_module_raises_value_error(self):
+        import pytest
+
+        from sports_skills.cli import _load_module
+
+        with pytest.raises(ValueError, match="Unknown module"):
+            _load_module("nonexistent_sport")
