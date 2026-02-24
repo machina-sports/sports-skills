@@ -444,6 +444,60 @@ def _parse_value(key, value):
     return value
 
 
+def _param_type(name):
+    """Return JSON Schema type string for a parameter based on known sets."""
+    if name in _BOOL_PARAMS:
+        return "boolean"
+    if name in _INT_PARAMS:
+        return "integer"
+    return "string"
+
+
+def _generate_schema(module_name):
+    """Generate Anthropic-compatible tool schema for a module.
+
+    Reads the _REGISTRY for command definitions and attempts to load the
+    module to extract docstrings from the actual functions.
+    """
+    commands = _REGISTRY[module_name]
+
+    # Try loading the module to get function docstrings
+    func_docs = {}
+    try:
+        module = _load_module(module_name)
+        for cmd_name in commands:
+            func = getattr(module, cmd_name, None)
+            if func and func.__doc__:
+                # Use the first line of the docstring as description
+                func_docs[cmd_name] = func.__doc__.strip().split("\n")[0]
+    except (SystemExit, Exception):
+        pass
+
+    tools = []
+    for cmd_name, cmd_info in commands.items():
+        required = cmd_info.get("required", [])
+        optional = cmd_info.get("optional", [])
+
+        properties = {}
+        for param in required + optional:
+            properties[param] = {"type": _param_type(param)}
+
+        tool = {
+            "name": f"{module_name}_{cmd_name}",
+            "description": func_docs.get(
+                cmd_name, f"{cmd_name} command for {module_name}"
+            ),
+            "input_schema": {
+                "type": "object",
+                "properties": properties,
+                "required": required,
+            },
+        }
+        tools.append(tool)
+
+    return {"sport": module_name, "tools": tools}
+
+
 def main():
     parser = argparse.ArgumentParser(
         prog="sports-skills",
@@ -487,6 +541,16 @@ def main():
             parts = [f"--{p}=<value>" for p in required]
             parts += [f"[--{p}=<value>]" for p in optional]
             print(f"  {cmd_name} {' '.join(parts)}")
+        return
+
+    # Reserved "schema" command: generate Anthropic tool schema
+    if args.command == "schema":
+        if args.module not in _REGISTRY:
+            _cli_error(
+                f"Unknown module '{args.module}'. Available: {', '.join(_REGISTRY.keys())}"
+            )
+        schema = _generate_schema(args.module)
+        print(json.dumps(schema, indent=2))
         return
 
     module_name = args.module

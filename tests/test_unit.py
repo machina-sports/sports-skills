@@ -1002,3 +1002,112 @@ class TestNormalizeDepthChart:
         pos = result["charts"][0]["positions"][0]
         assert pos["name"] == "lt"
         assert pos["abbreviation"] == "LT"
+
+
+# ── Schema generation ────────────────────────────────────────────
+
+
+class TestParamType:
+    """Tests for _param_type helper."""
+
+    def test_bool_param(self):
+        from sports_skills.cli import _param_type
+
+        assert _param_type("google_news") == "boolean"
+        assert _param_type("active") == "boolean"
+
+    def test_int_param(self):
+        from sports_skills.cli import _param_type
+
+        assert _param_type("limit") == "integer"
+        assert _param_type("season") == "integer"
+
+    def test_string_param(self):
+        from sports_skills.cli import _param_type
+
+        assert _param_type("team_id") == "string"
+        assert _param_type("query") == "string"
+
+
+class TestGenerateSchema:
+    """Tests for _generate_schema Anthropic tool schema generator."""
+
+    def test_schema_top_level_keys(self):
+        from sports_skills.cli import _generate_schema
+
+        schema = _generate_schema("nfl")
+        assert schema["sport"] == "nfl"
+        assert "tools" in schema
+        assert isinstance(schema["tools"], list)
+
+    def test_tool_name_format(self):
+        from sports_skills.cli import _generate_schema
+
+        schema = _generate_schema("nfl")
+        for tool in schema["tools"]:
+            assert tool["name"].startswith("nfl_")
+
+    def test_tool_has_required_fields(self):
+        from sports_skills.cli import _generate_schema
+
+        schema = _generate_schema("nfl")
+        for tool in schema["tools"]:
+            assert "name" in tool
+            assert "description" in tool
+            assert "input_schema" in tool
+            assert tool["input_schema"]["type"] == "object"
+            assert "properties" in tool["input_schema"]
+            assert "required" in tool["input_schema"]
+
+    def test_required_params_listed(self):
+        from sports_skills.cli import _generate_schema
+
+        schema = _generate_schema("nfl")
+        roster_tool = next(t for t in schema["tools"] if t["name"] == "nfl_get_team_roster")
+        assert "team_id" in roster_tool["input_schema"]["required"]
+        assert "team_id" in roster_tool["input_schema"]["properties"]
+
+    def test_optional_params_not_in_required(self):
+        from sports_skills.cli import _generate_schema
+
+        schema = _generate_schema("nfl")
+        scoreboard = next(t for t in schema["tools"] if t["name"] == "nfl_get_scoreboard")
+        assert scoreboard["input_schema"]["required"] == []
+        assert "date" in scoreboard["input_schema"]["properties"]
+
+    def test_param_types_inferred(self):
+        from sports_skills.cli import _generate_schema
+
+        schema = _generate_schema("nfl")
+        standings = next(t for t in schema["tools"] if t["name"] == "nfl_get_standings")
+        assert standings["input_schema"]["properties"]["season"]["type"] == "integer"
+
+    def test_bool_param_type(self):
+        from sports_skills.cli import _generate_schema
+
+        schema = _generate_schema("polymarket")
+        markets = next(t for t in schema["tools"] if t["name"] == "polymarket_get_sports_markets")
+        assert markets["input_schema"]["properties"]["active"]["type"] == "boolean"
+
+    def test_docstrings_used_as_descriptions(self):
+        from sports_skills.cli import _generate_schema
+
+        schema = _generate_schema("nfl")
+        teams = next(t for t in schema["tools"] if t["name"] == "nfl_get_teams")
+        assert teams["description"] == "Get all 32 NFL teams."
+
+    def test_all_registry_modules_generate_schema(self):
+        from sports_skills.cli import _REGISTRY, _generate_schema
+
+        for module_name in _REGISTRY:
+            schema = _generate_schema(module_name)
+            assert schema["sport"] == module_name
+            assert len(schema["tools"]) == len(_REGISTRY[module_name])
+
+    def test_no_params_command(self):
+        from sports_skills.cli import _generate_schema
+
+        schema = _generate_schema("nfl")
+        injuries = next(t for t in schema["tools"] if t["name"] == "nfl_get_injuries")
+        assert injuries["input_schema"]["properties"] == {}
+        assert injuries["input_schema"]["required"] == []
