@@ -1059,41 +1059,42 @@ class TestGenerateSchema:
         schema = _generate_schema("nfl")
         for tool in schema["tools"]:
             assert "name" in tool
+            assert "command" in tool
             assert "description" in tool
-            assert "input_schema" in tool
-            assert tool["input_schema"]["type"] == "object"
-            assert "properties" in tool["input_schema"]
-            assert "required" in tool["input_schema"]
+            assert "parameters" in tool
+            assert tool["parameters"]["type"] == "object"
+            assert "properties" in tool["parameters"]
+            assert "required" in tool["parameters"]
 
     def test_required_params_listed(self):
         from sports_skills.cli import _generate_schema
 
         schema = _generate_schema("nfl")
         roster_tool = next(t for t in schema["tools"] if t["name"] == "nfl_get_team_roster")
-        assert "team_id" in roster_tool["input_schema"]["required"]
-        assert "team_id" in roster_tool["input_schema"]["properties"]
+        assert "team_id" in roster_tool["parameters"]["required"]
+        assert "team_id" in roster_tool["parameters"]["properties"]
 
     def test_optional_params_not_in_required(self):
         from sports_skills.cli import _generate_schema
 
         schema = _generate_schema("nfl")
         scoreboard = next(t for t in schema["tools"] if t["name"] == "nfl_get_scoreboard")
-        assert scoreboard["input_schema"]["required"] == []
-        assert "date" in scoreboard["input_schema"]["properties"]
+        assert scoreboard["parameters"]["required"] == []
+        assert "date" in scoreboard["parameters"]["properties"]
 
     def test_param_types_inferred(self):
         from sports_skills.cli import _generate_schema
 
         schema = _generate_schema("nfl")
         standings = next(t for t in schema["tools"] if t["name"] == "nfl_get_standings")
-        assert standings["input_schema"]["properties"]["season"]["type"] == "integer"
+        assert standings["parameters"]["properties"]["season"]["type"] == "integer"
 
     def test_bool_param_type(self):
         from sports_skills.cli import _generate_schema
 
         schema = _generate_schema("polymarket")
         markets = next(t for t in schema["tools"] if t["name"] == "polymarket_get_sports_markets")
-        assert markets["input_schema"]["properties"]["active"]["type"] == "boolean"
+        assert markets["parameters"]["properties"]["active"]["type"] == "boolean"
 
     def test_docstrings_used_as_descriptions(self):
         from sports_skills.cli import _generate_schema
@@ -1115,8 +1116,8 @@ class TestGenerateSchema:
 
         schema = _generate_schema("nfl")
         injuries = next(t for t in schema["tools"] if t["name"] == "nfl_get_injuries")
-        assert injuries["input_schema"]["properties"] == {}
-        assert injuries["input_schema"]["required"] == []
+        assert injuries["parameters"]["properties"] == {}
+        assert injuries["parameters"]["required"] == []
 
     def test_list_param_has_array_type_and_items(self):
         from sports_skills.cli import _generate_schema
@@ -1125,7 +1126,7 @@ class TestGenerateSchema:
         market_prices = next(
             t for t in schema["tools"] if t["name"] == "polymarket_get_market_prices"
         )
-        prop = market_prices["input_schema"]["properties"]["token_ids"]
+        prop = market_prices["parameters"]["properties"]["token_ids"]
         assert prop["type"] == "array"
         assert prop["items"] == {"type": "string"}
 
@@ -1134,7 +1135,7 @@ class TestGenerateSchema:
 
         schema = _generate_schema("nfl")
         roster = next(t for t in schema["tools"] if t["name"] == "nfl_get_team_roster")
-        team_id_prop = roster["input_schema"]["properties"]["team_id"]
+        team_id_prop = roster["parameters"]["properties"]["team_id"]
         assert "description" in team_id_prop
         assert len(team_id_prop["description"]) > 0
 

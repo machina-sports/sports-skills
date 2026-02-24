@@ -503,7 +503,7 @@ def _param_type(name):
 
 
 def _generate_schema(module_name):
-    """Generate Anthropic-compatible tool schema for a module.
+    """Generate JSON Schema tool definitions for a module (Vercel AI SDK compatible).
 
     Reads the _REGISTRY for command definitions and attempts to load the
     module to extract docstrings from the actual functions.
@@ -543,10 +543,11 @@ def _generate_schema(module_name):
 
         tool = {
             "name": f"{module_name}_{cmd_name}",
+            "command": cmd_name,
             "description": func_docs.get(
                 cmd_name, f"{cmd_name} command for {module_name}"
             ),
-            "input_schema": {
+            "parameters": {
                 "type": "object",
                 "properties": properties,
                 "required": required,
@@ -602,7 +603,7 @@ def main():
             print(f"  {cmd_name} {' '.join(parts)}")
         return
 
-    # Reserved "schema" command: generate Anthropic tool schema
+    # Reserved "schema" command: generate JSON Schema tool definitions
     if args.command == "schema":
         if args.module not in _REGISTRY:
             _cli_error(
