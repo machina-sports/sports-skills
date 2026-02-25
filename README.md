@@ -21,11 +21,7 @@ npx skills add machina-sports/sports-skills --yes
 A collection of agent skills that wrap **publicly available** sports data sources and APIs. These skills don't provide proprietary data — they give AI agents a structured interface to data that's already freely accessible on the web:
 
 - **Football**: ESPN, Understat, FPL, Transfermarkt — 21 commands across 13 leagues
-- **NFL**: ESPN — scores, standings, rosters, schedules, game summaries, leaders, news
-- **NBA**: ESPN — scores, standings, rosters, schedules, game summaries, leaders, news
-- **WNBA**: ESPN — scores, standings, rosters, schedules, game summaries, leaders, news
-- **NHL**: ESPN — scores, standings, rosters, schedules, game summaries, leaders, news
-- **MLB**: ESPN — scores, standings, rosters, schedules, game summaries, leaders, news
+- **NFL / NBA / WNBA / NHL / MLB**: ESPN — scores, standings, rosters, schedules, game summaries, leaders, news
 - **Tennis**: ESPN — ATP and WTA tournament scores, rankings, calendars, player profiles, news
 - **College Football (CFB)**: ESPN — scores, standings, rosters, schedules, AP/Coaches rankings, news
 - **College Basketball (CBB)**: ESPN — scores, standings, rosters, schedules, AP/Coaches rankings, news

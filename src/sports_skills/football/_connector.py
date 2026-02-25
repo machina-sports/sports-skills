@@ -2265,8 +2265,10 @@ def search_team(request_data):
         season_id = f"{slug}-{year}"
         teams_data = get_season_teams(
             {
-                "season_id": season_id,
-                **{k: v for k, v in params.items() if k.startswith("fd_")},
+                "params": {
+                    "season_id": season_id,
+                    **{k: v for k, v in params.items() if k.startswith("fd_")},
+                }
             }
         )
         for team in teams_data.get("teams", []):
