@@ -10,6 +10,7 @@ import datetime
 import gzip
 import json
 import logging
+import re
 import threading
 import time
 import urllib.error
@@ -322,6 +323,8 @@ def normalize_odds(odds_list):
         return None
 
     o = odds_list[0]  # ESPN provides one provider (DraftKings)
+    if o is None:
+        return None
 
     ml = o.get("moneyline", {})
     ps = o.get("pointSpread", {})
@@ -406,37 +409,51 @@ def normalize_odds(odds_list):
     return result
 
 
-def _resolve_athlete_ref(ref_url: str) -> str:
-    """Follow an ESPN athlete $ref URL and return the athlete's displayName.
+def _resolve_athlete_ref(ref_url: str) -> dict:
+    """Follow an ESPN athlete $ref URL and return name + athlete_id.
 
     ESPN's core leaders API returns athlete data as a $ref link rather than
-    inline. This helper fetches the ref and extracts the name, with caching
-    so repeated calls for the same athlete are free.
+    inline. This helper fetches the ref and extracts the name and ID, with
+    caching so repeated calls for the same athlete are free.
 
-    Returns empty string on any failure (safe fallback).
+    Returns {"name": str, "id": str}. Empty strings on failure.
     """
     if not ref_url:
-        return ""
+        return {"name": "", "id": ""}
+
+    # Extract ID directly from URL (e.g. .../athletes/12345)
+    athlete_id = ""
+    match = re.search(r'/athletes/(\d+)', ref_url)
+    if match:
+        athlete_id = match.group(1)
 
     cache_key = f"athlete_ref:{ref_url}"
     cached = _cache_get(cache_key)
     if cached is not None:
+        # Migrate: old cache entries are bare strings
+        if isinstance(cached, str):
+            return {"name": cached, "id": athlete_id}
         return cached
 
     headers = {"User-Agent": _USER_AGENT}
     raw, err = _http_fetch(ref_url, headers=headers, timeout=5)
     if err:
-        _cache_set(cache_key, "", ttl=60)
-        return ""
+        result = {"name": "", "id": athlete_id}
+        _cache_set(cache_key, result, ttl=60)
+        return result
 
     try:
         data = json.loads(raw.decode())
         name = data.get("displayName") or data.get("fullName") or ""
-        _cache_set(cache_key, name, ttl=3600)  # athlete names don't change
-        return name
+        if not athlete_id:
+            athlete_id = str(data.get("id", ""))
+        result = {"name": name, "id": athlete_id}
+        _cache_set(cache_key, result, ttl=3600)
+        return result
     except (json.JSONDecodeError, ValueError):
-        _cache_set(cache_key, "", ttl=60)
-        return ""
+        result = {"name": "", "id": athlete_id}
+        _cache_set(cache_key, result, ttl=60)
+        return result
 
 
 # ============================================================
@@ -624,14 +641,20 @@ def normalize_futures(data, limit=25):
                 athlete_ref = book.get("athlete", {})
                 team_ref = book.get("team", {})
                 name = ""
+                athlete_id = ""
                 if isinstance(athlete_ref, dict) and athlete_ref.get("$ref"):
-                    name = _resolve_athlete_ref(athlete_ref["$ref"])
+                    resolved = _resolve_athlete_ref(athlete_ref["$ref"])
+                    name = resolved["name"]
+                    athlete_id = resolved["id"]
                 elif isinstance(team_ref, dict) and team_ref.get("$ref"):
                     name = _resolve_team_ref(team_ref["$ref"])
-                entries.append({
+                entry = {
                     "name": name,
                     "value": book.get("value", ""),
-                })
+                }
+                if athlete_id:
+                    entry["id"] = athlete_id
+                entries.append(entry)
         futures.append({
             "id": item.get("id", ""),
             "name": item.get("displayName", item.get("name", "")),
@@ -686,10 +709,16 @@ def _resolve_leaders(categories: list) -> list:
             if isinstance(athlete, dict):
                 ref_url = athlete.get("$ref", "")
                 name = athlete.get("displayName") or athlete.get("fullName") or ""
-                if not name and ref_url:
-                    name = _resolve_athlete_ref(ref_url)
+                athlete_id = str(athlete.get("id", ""))
+                if (not name or not athlete_id) and ref_url:
+                    resolved = _resolve_athlete_ref(ref_url)
+                    if not name:
+                        name = resolved["name"]
+                    if not athlete_id:
+                        athlete_id = resolved["id"]
             else:
                 name = ""
+                athlete_id = ""
 
             # Use numeric value over displayValue — displayValue can be
             # a full stat line string (e.g. MLB batting: "179-541, 53 HR...")
@@ -707,6 +736,7 @@ def _resolve_leaders(categories: list) -> list:
 
             leaders_list.append({
                 "rank": leader.get("rank", ""),
+                "id": athlete_id,
                 "name": name,
                 "value": value,
             })

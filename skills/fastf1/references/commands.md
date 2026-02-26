@@ -14,7 +14,7 @@ These are the ONLY valid commands. Do not invent or guess command names:
 - `get_championship_standings`
 - `get_season_stats`
 - `get_team_comparison`
-- `get_teammate_comparison`
+- `get_driver_comparison`
 - `get_tire_analysis`
 
 ## Commands That DO NOT Exist (Commonly Hallucinated)
@@ -77,10 +77,11 @@ If you're unsure whether a command exists, check this list. Do not try commands 
 - `team2` (str, required): Second team name (e.g., "McLaren")
 - `event` (str, optional): Event name. Omit for full season.
 
-### get_teammate_comparison
+### get_driver_comparison
 - `year` (int, required): Season year
-- `team` (str, required): Team name (e.g., "McLaren")
-- `event` (str, optional): Event name. Omit for full season.
+- `driver1` (str, required): Driver code or name (e.g., "NOR", "Norris")
+- `driver2` (str, required): Driver code or name (e.g., "PIA", "Piastri")
+- `event` (str, optional): Event name. Omit for full season. Supports "last" for most recent race.
 
 ### get_tire_analysis
 - `year` (int, required): Season year

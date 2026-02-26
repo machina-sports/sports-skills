@@ -332,19 +332,26 @@ def get_rankings(request_data):
         points = rank.get("points", 0)
         trend = rank.get("trend", "")
 
-        # Resolve athlete name from $ref
+        # Resolve athlete name and ID from $ref
         athlete = rank.get("athlete", {})
         if isinstance(athlete, dict):
             ref_url = athlete.get("$ref", "")
+            athlete_id = str(athlete.get("id", ""))
             name = athlete.get("displayName") or athlete.get("fullName") or ""
-            if not name and ref_url:
-                name = _resolve_athlete_ref(ref_url)
+            if (not name or not athlete_id) and ref_url:
+                resolved = _resolve_athlete_ref(ref_url)
+                if not name:
+                    name = resolved["name"]
+                if not athlete_id:
+                    athlete_id = resolved["id"]
         else:
             name = ""
+            athlete_id = ""
 
         entries.append({
             "rank": current,
             "previous_rank": previous,
+            "id": athlete_id,
             "name": name,
             "points": points,
             "trend": trend,

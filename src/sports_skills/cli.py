@@ -226,8 +226,8 @@ _REGISTRY = {
             "required": ["year", "team1", "team2"],
             "optional": ["event"],
         },
-        "get_teammate_comparison": {
-            "required": ["year", "team"],
+        "get_driver_comparison": {
+            "required": ["year", "driver1", "driver2"],
             "optional": ["event"],
         },
         "get_tire_analysis": {"required": ["year"], "optional": ["event", "driver"]},
@@ -645,7 +645,9 @@ def _generate_schema(module_name):
         }
         tools.append(tool)
 
-    return {"sport": module_name, "tools": tools}
+    from sports_skills import __version__
+
+    return {"sport": module_name, "version": __version__, "tools": tools}
 
 
 def main():

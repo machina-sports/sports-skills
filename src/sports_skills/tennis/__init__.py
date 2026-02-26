@@ -49,7 +49,7 @@ def get_calendar(*, tour: str, year: int | None = None) -> dict:
 
 
 def get_rankings(*, tour: str, limit: int | None = None) -> dict:
-    """Get current ATP or WTA rankings.
+    """Get current ATP or WTA rankings. Returns athlete IDs alongside names.
 
     Args:
         tour: Tour name — "atp" or "wta".
@@ -59,7 +59,7 @@ def get_rankings(*, tour: str, limit: int | None = None) -> dict:
 
 
 def get_player_info(*, player_id: str) -> dict:
-    """Get individual player profile.
+    """Get individual player profile. Use the id field from get_rankings results to look up a player.
 
     Args:
         player_id: ESPN athlete ID (e.g. "3782" for Carlos Alcaraz).

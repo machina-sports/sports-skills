@@ -45,6 +45,9 @@ def _validate_event(year, event_name):
     """Validate that event_name matches an actual event. Returns the exact event name or raises ValueError."""
     schedule = fastf1.get_event_schedule(year)
     real_events = schedule[schedule["EventFormat"] != "testing"]
+    # Support "last" / "latest" to resolve to the final event on the calendar
+    if event_name.lower().strip() in ("last", "latest", "last race", "most recent"):
+        return real_events.iloc[-1]["EventName"]
     exact = real_events[real_events["EventName"].str.lower() == event_name.lower()]
     if not exact.empty:
         return exact.iloc[0]["EventName"]
@@ -1037,22 +1040,37 @@ def get_team_comparison(request_data):
         }
 
 
-def get_teammate_comparison(request_data):
-    """Compare teammates within the same team: qualifying H2H, race H2H, pace delta."""
+def _find_driver(results, query):
+    """Match a driver query (code or name) against session results. Returns the row or None."""
+    q_upper = query.strip().upper()
+    match = results[
+        (results["Abbreviation"].str.upper() == q_upper)
+        | (results["FullName"].str.lower().str.contains(query.strip().lower()))
+    ]
+    return match.iloc[0] if not match.empty else None
+
+
+def get_driver_comparison(request_data):
+    """Compare any two drivers head-to-head: qualifying H2H, race H2H, pace delta."""
     try:
         params = request_data.get("params", {})
         year = int(params.get("year", 2025))
-        team = params.get("team", "")
+        driver1 = params.get("driver1", "")
+        driver2 = params.get("driver2", "")
         event = params.get("event")
+
+        if not driver1 or not driver2:
+            return {
+                "status": False,
+                "data": None,
+                "message": "Both driver1 and driver2 are required.",
+            }
 
         if event:
             event = _validate_event(year, event)
             race_names = [event]
         else:
             race_names = _get_completed_races(year)
-
-        def _match_team(team_name, query):
-            return query.lower() in team_name.lower()
 
         # Collect per-race data for both drivers
         driver_stats = {}  # driver_code -> accumulated stats
@@ -1066,14 +1084,13 @@ def get_teammate_comparison(request_data):
                 results = session.results
                 laps = session.laps
 
-                team_results = results[
-                    results["TeamName"].apply(lambda x: _match_team(x, team))
-                ]
-                if len(team_results) < 2:
+                row1 = _find_driver(results, driver1)
+                row2 = _find_driver(results, driver2)
+                if row1 is None or row2 is None:
                     continue
 
                 drivers = []
-                for _, row in team_results.iterrows():
+                for row in [row1, row2]:
                     drv = row.get("Abbreviation", "")
                     pos = (
                         int(row.get("Position", 99))
@@ -1170,6 +1187,8 @@ def get_teammate_comparison(request_data):
                     if d1["avg_pace"] and d2["avg_pace"]:
                         pace_gap = round(d1["avg_pace"] - d2["avg_pace"], 3)
 
+                    quali_gap = d1["grid"] - d2["grid"]
+
                     per_race.append(
                         {
                             "race": race_name,
@@ -1179,33 +1198,38 @@ def get_teammate_comparison(request_data):
                                     "grid": d1["grid"],
                                     "position": d1["pos"],
                                     "points": d1["pts"],
+                                    "avg_race_pace_seconds": d1["avg_pace"],
                                 },
                                 {
                                     "driver": d2["code"],
                                     "grid": d2["grid"],
                                     "position": d2["pos"],
                                     "points": d2["pts"],
+                                    "avg_race_pace_seconds": d2["avg_pace"],
                                 },
                             ],
+                            "qualifying_gap": quali_gap,
                             "pace_gap_seconds": pace_gap,
                         }
                     )
 
-            except Exception:
+            except Exception as exc:
+                per_race.append({"race": race_name, "error": str(exc)})
                 continue
 
         if not driver_stats:
-            # Validate team name by checking available teams
+            # Help the agent by listing available drivers
             schedule = fastf1.get_event_schedule(year)
             races = schedule[schedule["EventFormat"] != "testing"]
             last_race = races.iloc[-1]["EventName"]
             session = fastf1.get_session(year, last_race, "R")
             session.load()
-            teams = session.results["TeamName"].unique().tolist()
+            abbrevs = session.results["Abbreviation"].tolist()
             return {
                 "status": False,
                 "data": None,
-                "message": f"No data found for team '{team}' in {year}. Available teams: {', '.join(teams)}",
+                "message": f"No data found for '{driver1}' vs '{driver2}' in {year}. "
+                f"Available drivers: {', '.join(abbrevs)}",
             }
 
         # Build driver summaries
@@ -1256,7 +1280,7 @@ def get_teammate_comparison(request_data):
                 "per_race": per_race,
                 "races_compared": len(per_race),
             },
-            "message": f"Teammate comparison for {team} in {year}"
+            "message": f"Driver comparison: {driver1} vs {driver2} in {year}"
             + (f" {event}" if event else " (full season)"),
         }
 
@@ -1264,7 +1288,7 @@ def get_teammate_comparison(request_data):
         return {
             "status": False,
             "data": f"Error: {str(e)}",
-            "message": "Error comparing teammates",
+            "message": "Error comparing drivers",
         }
 
 

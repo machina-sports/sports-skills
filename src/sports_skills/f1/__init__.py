@@ -9,6 +9,9 @@ from sports_skills.f1._connector import (
     get_championship_standings as _get_championship_standings,
 )
 from sports_skills.f1._connector import (
+    get_driver_comparison as _get_driver_comparison,
+)
+from sports_skills.f1._connector import (
     get_driver_info as _get_driver_info,
 )
 from sports_skills.f1._connector import (
@@ -37,9 +40,6 @@ from sports_skills.f1._connector import (
 )
 from sports_skills.f1._connector import (
     get_team_info as _get_team_info,
-)
-from sports_skills.f1._connector import (
-    get_teammate_comparison as _get_teammate_comparison,
 )
 from sports_skills.f1._connector import (
     get_tire_analysis as _get_tire_analysis,
@@ -179,15 +179,23 @@ def get_team_comparison(
     return _get_team_comparison(_req(year=year, team1=team1, team2=team2, event=event))
 
 
-def get_teammate_comparison(*, year: int, team: str, event: str | None = None) -> dict:
-    """Compare teammates within the same team: qualifying H2H, race H2H, pace delta.
+def get_driver_comparison(
+    *, year: int, driver1: str, driver2: str, event: str | None = None
+) -> dict:
+    """Compare any two drivers head-to-head: qualifying H2H, race H2H, pace delta.
+
+    Works for teammates (e.g., Norris vs Piastri) and cross-team matchups
+    (e.g., Norris vs Verstappen).
 
     Args:
         year: Season year.
-        team: Team name (e.g., "McLaren").
-        event: Event name (optional — omit for full season).
+        driver1: Driver code or name (e.g., "NOR" or "Norris").
+        driver2: Driver code or name (e.g., "PIA" or "Piastri").
+        event: Event name (optional — omit for full season). Supports "last" for most recent race.
     """
-    return _get_teammate_comparison(_req(year=year, team=team, event=event))
+    return _get_driver_comparison(
+        _req(year=year, driver1=driver1, driver2=driver2, event=event)
+    )
 
 
 def get_tire_analysis(

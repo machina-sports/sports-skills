@@ -48,9 +48,9 @@ Returns aggregated season statistics: fastest laps, top speeds, points, wins, an
 
 Returns head-to-head comparison data: qualifying deltas, race pace differences, sector comparisons, and points.
 
-## get_teammate_comparison
+## get_driver_comparison
 
-Returns intra-team comparison data: qualifying H2H record, race H2H record, and pace deltas.
+Returns head-to-head driver comparison data: qualifying H2H record, race H2H record, pace deltas, and per-race breakdowns. Works for teammates and cross-team matchups.
 
 ## get_tire_analysis
 

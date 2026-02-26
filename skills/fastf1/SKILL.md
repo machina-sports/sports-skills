@@ -50,7 +50,7 @@ Derive the current year from the system prompt's date (e.g., `currentDate: 2026-
 ### Workflow: Driver/Team Comparison
 
 1. `get_championship_standings --year=<year>` — championship context (points, wins, podiums)
-2. `get_team_comparison --year=<year> --team1=<t1> --team2=<t2>` OR `get_teammate_comparison --year=<year> --team=<team>` — head-to-head qualifying and race pace
+2. `get_team_comparison --year=<year> --team1=<t1> --team2=<t2>` OR `get_driver_comparison --year=<year> --driver1=<d1> --driver2=<d2>` — head-to-head qualifying and race pace (works for teammates and cross-team)
 3. `get_season_stats --year=<year>` — aggregate performance (fastest laps, top speeds)
 
 ### Workflow: Season Overview
@@ -62,7 +62,7 @@ Derive the current year from the system prompt's date (e.g., `currentDate: 2026-
 
 ### Available Commands
 
-`get_race_schedule`, `get_race_results`, `get_session_data`, `get_driver_info`, `get_team_info`, `get_lap_data`, `get_pit_stops`, `get_speed_data`, `get_championship_standings`, `get_season_stats`, `get_team_comparison`, `get_teammate_comparison`, `get_tire_analysis`.
+`get_race_schedule`, `get_race_results`, `get_session_data`, `get_driver_info`, `get_team_info`, `get_lap_data`, `get_pit_stops`, `get_speed_data`, `get_championship_standings`, `get_season_stats`, `get_team_comparison`, `get_driver_comparison`, `get_tire_analysis`.
 
 For return schemas, parameter details, and valid command lists, read the files in the `references/` directory.
 
