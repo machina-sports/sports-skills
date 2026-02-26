@@ -23,6 +23,7 @@ For trading commands, configure a wallet via one of:
     polymarket wallet import <private-key>
 """
 
+import functools
 import json
 import os
 import shutil
@@ -94,6 +95,21 @@ def _success(data, message=""):
 
 def _error(message, data=None):
     return {"status": False, "data": data, "message": message}
+
+
+def _wrap_required_params(fn):
+    """Catch TypeError from missing required keyword args and return error dict."""
+    @functools.wraps(fn)
+    def wrapper(*args, **kwargs):
+        try:
+            return fn(*args, **kwargs)
+        except TypeError as e:
+            err_msg = str(e)
+            # Check if it's a missing required argument error
+            if 'missing' in err_msg and 'required' in err_msg:
+                return _error(err_msg)
+            raise  # Re-raise other TypeErrors
+    return wrapper
 
 
 def _build_env() -> dict | None:
@@ -195,46 +211,55 @@ def get_leaderboard(
     )
 
 
+@_wrap_required_params
 def get_positions(*, address: str) -> dict:
     """Get open positions for a wallet address."""
     return run_cli("data", "positions", address)
 
 
+@_wrap_required_params
 def get_closed_positions(*, address: str) -> dict:
     """Get closed positions for a wallet address."""
     return run_cli("data", "closed-positions", address)
 
 
+@_wrap_required_params
 def get_portfolio_value(*, address: str) -> dict:
     """Get portfolio value for a wallet address."""
     return run_cli("data", "value", address)
 
 
+@_wrap_required_params
 def get_trade_history(*, address: str, limit: int = 50) -> dict:
     """Get trade history for a wallet address."""
     return run_cli("data", "trades", address, "--limit", str(limit))
 
 
+@_wrap_required_params
 def get_activity(*, address: str) -> dict:
     """Get activity feed for a wallet address."""
     return run_cli("data", "activity", address)
 
 
+@_wrap_required_params
 def get_holders(*, condition_id: str) -> dict:
     """Get position holders for a market."""
     return run_cli("data", "holders", condition_id)
 
 
+@_wrap_required_params
 def get_open_interest(*, condition_id: str) -> dict:
     """Get open interest for a market."""
     return run_cli("data", "open-interest", condition_id)
 
 
+@_wrap_required_params
 def get_volume(*, event_id: str) -> dict:
     """Get volume data for an event."""
     return run_cli("data", "volume", event_id)
 
 
+@_wrap_required_params
 def get_traded(*, address: str) -> dict:
     """Get markets traded by a wallet address."""
     return run_cli("data", "traded", address)
@@ -245,6 +270,7 @@ def get_traded(*, address: str) -> dict:
 # ============================================================
 
 
+@_wrap_required_params
 def cli_search_markets(*, query: str, limit: int = 20) -> dict:
     """Full-text market search via CLI (more powerful than search_markets)."""
     return run_cli("markets", "search", query, "--limit", str(limit))
@@ -258,11 +284,13 @@ def get_tags(*, limit: int | None = None) -> dict:
     return run_cli(*args)
 
 
+@_wrap_required_params
 def get_tag(*, tag: str) -> dict:
     """Get details for a specific tag."""
     return run_cli("tags", "get", tag)
 
 
+@_wrap_required_params
 def get_related_tags(*, tag: str) -> dict:
     """Get tags related to a given tag."""
     return run_cli("tags", "related", tag)
@@ -273,6 +301,7 @@ def get_related_tags(*, tag: str) -> dict:
 # ============================================================
 
 
+@_wrap_required_params
 def get_comments(*, entity_type: str, entity_id: str) -> dict:
     """Get comments on an entity (event or market)."""
     return run_cli(
@@ -282,16 +311,19 @@ def get_comments(*, entity_type: str, entity_id: str) -> dict:
     )
 
 
+@_wrap_required_params
 def get_comment(*, comment_id: str) -> dict:
     """Get a single comment by ID."""
     return run_cli("comments", "get", comment_id)
 
 
+@_wrap_required_params
 def get_user_comments(*, address: str) -> dict:
     """Get all comments by a user."""
     return run_cli("comments", "by-user", address)
 
 
+@_wrap_required_params
 def get_profile(*, address: str) -> dict:
     """Get a public user profile."""
     return run_cli("profiles", "get", address)
@@ -307,6 +339,7 @@ def cli_sports_list() -> dict:
     return run_cli("sports", "list")
 
 
+@_wrap_required_params
 def cli_sports_teams(*, league: str, limit: int = 50) -> dict:
     """Get teams for a league."""
     return run_cli("sports", "teams", "--league", league, "--limit", str(limit))
@@ -317,11 +350,13 @@ def cli_sports_teams(*, league: str, limit: int = 50) -> dict:
 # ============================================================
 
 
+@_wrap_required_params
 def get_tick_size(*, token_id: str) -> dict:
     """Get the minimum tick size for a market."""
     return run_cli("clob", "tick-size", token_id)
 
 
+@_wrap_required_params
 def get_fee_rate(*, token_id: str) -> dict:
     """Get the fee rate for a market."""
     return run_cli("clob", "fee-rate", token_id)
@@ -332,6 +367,7 @@ def get_fee_rate(*, token_id: str) -> dict:
 # ============================================================
 
 
+@_wrap_required_params
 def create_order(
     *,
     token_id: str,
@@ -351,6 +387,7 @@ def create_order(
     )
 
 
+@_wrap_required_params
 def market_order(*, token_id: str, side: str, amount: str) -> dict:
     """Place a market order."""
     return run_cli(
@@ -361,6 +398,7 @@ def market_order(*, token_id: str, side: str, amount: str) -> dict:
     )
 
 
+@_wrap_required_params
 def cancel_order(*, order_id: str) -> dict:
     """Cancel a specific order."""
     return run_cli("clob", "cancel", order_id)
@@ -399,6 +437,7 @@ def get_user_trades() -> dict:
 # ============================================================
 
 
+@_wrap_required_params
 def ctf_split(*, condition_id: str, amount: str) -> dict:
     """Split USDC into YES/NO conditional tokens."""
     return run_cli(
@@ -408,6 +447,7 @@ def ctf_split(*, condition_id: str, amount: str) -> dict:
     )
 
 
+@_wrap_required_params
 def ctf_merge(*, condition_id: str, amount: str) -> dict:
     """Merge YES/NO tokens back into USDC."""
     return run_cli(
@@ -417,6 +457,7 @@ def ctf_merge(*, condition_id: str, amount: str) -> dict:
     )
 
 
+@_wrap_required_params
 def ctf_redeem(*, condition_id: str) -> dict:
     """Redeem winning tokens after market resolution."""
     return run_cli("ctf", "redeem", "--condition", condition_id)
