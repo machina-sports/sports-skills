@@ -2297,8 +2297,10 @@ def search_team(request_data):
         season_id = f"{slug}-{year}"
         teams_data = get_season_teams(
             {
-                "season_id": season_id,
-                **{k: v for k, v in params.items() if k.startswith("fd_")},
+                "params": {
+                    "season_id": season_id,
+                    **{k: v for k, v in params.items() if k.startswith("fd_")},
+                }
             }
         )
         for team in teams_data.get("teams", []):
@@ -3001,3 +3003,188 @@ def get_player_season_stats(request_data):
     }
     _cache_set(cache_key, result, ttl=600)
     return result
+
+
+# ============================================================
+# Player Search (Transfermarkt + ESPN)
+# ============================================================
+
+
+def _tm_search_players(query, limit=5):
+    """Search Transfermarkt quick-search page for players.
+
+    Returns a list of dicts with tm_player_id, name, position, club, etc.
+    Parses the HTML search results page (no JSON API available for search).
+    """
+    import html as html_mod
+
+    encoded_query = urllib.parse.quote_plus(query)
+    url = (
+        f"https://www.transfermarkt.com/schnellsuche/ergebnis/"
+        f"schnellsuche?query={encoded_query}"
+    )
+    raw, err = _http_fetch(
+        url,
+        headers={"User-Agent": _USER_AGENT, "Accept": "text/html"},
+        rate_limiter=_tm_rate_limiter,
+        max_retries=1,
+    )
+    if err or not raw:
+        logger.debug("TM search failed for %r: %s", query, err)
+        return []
+
+    page = raw.decode("utf-8", errors="replace")
+
+    results = []
+    # Each player row has an inline-table with player link + club,
+    # followed by a <td> with the position.
+    for m in re.finditer(
+        r'<table class="inline-table">(.*?)</table>\s*</td>\s*<td[^>]*>([^<]*)</td>',
+        page,
+        re.DOTALL,
+    ):
+        block = m.group(1)
+        position = m.group(2).strip()
+
+        player_link = re.search(
+            r'href="/([^"]+)/profil/spieler/(\d+)"[^>]*>([^<]+)</a>', block
+        )
+        if not player_link:
+            continue
+        slug, tm_id, name = player_link.groups()
+        name = html_mod.unescape(name.strip())
+
+        club_link = re.search(
+            r'<a title="([^"]+)" href="/[^"]+/startseite/verein/(\d+)">', block
+        )
+        club_name = html_mod.unescape(club_link.group(1)) if club_link else ""
+        club_id = club_link.group(2) if club_link else ""
+
+        results.append(
+            {
+                "name": name,
+                "tm_player_id": tm_id,
+                "position": position,
+                "club": club_name,
+                "tm_club_id": club_id,
+            }
+        )
+        if len(results) >= limit:
+            break
+
+    return results
+
+
+def _espn_search_players(query, limit=5):
+    """Search ESPN for football/soccer players by name.
+
+    Returns a list of dicts with espn_athlete_id, name, league, team info.
+    """
+    encoded_query = urllib.parse.quote_plus(query)
+    url = (
+        f"https://site.api.espn.com/apis/common/v3/search"
+        f"?query={encoded_query}&type=player&sport=soccer&limit={limit}"
+    )
+    raw, err = _http_fetch(
+        url,
+        headers={"User-Agent": _USER_AGENT},
+        rate_limiter=_espn_rate_limiter,
+        max_retries=1,
+    )
+    if err or not raw:
+        logger.debug("ESPN search failed for %r: %s", query, err)
+        return []
+
+    try:
+        data = json.loads(raw.decode())
+    except (json.JSONDecodeError, ValueError):
+        return []
+
+    results = []
+    for item in data.get("items", []):
+        if item.get("type") != "player":
+            continue
+        league_rels = item.get("leagueRelationships", [])
+        league_slug = ""
+        league_name = ""
+        if league_rels:
+            core = league_rels[0].get("core", {})
+            league_slug = core.get("slug", "")
+            league_name = core.get("displayName", "")
+        results.append(
+            {
+                "espn_athlete_id": item.get("id", ""),
+                "name": item.get("displayName", ""),
+                "league": league_slug,
+                "league_name": league_name,
+            }
+        )
+        if len(results) >= limit:
+            break
+
+    return results
+
+
+def search_player(request_data):
+    """Search for a football player by name.
+
+    Searches Transfermarkt and ESPN simultaneously to return player IDs
+    that can be used with get_player_profile and get_season_transfers.
+    """
+    params = request_data.get("params", {})
+    query = params.get("query") or params.get("command_attribute", {}).get("query", "")
+    if not query:
+        return {"results": [], "error": True, "message": "Missing query"}
+    limit = 5
+
+    # Search both sources
+    tm_results = _tm_search_players(query, limit=limit)
+    espn_results = _espn_search_players(query, limit=limit)
+
+    # Merge: pair TM and ESPN results by name similarity
+    merged = []
+    used_espn = set()
+
+    for tm in tm_results:
+        entry = {
+            "name": tm["name"],
+            "tm_player_id": tm["tm_player_id"],
+            "position": tm["position"],
+            "club": tm["club"],
+            "tm_club_id": tm["tm_club_id"],
+            "espn_athlete_id": "",
+            "league": "",
+            "league_name": "",
+        }
+        # Try to match with an ESPN result
+        tm_lower = _normalize_name(tm["name"])
+        for i, espn in enumerate(espn_results):
+            if i in used_espn:
+                continue
+            espn_lower = _normalize_name(espn["name"])
+            if tm_lower == espn_lower or tm_lower in espn_lower or espn_lower in tm_lower:
+                entry["espn_athlete_id"] = espn["espn_athlete_id"]
+                entry["league"] = espn["league"]
+                entry["league_name"] = espn["league_name"]
+                used_espn.add(i)
+                break
+        merged.append(entry)
+
+    # Add unmatched ESPN results
+    for i, espn in enumerate(espn_results):
+        if i in used_espn:
+            continue
+        merged.append(
+            {
+                "name": espn["name"],
+                "tm_player_id": "",
+                "position": "",
+                "club": "",
+                "tm_club_id": "",
+                "espn_athlete_id": espn["espn_athlete_id"],
+                "league": espn["league"],
+                "league_name": espn["league_name"],
+            }
+        )
+
+    return {"results": merged[:limit]}

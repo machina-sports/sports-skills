@@ -28,6 +28,7 @@ _REGISTRY = {
         "get_season_standings": {"required": ["season_id"]},
         "get_season_leaders": {"required": ["season_id"]},
         "get_season_teams": {"required": ["season_id"]},
+        "search_player": {"required": ["query"]},
         "search_team": {"required": ["query"], "optional": ["competition_id"]},
         "get_team_profile": {"required": ["team_id"], "optional": ["league_slug"]},
         "get_daily_schedule": {"optional": ["date"]},

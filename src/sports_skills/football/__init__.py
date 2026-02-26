@@ -71,6 +71,9 @@ from sports_skills.football._connector import (
     get_team_schedule as _get_team_schedule,
 )
 from sports_skills.football._connector import (
+    search_player as _search_player,
+)
+from sports_skills.football._connector import (
     search_team as _search_team,
 )
 
@@ -113,6 +116,17 @@ def get_season_leaders(*, season_id: str) -> dict:
 def get_season_teams(*, season_id: str) -> dict:
     """Get teams in a season."""
     return wrap(_get_season_teams(_params(season_id=season_id)))
+
+
+def search_player(*, query: str) -> dict:
+    """Search for a football player by name.
+
+    Returns Transfermarkt and ESPN IDs for use with get_player_profile.
+
+    Args:
+        query: Player name to search for (e.g. "Hugo Souza", "Salah").
+    """
+    return wrap(_search_player(_params(query=query)))
 
 
 def search_team(*, query: str, competition_id: str | None = None) -> dict:
