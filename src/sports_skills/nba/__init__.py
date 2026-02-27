@@ -1,11 +1,24 @@
 """NBA data — scores, standings, rosters, schedules, game summaries, and more.
 
-Wraps ESPN public endpoints. No API keys required. Zero config.
+Wraps ESPN public endpoints and NBA CDN for real-time live data.
+No API keys required. Zero config.
+
+For live in-game data, prefer the ``get_live_*`` functions which use
+cdn.nba.com for faster updates.
 """
 
 from __future__ import annotations
 
 from sports_skills._response import wrap
+from sports_skills.nba._cdn import (
+    get_live_boxscore as _get_live_boxscore,
+)
+from sports_skills.nba._cdn import (
+    get_live_playbyplay as _get_live_playbyplay,
+)
+from sports_skills.nba._cdn import (
+    get_live_scoreboard as _get_live_scoreboard,
+)
 from sports_skills.nba._connector import (
     get_depth_chart as _get_depth_chart,
 )
@@ -228,3 +241,40 @@ def get_player_stats(
             )
         )
     )
+
+
+# ============================================================
+# NBA CDN — Real-Time Live Data
+# ============================================================
+
+
+def get_live_scoreboard() -> dict:
+    """Get real-time NBA scores from cdn.nba.com.
+
+    Preferred over get_scoreboard() for live game data due to faster
+    update frequency. Returns today's games with live scores, periods,
+    game clock, and game leaders.
+    """
+    return wrap(_get_live_scoreboard())
+
+
+def get_live_boxscore(*, game_id: str) -> dict:
+    """Get real-time NBA box score from cdn.nba.com.
+
+    Preferred over get_game_summary() for live game data.
+
+    Args:
+        game_id: NBA game ID (e.g. "0022400001").
+    """
+    return wrap(_get_live_boxscore(_params(game_id=game_id)))
+
+
+def get_live_playbyplay(*, game_id: str) -> dict:
+    """Get real-time NBA play-by-play from cdn.nba.com.
+
+    Preferred over get_play_by_play() for live game data.
+
+    Args:
+        game_id: NBA game ID (e.g. "0022400001").
+    """
+    return wrap(_get_live_playbyplay(_params(game_id=game_id)))

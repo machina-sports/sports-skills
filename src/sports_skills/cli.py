@@ -305,6 +305,9 @@ _REGISTRY = {
         "get_depth_chart": {"required": ["team_id"]},
         "get_team_stats": {"required": ["team_id"], "optional": ["season_year", "season_type"]},
         "get_player_stats": {"required": ["player_id"], "optional": ["season_year", "season_type"]},
+        "get_live_scoreboard": {},
+        "get_live_boxscore": {"required": ["game_id"]},
+        "get_live_playbyplay": {"required": ["game_id"]},
     },
     "wnba": {
         "get_scoreboard": {"optional": ["date"]},
