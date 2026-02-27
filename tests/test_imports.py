@@ -21,6 +21,7 @@ MODULES = [
     "sports_skills.golf",
     "sports_skills.tennis",
     "sports_skills.football",
+    "sports_skills.metadata",
     "sports_skills.polymarket",
     "sports_skills.kalshi",
     "sports_skills.news",

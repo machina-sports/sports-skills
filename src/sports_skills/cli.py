@@ -214,6 +214,13 @@ _REGISTRY = {
             "optional": ["token_id", "kalshi_ticker", "outcome"],
         },
     },
+    "metadata": {
+        "get_team_logo": {"required": ["team_name"], "optional": ["sport"]},
+        "get_team_info": {"required": ["team_name"]},
+        "get_player_photo": {"required": ["player_name"]},
+        "search_teams": {"required": ["query"]},
+        "search_players": {"required": ["query"]},
+    },
     "news": {
         "fetch_feed": {
             "optional": [
@@ -512,6 +519,10 @@ def _load_module(name):
         from sports_skills import markets
 
         return markets
+    elif name == "metadata":
+        from sports_skills import metadata
+
+        return metadata
     elif name == "news":
         from sports_skills import news
 
@@ -714,10 +725,10 @@ def _generate_schema(module_name):
 def main():
     parser = argparse.ArgumentParser(
         prog="sports-skills",
-        description="Lightweight CLI for sports data — football, F1, NFL, NBA, WNBA, NHL, MLB, tennis, CFB, CBB, golf, prediction markets, betting analysis, and news.",
+        description="Lightweight CLI for sports data — football, F1, NFL, NBA, WNBA, NHL, MLB, tennis, CFB, CBB, golf, prediction markets, betting analysis, metadata, and news.",
     )
     parser.add_argument(
-        "module", nargs="?", help="Module name: football, f1, nfl, nba, wnba, nhl, mlb, tennis, cfb, cbb, golf, polymarket, kalshi, betting, markets, news"
+        "module", nargs="?", help="Module name: football, f1, nfl, nba, wnba, nhl, mlb, tennis, cfb, cbb, golf, polymarket, kalshi, betting, markets, metadata, news"
     )
     parser.add_argument(
         "command", nargs="?", help="Command name (e.g., get_season_standings)"

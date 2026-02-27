@@ -10,6 +10,7 @@ from sports_skills import (
     golf,
     kalshi,
     markets,
+    metadata,
     mlb,
     nba,
     news,
@@ -26,4 +27,4 @@ try:
 except ImportError:
     f1 = None
 
-__all__ = ["football", "f1", "polymarket", "kalshi", "betting", "markets", "news", "nfl", "nba", "wnba", "nhl", "mlb", "tennis", "cfb", "cbb", "golf"]
+__all__ = ["football", "f1", "polymarket", "kalshi", "betting", "markets", "metadata", "news", "nfl", "nba", "wnba", "nhl", "mlb", "tennis", "cfb", "cbb", "golf"]
