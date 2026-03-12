@@ -395,6 +395,18 @@ _REGISTRY = {
         "get_scorecard": {"required": ["tour", "player_id"]},
         "get_news": {"required": ["tour"]},
     },
+    "volleyball": {
+        "get_competitions": {},
+        "get_standings": {"required": ["competition_id"]},
+        "get_schedule": {"required": ["competition_id"]},
+        "get_results": {"required": ["competition_id"]},
+        "get_clubs": {"optional": ["competition_id", "limit"]},
+        "get_club_schedule": {"required": ["club_id"]},
+        "get_club_results": {"required": ["club_id"]},
+        "get_poules": {"optional": ["competition_id", "regio", "limit"]},
+        "get_tournaments": {"optional": ["limit"]},
+        "get_news": {"optional": ["limit"]},
+    },
 }
 
 # Params that should be parsed as boolean
@@ -567,6 +579,9 @@ def _load_module(name):
     elif name == "golf":
         from sports_skills import golf
         return golf
+    elif name == "volleyball":
+        from sports_skills import volleyball
+        return volleyball
     else:
         raise ValueError(f"Unknown module '{name}'. Available: {', '.join(_REGISTRY.keys())}")
 
@@ -707,10 +722,10 @@ def _generate_schema(module_name):
 def main():
     parser = argparse.ArgumentParser(
         prog="sports-skills",
-        description="Lightweight CLI for sports data — football, F1, NFL, NBA, WNBA, NHL, MLB, tennis, CFB, CBB, golf, prediction markets, betting analysis, metadata, and news.",
+        description="Lightweight CLI for sports data — football, F1, NFL, NBA, WNBA, NHL, MLB, tennis, CFB, CBB, golf, volleyball, prediction markets, betting analysis, metadata, and news.",
     )
     parser.add_argument(
-        "module", nargs="?", help="Module name: football, f1, nfl, nba, wnba, nhl, mlb, tennis, cfb, cbb, golf, polymarket, kalshi, betting, markets, metadata, news"
+        "module", nargs="?", help="Module name: football, f1, nfl, nba, wnba, nhl, mlb, tennis, cfb, cbb, golf, volleyball, polymarket, kalshi, betting, markets, metadata, news"
     )
     parser.add_argument(
         "command", nargs="?", help="Command name (e.g., get_season_standings)"
