@@ -1,6 +1,6 @@
 """sports-skills: Lightweight Python SDK for sports data."""
 
-__version__ = "0.19.0"
+__version__ = "0.18.2"
 
 from sports_skills import (
     betting,
@@ -19,7 +19,6 @@ from sports_skills import (
     polymarket,
     tennis,
     volleyball,
-    watch,
     wnba,
 )
 
@@ -29,4 +28,4 @@ try:
 except ImportError:
     f1 = None
 
-__all__ = ["football", "f1", "polymarket", "kalshi", "betting", "markets", "metadata", "news", "nfl", "nba", "wnba", "nhl", "mlb", "tennis", "cfb", "cbb", "golf", "volleyball", "watch"]
+__all__ = ["football", "f1", "polymarket", "kalshi", "betting", "markets", "metadata", "news", "nfl", "nba", "wnba", "nhl", "mlb", "tennis", "cfb", "cbb", "golf", "volleyball"]

@@ -729,89 +729,6 @@ def _generate_schema(module_name):
     return {"sport": module_name, "version": __version__, "tools": tools}
 
 
-# -- Watch meta-params (separated from endpoint params) ----------------------
-
-_WATCH_META_PARAMS = {"interval", "output", "output_path", "webhook_url", "db_path", "config"}
-
-
-def _handle_watch(args, remaining):
-    """Handle the 'sports-skills watch' subcommand.
-
-    Parses: sports-skills watch <module> <command> [--interval=N] [--output=mode] [--endpoint-params...]
-    Or:     sports-skills watch --config=watchers.json
-    """
-    # Separate positional args from flags
-    positionals = []
-    flags = []
-    for arg in remaining:
-        if arg.startswith("--"):
-            flags.append(arg)
-        else:
-            positionals.append(arg)
-
-    # Include args.command as first positional if present (argparse puts module_name there)
-    if args.command:
-        positionals.insert(0, args.command)
-
-    # Parse all --key=value flags
-    all_kwargs = {}
-    for arg in flags:
-        raw = arg[2:]
-        if "=" in raw:
-            key, value = raw.split("=", 1)
-            all_kwargs[key] = value
-        else:
-            all_kwargs[raw] = "true"
-
-    # Config file mode
-    if "config" in all_kwargs:
-        from sports_skills.watch import start_watchers_from_config
-
-        try:
-            start_watchers_from_config(
-                all_kwargs["config"],
-                db_path=all_kwargs.get("db_path"),
-            )
-        except (ValueError, FileNotFoundError, json.JSONDecodeError) as e:
-            _cli_error(str(e))
-        return
-
-    # Single watcher mode
-    if len(positionals) < 2:
-        print("Usage: sports-skills watch <module> <command> [--interval=60] [--output=stdout] [--params...]")
-        print("       sports-skills watch --config=watchers.json")
-        print(f"\nAvailable modules: {', '.join(_REGISTRY.keys())}")
-        return
-
-    module_name = positionals[0]
-    command_name = positionals[1]
-
-    # Separate watch meta-params from endpoint params
-    watch_meta = {}
-    endpoint_params = {}
-    for key, value in all_kwargs.items():
-        if key in _WATCH_META_PARAMS:
-            watch_meta[key] = value
-        else:
-            endpoint_params[key] = _parse_value(key, value)
-
-    from sports_skills.watch import start_watcher
-
-    try:
-        start_watcher(
-            module_name,
-            command_name,
-            params=endpoint_params,
-            interval=float(watch_meta.get("interval", 60)),
-            output_mode=watch_meta.get("output", "stdout"),
-            output_path=watch_meta.get("output_path"),
-            webhook_url=watch_meta.get("webhook_url"),
-            db_path=watch_meta.get("db_path"),
-        )
-    except (ValueError, TypeError) as e:
-        _cli_error(str(e))
-
-
 def main():
     parser = argparse.ArgumentParser(
         prog="sports-skills",
@@ -850,11 +767,6 @@ def main():
             "modules": list(_REGISTRY.keys()),
         }
         print(json.dumps(catalog, indent=2))
-        return
-
-    # Reserved "watch" command: realtime data watcher
-    if args.module == "watch":
-        _handle_watch(args, remaining)
         return
 
     if not args.command:
