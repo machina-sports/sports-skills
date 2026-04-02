@@ -33,6 +33,117 @@ which sports-skills || pip install sports-skills
 
 ---
 
+## Command Routing
+
+**Check the ARGUMENTS first.** If the argument is `help` (case-insensitive, with or without `--`), execute the Help command below and stop — do not try to generate an article.
+
+---
+
+## Help Command
+
+**Trigger:** argument is `help` or `--help`
+
+When triggered, respond in the user's language (PT-BR by default) with the following guide — formatted and ready to read, no data fetching needed:
+
+---
+
+### 📰 Sports Reporter — Guia de Uso
+
+O Sports Reporter gera artigos jornalísticos originais a partir de dados reais. Escolha o tipo de artigo e use uma das frases de exemplo para começar.
+
+---
+
+#### 1. Preview (Pré-jogo)
+Análise de jogos ainda não disputados: forma recente, prováveis escalações, o que esperar do confronto.
+
+**Exemplos:**
+- `preview do jogo Flamengo x Palmeiras de amanhã`
+- `quais os próximos jogos do Brasileirão?`
+- `pré-jogo da final da Champions League`
+- `o que esperar do Lakers x Celtics no domingo?`
+- `análise pré-jogo do Brasil na Copa do Mundo`
+
+---
+
+#### 2. Live (Ao vivo)
+Atualização em tempo real de um jogo em andamento: placar, eventos, momento da partida.
+
+**Exemplos:**
+- `como está o jogo do Flamengo agora?`
+- `placar ao vivo do Corinthians`
+- `o que está acontecendo no jogo dos Lakers?`
+- `atualização ao vivo da Premier League`
+- `como está a partida do Brasil?`
+
+---
+
+#### 3. Match Report (Pós-jogo)
+Relatório completo de um jogo já encerrado: gols, estatísticas, destaques, análise.
+
+**Exemplos:**
+- `quanto ficou o jogo do Brasil e Croácia ontem?`
+- `relatório do clássico Fla x Flu do fim de semana`
+- `como foi o jogo do Real Madrid ontem?`
+- `resultado do Lakers x Celtics de ontem`
+- `resumo do jogo do Brasil na Copa do Mundo`
+
+---
+
+#### 4. Team Analysis (Análise de time)
+Situação atual de um clube: posição na tabela, forma recente, lesionados, destaques da temporada.
+
+**Exemplos:**
+- `como está o Flamengo na temporada?`
+- `análise do momento do Manchester City`
+- `situação do Golden State Warriors no campeonato`
+- `como está o Brasil na Copa do Mundo?`
+- `análise completa do Palmeiras em 2026`
+
+---
+
+#### 5. Player Profile (Perfil de jogador)
+Estatísticas e análise individual de um atleta: gols, assistências, desempenho na temporada.
+
+**Exemplos:**
+- `estatísticas do Vinicius Jr esta temporada`
+- `como está jogando o Lebron James?`
+- `perfil do Endrick no Brasileirão`
+- `análise do Patrick Mahomes nessa temporada`
+- `números do Lamine Yamal na La Liga`
+
+---
+
+#### 6. Daily Roundup (Resumo do dia)
+Todos os jogos do dia em todos os esportes cobertos, com placares e destaques.
+
+**Exemplos:**
+- `quais os jogos de hoje?`
+- `resumo esportivo do dia`
+- `o que tem de jogo hoje?`
+- `todos os resultados de ontem`
+- `rodada de hoje no futebol e NBA`
+
+---
+
+#### Esportes suportados
+| Módulo | Cobertura |
+|--------|-----------|
+| `football` | Premier League, La Liga, Bundesliga, Serie A, Ligue 1, Champions League, Brasileirão, MLS, Copa do Mundo, Amistosos FIFA e mais |
+| `nba` | NBA (incluindo ao vivo com play-by-play) |
+| `nfl` | NFL |
+| `nhl` | NHL |
+| `mlb` | MLB |
+| `cfb` / `cbb` | College Football / College Basketball |
+| `tennis` | ATP / WTA |
+| `f1` | Fórmula 1 |
+| `golf` | PGA Tour |
+
+---
+
+*Dica: você não precisa especificar o tipo de artigo — basta perguntar naturalmente. O Sports Reporter identifica o contexto automaticamente.*
+
+---
+
 ## CRITICAL: Before Any Article
 
 1. **Identify the article type** — see the table below
