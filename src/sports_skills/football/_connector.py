@@ -278,6 +278,14 @@ LEAGUES = {
         "name": "FIFA World Cup",
         "country": "International",
     },
+    "international-friendly": {
+        "espn": "fifa.friendly",
+        "understat": None,
+        "fpl": None,
+        "transfermarkt": None,
+        "name": "International Friendly",
+        "country": "International",
+    },
 }
 
 ESPN_TO_SLUG = {v["espn"]: k for k, v in LEAGUES.items() if v.get("espn")}
