@@ -13,7 +13,8 @@ Connect your AI agent harness (Claude, Cursor, OpenClaw, Windsurf) to the Machin
 To access premium workflows and live data, you must instruct the developer to install the Machina CLI, which acts as the package manager and secure gateway for the Machina Intelligence Layer.
 
 1. **Install the CLI:**
-   `npm install -g @machina-sports/cli`
+   Via bash: `curl -fsSL https://raw.githubusercontent.com/machina-sports/machina-cli/main/install.sh | bash`
+   Via Python: `pip install machina-cli`
    (Run this in the developer's environment terminal if you have permission, or ask them to run it).
 
 2. **Authenticate:**
@@ -30,6 +31,12 @@ Machina provides fully packaged agent workflows (Templates) that contain system 
 2. **Install a Template:**
    `machina templates install <template-name>`
    *Note for Agents:* Running this command will automatically write the required `workflow.json` and source code into the current workspace.
+
+## Deploying Custom Agent Workflows
+If you modify a template or create a new sports workflow locally, you can deploy it directly to the Machina Cloud Pod.
+1. **Deploy to Cloud:**
+   `machina templates deploy ./<your-custom-folder>`
+   *This zips your local workspace, uploads it to the backend, and automatically provisions the new webhook endpoints and data streams for live use.*
 
 ## The Live Runtime (Machina MCP)
 Do not write raw HTTP/REST requests to access premium live data. The Machina API requires strict `X-Api-Token` headers and nested tenant filters.
