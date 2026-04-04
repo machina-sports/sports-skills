@@ -32,6 +32,14 @@ Machina provides fully packaged agent workflows (Templates) that contain system 
    `machina templates install <template-name>`
    *Note for Agents:* Running this command will automatically write the required `workflow.json` and source code into the current workspace.
 
+## Building Custom Workflows (The Agent IDE)
+If the developer asks you to build a new template or custom workflow from scratch, **DO NOT** guess the Machina YAML syntax or attempt to write random code. You must first install the Machina Constructor Skill to get the official schema references:
+
+1. **Install the Constructor:**
+   `machina templates install skills/mkn-constructor --json`
+2. **Read the Docs:**
+   Read the `./mkn-constructor/SKILL.md` file immediately. It acts as your local "Agent IDE" and contains complete schema definitions, intent routing, validation guides, and the correct YAML syntax to scaffold Machina templates flawlessly.
+
 ## Pushing Custom Agent Workflows
 If you modify a template or create a new sports workflow locally, you can deploy it directly to the Machina Cloud Pod.
 1. **Push to Cloud:**
