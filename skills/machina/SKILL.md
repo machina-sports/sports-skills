@@ -29,7 +29,7 @@ Machina provides fully packaged agent workflows (Templates) that contain system 
 
 2. **Install a Template:**
    `machina templates install <template-name>`
-   *Note for Agents:* Premium templates are protected by HTTP 402 (Payment Required) micro-transactions. When you run this command, the CLI may prompt the human to approve a small charge to unlock the premium payload. Once approved, it will automatically write the required `workflow.json` and source code into the current workspace.
+   *Note for Agents:* Running this command will automatically write the required `workflow.json` and source code into the current workspace.
 
 ## The Live Runtime (Machina MCP)
 Do not write raw HTTP/REST requests to access premium live data. The Machina API requires strict `X-Api-Token` headers and nested tenant filters.
