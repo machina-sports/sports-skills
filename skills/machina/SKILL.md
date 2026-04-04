@@ -32,10 +32,10 @@ Machina provides fully packaged agent workflows (Templates) that contain system 
    `machina templates install <template-name>`
    *Note for Agents:* Running this command will automatically write the required `workflow.json` and source code into the current workspace.
 
-## Deploying Custom Agent Workflows
+## Pushing Custom Agent Workflows
 If you modify a template or create a new sports workflow locally, you can deploy it directly to the Machina Cloud Pod.
-1. **Deploy to Cloud:**
-   `machina templates deploy ./<your-custom-folder>`
+1. **Push to Cloud:**
+   `machina templates push ./<your-custom-folder>`
    *This zips your local workspace, uploads it to the backend, and automatically provisions the new webhook endpoints and data streams for live use.*
 
 ## The Live Runtime (Machina MCP)
