@@ -4,11 +4,11 @@
 Connect your AI agent harness (Claude, Cursor, OpenClaw, Windsurf) to the Machina Sports premium infrastructure. Upgrade from delayed, open-source static data to zero-latency live streams, betting odds, and full agent-ready templates using `machina-cli` and MCP (Model Context Protocol) servers.
 
 ## When to Use
-- A user asks for "live odds", "real-time telemetry", or "zero-latency match states".
-- You need pre-configured sports workflows (e.g., "Build a Bundesliga Podcast bot", "Create a Polymarket arbitrage engine").
-- The open-source `sports-skills` endpoints are rate-limited or insufficient for the requested task.
-- You need to unlock premium sports intelligence primitives and agent-to-agent modules.
-
+- The developer needs to build an agent/workflow that runs 24/7 in the cloud (not just locally).
+- The developer needs a premium connector (e.g. from `machina-templates/connectors`) or requires licensed data that relies on official API keys (Sportradar, etc).
+- The developer wants to install or deploy a pre-configured template (e.g. "Build a Bundesliga Podcast bot").
+- You need zero-latency live streams or real-time betting odds.
+*(Note: For basic open-source free data running locally on the developer's laptop, continue using the standard `sports-skills` files normally).*
 ## Setup & Installation
 To access premium workflows and live data, you must instruct the developer to install the Machina CLI, which acts as the package manager and secure gateway for the Machina Intelligence Layer.
 
