@@ -31,7 +31,7 @@ dependencies = [
 
 [project.optional-dependencies]
 f1 = ["fastf1>=3.0", "pandas>=2.0"]
-nfl = ["nfl-data-py>=0.3"]
+nfl = ["nflreadpy>=0.1", "nfl-data-py>=0.3"]
 nba = []
 wnba = []
 nhl = []
@@ -41,7 +41,7 @@ cfb = []
 cbb = []
 golf = []
 polymarket = ["py_clob_client>=0.1.8"]
-all = ["fastf1>=3.0", "pandas>=2.0", "nfl-data-py>=0.3", "py_clob_client>=0.1.8"]
+all = ["fastf1>=3.0", "pandas>=2.0", "nflreadpy>=0.1", "nfl-data-py>=0.3", "py_clob_client>=0.1.8"]
 dev = ["ruff>=0.9", "pytest>=8.0", "fastf1>=3.0", "pandas>=2.0"]
 
 [project.scripts]

@@ -272,6 +272,7 @@ class TestParseValue:
 
         assert _parse_value("limit", "25") == 25
         assert _parse_value("season", "2024") == 2024
+        assert _parse_value("week", "3") == 3
 
     def test_bool_param_string(self):
         from sports_skills.cli import _parse_value
@@ -1300,6 +1301,99 @@ class TestNewsQueryDefaults:
         result = fetch_items()
         assert result["status"] is False
         assert "Provide url or use a query for Google News" in result["message"]
+
+
+class TestNFLverseNormalizers:
+    """Tests for pure nflverse normalizers."""
+
+    def test_normalize_schedule_row(self):
+        from sports_skills.nfl._nflverse import _normalize_schedule_row
+
+        row = {
+            "game_id": "2024_01_KC_BAL",
+            "season": 2024,
+            "week": 1,
+            "game_type": "REG",
+            "gameday": "2024-09-05",
+            "away_team": "BAL",
+            "home_team": "KC",
+            "away_score": 20,
+            "home_score": 27,
+            "location": "GEHA Field",
+            "spread_line": -2.5,
+        }
+        result = _normalize_schedule_row(row)
+        assert result["game_id"] == "2024_01_KC_BAL"
+        assert result["home_team"] == "KC"
+        assert result["away_score"] == 20
+        assert result["spread_line"] == -2.5
+
+    def test_normalize_player_stats_row(self):
+        from sports_skills.nfl._nflverse import _normalize_player_stats_row
+
+        row = {
+            "player_id": "00-0033873",
+            "player_name": "Patrick Mahomes",
+            "position": "QB",
+            "recent_team": "KC",
+            "season": 2024,
+            "season_type": "REG",
+            "passing_yards": 4183,
+            "passing_tds": 31,
+        }
+        result = _normalize_player_stats_row(row)
+        assert result["player_id"] == "00-0033873"
+        assert result["team"] == "KC"
+        assert result["stats"]["passing_yards"] == 4183
+        assert result["stats"]["passing_tds"] == 31
+
+    def test_normalize_pbp_row(self):
+        from sports_skills.nfl._nflverse import _normalize_pbp_row
+
+        row = {
+            "play_id": 55,
+            "game_id": "2024_03_BUF_MIA",
+            "season": 2024,
+            "week": 3,
+            "qtr": 4,
+            "time": "02:31",
+            "posteam": "BUF",
+            "defteam": "MIA",
+            "down": 3,
+            "ydstogo": 7,
+            "desc": "(2:31) J.Allen pass short middle to S.Diggs for 9 yards.",
+            "epa": 1.21,
+            "wpa": 0.08,
+        }
+        result = _normalize_pbp_row(row)
+        assert result["play_id"] == "55"
+        assert result["game_id"] == "2024_03_BUF_MIA"
+        assert result["quarter"] == 4
+        assert result["posteam"] == "BUF"
+        assert result["epa"] == 1.21
+
+
+class TestNFLverseOptionalDependency:
+    """Missing nflverse backends should raise a clear install hint."""
+
+    def test_load_provider_error_message(self, monkeypatch):
+        import builtins
+
+        from sports_skills.nfl._nflverse import _load_provider
+
+        real_import = builtins.__import__
+
+        def fake_import(name, *args, **kwargs):
+            if name in {"nflreadpy", "nfl_data_py"}:
+                raise ImportError(name)
+            return real_import(name, *args, **kwargs)
+
+        monkeypatch.setattr(builtins, "__import__", fake_import)
+
+        import pytest
+
+        with pytest.raises(ImportError, match="sports-skills\[nfl\]"):
+            _load_provider()
 
 
 class TestParamsContract:

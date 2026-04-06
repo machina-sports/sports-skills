@@ -57,6 +57,21 @@ from sports_skills.nfl._connector import (
 from sports_skills.nfl._connector import (
     get_win_probability as _get_win_probability,
 )
+from sports_skills.nfl._nflverse import (
+    get_nflverse_play_by_play as _get_nflverse_play_by_play,
+)
+from sports_skills.nfl._nflverse import (
+    get_nflverse_player_stats as _get_nflverse_player_stats,
+)
+from sports_skills.nfl._nflverse import (
+    get_nflverse_schedule as _get_nflverse_schedule,
+)
+from sports_skills.nfl._nflverse import (
+    get_nflverse_team_stats as _get_nflverse_team_stats,
+)
+from sports_skills.nfl._nflverse import (
+    get_nflverse_weekly_rosters as _get_nflverse_weekly_rosters,
+)
 
 
 def _params(**kwargs):
@@ -227,5 +242,89 @@ def get_player_stats(
             _params(
                 player_id=player_id, season_year=season_year, season_type=season_type
             )
+        )
+    )
+
+
+def get_nflverse_schedule(*, season: int | None = None, week: int | None = None) -> dict:
+    """Get NFL schedule via nflverse backend.
+
+    Args:
+        season: Season year. Defaults to current NFL season.
+        week: Optional NFL week number.
+    """
+    return wrap(_get_nflverse_schedule(_params(season=season, week=week)))
+
+
+def get_nflverse_weekly_rosters(
+    *, season: int | None = None, week: int | None = None, team: str | None = None
+) -> dict:
+    """Get weekly NFL rosters via nflverse backend.
+
+    Args:
+        season: Season year. Defaults to current NFL season.
+        week: Optional NFL week number.
+        team: Optional team abbreviation filter (e.g. "KC").
+    """
+    return wrap(
+        _get_nflverse_weekly_rosters(_params(season=season, week=week, team=team))
+    )
+
+
+def get_nflverse_player_stats(
+    *,
+    season: int | None = None,
+    player_id: str | None = None,
+    team: str | None = None,
+    position: str | None = None,
+) -> dict:
+    """Get NFL player stats via nflverse backend.
+
+    Args:
+        season: Season year. Defaults to current NFL season.
+        player_id: Optional nflverse/GSIS player identifier.
+        team: Optional team abbreviation filter.
+        position: Optional position filter.
+    """
+    return wrap(
+        _get_nflverse_player_stats(
+            _params(season=season, player_id=player_id, team=team, position=position)
+        )
+    )
+
+
+def get_nflverse_team_stats(
+    *, season: int | None = None, team: str | None = None, week: int | None = None
+) -> dict:
+    """Get NFL team stats via nflverse backend.
+
+    Args:
+        season: Season year. Defaults to current NFL season.
+        team: Optional team abbreviation filter.
+        week: Optional week filter when the backend exposes weekly rows.
+    """
+    return wrap(_get_nflverse_team_stats(_params(season=season, team=team, week=week)))
+
+
+def get_nflverse_play_by_play(
+    *,
+    season: int | None = None,
+    week: int | None = None,
+    team: str | None = None,
+    game_id: str | None = None,
+    limit: int | None = None,
+) -> dict:
+    """Get NFL play-by-play via nflverse backend.
+
+    Args:
+        season: Season year. Defaults to current NFL season.
+        week: Optional NFL week number.
+        team: Optional team abbreviation filter.
+        game_id: Optional nflverse game identifier.
+        limit: Optional max number of plays to return.
+    """
+    return wrap(
+        _get_nflverse_play_by_play(
+            _params(season=season, week=week, team=team, game_id=game_id, limit=limit)
         )
     )

@@ -79,6 +79,12 @@ def test_cli_registry_commands_callable():
             assert callable(fn), f"{module_name}.{command_name} is not callable"
 
 
+def test_nflverse_provider_module_imports():
+    """The nflverse provider module should import without optional deps installed."""
+    mod = importlib.import_module("sports_skills.nfl._nflverse")
+    assert mod is not None
+
+
 def test_response_envelope():
     """The response wrapper should produce the standard envelope."""
     from sports_skills._response import wrap

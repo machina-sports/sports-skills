@@ -110,6 +110,52 @@ Get full player statistical profile for a season.
 
 Returns `categories[]` with detailed stats including value, rank, and per-game averages.
 
+### get_nflverse_schedule
+Get schedules/results through the nflverse backend.
+- `season` (int, optional): Season year
+- `week` (int, optional): NFL week filter
+
+Returns `events[]` with `game_id`, teams, scores, date/time, line fields, and location.
+
+### get_nflverse_weekly_rosters
+Get weekly roster snapshots through the nflverse backend.
+- `season` (int, optional): Season year
+- `week` (int, optional): NFL week filter
+- `team` (str, optional): Team abbreviation filter (e.g. `KC`)
+
+Returns `players[]` with normalized roster fields: team, player_id, player_name, position, jersey_number, status, college, and experience fields when available.
+
+### get_nflverse_player_stats
+Get normalized nflverse player stat rows.
+- `season` (int, optional): Season year
+- `player_id` (str, optional): nflverse/GSIS player identifier
+- `team` (str, optional): Team abbreviation filter
+- `position` (str, optional): Position filter
+
+Returns `players[]`, each with identity fields plus a `stats` object containing backend columns.
+
+### get_nflverse_team_stats
+Get normalized nflverse team stat rows.
+- `season` (int, optional): Season year
+- `team` (str, optional): Team abbreviation filter
+- `week` (int, optional): Week filter when available
+
+Returns `teams[]`, each with team/season context plus a `stats` object containing backend columns.
+
+### get_nflverse_play_by_play
+Get normalized nflverse play-by-play rows.
+- `season` (int, optional): Season year
+- `week` (int, optional): Week filter
+- `team` (str, optional): Team abbreviation filter
+- `game_id` (str, optional): nflverse game identifier
+- `limit` (int, optional): Max rows to return
+
+Returns `plays[]` with game/play identifiers, quarter/clock, teams, down/distance, description, EPA, WP/WPA, and score state.
+
+Notes:
+- The nflverse backend prefers `nflreadpy` when installed and falls back to `nfl_data_py` for compatibility.
+- These commands keep `nfl-data` as the user-facing skill while exposing table-style datasets under the same module.
+
 ## Team IDs
 
 | Team | ID | Team | ID |
