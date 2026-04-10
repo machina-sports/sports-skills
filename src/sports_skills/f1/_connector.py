@@ -382,11 +382,18 @@ def _get_completed_races(year):
     return races["EventName"].tolist()
 
 
-def _load_session_cached(year, event, *, results_only=False):
-    """Load a race session. FastF1 handles its own caching."""
+def _load_session_cached(year, event, *, results_only=False, laps_only=False):
+    """Load a race session. FastF1 handles its own caching.
+
+    results_only: load only results (no laps, telemetry, weather, messages)
+    laps_only: load results + laps but skip telemetry/weather/messages
+               (saves ~80% memory vs full load)
+    """
     session = fastf1.get_session(year, event, "R")
     if results_only:
         session.load(laps=False, telemetry=False, weather=False, messages=False)
+    elif laps_only:
+        session.load(telemetry=False, weather=False, messages=False)
     else:
         session.load()
     return session
@@ -409,7 +416,7 @@ def get_pit_stops(request_data):
         all_pits = []
         for race_name in race_names:
             try:
-                session = _load_session_cached(year, race_name)
+                session = _load_session_cached(year, race_name, laps_only=True)
                 laps = session.laps.copy()
 
                 for drv in laps["Driver"].unique():
@@ -518,7 +525,7 @@ def get_speed_data(request_data):
 
         for race_name in race_names:
             try:
-                session = _load_session_cached(year, race_name)
+                session = _load_session_cached(year, race_name, laps_only=True)
                 laps = session.laps.copy()
 
                 if driver:
@@ -695,7 +702,7 @@ def get_season_stats(request_data):
 
         for race_name in race_names:
             try:
-                session = _load_session_cached(year, race_name)
+                session = _load_session_cached(year, race_name, laps_only=True)
                 results = session.results
                 laps = session.laps
 
@@ -894,7 +901,7 @@ def get_team_comparison(request_data):
 
         for race_name in race_names:
             try:
-                session = _load_session_cached(year, race_name)
+                session = _load_session_cached(year, race_name, laps_only=True)
                 results = session.results
                 laps = session.laps
 
@@ -1089,7 +1096,7 @@ def get_driver_comparison(request_data):
 
         for race_name in race_names:
             try:
-                session = _load_session_cached(year, race_name)
+                session = _load_session_cached(year, race_name, laps_only=True)
                 results = session.results
                 laps = session.laps
 
@@ -1321,7 +1328,7 @@ def get_tire_analysis(request_data):
 
         for race_name in race_names:
             try:
-                session = _load_session_cached(year, race_name)
+                session = _load_session_cached(year, race_name, laps_only=True)
                 laps = session.laps.copy()
 
                 if driver:
