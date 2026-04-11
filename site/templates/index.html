@@ -58,8 +58,6 @@
     <div class="badges fade-in delay-3">
       <span class="badge">{{ total_skills }} skills</span>
       <span class="badge">{{ total_commands }}+ commands</span>
-      <span class="badge">0 API keys</span>
-      <span class="badge">MIT</span>
     </div>
   </div>
 </section>
@@ -84,7 +82,7 @@
           {{ skill.name }}
           <span class="skill-tag tag-{{ skill.category_color }}">{{ skill.category }}</span>
           {% if skill.tier == 'pro' %}
-          <span class="skill-tag tag-cyan">Machina</span>
+          <span class="skill-tag tag-cyan">Pro</span>
           {% endif %}
         </div>
         <div class="skill-desc">{{ skill.description }}</div>

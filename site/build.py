@@ -48,7 +48,7 @@ CATEGORY_MAP = {
     "volleyball-data": "Other",
     "sports-news": "Other",
     "sports-reporter": "Other",
-    "machina": "Other",
+    "machina": "Machina Skills",
     "metadata": "Other",
 }
 
