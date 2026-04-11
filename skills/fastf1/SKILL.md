@@ -6,7 +6,7 @@ description: |
   Use when: user asks about F1 race results, qualifying, lap times, driver stats, team info, the F1 calendar, or Formula 1 data.
   Don't use when: user asks about other motorsports (MotoGP, NASCAR, IndyCar, WEC, Formula E). Don't use for F1 betting odds or predictions — use kalshi or polymarket instead. Don't use for F1 news articles — use sports-news instead.
 license: MIT
-compatibility: Requires Python 3.10+ (install with: pip install sports-skills)
+compatibility: "Requires Python 3.10+ (install with: pip install sports-skills)"
 metadata:
   author: machina-sports
   version: "0.1.0"

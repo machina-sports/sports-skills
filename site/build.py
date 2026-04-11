@@ -1,0 +1,385 @@
+#!/usr/bin/env python3
+"""Build the sports-skills.sh marketplace from SKILL.md files."""
+
+import json
+import os
+import re
+import shutil
+from pathlib import Path
+
+import yaml
+from jinja2 import Environment, FileSystemLoader
+
+# ── Paths ──────────────────────────────────────────────────────────────
+ROOT = Path(__file__).resolve().parent.parent  # repo root
+SITE = Path(__file__).resolve().parent         # site/
+TEMPLATES = SITE / "templates"
+DIST = SITE / "dist"
+
+SKILL_SOURCES = [
+    {"path": ROOT / "skills", "tier": "open"},
+    {"path": ROOT.parent / "machina-templates" / "skills", "tier": "pro"},
+    {"path": ROOT.parent / "machina-templates" / "connectors", "tier": "pro", "scan": "*/skills/"},
+]
+
+BASE_URL = "https://sports-skills.sh"
+
+# ── Category mapping ───────────────────────────────────────────────────
+CATEGORY_MAP = {
+    "mkn-constructor": "Machina Skills",
+    "polymarket-sync-events": "Machina Skills",
+    "polymarket-sync-series": "Machina Skills",
+    "polymarket-sync-markets": "Machina Skills",
+    "kalshi": "Prediction Markets",
+    "polymarket": "Prediction Markets",
+    "betting": "Prediction Markets",
+    "markets": "Prediction Markets",
+    "nfl-data": "US Sports",
+    "nba-data": "US Sports",
+    "wnba-data": "US Sports",
+    "nhl-data": "US Sports",
+    "mlb-data": "US Sports",
+    "football-data": "Football",
+    "cfb-data": "College",
+    "cbb-data": "College",
+    "tennis-data": "Racquet",
+    "golf-data": "Golf",
+    "fastf1": "Motorsport",
+    "volleyball-data": "Other",
+    "sports-news": "Other",
+    "sports-reporter": "Other",
+    "machina": "Other",
+    "metadata": "Other",
+}
+
+CATEGORY_ORDER = [
+    "Machina Skills",
+    "Prediction Markets",
+    "US Sports",
+    "Football",
+    "College",
+    "Racquet",
+    "Golf",
+    "Motorsport",
+    "Other",
+]
+
+# Colors for category tag pills (CSS class suffixes)
+CATEGORY_COLORS = {
+    "Machina Skills": "cyan",
+    "Prediction Markets": "amber",
+    "US Sports": "green",
+    "Football": "green",
+    "College": "green",
+    "Racquet": "green",
+    "Golf": "green",
+    "Motorsport": "amber",
+    "Other": "green",
+}
+
+# ── Data source mapping (per slug, fallback to "Community data") ──────
+DATA_SOURCES = {
+    "kalshi": "Kalshi API",
+    "polymarket": "Polymarket API",
+    "betting": "Pure computation",
+    "markets": "ESPN + Kalshi + Polymarket",
+    "nfl-data": "ESPN",
+    "nba-data": "ESPN",
+    "wnba-data": "ESPN",
+    "nhl-data": "ESPN",
+    "mlb-data": "ESPN",
+    "football-data": "ESPN, Understat, FPL, Transfermarkt",
+    "cfb-data": "ESPN",
+    "cbb-data": "ESPN",
+    "tennis-data": "ESPN",
+    "golf-data": "ESPN",
+    "fastf1": "FastF1 (open-source)",
+    "volleyball-data": "Nevobo API",
+    "sports-news": "RSS / Google News",
+    "sports-reporter": "RSS / Google News",
+    "machina": "Machina Platform",
+    "mkn-constructor": "Machina Platform",
+    "polymarket-sync-events": "Polymarket API",
+    "polymarket-sync-series": "Polymarket API",
+    "polymarket-sync-markets": "Polymarket API",
+}
+
+
+# ── Parsing ────────────────────────────────────────────────────────────
+def parse_skill_md(path: Path) -> dict | None:
+    """Parse a SKILL.md file into a dict with frontmatter and content."""
+    text = path.read_text(encoding="utf-8")
+
+    # Split frontmatter
+    if text.startswith("---"):
+        parts = text.split("---", 2)
+        if len(parts) >= 3:
+            fm = yaml.safe_load(parts[1]) or {}
+            body = parts[2].strip()
+        else:
+            return None
+    elif text.startswith("# "):
+        # No frontmatter (e.g. machina SKILL.md)
+        fm = {}
+        body = text.strip()
+    else:
+        return None
+
+    return {"frontmatter": fm, "body": body}
+
+
+def extract_commands(body: str) -> list[dict]:
+    """Extract commands from markdown tables with | Command | Description | headers."""
+    commands = []
+    lines = body.split("\n")
+    in_table = False
+    for line in lines:
+        stripped = line.strip()
+        if re.match(r"\|\s*Command\s*\|\s*Description\s*\|", stripped, re.IGNORECASE):
+            in_table = True
+            continue
+        if in_table and stripped.startswith("|") and re.match(r"\|\s*[-:]+", stripped):
+            continue  # separator row
+        if in_table and stripped.startswith("|"):
+            cells = [c.strip() for c in stripped.split("|")[1:-1]]
+            if len(cells) >= 2:
+                name = re.sub(r"`", "", cells[0]).strip()
+                desc = cells[1].strip()
+                if name and not name.startswith("---"):
+                    commands.append({"name": name, "description": desc})
+        elif in_table and not stripped.startswith("|"):
+            in_table = False
+    return commands
+
+
+def extract_examples(body: str) -> list[str]:
+    """Extract example prompts — lines matching quoted strings under example headings."""
+    examples = []
+    lines = body.split("\n")
+    in_examples = False
+    for line in lines:
+        stripped = line.strip()
+        if re.match(r"^#+\s*(Example|Usage)", stripped, re.IGNORECASE):
+            in_examples = True
+            continue
+        if in_examples and re.match(r"^#+\s", stripped) and not re.match(r"^#+\s*(Example|Usage)", stripped, re.IGNORECASE):
+            in_examples = False
+            continue
+        if in_examples:
+            # Match "User says: ..." pattern
+            m = re.match(r'User says:\s*"(.+)"', stripped)
+            if m:
+                examples.append(m.group(1))
+    return examples[:5]
+
+
+def load_skill(slug: str, skill_dir: Path, tier: str) -> dict:
+    """Load a single skill from its directory."""
+    skill_md = skill_dir / "SKILL.md"
+    if not skill_md.exists():
+        return None
+
+    parsed = parse_skill_md(skill_md)
+    if not parsed:
+        return None
+
+    fm = parsed["frontmatter"]
+    body = parsed["body"]
+    meta = fm.get("metadata", {}) or {}
+
+    name = fm.get("name", slug)
+    description_raw = fm.get("description", "")
+    # Take first sentence/line of description for short desc
+    description_lines = [l.strip() for l in description_raw.strip().split("\n") if l.strip()]
+    short_desc = description_lines[0] if description_lines else ""
+    # Truncate to first sentence if very long
+    if len(short_desc) > 200:
+        dot = short_desc.find(". ", 0, 200)
+        if dot > 0:
+            short_desc = short_desc[: dot + 1]
+
+    commands = extract_commands(body)
+    examples = extract_examples(body)
+    category = CATEGORY_MAP.get(slug, "Other")
+
+    return {
+        "slug": slug,
+        "name": name,
+        "description": short_desc,
+        "description_full": description_raw.strip(),
+        "category": category,
+        "category_color": CATEGORY_COLORS.get(category, "green"),
+        "tier": tier,
+        "version": meta.get("version", ""),
+        "author": meta.get("author", "machina-sports"),
+        "license": fm.get("license", "MIT" if tier == "open" else "Proprietary"),
+        "commands": commands,
+        "command_count": len(commands),
+        "examples": examples,
+        "data_source": DATA_SOURCES.get(slug, "Community data"),
+        "url": f"{BASE_URL}/{slug}/",
+        "source_url": f"https://github.com/machina-sports/sports-skills/tree/main/skills/{slug}" if tier == "open" else None,
+        "install_command": f"npx skills add machina-sports/sports-skills@{slug}" if tier == "open" else None,
+    }
+
+
+def load_all_skills() -> list[dict]:
+    """Load skills from all configured sources."""
+    skills = []
+    seen_slugs = set()
+
+    for source in SKILL_SOURCES:
+        base = Path(source["path"])
+        if not base.exists():
+            continue
+        tier = source["tier"]
+        scan = source.get("scan")
+
+        if scan:
+            # Glob pattern: e.g. connectors/*/skills/*/
+            for skill_dir in sorted(base.glob(scan)):
+                if skill_dir.is_dir():
+                    slug = skill_dir.name
+                    if slug in seen_slugs:
+                        continue
+                    skill = load_skill(slug, skill_dir, tier)
+                    if skill:
+                        skills.append(skill)
+                        seen_slugs.add(slug)
+        else:
+            for skill_dir in sorted(base.iterdir()):
+                if skill_dir.is_dir() and (skill_dir / "SKILL.md").exists():
+                    slug = skill_dir.name
+                    if slug in seen_slugs:
+                        continue
+                    skill = load_skill(slug, skill_dir, tier)
+                    if skill:
+                        skills.append(skill)
+                        seen_slugs.add(slug)
+
+    # Sort: by category order, then alphabetically within category
+    def sort_key(s):
+        cat_idx = CATEGORY_ORDER.index(s["category"]) if s["category"] in CATEGORY_ORDER else len(CATEGORY_ORDER)
+        return (cat_idx, s["slug"])
+
+    skills.sort(key=sort_key)
+    return skills
+
+
+# ── Rendering ──────────────────────────────────────────────────────────
+def build():
+    """Main build entry point."""
+    print("Loading skills...")
+    skills = load_all_skills()
+    print(f"  Found {len(skills)} skills")
+
+    categories = []
+    seen_cats = set()
+    for s in skills:
+        if s["category"] not in seen_cats:
+            categories.append(s["category"])
+            seen_cats.add(s["category"])
+
+    # Set up Jinja2
+    env = Environment(
+        loader=FileSystemLoader(str(TEMPLATES)),
+        autoescape=True,
+        trim_blocks=True,
+        lstrip_blocks=True,
+    )
+
+    # Clean and create dist
+    if DIST.exists():
+        shutil.rmtree(DIST)
+    DIST.mkdir(parents=True)
+
+    # ── Render homepage ────────────────────────────────────────────────
+    print("Rendering homepage...")
+    tpl_index = env.get_template("index.html")
+    total_commands = sum(s["command_count"] for s in skills)
+    html = tpl_index.render(
+        skills=skills,
+        categories=categories,
+        skills_json=json.dumps([{
+            "slug": s["slug"],
+            "name": s["name"],
+            "description": s["description"],
+            "category": s["category"],
+            "tier": s["tier"],
+            "commands": [c["name"] for c in s["commands"]],
+        } for s in skills]),
+        total_skills=len(skills),
+        total_commands=total_commands,
+        base_url=BASE_URL,
+    )
+    (DIST / "index.html").write_text(html, encoding="utf-8")
+
+    # ── Render skill detail pages ──────────────────────────────────────
+    print("Rendering skill pages...")
+    tpl_skill = env.get_template("skill.html")
+    for skill in skills:
+        # Related skills: up to 4 from same category, excluding self
+        related = [s for s in skills if s["category"] == skill["category"] and s["slug"] != skill["slug"]][:4]
+        html = tpl_skill.render(
+            skill=skill,
+            related=related,
+            base_url=BASE_URL,
+        )
+        skill_dir = DIST / skill["slug"]
+        skill_dir.mkdir(parents=True, exist_ok=True)
+        (skill_dir / "index.html").write_text(html, encoding="utf-8")
+
+    # ── Generate skills.json manifest ──────────────────────────────────
+    print("Generating skills.json...")
+    manifest = {
+        "name": "sports-skills",
+        "description": "Live sports data and prediction markets for AI agents",
+        "repository": "https://github.com/machina-sports/sports-skills",
+        "install": "npx skills add machina-sports/sports-skills",
+        "skills": [{
+            "slug": s["slug"],
+            "name": s["name"],
+            "description": s["description"],
+            "category": s["category"],
+            "tier": s["tier"],
+            "version": s["version"],
+            "license": s["license"],
+            "install": s["install_command"],
+            "url": s["url"],
+            "source": s["source_url"],
+            "data_sources": [s["data_source"]],
+            "commands": s["commands"],
+        } for s in skills],
+    }
+    (DIST / "skills.json").write_text(json.dumps(manifest, indent=2), encoding="utf-8")
+
+    # ── Generate sitemap.xml ───────────────────────────────────────────
+    print("Generating sitemap.xml...")
+    urls = [BASE_URL + "/"]
+    for s in skills:
+        urls.append(s["url"])
+    sitemap_entries = "\n".join(
+        f"  <url><loc>{u}</loc></url>" for u in urls
+    )
+    sitemap = f"""<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+{sitemap_entries}
+</urlset>"""
+    (DIST / "sitemap.xml").write_text(sitemap, encoding="utf-8")
+
+    # ── Generate robots.txt ────────────────────────────────────────────
+    robots = f"""User-agent: *
+Allow: /
+Sitemap: {BASE_URL}/sitemap.xml"""
+    (DIST / "robots.txt").write_text(robots, encoding="utf-8")
+
+    # ── Copy styles.css if it exists alongside templates ───────────────
+    styles_src = TEMPLATES / "styles.css"
+    if styles_src.exists():
+        shutil.copy2(styles_src, DIST / "styles.css")
+
+    print(f"Build complete: {len(skills)} skills -> {DIST}")
+
+
+if __name__ == "__main__":
+    build()
