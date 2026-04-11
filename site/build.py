@@ -73,7 +73,7 @@ CATEGORY_COLORS = {
     "College": "green",
     "Racquet": "green",
     "Golf": "green",
-    "Motorsport": "amber",
+    "Motorsport": "green",
     "Other": "green",
 }
 
@@ -189,6 +189,13 @@ def load_skill(slug: str, skill_dir: Path, tier: str) -> dict:
 
     name = fm.get("name", slug)
     description_raw = fm.get("description", "")
+    # Fallback: if no frontmatter description, use first paragraph after the heading
+    if not description_raw.strip() and body:
+        for line in body.split("\n"):
+            stripped = line.strip()
+            if stripped and not stripped.startswith("#") and not stripped.startswith("|") and not stripped.startswith("-") and not stripped.startswith("```"):
+                description_raw = stripped
+                break
     # Take first sentence/line of description for short desc
     description_lines = [l.strip() for l in description_raw.strip().split("\n") if l.strip()]
     short_desc = description_lines[0] if description_lines else ""
