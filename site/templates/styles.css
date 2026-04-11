@@ -484,12 +484,14 @@ section {
   flex-wrap: wrap;
 }
 
-.skill-header .description {
+.description-section {
+  padding: 0 0 20px;
+}
+
+.skill-description {
   font-size: 14px;
   color: var(--text-muted);
   line-height: 1.7;
-  max-width: 640px;
-  margin-bottom: 24px;
 }
 
 .skill-actions {

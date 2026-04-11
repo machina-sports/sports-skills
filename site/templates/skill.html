@@ -54,8 +54,6 @@
       {% endif %}
     </h1>
 
-    <div class="description">{{ skill.description_full }}</div>
-
     <div class="skill-actions">
       {% if skill.tier == 'open' %}
       <button class="btn-primary" onclick="copySkillInstall()">
@@ -80,6 +78,13 @@
       {% endif %}
       <span>{{ skill.license }}</span>
     </div>
+  </div>
+</section>
+
+<!-- DESCRIPTION -->
+<section class="description-section">
+  <div class="container">
+    <p class="skill-description">{{ skill.description }}</p>
   </div>
 </section>
 
