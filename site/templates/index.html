@@ -1,0 +1,192 @@
+{% extends "base.html" %}
+
+{% block meta_extra %}
+<meta name="keywords" content="sports data, prediction markets, AI agents, kalshi, polymarket, NFL, NBA, football, tennis, golf, F1">
+<meta property="og:title" content="sports-skills.sh — Live Sports Data for AI Agents">
+<meta property="og:description" content="Open-source agent skills for live sports data and prediction markets. Zero API keys. Zero signup.">
+<meta property="og:url" content="{{ base_url }}/">
+<meta property="og:type" content="website">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="sports-skills.sh — Live Sports Data for AI Agents">
+<meta name="twitter:description" content="Open-source agent skills for live sports data and prediction markets. Zero API keys. Zero signup.">
+{% endblock %}
+
+{% block json_ld %}
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "SoftwareApplication",
+  "name": "sports-skills",
+  "description": "Live sports data and prediction markets for AI agents",
+  "applicationCategory": "DeveloperApplication",
+  "operatingSystem": "Any",
+  "offers": {"@type": "Offer", "price": "0", "priceCurrency": "USD"},
+  "url": "{{ base_url }}/",
+  "codeRepository": "https://github.com/machina-sports/sports-skills",
+  "hasPart": [
+    {% for skill in skills %}
+    {
+      "@type": "SoftwareApplication",
+      "name": "{{ skill.name }}",
+      "description": "{{ skill.description }}",
+      "url": "{{ skill.url }}"
+    }{% if not loop.last %},{% endif %}
+    {% endfor %}
+  ]
+}
+</script>
+{% endblock %}
+
+{% block content %}
+<!-- HERO -->
+<section class="hero">
+  <div class="container">
+    <h1 class="hero-headline fade-in">Live sports data and prediction markets for AI agents</h1>
+    <p class="hero-subtitle fade-in delay-1">Open-source skills. Zero API keys. Zero signup.</p>
+
+    <div class="fade-in delay-2">
+      <div class="install-box" onclick="copyInstall(this)">
+        <span class="prompt">$</span>
+        <code>npx skills add machina-sports/sports-skills</code>
+        <button class="copy-btn" aria-label="Copy install command">copy</button>
+      </div>
+      <div class="install-hint">
+        Python: <code>pip install sports-skills</code>
+      </div>
+    </div>
+
+    <div class="badges fade-in delay-3">
+      <span class="badge">{{ total_skills }} skills</span>
+      <span class="badge">{{ total_commands }}+ commands</span>
+      <span class="badge">0 API keys</span>
+      <span class="badge">MIT</span>
+    </div>
+  </div>
+</section>
+
+<!-- SKILLS -->
+<section id="skills">
+  <div class="container">
+    <div class="search-filter fade-in">
+      <input type="text" class="search-input" placeholder="Search skills..." id="skill-search" autocomplete="off">
+      <div class="filter-tabs" id="filter-tabs">
+        <button class="filter-tab active" data-category="all">All</button>
+        {% for cat in categories %}
+        <button class="filter-tab" data-category="{{ cat }}">{{ cat }}</button>
+        {% endfor %}
+      </div>
+    </div>
+
+    <div class="skills-grid" id="skills-grid">
+      {% for skill in skills %}
+      <a href="/{{ skill.slug }}/" class="skill-card {% if skill.tier == 'pro' %}pro-tier{% endif %}" data-slug="{{ skill.slug }}" data-category="{{ skill.category }}">
+        <div class="skill-name">
+          {{ skill.name }}
+          <span class="skill-tag tag-{{ skill.category_color }}">{{ skill.category }}</span>
+          {% if skill.tier == 'pro' %}
+          <span class="skill-tag tag-cyan">Machina</span>
+          {% endif %}
+        </div>
+        <div class="skill-desc">{{ skill.description }}</div>
+        <div class="skill-meta">
+          <span>{{ skill.command_count }} commands</span>
+          <span>{{ skill.data_source }}</span>
+        </div>
+      </a>
+      {% endfor %}
+    </div>
+
+    <div class="no-results" id="no-results">No skills match your search.</div>
+
+    <div class="stats-row fade-in" style="margin-top: 48px;">
+      <div class="stat">
+        <div class="stat-value">{{ total_commands }}+</div>
+        <div class="stat-label">Commands</div>
+      </div>
+      <div class="stat">
+        <div class="stat-value">{{ total_skills }}</div>
+        <div class="stat-label">Skills</div>
+      </div>
+      <div class="stat">
+        <div class="stat-value">13+</div>
+        <div class="stat-label">Leagues</div>
+      </div>
+      <div class="stat">
+        <div class="stat-value">0</div>
+        <div class="stat-label">API Keys</div>
+      </div>
+    </div>
+  </div>
+</section>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  // Skill data for client-side filtering
+  const SKILLS = {{ skills_json|safe }};
+
+  function copyInstall(el) {
+    const text = 'npx skills add machina-sports/sports-skills';
+    navigator.clipboard.writeText(text).then(() => {
+      const btn = el.querySelector('.copy-btn');
+      btn.textContent = 'copied!';
+      setTimeout(() => { btn.textContent = 'copy'; }, 2000);
+    });
+  }
+
+  // Search + Filter
+  const searchInput = document.getElementById('skill-search');
+  const grid = document.getElementById('skills-grid');
+  const cards = grid.querySelectorAll('.skill-card');
+  const tabs = document.querySelectorAll('.filter-tab');
+  const noResults = document.getElementById('no-results');
+  let activeCategory = 'all';
+
+  function filterCards() {
+    const query = searchInput.value.toLowerCase().trim();
+    let visible = 0;
+
+    cards.forEach((card, i) => {
+      const skill = SKILLS[i];
+      const matchesCategory = activeCategory === 'all' || skill.category === activeCategory;
+      const matchesSearch = !query ||
+        skill.name.toLowerCase().includes(query) ||
+        skill.description.toLowerCase().includes(query) ||
+        skill.commands.some(c => c.toLowerCase().includes(query));
+
+      const show = matchesCategory && matchesSearch;
+      card.style.display = show ? '' : 'none';
+      if (show) visible++;
+    });
+
+    noResults.style.display = visible === 0 ? 'block' : 'none';
+  }
+
+  searchInput.addEventListener('input', filterCards);
+
+  tabs.forEach(tab => {
+    tab.addEventListener('click', () => {
+      tabs.forEach(t => t.classList.remove('active'));
+      tab.classList.add('active');
+      activeCategory = tab.dataset.category;
+      filterCards();
+    });
+  });
+
+  // Fade-in observer
+  if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          entry.target.style.animationPlayState = 'running';
+          observer.unobserve(entry.target);
+        }
+      });
+    }, { threshold: 0.1 });
+    document.querySelectorAll('.fade-in').forEach(el => {
+      el.style.animationPlayState = 'paused';
+      observer.observe(el);
+    });
+  }
+</script>
+{% endblock %}
