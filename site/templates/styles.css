@@ -218,6 +218,25 @@ section {
   text-align: center;
 }
 
+.ascii-art {
+  font-size: clamp(4px, 1.8vw, 7px);
+  color: var(--green);
+  line-height: 1.15;
+  white-space: pre;
+  margin-bottom: 24px;
+}
+
+.hero-tagline {
+  font-size: 14px;
+  color: var(--text-muted);
+  line-height: 1.7;
+  margin-bottom: 32px;
+}
+
+.hero-tagline strong {
+  color: var(--text);
+}
+
 .hero-headline {
   font-size: clamp(22px, 4vw, 36px);
   font-weight: 700;
