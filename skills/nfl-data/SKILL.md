@@ -33,6 +33,12 @@ python3 --version  # check version
 ```
 No API keys required.
 
+For nflverse-backed commands (`get_nflverse_*`), install the NFL extra:
+```bash
+pip install sports-skills[nfl]
+```
+This installs `nfl-data-py` (or use `nflreadpy` if preferred). Parquet support (`pyarrow`) is also needed for most nflverse data beyond schedules.
+
 ## Quick Start
 
 Prefer the CLI — it avoids Python import path issues:

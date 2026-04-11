@@ -132,7 +132,7 @@ Get normalized nflverse player stat rows.
 - `team` (str, optional): Team abbreviation filter
 - `position` (str, optional): Position filter
 
-Returns `players[]`, each with identity fields plus a `stats` object containing backend columns.
+Returns `players[]`, each with identity fields (`player_id`, `player_name`, `position`, `team`) plus a `stats` object containing backend columns (completions, passing_yards, passing_tds, rushing_yards, etc.).
 
 ### get_nflverse_team_stats
 Get normalized nflverse team stat rows.
@@ -140,7 +140,7 @@ Get normalized nflverse team stat rows.
 - `team` (str, optional): Team abbreviation filter
 - `week` (int, optional): Week filter when available
 
-Returns `teams[]`, each with team/season context plus a `stats` object containing backend columns.
+Returns `teams[]`, each with team/season context plus a `stats` object containing backend columns. Note: with `nfl_data_py`, team stats fall back to schedule data (game-by-game results) since a dedicated team stats endpoint is not available.
 
 ### get_nflverse_play_by_play
 Get normalized nflverse play-by-play rows.
@@ -153,8 +153,10 @@ Get normalized nflverse play-by-play rows.
 Returns `plays[]` with game/play identifiers, quarter/clock, teams, down/distance, description, EPA, WP/WPA, and score state.
 
 Notes:
-- The nflverse backend prefers `nflreadpy` when installed and falls back to `nfl_data_py` for compatibility.
+- The nflverse backend requires the `[nfl]` optional extra: `pip install sports-skills[nfl]`. It prefers `nflreadpy` when installed and falls back to `nfl_data_py` for compatibility.
 - These commands keep `nfl-data` as the user-facing skill while exposing table-style datasets under the same module.
+- The ESPN-backed commands (e.g. `get_scoreboard`, `get_standings`) work with zero extra dependencies. The nflverse commands provide deeper historical/analytical data (seasonal aggregates, EPA, win probability per play) but require the optional install.
+- Parquet support (`pyarrow` or `fastparquet`) is needed for most nflverse data beyond schedules.
 
 ## Team IDs
 

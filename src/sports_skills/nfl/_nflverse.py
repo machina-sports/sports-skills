@@ -114,7 +114,15 @@ def _load_player_stats(provider_name: str, provider: Any, season: int):
             return _coerce_frame(provider.load_player_stats([season], stat_type="season"))
         except TypeError:
             return _coerce_frame(provider.load_player_stats([season]))
-    return _coerce_frame(provider.import_seasonal_data([season]))
+    df = _coerce_frame(provider.import_seasonal_data([season]))
+    # import_seasonal_data only has player_id — enrich with roster data
+    try:
+        roster = _coerce_frame(provider.import_seasonal_rosters([season]))
+        roster_cols = roster[["player_id", "player_name", "position", "team"]].drop_duplicates(subset=["player_id"])
+        df = df.merge(roster_cols, on="player_id", how="left")
+    except Exception:
+        pass
+    return df
 
 
 def _load_team_stats(provider_name: str, provider: Any, season: int):
@@ -207,15 +215,19 @@ def _normalize_player_stats_row(row: Mapping[str, Any]) -> dict[str, Any]:
 
 def _normalize_team_stats_row(row: Mapping[str, Any]) -> dict[str, Any]:
     base = {
-        "team": _pick(row, "team", "team_abbr", "recent_team"),
+        "team": _pick(row, "team", "team_abbr", "recent_team", "home_team"),
         "season": _pick(row, "season"),
-        "season_type": _pick(row, "season_type", default="REG"),
+        "season_type": _pick(row, "season_type", "game_type", default="REG"),
         "week": _pick(row, "week"),
         "game_id": _pick(row, "game_id", "old_game_id"),
     }
+    skip_keys = {
+        "team", "team_abbr", "recent_team", "home_team", "season",
+        "season_type", "game_type", "week", "game_id", "old_game_id",
+    }
     stats = {}
     for key, value in row.items():
-        if key in base or key in {"team", "team_abbr", "recent_team", "season", "season_type", "week", "game_id", "old_game_id"}:
+        if key in base or key in skip_keys:
             continue
         normalized = _normalize_value(value)
         if normalized is not None:
@@ -253,7 +265,7 @@ def _normalize_pbp_row(row: Mapping[str, Any]) -> dict[str, Any]:
 def get_nflverse_schedule(request_data: dict[str, Any]) -> dict[str, Any]:
     params = request_data.get("params", {})
     season = int(params.get("season") or _current_season())
-    week = params.get("week")
+    week = int(params["week"]) if params.get("week") is not None else None
 
     provider_name, provider = _load_provider()
     df = _load_schedules(provider_name, provider, season)
@@ -274,7 +286,7 @@ def get_nflverse_schedule(request_data: dict[str, Any]) -> dict[str, Any]:
 def get_nflverse_weekly_rosters(request_data: dict[str, Any]) -> dict[str, Any]:
     params = request_data.get("params", {})
     season = int(params.get("season") or _current_season())
-    week = params.get("week")
+    week = int(params["week"]) if params.get("week") is not None else None
     team = params.get("team")
 
     provider_name, provider = _load_provider()
@@ -342,17 +354,28 @@ def get_nflverse_team_stats(request_data: dict[str, Any]) -> dict[str, Any]:
     params = request_data.get("params", {})
     season = int(params.get("season") or _current_season())
     team = params.get("team")
-    week = params.get("week")
+    week = int(params["week"]) if params.get("week") is not None else None
 
     provider_name, provider = _load_provider()
     df = _load_team_stats(provider_name, provider, season)
 
     if team is not None:
         team_upper = str(team).upper()
+        matched = False
         for col in ("team", "team_abbr", "recent_team"):
             if col in df.columns:
                 df = df[df[col].astype(str).str.upper() == team_upper]
+                matched = True
                 break
+        if not matched:
+            # schedule-based fallback: filter where team is home or away
+            mask = None
+            for col in ("home_team", "away_team"):
+                if col in df.columns:
+                    col_mask = df[col].astype(str).str.upper() == team_upper
+                    mask = col_mask if mask is None else (mask | col_mask)
+            if mask is not None:
+                df = df[mask]
     if week is not None and "week" in df.columns:
         df = df[df["week"] == week]
 
@@ -371,7 +394,7 @@ def get_nflverse_team_stats(request_data: dict[str, Any]) -> dict[str, Any]:
 def get_nflverse_play_by_play(request_data: dict[str, Any]) -> dict[str, Any]:
     params = request_data.get("params", {})
     season = int(params.get("season") or _current_season())
-    week = params.get("week")
+    week = int(params["week"]) if params.get("week") is not None else None
     team = params.get("team")
     game_id = params.get("game_id")
     limit = params.get("limit")
