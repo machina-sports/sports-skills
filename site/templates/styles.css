@@ -214,15 +214,16 @@ section {
 /* ── HERO ── */
 .hero {
   padding-top: 140px;
-  padding-bottom: 60px;
+  padding-bottom: 32px;
   text-align: center;
 }
 
 .ascii-art {
-  font-size: clamp(4px, 1.8vw, 7px);
+  font-size: clamp(5px, 1.05vw, 11px);
   color: var(--green);
   line-height: 1.15;
   white-space: pre;
+  overflow-x: auto;
   margin-bottom: 24px;
 }
 
@@ -805,7 +806,8 @@ footer {
   .nav-cta { font-size: 11px; padding: 5px 10px; }
   .container { padding: 0 16px; }
   section { padding: 60px 0; }
-  .hero { padding-top: 120px; padding-bottom: 40px; }
+  .hero { padding-top: 120px; padding-bottom: 24px; }
+  .ascii-art { font-size: clamp(3.5px, 2.2vw, 7px); }
   .skills-grid { grid-template-columns: 1fr; }
   .stat-value { font-size: 22px; }
   .stat { padding: 16px; }
