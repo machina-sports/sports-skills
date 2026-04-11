@@ -1392,7 +1392,7 @@ class TestNFLverseOptionalDependency:
 
         import pytest
 
-        with pytest.raises(ImportError, match="sports-skills\[nfl\]"):
+        with pytest.raises(ImportError, match=r"sports-skills\[nfl\]"):
             _load_provider()
 
 
