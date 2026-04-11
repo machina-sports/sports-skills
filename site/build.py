@@ -196,10 +196,18 @@ def load_skill(slug: str, skill_dir: Path, tier: str) -> dict:
             if stripped and not stripped.startswith("#") and not stripped.startswith("|") and not stripped.startswith("-") and not stripped.startswith("```"):
                 description_raw = stripped
                 break
-    # Take first sentence/line of description for short desc
-    description_lines = [l.strip() for l in description_raw.strip().split("\n") if l.strip()]
-    short_desc = description_lines[0] if description_lines else ""
-    # Truncate to first sentence if very long
+    # Extract human-friendly description: everything before "Use when:" / "Don't use when:"
+    human_desc_lines = []
+    for line in description_raw.strip().split("\n"):
+        stripped = line.strip()
+        if re.match(r"(Use when|Don't use when|Don.t use when)", stripped, re.IGNORECASE):
+            break
+        if stripped:
+            human_desc_lines.append(stripped)
+    human_desc = " ".join(human_desc_lines).strip()
+
+    # Short desc: first sentence for cards
+    short_desc = human_desc_lines[0] if human_desc_lines else ""
     if len(short_desc) > 200:
         dot = short_desc.find(". ", 0, 200)
         if dot > 0:
@@ -213,7 +221,7 @@ def load_skill(slug: str, skill_dir: Path, tier: str) -> dict:
         "slug": slug,
         "name": name,
         "description": short_desc,
-        "description_full": description_raw.strip(),
+        "description_human": human_desc,
         "category": category,
         "category_color": CATEGORY_COLORS.get(category, "green"),
         "tier": tier,
