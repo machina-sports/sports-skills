@@ -1,22 +1,74 @@
+<div align="center">
+
+```text
+███████╗██████╗  ██████╗ ██████╗ ████████╗███████╗
+██╔════╝██╔══██╗██╔═══██╗██╔══██╗╚══██╔══╝██╔════╝
+███████╗██████╔╝██║   ██║██████╔╝   ██║   ███████╗
+╚════██║██╔═══╝ ██║   ██║██╔══██╗   ██║   ╚════██║
+███████║██║     ╚██████╔╝██║  ██║   ██║   ███████║
+╚══════╝╚═╝      ╚═════╝ ╚═╝  ╚═╝   ╚═╝   ╚══════╝
+    ███████╗██╗  ██╗██╗██╗     ██╗     ███████╗
+    ██╔════╝██║ ██╔╝██║██║     ██║     ██╔════╝
+    ███████╗█████╔╝ ██║██║     ██║     ███████╗
+    ╚════██║██╔═██╗ ██║██║     ██║     ╚════██║
+    ███████║██║  ██╗██║███████╗███████╗███████║
+    ╚══════╝╚═╝  ╚═╝╚═╝╚══════╝╚══════╝╚══════╝
+```
+
 # sports-skills.sh
 
-https://sports-skills.sh
+[![npm version](https://img.shields.io/npm/v/sports-skills.svg?style=flat-square)](https://www.npmjs.com/package/sports-skills)
+[![PyPI version](https://img.shields.io/pypi/v/sports-skills.svg?style=flat-square)](https://pypi.org/project/sports-skills/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=flat-square)](https://opensource.org/licenses/MIT)
 
-Open-source agent skills for live sports data and prediction markets. Built for the [Agent Skills](https://agentskills.io/specification) spec. Works with [sportsclaw](https://sportsclaw.gg), OpenClaw, Claude Code, Cursor, Copilot, Gemini CLI, and every major AI agent.
+<br>
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="https://img.shields.io/badge/Dark_Mode-Active-2ea043?style=for-the-badge">
+  <source media="(prefers-color-scheme: light)" srcset="https://img.shields.io/badge/Light_Mode-Active-fb8f24?style=for-the-badge">
+  <img alt="Theme Status" src="https://img.shields.io/badge/Theme-Auto-blue?style=for-the-badge">
+</picture>
+
+<br><br>
+
+**Open-source agent skills for live sports data and prediction markets.**
+
+[Website](https://sports-skills.sh) • [Agent Skills Spec](https://agentskills.io/specification)
+
+Works with [sportsclaw](https://sportsclaw.gg), OpenClaw, Claude Code, Cursor, Copilot, Gemini CLI, and every major AI agent.
 
 **Zero API keys. Zero signup. Just works.**
+
+</div>
+
+## Table of Contents
+
+- [Installation](#installation)
+- [What This Is](#what-this-is)
+- [Available Skills](#available-skills)
+- [Quick Start](#quick-start)
+- [Skills Reference](#skills-reference)
+- [Architecture](#architecture)
+- [Compatibility](#compatibility)
+- [Coming Soon](#coming-soon)
+- [Contributing](#contributing)
+- [Data Sources & Disclaimer](#data-sources--disclaimer)
+- [Acknowledgments](#acknowledgments)
+- [License](#license)
+
+## Installation
 
 ```bash
 npx skills add machina-sports/sports-skills
 ```
 
-Python package users:
+**Python package users:**
 
 ```bash
 pip install sports-skills
 ```
 
-Includes all sports modules in the base package.
+*Includes all sports modules in the base package.*
 
 To upgrade to the latest version, run the same command with the `--yes` flag:
 
