@@ -7,6 +7,8 @@ workflow:
       basicAuth: "$TEMP_CONTEXT_VARIABLE_SPOTIFY_BEARER_TOKEN"
     google-genai:
       api_key: "$TEMP_CONTEXT_VARIABLE_GOOGLE_GENERATIVE_AI_API_KEY"
+      credential: "$TEMP_CONTEXT_VARIABLE_VERTEX_AI_CREDENTIAL"
+      project_id: "$TEMP_CONTEXT_VARIABLE_VERTEX_AI_PROJECT_ID"
   inputs:
     query: "$.get('query')"
   outputs:
@@ -35,6 +37,8 @@ workflow:
         name: google-genai
         command: invoke_prompt
         model: gemini-2.5-flash
+        provider: vertex_ai
+        location: global
       inputs:
         query: "$.get('query')"
         shows_data: "$.get('shows', [])"
