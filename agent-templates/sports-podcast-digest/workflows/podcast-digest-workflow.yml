@@ -4,12 +4,11 @@ workflow:
   description: Searches for sports podcasts, fetches latest episodes, and generates a digest.
   context-variables:
     spotify-podcasts:
-      bearer: "$.get('spotify_token')"
+      bearer: "$TEMP_CONTEXT_VARIABLE_SPOTIFY_BEARER_TOKEN"
     machina-ai:
       api_key: "$TEMP_CONTEXT_VARIABLE_SDK_OPENAI_API_KEY"
   inputs:
     query: "$.get('query')"
-    spotify_token: "$.get('spotify_token')"
   outputs:
     digest: "$.get('digest', '')"
     workflow-status: "$.get('digest', '') != ''"

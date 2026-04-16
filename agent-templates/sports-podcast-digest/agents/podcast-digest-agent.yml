@@ -4,13 +4,11 @@ agent:
   description: "Agent to discover and summarize sports podcasts from Spotify and generate a digest."
   context-agent:
     query: "$.get('query')"
-    spotify_token: "$.get('spotify_token')"
   workflows:
     - name: podcast-digest-workflow
       description: "Searches for sports podcasts, fetches latest episodes, and generates a digest."
       inputs:
         query: "$.get('query')"
-        spotify_token: "$.get('spotify_token')"
       outputs:
         digest: "$.get('digest', '')"
         workflow-status: "$.get('workflow-status')"
