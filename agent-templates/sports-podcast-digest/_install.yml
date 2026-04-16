@@ -27,7 +27,7 @@ datasets:
     path: connectors/spotify-podcasts.yml
 
   # Prompts
-  - type: prompts
+  - type: prompt
     path: prompts/generate-digest.yml
 
   # Workflows
