@@ -25,7 +25,7 @@ workflow:
         market: "US"
         limit: 3
       outputs:
-        shows: "$.get('shows', {}).get('items', [])"
+        shows: "json.loads($).get('shows', {}).get('items', []) if isinstance($, str) else $.get('shows', {}).get('items', [])"
 
     - name: fetch-episodes
       type: connector
@@ -44,7 +44,7 @@ workflow:
         market: "US"
         limit: 3
       outputs:
-        episodes: "[\n  *$.get('items', [])\n]\n"
+        episodes: "[\n  *(json.loads($) if isinstance($, str) else $).get('items', [])\n]\n"
 
     - name: generate-digest
       type: prompt
