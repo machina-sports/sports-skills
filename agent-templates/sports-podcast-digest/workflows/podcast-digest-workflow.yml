@@ -33,7 +33,7 @@ workflow:
       condition: "len($.get('shows', [])) > 0"
       connector:
         name: spotify-podcasts
-        command: get-shows/{show_id}/episodes
+        command: get-shows
       foreach:
         name: show
         value: "$.get('shows', [])"
