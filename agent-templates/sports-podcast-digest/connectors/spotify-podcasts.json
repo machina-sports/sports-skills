@@ -72,7 +72,7 @@
         },
         "security": [
           {
-            "bearer": []
+            "basicAuth": []
           }
         ]
       }
@@ -127,7 +127,7 @@
         },
         "security": [
           {
-            "bearer": []
+            "basicAuth": []
           }
         ]
       }
@@ -172,7 +172,7 @@
         },
         "security": [
           {
-            "bearer": []
+            "basicAuth": []
           }
         ]
       }
@@ -180,9 +180,9 @@
   },
   "components": {
     "securitySchemes": {
-      "bearer": {
+      "basicAuth": {
         "type": "http",
-        "scheme": "bearer"
+        "scheme": "Bearer"
       }
     }
   }
