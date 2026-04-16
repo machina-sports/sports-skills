@@ -1,7 +1,7 @@
 workflow:
   name: podcast-digest-workflow
   title: Podcast Digest Workflow
-  description: Searches for sports podcasts, fetches latest episodes, and generates a digest.
+  description: Searches for sports podcasts and generates a digest from the results.
   context-variables:
     spotify-podcasts:
       basicAuth: "$TEMP_CONTEXT_VARIABLE_SPOTIFY_BEARER_TOKEN"
@@ -20,41 +20,23 @@ workflow:
         name: spotify-podcasts
         command: get-search
       inputs:
-        q: "$.get('query')"
+        q: "$.get('query') + ' podcast'"
         type: "'show'"
         market: "'US'"
-        limit: 3
+        limit: 10
       outputs:
         shows: "$.get('shows', {}).get('items', [])"
 
-    - name: fetch-episodes
-      type: connector
-      description: "Fetch episodes for the top shows"
-      condition: "len($.get('shows', [])) > 0"
-      connector:
-        name: spotify-podcasts
-        command: get-shows
-      foreach:
-        name: show
-        value: "$.get('shows', [])"
-        expr: "$"
-        concurrent: true
-      inputs:
-        show_id: "$.get('show', {}).get('id')"
-        market: "'US'"
-        limit: 3
-      outputs:
-        episodes: "[\n  *$.get('items', [])\n]\n"
-
     - name: generate-digest
       type: prompt
-      description: "Generate a sports digest from the podcast episodes"
+      description: "Generate a sports podcast digest from the search results"
+      condition: "len($.get('shows', [])) > 0"
       connector:
         name: machina-ai
         command: invoke_prompt
         model: gpt-4o
       inputs:
         query: "$.get('query')"
-        episodes_data: "$.get('episodes', [])"
+        shows_data: "$.get('shows', [])"
       outputs:
         digest: "$.get('content', '')"
