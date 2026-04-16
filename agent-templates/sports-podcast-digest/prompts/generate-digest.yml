@@ -1,0 +1,25 @@
+prompt:
+  name: generate-digest
+  title: Generate Podcast Digest
+  description: "Summarize the podcast episodes into a cohesive sports digest"
+  instructions: |
+    You are a sports podcast digest generator.
+    Given the following podcast episodes data for the topic '{query}', generate a digest with key highlights, main topics, and recommended listens.
+
+    Data:
+    {episodes_data}
+
+    Format the output as a Markdown digest containing:
+    1. A catchy title and introduction based on the topic ({query}).
+    2. A list of key highlights across all episodes.
+    3. A section detailing main topics discussed.
+    4. A 'Recommended Listens' section featuring the top episodes with their names and descriptions.
+  schema:
+    title: GeneratePodcastDigest
+    description: Generates a digest for sports podcasts
+    type: object
+    required: ["content"]
+    properties:
+      content:
+        type: string
+        description: The generated sports podcast digest in Markdown format

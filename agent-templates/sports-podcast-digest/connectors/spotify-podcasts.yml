@@ -1,0 +1,5 @@
+connector:
+  name: "spotify-podcasts"
+  description: "Connector for the Spotify Web API to search and retrieve podcast information."
+  filename: "spotify-podcasts.json"
+  filetype: "restapi"

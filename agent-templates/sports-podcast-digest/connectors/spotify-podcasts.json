@@ -1,0 +1,189 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "Spotify Podcasts API",
+    "description": "API for searching and retrieving Spotify podcasts and episodes",
+    "version": "1.0.0"
+  },
+  "servers": [
+    {
+      "url": "https://api.spotify.com/v1",
+      "description": "Spotify Web API Server"
+    }
+  ],
+  "paths": {
+    "/search": {
+      "get": {
+        "summary": "Search for podcasts",
+        "description": "Get Spotify catalog information about shows that match a keyword string.",
+        "operationId": "searchPodcasts",
+        "parameters": [
+          {
+            "name": "q",
+            "in": "query",
+            "required": true,
+            "description": "Search query keywords",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "type",
+            "in": "query",
+            "required": true,
+            "description": "Item type to search for (e.g., 'show')",
+            "schema": {
+              "type": "string",
+              "default": "show"
+            }
+          },
+          {
+            "name": "market",
+            "in": "query",
+            "required": false,
+            "description": "Market country code",
+            "schema": {
+              "type": "string",
+              "default": "US"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "description": "Maximum number of results to return",
+            "schema": {
+              "type": "integer",
+              "default": 10
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful search results",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/shows/{show_id}/episodes": {
+      "get": {
+        "summary": "Get show episodes",
+        "description": "Get Spotify catalog information about an show's episodes.",
+        "operationId": "getShowEpisodes",
+        "parameters": [
+          {
+            "name": "show_id",
+            "in": "path",
+            "required": true,
+            "description": "The Spotify ID for the show",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "market",
+            "in": "query",
+            "required": false,
+            "description": "Market country code",
+            "schema": {
+              "type": "string",
+              "default": "US"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "description": "Maximum number of episodes to return",
+            "schema": {
+              "type": "integer",
+              "default": 5
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful episodes results",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/episodes/{episode_id}": {
+      "get": {
+        "summary": "Get episode details",
+        "description": "Get Spotify catalog information for a single episode.",
+        "operationId": "getEpisodeDetails",
+        "parameters": [
+          {
+            "name": "episode_id",
+            "in": "path",
+            "required": true,
+            "description": "The Spotify ID for the episode",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "market",
+            "in": "query",
+            "required": false,
+            "description": "Market country code",
+            "schema": {
+              "type": "string",
+              "default": "US"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful episode details",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "bearer": {
+        "type": "http",
+        "scheme": "bearer"
+      }
+    }
+  }
+}

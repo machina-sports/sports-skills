@@ -1,0 +1,62 @@
+workflow:
+  name: podcast-digest-workflow
+  title: Podcast Digest Workflow
+  description: Searches for sports podcasts, fetches latest episodes, and generates a digest.
+  context-variables:
+    spotify-podcasts:
+      bearer: "$.get('spotify_token')"
+    machina-ai:
+      api_key: "$TEMP_CONTEXT_VARIABLE_SDK_OPENAI_API_KEY"
+  inputs:
+    query: "$.get('query')"
+    spotify_token: "$.get('spotify_token')"
+  outputs:
+    digest: "$.get('digest')"
+  tasks:
+    - type: connector
+      name: search-podcasts
+      description: "Search for sports podcasts matching the user's query"
+      connector:
+        name: spotify-podcasts
+        command: searchPodcasts
+      inputs:
+        q: "$.get('query')"
+        type: "'show'"
+        limit: 3
+      outputs:
+        shows: "$.get('shows', {}).get('items', [])"
+
+    - type: connector
+      name: fetch-episodes
+      description: "Fetch episodes for the top shows"
+      condition: "$.get('shows') is not None and len($.get('shows', [])) > 0"
+      connector:
+        name: spotify-podcasts
+        command: getShowEpisodes
+      foreach:
+        concurrent: true
+        name: show
+        expr: $
+        value: "$.get('shows', [])"
+      inputs:
+        show_id: "$.get('show', {}).get('id')"
+        limit: 5
+      outputs:
+        episodes: |
+          [
+            *$.get('items', [])
+          ]
+
+    - type: prompt
+      name: generate-digest
+      description: "Generate a sports digest from the podcast episodes"
+      condition: "$.get('episodes') is not None and len($.get('episodes', [])) > 0"
+      connector:
+        name: machina-ai
+        command: invoke_prompt
+        model: gpt-4o
+      inputs:
+        episodes_data: "$.get('episodes', [])"
+        query: "$.get('query')"
+      outputs:
+        digest: "$.get('content')"

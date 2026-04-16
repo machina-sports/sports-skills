@@ -1,0 +1,35 @@
+setup:
+  title: Sports Podcast Digest
+  description: AI-powered agent that discovers and summarizes sports podcasts from Spotify. The agent fetches podcast episodes about football (soccer), NBA, NFL, and other sports, then generates a digest with key highlights from each episode.
+  category:
+    - sports
+    - content-generation
+  estimatedTime: 1 minute
+  features:
+    - AI Agent to discover and summarize sports podcasts
+    - Spotify Web API integration for fetching shows and episodes
+    - Digest generation with key highlights and recommendations
+  integrations:
+    - spotify
+    - machina-ai
+  status: available
+  value: agent-templates/sports-podcast-digest
+  version: 1.0.0
+
+datasets:
+
+  # Agent
+  - type: agent
+    path: agents/podcast-digest-agent.yml
+
+  # Connectors
+  - type: connector
+    path: connectors/spotify-podcasts.yml
+
+  # Prompts
+  - type: prompts
+    path: prompts/generate-digest.yml
+
+  # Workflows
+  - type: workflow
+    path: workflows/podcast-digest-workflow.yml
