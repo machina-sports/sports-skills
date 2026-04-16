@@ -12,6 +12,7 @@ workflow:
     spotify_token: "$.get('spotify_token')"
   outputs:
     digest: "$.get('digest')"
+    workflow-status: "$.get('digest', '') != ''"
   tasks:
     - type: connector
       name: search-podcasts
