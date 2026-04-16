@@ -5,8 +5,8 @@ workflow:
   context-variables:
     spotify-podcasts:
       basicAuth: "$TEMP_CONTEXT_VARIABLE_SPOTIFY_BEARER_TOKEN"
-    machina-ai:
-      api_key: "$TEMP_CONTEXT_VARIABLE_SDK_OPENAI_API_KEY"
+    google-genai:
+      api_key: "$TEMP_CONTEXT_VARIABLE_GOOGLE_GENERATIVE_AI_API_KEY"
   inputs:
     query: "$.get('query')"
   outputs:
@@ -32,9 +32,9 @@ workflow:
       description: "Generate a sports podcast digest from the search results"
       condition: "len($.get('shows', [])) > 0"
       connector:
-        name: machina-ai
+        name: google-genai
         command: invoke_prompt
-        model: gpt-4o
+        model: gemini-2.5-flash
       inputs:
         query: "$.get('query')"
         shows_data: "$.get('shows', [])"
