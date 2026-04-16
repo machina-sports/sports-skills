@@ -21,8 +21,8 @@ workflow:
         command: searchPodcasts
       inputs:
         q: "$.get('query')"
-        type: "show"
-        market: "US"
+        type: "'show'"
+        market: "'US'"
         limit: 3
       outputs:
         shows: "$.get('shows', {}).get('items', [])"
@@ -41,7 +41,7 @@ workflow:
         concurrent: true
       inputs:
         show_id: "$.get('show', {}).get('id')"
-        market: "US"
+        market: "'US'"
         limit: 3
       outputs:
         episodes: "[\n  *$.get('items', [])\n]\n"
