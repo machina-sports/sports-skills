@@ -1,0 +1,43 @@
+workflow:
+  name: meme-generator-workflow
+  title: Generate Meme
+  description: Workflow to generate a meme using sports-skills context and memelord connector
+  inputs:
+    query: "$.get('query', 'NBA')"
+    style: "$.get('style', 'dank')"
+  outputs:
+    workflow-status: "$.get('meme_url') is not None and 'executed' or 'skipped'"
+    meme_url: "$.get('meme_url')"
+    meme_text: "$.get('meme_text')"
+  tasks:
+
+    # 1. Get context from sports-skills
+    - type: connector
+      name: get-sports-context
+      description: Fetches recent news and context using sports-skills
+      connector:
+        name: sports-skills-context
+        command: get_context
+      inputs:
+        query: "$.get('query')"
+        limit: "5"
+      outputs:
+        context_text: "$.get('context')"
+        
+    # 2. Use LLM to format context for the meme (optional, let's use a prompt if we want, or just pass directly)
+    # Since I don't have a prompt defined yet, let's just pass the context_text to memelord.
+    
+    # 3. Call memelord
+    - type: connector
+      name: generate-meme-image
+      description: Calls Memelord to generate a meme
+      condition: "$.get('context_text') is not None"
+      connector:
+        name: memelord
+        command: generateMeme
+      inputs:
+        context: "$.get('context_text')"
+        style: "$.get('style')"
+      outputs:
+        meme_url: "$.get('url')"
+        meme_text: "$.get('text')"

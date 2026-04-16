@@ -1,0 +1,76 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "Memelord API",
+    "description": "API for generating memes based on context.",
+    "version": "1.0.0"
+  },
+  "servers": [
+    {
+      "url": "http://memelord.com",
+      "description": "Memelord Production Server"
+    }
+  ],
+  "components": {
+    "schemas": {
+      "MemeRequest": {
+        "type": "object",
+        "properties": {
+          "context": {
+            "type": "string",
+            "description": "The context or text to generate a meme for"
+          },
+          "style": {
+            "type": "string",
+            "description": "The style of the meme"
+          }
+        },
+        "required": ["context"]
+      },
+      "MemeResponse": {
+        "type": "object",
+        "properties": {
+          "url": {
+            "type": "string",
+            "description": "The URL of the generated meme image"
+          },
+          "text": {
+            "type": "string",
+            "description": "The text used in the meme"
+          }
+        }
+      }
+    }
+  },
+  "paths": {
+    "/hackers": {
+      "post": {
+        "summary": "Generate a meme",
+        "description": "Generates a meme image based on the provided context.",
+        "operationId": "generateMeme",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MemeRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MemeResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

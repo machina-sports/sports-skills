@@ -1,0 +1,19 @@
+agent:
+  name: meme-agent
+  title: Meme Agent
+  description: "Agent to generate memes based on recent sports context."
+  context-agent:
+    query: $.get('query', 'NBA')
+    style: $.get('style', 'dank')
+  workflows:
+
+    # generate-meme
+    - name: meme-generator-workflow
+      description: "Generates a meme from sports news"
+      inputs:
+        query: "$.get('query')"
+        style: "$.get('style')"
+      outputs:
+        workflow-status: "$.get('workflow-status')"
+        meme_url: "$.get('meme_url')"
+        meme_text: "$.get('meme_text')"

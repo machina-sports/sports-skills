@@ -1,0 +1,8 @@
+connector:
+  name: "sports-skills-context"
+  description: "Gets sports data context using sports-skills library to generate memes"
+  filename: "sports_skills_context.py"
+  filetype: "pyscript"
+  commands:
+    - name: "Get Context"
+      value: "get_context"
