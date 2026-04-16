@@ -5,6 +5,7 @@ workflow:
   context-variables:
     spotify-podcasts:
       basicAuth: "$TEMP_CONTEXT_VARIABLE_SPOTIFY_BEARER_TOKEN"
+      Authorization: "Bearer $TEMP_CONTEXT_VARIABLE_SPOTIFY_BEARER_TOKEN"
     machina-ai:
       api_key: "$TEMP_CONTEXT_VARIABLE_SDK_OPENAI_API_KEY"
   inputs:
