@@ -11,53 +11,51 @@ workflow:
     query: "$.get('query')"
     spotify_token: "$.get('spotify_token')"
   outputs:
-    digest: "$.get('digest')"
+    digest: "$.get('digest', '')"
     workflow-status: "$.get('digest', '') != ''"
   tasks:
-    - type: connector
-      name: search-podcasts
+    - name: search-podcasts
+      type: connector
       description: "Search for sports podcasts matching the user's query"
       connector:
         name: spotify-podcasts
         command: searchPodcasts
       inputs:
         q: "$.get('query')"
-        type: "'show'"
+        type: "show"
+        market: "US"
         limit: 3
       outputs:
         shows: "$.get('shows', {}).get('items', [])"
 
-    - type: connector
-      name: fetch-episodes
+    - name: fetch-episodes
+      type: connector
       description: "Fetch episodes for the top shows"
-      condition: "$.get('shows') is not None and len($.get('shows', [])) > 0"
+      condition: "len($.get('shows', [])) > 0"
       connector:
         name: spotify-podcasts
         command: getShowEpisodes
       foreach:
-        concurrent: true
         name: show
-        expr: $
         value: "$.get('shows', [])"
+        expr: "$"
+        concurrent: true
       inputs:
         show_id: "$.get('show', {}).get('id')"
-        limit: 5
+        market: "US"
+        limit: 3
       outputs:
-        episodes: |
-          [
-            *$.get('items', [])
-          ]
+        episodes: "[\n  *$.get('items', [])\n]\n"
 
-    - type: prompt
-      name: generate-digest
+    - name: generate-digest
+      type: prompt
       description: "Generate a sports digest from the podcast episodes"
-      condition: "$.get('episodes') is not None and len($.get('episodes', [])) > 0"
       connector:
         name: machina-ai
         command: invoke_prompt
         model: gpt-4o
       inputs:
-        episodes_data: "$.get('episodes', [])"
         query: "$.get('query')"
+        episodes_data: "$.get('episodes', [])"
       outputs:
-        digest: "$.get('content')"
+        digest: "$.get('content', '')"
