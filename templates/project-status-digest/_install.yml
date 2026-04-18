@@ -1,0 +1,47 @@
+setup:
+  title: "Project Status Digest"
+  description: "Fetches recent activity and composes a 3-5 bullet digest."
+  value: "project-status-digest"
+  version: "1.0.0"
+
+datasets: []
+
+prompts:
+  - name: status-digest-prompt
+    description: "System prompt to compose a short, friendly digest."
+    content: |
+      You are a friendly project assistant. 
+      Review the following recent activity data: {data}
+      
+      Topic: {query}
+      
+      Please compose a short, friendly digest summarizing the activity in exactly 3-5 bullet points.
+      Make sure to be concise and highlight the most important updates.
+
+workflows:
+  - name: project-status-digest-workflow
+    description: "Calls the existing news connector, then calls Gemini to digest the results."
+    inputs:
+      - name: query
+        type: string
+        default: "'latest updates'"
+    steps:
+      - name: fetch_activity
+        connector: sports-news
+        command: get-search
+        inputs:
+          query: "$.inputs.query"
+      - name: generate_digest
+        connector: google-genai
+        command: invoke_prompt
+        model: gemini-2.5-flash
+        provider: vertex_ai
+        location: global
+        inputs:
+          prompt: "'status-digest-prompt'"
+          data: "$.steps.fetch_activity.outputs.result"
+          query: "$.inputs.query"
+          auth: "$TEMP_CONTEXT_VARIABLE_GEMINI_API_KEY"
+    outputs:
+      result: "$.steps.generate_digest.outputs.result"
+      workflow-status: "$.get('result', '') != ''"
