@@ -422,6 +422,39 @@ If you pass `query` without `url`, it automatically uses Google News.
 
 ---
 
+## Running as a server
+
+Expose the same data the CLI serves over HTTP so Next.js / web frontends can
+consume it without installing Python or learning the CLI.
+
+Install the `serve` extras and boot the server:
+
+```bash
+pip install 'sports-skills[serve]'
+sports-skills serve --host 0.0.0.0 --port 8000
+```
+
+CORS is enabled for all origins. Responses are JSON; underlying data-source
+errors are returned as `{"error": "..."}` with HTTP `502`.
+
+Available endpoints:
+
+- `GET /health` → `{"status": "ok"}`
+- `GET /football/search_team?query=...`
+- `GET /football/get_team_schedule?team_id=...&competition_id=...`
+- `GET /football/get_season_standings?season_id=...`
+- `GET /football/get_season_leaders?season_id=...`
+- `GET /football/get_event_statistics?event_id=...`
+- `GET /football/get_event_lineups?event_id=...`
+
+Example:
+
+```bash
+curl "http://localhost:8000/football/search_team?query=Arsenal"
+```
+
+---
+
 ## Architecture
 
 ```

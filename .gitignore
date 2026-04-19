@@ -39,3 +39,4 @@ node_modules/
 .cursor/
 .pi/
 .windsurf/
+.refs/

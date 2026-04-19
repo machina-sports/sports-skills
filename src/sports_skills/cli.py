@@ -756,6 +756,25 @@ def main():
         print(f"sports-skills {__version__}")
         return
 
+    # `serve` subcommand: boot the HTTP API (additive; does not touch registry)
+    if args.module == "serve":
+        serve_parser = argparse.ArgumentParser(prog="sports-skills serve")
+        serve_parser.add_argument("--host", default="0.0.0.0")
+        serve_parser.add_argument("--port", type=int, default=8000)
+        serve_args = serve_parser.parse_args(remaining)
+        try:
+            from sports_skills.serve import run as _serve_run
+        except ImportError as e:
+            _cli_error(
+                str(e),
+                error_code="MISSING_OPTIONAL_DEPENDENCY",
+                hint="pip install 'sports-skills[serve]'",
+                dependency="fastapi",
+                extra="serve",
+            )
+        _serve_run(host=serve_args.host, port=serve_args.port)
+        return
+
     if not args.module:
         parser.print_help()
         print("\nAvailable modules:")
