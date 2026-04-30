@@ -40,3 +40,6 @@ node_modules/
 .pi/
 .windsurf/
 .refs/
+
+# Skills lockfile (local machine only)
+skills-lock.json

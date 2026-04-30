@@ -417,6 +417,13 @@ _REGISTRY = {
         "get_tournaments": {"optional": ["limit"]},
         "get_news": {"optional": ["limit"]},
     },
+    "xctf": {
+        "search_athlete": {"required": ["name", "school"]},
+        "get_athlete_profile": {"required": ["athlete_id", "school", "name"]},
+        "get_team_roster": {"required": ["school"], "optional": ["sport"]},
+        "get_meet_results": {"required": ["meet_id", "slug"]},
+        "get_news": {"optional": ["limit"]},
+    },
 }
 
 # Params that should be parsed as boolean
@@ -597,6 +604,9 @@ def _load_module(name):
     elif name == "volleyball":
         from sports_skills import volleyball
         return volleyball
+    elif name == "xctf":
+        from sports_skills import xctf
+        return xctf
     else:
         raise ValueError(f"Unknown module '{name}'. Available: {', '.join(_REGISTRY.keys())}")
 
@@ -740,7 +750,7 @@ def main():
         description="Lightweight CLI for sports data — football, F1, NFL, NBA, WNBA, NHL, MLB, tennis, CFB, CBB, golf, volleyball, prediction markets, betting analysis, metadata, and news.",
     )
     parser.add_argument(
-        "module", nargs="?", help="Module name: football, f1, nfl, nba, wnba, nhl, mlb, tennis, cfb, cbb, golf, volleyball, polymarket, kalshi, betting, markets, metadata, news"
+        "module", nargs="?", help="Module name: football, f1, nfl, nba, wnba, nhl, mlb, tennis, cfb, cbb, golf, volleyball, xctf, polymarket, kalshi, betting, markets, metadata, news"
     )
     parser.add_argument(
         "command", nargs="?", help="Command name (e.g., get_season_standings)"
