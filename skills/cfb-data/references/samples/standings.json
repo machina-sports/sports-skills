@@ -1,0 +1,255 @@
+{
+  "status": true,
+  "data": {
+    "groups": [
+      {
+        "conference": "Southeastern Conference",
+        "division": "",
+        "entries": [
+          {
+            "team": {
+              "id": "145",
+              "name": "Ole Miss Rebels",
+              "abbreviation": "MISS",
+              "logo": "https://a.espncdn.com/i/teamlogos/ncaa/500/145.png"
+            },
+            "wins": "2",
+            "losses": "0",
+            "win_pct": "0",
+            "points_for": "93",
+            "points_against": "88",
+            "streak": "L1",
+            "conference_record": "7-1"
+          },
+          {
+            "team": {
+              "id": "61",
+              "name": "Georgia Bulldogs",
+              "abbreviation": "UGA",
+              "logo": "https://a.espncdn.com/i/teamlogos/ncaa/500/61.png"
+            },
+            "wins": "5",
+            "losses": "0",
+            "win_pct": "0",
+            "points_for": "187",
+            "points_against": "126",
+            "streak": "L1",
+            "conference_record": "7-1"
+          },
+          {
+            "team": {
+              "id": "245",
+              "name": "Texas A&M Aggies",
+              "abbreviation": "TA&M",
+              "logo": "https://a.espncdn.com/i/teamlogos/ncaa/500/245.png"
+            },
+            "wins": "3",
+            "losses": "0",
+            "win_pct": "0",
+            "points_for": "145",
+            "points_against": "109",
+            "streak": "L2",
+            "conference_record": "7-1"
+          },
+          {
+            "team": {
+              "id": "251",
+              "name": "Texas Longhorns",
+              "abbreviation": "TEX",
+              "logo": "https://a.espncdn.com/i/teamlogos/ncaa/500/251.png"
+            },
+            "wins": "3",
+            "losses": "0",
+            "win_pct": "0",
+            "points_for": "101",
+            "points_against": "103",
+            "streak": "W3",
+            "conference_record": "6-2"
+          },
+          {
+            "team": {
+              "id": "201",
+              "name": "Oklahoma Sooners",
+              "abbreviation": "OU",
+              "logo": "https://a.espncdn.com/i/teamlogos/ncaa/500/201.png"
+            },
+            "wins": "5",
+            "losses": "0",
+            "win_pct": "0",
+            "points_for": "153",
+            "points_against": "141",
+            "streak": "L1",
+            "conference_record": "6-2"
+          },
+          {
+            "team": {
+              "id": "238",
+              "name": "Vanderbilt Commodores",
+              "abbreviation": "VAN",
+              "logo": "https://a.espncdn.com/i/teamlogos/ncaa/500/238.png"
+            },
+            "wins": "4",
+            "losses": "0",
+            "win_pct": "0",
+            "points_for": "169",
+            "points_against": "129",
+            "streak": "L1",
+            "conference_record": "6-2"
+          },
+          {
+            "team": {
+              "id": "333",
+              "name": "Alabama Crimson Tide",
+              "abbreviation": "ALA",
+              "logo": "https://a.espncdn.com/i/teamlogos/ncaa/500/333.png"
+            },
+            "wins": "4",
+            "losses": "0",
+            "win_pct": "0",
+            "points_for": "146",
+            "points_against": "130",
+            "streak": "L1",
+            "conference_record": "7-1"
+          },
+          {
+            "team": {
+              "id": "142",
+              "name": "Missouri Tigers",
+              "abbreviation": "MIZ",
+              "logo": "https://a.espncdn.com/i/teamlogos/ncaa/500/142.png"
+            },
+            "wins": "1",
+            "losses": "0",
+            "win_pct": "0",
+            "points_for": "86",
+            "points_against": "119",
+            "streak": "L1",
+            "conference_record": "4-4"
+          },
+          {
+            "team": {
+              "id": "2633",
+              "name": "Tennessee Volunteers",
+              "abbreviation": "TENN",
+              "logo": "https://a.espncdn.com/i/teamlogos/ncaa/500/2633.png"
+            },
+            "wins": "0",
+            "losses": "0",
+            "win_pct": "0",
+            "points_for": "112",
+            "points_against": "159",
+            "streak": "L2",
+            "conference_record": "4-4"
+          },
+          {
+            "team": {
+              "id": "99",
+              "name": "LSU Tigers",
+              "abbreviation": "LSU",
+              "logo": "https://a.espncdn.com/i/teamlogos/ncaa/500/99.png"
+            },
+            "wins": "1",
+            "losses": "0",
+            "win_pct": "0",
+            "points_for": "107",
+            "points_against": "151",
+            "streak": "L2",
+            "conference_record": "3-5"
+          },
+          {
+            "team": {
+              "id": "96",
+              "name": "Kentucky Wildcats",
+              "abbreviation": "UK",
+              "logo": "https://a.espncdn.com/i/teamlogos/ncaa/500/96.png"
+            },
+            "wins": "0",
+            "losses": "0",
+            "win_pct": "0",
+            "points_for": "101",
+            "points_against": "182",
+            "streak": "L2",
+            "conference_record": "2-6"
+          },
+          {
+            "team": {
+              "id": "2",
+              "name": "Auburn Tigers",
+              "abbreviation": "AUB",
+              "logo": "https://a.espncdn.com/i/teamlogos/ncaa/500/2.png"
+            },
+            "wins": "0",
+            "losses": "0",
+            "win_pct": "0",
+            "points_for": "112",
+            "points_against": "155",
+            "streak": "L1",
+            "conference_record": "1-7"
+          },
+          {
+            "team": {
+              "id": "344",
+              "name": "Mississippi State Bulldogs",
+              "abbreviation": "MSST",
+              "logo": "https://a.espncdn.com/i/teamlogos/ncaa/500/344.png"
+            },
+            "wins": "1",
+            "losses": "0",
+            "win_pct": "0",
+            "points_for": "172",
+            "points_against": "265",
+            "streak": "L4",
+            "conference_record": "1-7"
+          },
+          {
+            "team": {
+              "id": "57",
+              "name": "Florida Gators",
+              "abbreviation": "FLA",
+              "logo": "https://a.espncdn.com/i/teamlogos/ncaa/500/57.png"
+            },
+            "wins": "1",
+            "losses": "0",
+            "win_pct": "0",
+            "points_for": "118",
+            "points_against": "190",
+            "streak": "W1",
+            "conference_record": "2-6"
+          },
+          {
+            "team": {
+              "id": "2579",
+              "name": "South Carolina Gamecocks",
+              "abbreviation": "SC",
+              "logo": "https://a.espncdn.com/i/teamlogos/ncaa/500/2579.png"
+            },
+            "wins": "0",
+            "losses": "0",
+            "win_pct": "0",
+            "points_for": "103",
+            "points_against": "165",
+            "streak": "L1",
+            "conference_record": "1-7"
+          },
+          {
+            "team": {
+              "id": "8",
+              "name": "Arkansas Razorbacks",
+              "abbreviation": "ARK",
+              "logo": "https://a.espncdn.com/i/teamlogos/ncaa/500/8.png"
+            },
+            "wins": "0",
+            "losses": "0",
+            "win_pct": "0",
+            "points_for": "158",
+            "points_against": "228",
+            "streak": "L10",
+            "conference_record": "0-8"
+          }
+        ]
+      }
+    ],
+    "season": 2026
+  },
+  "message": ""
+}
