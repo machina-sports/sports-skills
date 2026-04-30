@@ -70,13 +70,14 @@ metadata:
       - name: get_player_stats
         summary: Player statistical profile.
         returns: stats[]
-    # Mini-fixtures for the agent. When a customer mentions this skill
-    # in `/c`, the factory bridge pulls these so the agent doesn't have
-    # to guess the JSON shape when wiring up widgets / consumers.
-    sample_outputs:
-      get_scoreboard: references/samples/scoreboard.json
-      get_standings: references/samples/standings.json
-      get_rankings: references/samples/rankings.json
+    # The agent in the customer build sandbox can call `machina sports
+    # cfb <command> --json` directly to capture a live sample output —
+    # we don't ship static fixtures here so the public repo stays
+    # data-free. List the runtime invocation pattern explicitly so
+    # tooling / pre-flight knows how to fetch a real shape on demand.
+    runtime:
+      cli: "machina sports cfb"
+      sample_command: "machina sports cfb get_scoreboard"
     references:
       api: references/api-reference.md
       conferences: references/conference-ids.md
