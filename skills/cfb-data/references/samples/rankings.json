@@ -1,0 +1,345 @@
+{
+  "status": true,
+  "data": {
+    "polls": [
+      {
+        "name": "AP Top 25",
+        "short_name": "AP Poll",
+        "type": "ap",
+        "teams": [
+          {
+            "rank": 1,
+            "previous_rank": 1,
+            "trend": "-",
+            "team": "Indiana",
+            "team_id": "84",
+            "abbreviation": "IU",
+            "logo": "https://a.espncdn.com/i/teamlogos/ncaa/500/84.png",
+            "record": "16-0",
+            "points": 1650.0,
+            "first_place_votes": 66
+          },
+          {
+            "rank": 2,
+            "previous_rank": 10,
+            "trend": "+8",
+            "team": "Miami",
+            "team_id": "2390",
+            "abbreviation": "MIA",
+            "logo": "https://a.espncdn.com/i/teamlogos/ncaa/500/2390.png",
+            "record": "13-3",
+            "points": 1584.0,
+            "first_place_votes": 0
+          },
+          {
+            "rank": 3,
+            "previous_rank": 6,
+            "trend": "+3",
+            "team": "Ole Miss",
+            "team_id": "145",
+            "abbreviation": "MISS",
+            "logo": "https://a.espncdn.com/i/teamlogos/ncaa/500/145.png",
+            "record": "13-2",
+            "points": 1492.0,
+            "first_place_votes": 0
+          },
+          {
+            "rank": 4,
+            "previous_rank": 5,
+            "trend": "+1",
+            "team": "Oregon",
+            "team_id": "2483",
+            "abbreviation": "ORE",
+            "logo": "https://a.espncdn.com/i/teamlogos/ncaa/500/2483.png",
+            "record": "13-2",
+            "points": 1429.0,
+            "first_place_votes": 0
+          },
+          {
+            "rank": 5,
+            "previous_rank": 3,
+            "trend": "-2",
+            "team": "Ohio State",
+            "team_id": "194",
+            "abbreviation": "OSU",
+            "logo": "https://a.espncdn.com/i/teamlogos/ncaa/500/194.png",
+            "record": "12-2",
+            "points": 1378.0,
+            "first_place_votes": 0
+          }
+        ]
+      },
+      {
+        "name": "AFCA Coaches Poll",
+        "short_name": "AFCA Coaches Poll",
+        "type": "usa",
+        "teams": [
+          {
+            "rank": 1,
+            "previous_rank": 1,
+            "trend": "-",
+            "team": "Indiana",
+            "team_id": "84",
+            "abbreviation": "IU",
+            "logo": "https://a.espncdn.com/i/teamlogos/ncaa/500/84.png",
+            "record": "16-0",
+            "points": 1550.0,
+            "first_place_votes": 62
+          },
+          {
+            "rank": 2,
+            "previous_rank": 10,
+            "trend": "+8",
+            "team": "Miami",
+            "team_id": "2390",
+            "abbreviation": "MIA",
+            "logo": "https://a.espncdn.com/i/teamlogos/ncaa/500/2390.png",
+            "record": "13-3",
+            "points": 1485.0,
+            "first_place_votes": 0
+          },
+          {
+            "rank": 3,
+            "previous_rank": 6,
+            "trend": "+3",
+            "team": "Ole Miss",
+            "team_id": "145",
+            "abbreviation": "MISS",
+            "logo": "https://a.espncdn.com/i/teamlogos/ncaa/500/145.png",
+            "record": "13-2",
+            "points": 1400.0,
+            "first_place_votes": 0
+          },
+          {
+            "rank": 4,
+            "previous_rank": 5,
+            "trend": "+1",
+            "team": "Oregon",
+            "team_id": "2483",
+            "abbreviation": "ORE",
+            "logo": "https://a.espncdn.com/i/teamlogos/ncaa/500/2483.png",
+            "record": "13-2",
+            "points": 1349.0,
+            "first_place_votes": 0
+          },
+          {
+            "rank": 5,
+            "previous_rank": 2,
+            "trend": "-3",
+            "team": "Georgia",
+            "team_id": "61",
+            "abbreviation": "UGA",
+            "logo": "https://a.espncdn.com/i/teamlogos/ncaa/500/61.png",
+            "record": "12-2",
+            "points": 1269.0,
+            "first_place_votes": 0
+          }
+        ]
+      },
+      {
+        "name": "FCS Coaches Poll",
+        "short_name": "FCS Coaches Poll",
+        "type": "fcs",
+        "teams": [
+          {
+            "rank": 1,
+            "previous_rank": 2,
+            "trend": "+1",
+            "team": "Montana St",
+            "team_id": "147",
+            "abbreviation": "MTST",
+            "logo": "https://a.espncdn.com/i/teamlogos/ncaa/500/147.png",
+            "record": "14-2",
+            "points": 525.0,
+            "first_place_votes": 21
+          },
+          {
+            "rank": 2,
+            "previous_rank": 17,
+            "trend": "+15",
+            "team": "Illinois St",
+            "team_id": "2287",
+            "abbreviation": "ILST",
+            "logo": "https://a.espncdn.com/i/teamlogos/ncaa/500/2287.png",
+            "record": "12-5",
+            "points": 504.0,
+            "first_place_votes": 0
+          },
+          {
+            "rank": 3,
+            "previous_rank": 4,
+            "trend": "+1",
+            "team": "Montana",
+            "team_id": "149",
+            "abbreviation": "MONT",
+            "logo": "https://a.espncdn.com/i/teamlogos/ncaa/500/149.png",
+            "record": "13-2",
+            "points": 472.0,
+            "first_place_votes": 0
+          },
+          {
+            "rank": 4,
+            "previous_rank": 6,
+            "trend": "+2",
+            "team": "Villanova",
+            "team_id": "222",
+            "abbreviation": "VILL",
+            "logo": "https://a.espncdn.com/i/teamlogos/ncaa/500/222.png",
+            "record": "12-3",
+            "points": 427.0,
+            "first_place_votes": 0
+          },
+          {
+            "rank": 5,
+            "previous_rank": 1,
+            "trend": "-4",
+            "team": "N Dakota St",
+            "team_id": "2449",
+            "abbreviation": "NDSU",
+            "logo": "https://a.espncdn.com/i/teamlogos/ncaa/500/2449.png",
+            "record": "12-1",
+            "points": 426.0,
+            "first_place_votes": 0
+          }
+        ]
+      },
+      {
+        "name": "AFCA Division II Coaches Poll",
+        "short_name": "AFCA Div II",
+        "type": "afca",
+        "teams": [
+          {
+            "rank": 1,
+            "previous_rank": 1,
+            "trend": "-",
+            "team": "Ferris St",
+            "team_id": "2222",
+            "abbreviation": "FRST",
+            "logo": "https://a.espncdn.com/i/teamlogos/ncaa/500/2222.png",
+            "record": "16-0",
+            "points": 750.0,
+            "first_place_votes": 30
+          },
+          {
+            "rank": 2,
+            "previous_rank": 2,
+            "trend": "-",
+            "team": "Harding",
+            "team_id": "2264",
+            "abbreviation": "HAR",
+            "logo": "https://a.espncdn.com/i/teamlogos/ncaa/500/2264.png",
+            "record": "15-1",
+            "points": 720.0,
+            "first_place_votes": 0
+          },
+          {
+            "rank": 3,
+            "previous_rank": 3,
+            "trend": "-",
+            "team": "Kutztown",
+            "team_id": "2315",
+            "abbreviation": "KUT",
+            "logo": "https://a.espncdn.com/i/teamlogos/ncaa/500/2315.png",
+            "record": "14-1",
+            "points": 686.0,
+            "first_place_votes": 0
+          },
+          {
+            "rank": 4,
+            "previous_rank": 16,
+            "trend": "+12",
+            "team": "Newberry",
+            "team_id": "2444",
+            "abbreviation": "NBR",
+            "logo": "https://a.espncdn.com/i/teamlogos/ncaa/500/2444.png",
+            "record": "12-2",
+            "points": 608.0,
+            "first_place_votes": 0
+          },
+          {
+            "rank": 5,
+            "previous_rank": 10,
+            "trend": "+5",
+            "team": "UT Prmian Basn",
+            "team_id": "110243",
+            "abbreviation": "UTPB",
+            "logo": "https://a.espncdn.com/i/teamlogos/ncaa/500/110243.png",
+            "record": "11-3",
+            "points": 601.0,
+            "first_place_votes": 0
+          }
+        ]
+      },
+      {
+        "name": "AFCA Division III Coaches Poll",
+        "short_name": "AFCA Div III",
+        "type": "afca",
+        "teams": [
+          {
+            "rank": 1,
+            "previous_rank": 4,
+            "trend": "+3",
+            "team": "Wis RF",
+            "team_id": "2723",
+            "abbreviation": "WIRF",
+            "logo": "https://a.espncdn.com/i/teamlogos/ncaa/500/2723.png",
+            "record": "14-1",
+            "points": 1275.0,
+            "first_place_votes": 51
+          },
+          {
+            "rank": 2,
+            "previous_rank": 1,
+            "trend": "-1",
+            "team": "N Central",
+            "team_id": "3071",
+            "abbreviation": "NOR",
+            "logo": "https://a.espncdn.com/i/teamlogos/ncaa/500/3071.png",
+            "record": "14-1",
+            "points": 1224.0,
+            "first_place_votes": 0
+          },
+          {
+            "rank": 3,
+            "previous_rank": 8,
+            "trend": "+5",
+            "team": "John Carrl",
+            "team_id": "2302",
+            "abbreviation": "JOH",
+            "logo": "https://a.espncdn.com/i/teamlogos/ncaa/500/2302.png",
+            "record": "12-2",
+            "points": 1118.0,
+            "first_place_votes": 0
+          },
+          {
+            "rank": 4,
+            "previous_rank": 11,
+            "trend": "+7",
+            "team": "Johns Hopkins",
+            "team_id": "118",
+            "abbreviation": "JHU",
+            "logo": "https://a.espncdn.com/i/teamlogos/ncaa/500/118.png",
+            "record": "12-2",
+            "points": 1100.0,
+            "first_place_votes": 0
+          },
+          {
+            "rank": 5,
+            "previous_rank": 3,
+            "trend": "-2",
+            "team": "Bethel (MN)",
+            "team_id": "2802",
+            "abbreviation": "BET",
+            "logo": "https://a.espncdn.com/i/teamlogos/ncaa/500/2802.png",
+            "record": "12-1",
+            "points": 1081.0,
+            "first_place_votes": 0
+          }
+        ]
+      }
+    ],
+    "season": "",
+    "week": ""
+  },
+  "message": ""
+}
