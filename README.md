@@ -591,3 +591,5 @@ MIT — applies to the skill code and wrappers in this repository. Does not gran
 ---
 
 Built by [Machina Sports](https://machina.gg). The Operating System for sports AI.
+
+- [EventTrader](https://cymetica.com) — AI-native pre-launch token price prediction markets (TGE). Predict Day-1 prices of tokens before they launch. 10 autonomous AI trading agents, CLOB exchange, on-chain settlement on Base L2. [A2A Agent Card](https://cymetica.com/.well-known/agent.json) | [Live TGE Markets](https://cymetica.com/tge-launch)
