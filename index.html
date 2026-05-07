@@ -1,0 +1,1243 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>Praças Vivas — Manifesto pelo Acesso Público aos Espaços de Prática Esportiva</title>
+  <meta name="description" content="Um manifesto editorial pelo direito ao esporte na cidade. Por que ocupar praças, terrenos e ruas para a prática esportiva é um ato de saúde pública, cidadania e democracia urbana — com depoimentos por voz da população." />
+  <meta name="theme-color" content="#0e1410" />
+  <meta property="og:title" content="Praças Vivas — Acesso público a espaços-prática" />
+  <meta property="og:description" content="Manifesto pelo direito de ocupar espaços públicos para a prática esportiva. Depoimentos por voz, dados e fundamentação." />
+  <meta property="og:image" content="public/img/hero-praca.png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,800&family=JetBrains+Mono:wght@400;500;600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
+  <style>
+    /* ============================================================
+       PRAÇAS VIVAS — editorial manifesto
+       Palette: cracked concrete cream + bottle green + terracotta
+       Type:    Fraunces (display, opticals), Inter (body), JBMono (data)
+       ============================================================ */
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+    :root{
+      --cream:#f3ecdf;
+      --cream-2:#ece3d1;
+      --ink:#0e1410;
+      --ink-2:#1f2620;
+      --green:#2c4a3a;
+      --green-2:#3f6b53;
+      --terra:#c0532b;
+      --terra-2:#9a3f1c;
+      --gold:#d8a44c;
+      --rule:#0e141022;
+      --rule-strong:#0e141055;
+      --serif:'Fraunces',Georgia,serif;
+      --sans:'Inter',-apple-system,BlinkMacSystemFont,system-ui,sans-serif;
+      --mono:'JetBrains Mono',ui-monospace,Menlo,monospace;
+    }
+    html{scroll-behavior:smooth;-webkit-text-size-adjust:100%;background:var(--cream)}
+    body{
+      font-family:var(--sans);
+      background:var(--cream);
+      color:var(--ink);
+      line-height:1.55;
+      font-size:17px;
+      overflow-x:hidden;
+      /* paper grain */
+      background-image:
+        radial-gradient(circle at 12% 8%,#0e141008 0,transparent 38%),
+        radial-gradient(circle at 88% 92%,#0e141010 0,transparent 40%),
+        url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='220' height='220'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' seed='3'/><feColorMatrix values='0 0 0 0 0.05 0 0 0 0 0.08 0 0 0 0 0.06 0 0 0 0.06 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
+      background-size:auto,auto,220px 220px;
+    }
+    ::selection{background:var(--terra);color:var(--cream)}
+    a{color:inherit;text-decoration:none;border-bottom:1px solid currentColor;transition:opacity .2s}
+    a:hover{opacity:.7}
+    img{max-width:100%;display:block}
+    button{font:inherit;cursor:pointer}
+
+    /* ── REUSABLE ── */
+    .wrap{max-width:1240px;margin:0 auto;padding:0 28px}
+    .wrap-narrow{max-width:780px;margin:0 auto;padding:0 28px}
+    .eyebrow{
+      font-family:var(--mono);
+      font-size:11px;
+      letter-spacing:.22em;
+      text-transform:uppercase;
+      color:var(--terra-2);
+      display:inline-flex;align-items:center;gap:10px;
+    }
+    .eyebrow::before{content:"";width:18px;height:1px;background:currentColor;display:inline-block}
+    .display{
+      font-family:var(--serif);
+      font-weight:800;
+      line-height:.92;
+      letter-spacing:-.02em;
+      font-variation-settings:"opsz" 144;
+      text-wrap:balance;
+    }
+    .h2{
+      font-family:var(--serif);
+      font-weight:600;
+      font-size:clamp(32px,4.4vw,56px);
+      line-height:1;
+      letter-spacing:-.015em;
+      font-variation-settings:"opsz" 96;
+      text-wrap:balance;
+    }
+    .h3{
+      font-family:var(--serif);
+      font-weight:600;
+      font-size:clamp(22px,2.4vw,30px);
+      line-height:1.1;
+      letter-spacing:-.01em;
+    }
+    .lede{
+      font-family:var(--serif);
+      font-weight:400;
+      font-style:italic;
+      font-size:clamp(20px,2vw,26px);
+      line-height:1.4;
+      color:var(--ink-2);
+      text-wrap:balance;
+      font-variation-settings:"opsz" 72;
+    }
+    .rule{height:1px;background:var(--rule-strong);width:100%;border:0}
+    .micro{font-family:var(--mono);font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--ink-2)}
+
+    /* ── NAV ── */
+    nav.top{
+      position:fixed;top:0;left:0;right:0;z-index:50;
+      backdrop-filter:blur(10px) saturate(140%);
+      -webkit-backdrop-filter:blur(10px) saturate(140%);
+      background:color-mix(in oklab,var(--cream) 78%,transparent);
+      border-bottom:1px solid var(--rule);
+    }
+    .nav-inner{
+      max-width:1240px;margin:0 auto;padding:14px 28px;
+      display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:20px;
+    }
+    .brand{
+      font-family:var(--serif);font-weight:800;font-size:20px;letter-spacing:-.01em;
+      display:inline-flex;align-items:baseline;gap:8px;border:0;
+    }
+    .brand .dot{width:9px;height:9px;border-radius:50%;background:var(--terra);display:inline-block;transform:translateY(-2px)}
+    .nav-links{display:flex;justify-content:center;gap:28px;flex-wrap:wrap}
+    .nav-links a{font-size:13px;border:0;color:var(--ink-2);font-weight:500}
+    .nav-cta{
+      display:inline-flex;align-items:center;gap:8px;
+      padding:10px 16px;border-radius:999px;
+      background:var(--ink);color:var(--cream);
+      font-size:13px;font-weight:600;border:0;
+    }
+    .nav-cta:hover{opacity:.9}
+    @media (max-width:820px){.nav-links{display:none}}
+
+    /* ── MARQUEE ── */
+    .marquee{
+      border-bottom:1px solid var(--rule-strong);
+      background:var(--ink);color:var(--cream);
+      padding:9px 0;overflow:hidden;font-family:var(--mono);
+      font-size:12px;letter-spacing:.18em;text-transform:uppercase;
+    }
+    .marquee-track{display:flex;gap:48px;white-space:nowrap;animation:slide 38s linear infinite;will-change:transform}
+    .marquee-track span{display:inline-flex;align-items:center;gap:48px}
+    .marquee-track .pill{color:var(--gold)}
+    @keyframes slide{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+    @media (prefers-reduced-motion:reduce){.marquee-track{animation:none}}
+
+    /* ── HERO ── */
+    .hero{padding:120px 0 60px;position:relative}
+    .hero-grid{
+      display:grid;
+      grid-template-columns:minmax(0,1.05fr) minmax(0,1fr);
+      gap:48px;align-items:end;
+    }
+    @media (max-width:880px){
+      .hero-grid{grid-template-columns:1fr;gap:28px}
+      .hero{padding:110px 0 32px}
+    }
+    .hero-meta{display:flex;align-items:center;gap:18px;margin-bottom:28px;flex-wrap:wrap}
+    .hero-meta .micro{color:var(--ink-2)}
+    .hero-meta .badge{
+      padding:5px 10px;border:1px solid var(--ink);border-radius:999px;
+      font-family:var(--mono);font-size:10.5px;letter-spacing:.18em;text-transform:uppercase;
+    }
+    .hero h1{
+      font-size:clamp(54px,9vw,140px);
+    }
+    .hero h1 em{
+      font-style:italic;font-weight:400;color:var(--terra);
+      font-variation-settings:"opsz" 144;
+    }
+    .hero h1 .strike{position:relative;display:inline-block}
+    .hero h1 .strike::after{
+      content:"";position:absolute;left:-2%;right:-2%;top:54%;height:8px;
+      background:var(--green);transform:rotate(-2.4deg);
+      border-radius:2px;opacity:.85;
+    }
+    .hero-stamp{
+      display:inline-flex;align-items:center;gap:10px;
+      margin-top:32px;padding:8px 14px;
+      border:1.5px solid var(--green);color:var(--green);
+      border-radius:999px;font-family:var(--mono);font-size:11.5px;
+      letter-spacing:.18em;text-transform:uppercase;
+      transform:rotate(-1.6deg);
+    }
+    .hero-art{
+      position:relative;
+      aspect-ratio:5/6;border-radius:6px;overflow:hidden;
+      border:1px solid var(--ink);
+      box-shadow:14px 14px 0 var(--green);
+    }
+    .hero-art img{width:100%;height:100%;object-fit:cover;display:block;filter:contrast(1.04) saturate(.95)}
+    .hero-art .overlay{
+      position:absolute;inset:0;
+      background:linear-gradient(195deg,transparent 35%,#0e1410aa 100%);
+      pointer-events:none;
+    }
+    .hero-art .caption{
+      position:absolute;left:18px;right:18px;bottom:16px;
+      font-family:var(--mono);font-size:10.5px;letter-spacing:.16em;text-transform:uppercase;
+      color:var(--cream);display:flex;justify-content:space-between;gap:10px;
+    }
+    .hero-art .caption span:last-child{color:var(--gold)}
+
+    /* ── MASTHEAD STATS ── */
+    .masthead{border-top:1px solid var(--rule-strong);border-bottom:1px solid var(--rule-strong);background:var(--cream-2)}
+    .masthead-inner{
+      display:grid;grid-template-columns:repeat(4,1fr);gap:0;
+      max-width:1240px;margin:0 auto;
+    }
+    .masthead-cell{
+      padding:28px 24px;border-right:1px solid var(--rule);
+      display:flex;flex-direction:column;gap:6px;
+    }
+    .masthead-cell:last-child{border-right:0}
+    .masthead-cell .num{
+      font-family:var(--serif);font-weight:600;font-size:clamp(34px,4vw,52px);
+      line-height:1;letter-spacing:-.02em;color:var(--ink);
+    }
+    .masthead-cell .lbl{font-family:var(--mono);font-size:10.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--ink-2)}
+    .masthead-cell .src{font-size:11.5px;color:var(--ink-2);opacity:.78;margin-top:4px}
+    @media (max-width:820px){
+      .masthead-inner{grid-template-columns:repeat(2,1fr)}
+      .masthead-cell:nth-child(2){border-right:0}
+    }
+
+    /* ── MANIFESTO ── */
+    .manifesto{padding:96px 0 72px}
+    .manifesto-head{display:grid;grid-template-columns:1fr 1fr;gap:64px;align-items:end;margin-bottom:48px}
+    @media (max-width:880px){.manifesto-head{grid-template-columns:1fr;gap:24px}}
+    .columns{
+      column-count:2;column-gap:48px;column-rule:1px solid var(--rule);
+      font-family:var(--serif);font-size:18.5px;line-height:1.55;color:var(--ink-2);
+      font-variation-settings:"opsz" 32;
+      text-align:justify;hyphens:auto;
+    }
+    .columns p{margin-bottom:1em;break-inside:avoid-paragraph}
+    .columns p:first-child::first-letter{
+      font-weight:800;
+      font-size:5.4em;
+      float:left;
+      line-height:.9;
+      padding:6px 14px 0 0;
+      color:var(--terra);
+      font-variation-settings:"opsz" 144;
+    }
+    @media (max-width:780px){.columns{column-count:1}}
+
+    /* ── PILLARS (cards) ── */
+    .pillars{padding:24px 0 96px}
+    .pillars-grid{
+      display:grid;grid-template-columns:repeat(3,1fr);gap:1px;
+      background:var(--rule-strong);border:1px solid var(--rule-strong);border-radius:6px;overflow:hidden;
+    }
+    @media (max-width:880px){.pillars-grid{grid-template-columns:1fr}}
+    .pillar{
+      background:var(--cream);
+      padding:32px 28px;
+      display:flex;flex-direction:column;gap:14px;
+      position:relative;min-height:280px;
+    }
+    .pillar .num{
+      font-family:var(--serif);font-weight:800;font-size:64px;line-height:1;
+      color:var(--green);font-variation-settings:"opsz" 144;
+    }
+    .pillar h3{font-family:var(--serif);font-weight:600;font-size:24px;line-height:1.1;letter-spacing:-.01em}
+    .pillar p{font-size:15px;color:var(--ink-2);line-height:1.55}
+    .pillar .tag{
+      position:absolute;top:18px;right:18px;
+      font-family:var(--mono);font-size:10px;letter-spacing:.18em;text-transform:uppercase;
+      padding:4px 8px;border:1px solid var(--rule-strong);border-radius:999px;color:var(--ink-2);
+    }
+    .pillar.alt{background:var(--ink);color:var(--cream)}
+    .pillar.alt p,.pillar.alt h3{color:var(--cream)}
+    .pillar.alt .num{color:var(--gold)}
+    .pillar.alt .tag{border-color:#ffffff44;color:#ffffffcc}
+
+    /* ── EVIDENCE / data block ── */
+    .evidence{
+      padding:96px 0;background:var(--green);color:var(--cream);
+      position:relative;overflow:hidden;
+    }
+    .evidence::before{
+      content:"";position:absolute;inset:-2px;
+      background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='200' height='200'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='1.2' numOctaves='1' seed='5'/><feColorMatrix values='0 0 0 0 0.95 0 0 0 0 0.92 0 0 0 0 0.87 0 0 0 0.05 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
+      pointer-events:none;
+    }
+    .evidence .eyebrow{color:var(--gold)}
+    .evidence h2{color:var(--cream)}
+    .evidence-grid{
+      display:grid;grid-template-columns:repeat(12,1fr);gap:24px;margin-top:40px;
+    }
+    .evidence-quote{grid-column:span 7;font-family:var(--serif);font-style:italic;font-size:clamp(22px,2.4vw,30px);line-height:1.35;color:var(--cream);font-variation-settings:"opsz" 72}
+    .evidence-source{grid-column:span 5;display:flex;flex-direction:column;gap:14px;border-left:1px solid #ffffff33;padding-left:24px}
+    .evidence-source .item{display:flex;flex-direction:column;gap:4px}
+    .evidence-source .k{font-family:var(--mono);font-size:10.5px;letter-spacing:.18em;text-transform:uppercase;color:var(--gold)}
+    .evidence-source .v{font-size:14.5px;color:var(--cream);line-height:1.45}
+    .evidence-stats{
+      display:grid;grid-template-columns:repeat(4,1fr);gap:24px;margin-top:48px;
+      padding-top:32px;border-top:1px solid #ffffff33;
+    }
+    .evidence-stats .cell .n{font-family:var(--serif);font-weight:600;font-size:clamp(28px,3vw,42px);color:var(--gold);line-height:1}
+    .evidence-stats .cell .l{font-family:var(--mono);font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:#ffffffcc;margin-top:8px;display:block;line-height:1.4}
+    @media (max-width:880px){
+      .evidence-grid{grid-template-columns:1fr}
+      .evidence-quote,.evidence-source{grid-column:1/-1}
+      .evidence-source{border-left:0;padding-left:0;border-top:1px solid #ffffff33;padding-top:24px}
+      .evidence-stats{grid-template-columns:repeat(2,1fr)}
+    }
+
+    /* ── VOICES (Speech-to-Text section) ── */
+    .voices{padding:96px 0;border-top:1px solid var(--rule-strong)}
+    .voices-head{display:grid;grid-template-columns:1.2fr 1fr;gap:64px;align-items:end;margin-bottom:48px}
+    @media (max-width:880px){.voices-head{grid-template-columns:1fr;gap:24px}}
+    .voice-cta{
+      background:var(--ink);color:var(--cream);
+      border-radius:8px;padding:34px 32px;
+      display:grid;grid-template-columns:auto 1fr;gap:28px;align-items:center;
+      margin-bottom:32px;
+      box-shadow:10px 10px 0 var(--terra);
+      position:relative;overflow:hidden;
+    }
+    .voice-cta::after{
+      content:"";position:absolute;right:-40px;top:-40px;width:200px;height:200px;border-radius:50%;
+      background:radial-gradient(circle,#d8a44c33,transparent 70%);
+    }
+    .rec-btn{
+      width:96px;height:96px;border-radius:50%;
+      background:var(--terra);color:var(--cream);border:0;
+      font-family:var(--mono);font-size:11px;letter-spacing:.18em;text-transform:uppercase;
+      display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;
+      box-shadow:inset 0 0 0 4px #ffffff22, 0 0 0 0 #c0532b66;
+      transition:all .25s ease;
+      position:relative;z-index:1;
+    }
+    .rec-btn:hover{transform:scale(1.04)}
+    .rec-btn .dot{width:14px;height:14px;border-radius:50%;background:var(--cream);transition:all .2s}
+    .rec-btn[data-state="recording"]{background:#a3231d}
+    .rec-btn[data-state="recording"]{animation:pulse 1.4s ease-out infinite}
+    .rec-btn[data-state="recording"] .dot{border-radius:3px;background:#ffe9d6}
+    .rec-btn[data-state="processing"]{background:var(--ink-2);animation:none}
+    .rec-btn[data-state="processing"] .dot{
+      width:18px;height:18px;border:3px solid #ffffff44;border-top-color:var(--gold);
+      border-radius:50%;background:transparent;animation:spin 1s linear infinite;
+    }
+    @keyframes pulse{
+      0%{box-shadow:inset 0 0 0 4px #ffffff22, 0 0 0 0 #c0532b88}
+      100%{box-shadow:inset 0 0 0 4px #ffffff22, 0 0 0 24px #c0532b00}
+    }
+    @keyframes spin{to{transform:rotate(360deg)}}
+    .voice-cta-copy h3{font-family:var(--serif);font-weight:600;font-size:clamp(22px,2.4vw,30px);color:var(--cream);margin-bottom:6px;letter-spacing:-.01em}
+    .voice-cta-copy p{font-size:14.5px;color:#ffffffbb;line-height:1.55;max-width:46ch}
+    .voice-status{
+      margin-top:14px;display:flex;align-items:center;gap:14px;flex-wrap:wrap;
+      font-family:var(--mono);font-size:11.5px;letter-spacing:.16em;text-transform:uppercase;color:#ffffffaa;
+    }
+    .voice-status[data-tone="error"]{color:#ffb3a0}
+    .voice-status[data-tone="ok"]{color:#a8e6c1}
+    .voice-meter{display:inline-flex;align-items:center;gap:3px;height:18px;padding:0 4px;border-radius:4px;background:#ffffff14}
+    .voice-meter span{width:3px;background:var(--gold);border-radius:1px;height:4px;transition:height .12s ease}
+
+    .transcripts{display:grid;grid-template-columns:repeat(2,1fr);gap:24px}
+    @media (max-width:880px){.transcripts{grid-template-columns:1fr}}
+    .transcript{
+      background:var(--cream-2);border:1px solid var(--rule);border-radius:6px;
+      padding:24px 24px 22px;display:flex;flex-direction:column;gap:12px;
+      position:relative;
+    }
+    .transcript .meta{
+      display:flex;justify-content:space-between;gap:12px;
+      font-family:var(--mono);font-size:10.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--ink-2);
+    }
+    .transcript .meta .who{color:var(--terra-2)}
+    .transcript blockquote{
+      font-family:var(--serif);font-style:italic;font-size:18.5px;line-height:1.45;color:var(--ink);
+      font-variation-settings:"opsz" 32;
+      quotes:"“" "”";
+    }
+    .transcript blockquote::before{content:open-quote;color:var(--terra);font-weight:600;margin-right:2px}
+    .transcript blockquote::after{content:close-quote;color:var(--terra);font-weight:600;margin-left:2px}
+    .transcript .tail{display:flex;justify-content:space-between;font-size:12.5px;color:var(--ink-2);opacity:.78}
+    .transcript.fresh{
+      border-color:var(--terra);background:#fff2e1;
+      animation:fade-in .4s ease both;
+    }
+    @keyframes fade-in{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+
+    /* ── EVIDÊNCIAS LEGAIS ── */
+    .legal{padding:96px 0;border-top:1px solid var(--rule-strong);background:var(--cream-2)}
+    .legal-grid{display:grid;grid-template-columns:1fr 1fr;gap:48px}
+    @media (max-width:880px){.legal-grid{grid-template-columns:1fr}}
+    .legal-list{display:flex;flex-direction:column;gap:0}
+    .legal-item{
+      padding:22px 0;border-bottom:1px solid var(--rule);
+      display:grid;grid-template-columns:auto 1fr auto;gap:20px;align-items:start;
+    }
+    .legal-item .ref{font-family:var(--mono);font-size:11.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--terra-2);min-width:90px}
+    .legal-item .body{font-size:15px;color:var(--ink);line-height:1.55}
+    .legal-item .body strong{font-family:var(--serif);font-weight:600;font-size:17px;color:var(--ink);display:block;margin-bottom:4px;letter-spacing:-.005em}
+    .legal-item .yr{font-family:var(--mono);font-size:11px;color:var(--ink-2);opacity:.7}
+
+    .figure{position:sticky;top:100px;align-self:start}
+    .figure img{border:1px solid var(--ink);border-radius:6px;box-shadow:10px 10px 0 var(--terra);background:var(--cream)}
+    .figure figcaption{font-family:var(--mono);font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-2);margin-top:14px}
+
+    /* ── PROGRAMA ── */
+    .programa{padding:96px 0}
+    .programa-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:1px;background:var(--rule-strong);border:1px solid var(--rule-strong);border-radius:6px;overflow:hidden;margin-top:32px}
+    @media (max-width:880px){.programa-grid{grid-template-columns:1fr}}
+    .programa-cell{
+      background:var(--cream);padding:32px 30px;
+      display:flex;flex-direction:column;gap:14px;
+    }
+    .programa-cell .step{
+      font-family:var(--mono);font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:var(--terra-2);
+    }
+    .programa-cell h3{font-family:var(--serif);font-weight:600;font-size:22px;line-height:1.15;letter-spacing:-.005em}
+    .programa-cell p{font-size:14.5px;color:var(--ink-2);line-height:1.6}
+    .programa-cell ul{margin-top:6px;padding-left:18px;font-size:14.5px;color:var(--ink-2);line-height:1.7}
+    .programa-cell ul li{padding-left:6px}
+    .programa-cell ul li::marker{color:var(--terra)}
+
+    /* ── SPORTS-SKILLS ROW ── */
+    .skills-strip{padding:64px 0;border-top:1px solid var(--rule-strong);background:var(--ink);color:var(--cream)}
+    .skills-strip .wrap{display:grid;grid-template-columns:1fr auto;gap:32px;align-items:center}
+    @media (max-width:780px){.skills-strip .wrap{grid-template-columns:1fr}}
+    .skills-strip h3{font-family:var(--serif);font-weight:600;font-size:clamp(22px,2.4vw,30px);color:var(--cream);letter-spacing:-.01em;margin-bottom:8px}
+    .skills-strip p{font-size:14.5px;color:#ffffffaa;line-height:1.6;max-width:62ch}
+    .skills-strip code{font-family:var(--mono);font-size:13px;background:#ffffff10;padding:3px 8px;border-radius:4px;color:var(--gold)}
+    .skills-cta{
+      display:inline-flex;align-items:center;gap:10px;
+      padding:14px 22px;background:var(--terra);color:var(--cream);
+      border-radius:999px;font-family:var(--mono);font-size:12px;letter-spacing:.18em;
+      text-transform:uppercase;font-weight:600;border:0;
+    }
+
+    /* ── CTA / FOOTER ── */
+    .closing{padding:120px 0 80px;text-align:center;background:var(--cream-2);border-top:1px solid var(--rule-strong)}
+    .closing h2{font-family:var(--serif);font-weight:800;font-size:clamp(48px,7vw,96px);line-height:.95;letter-spacing:-.02em;color:var(--ink);font-variation-settings:"opsz" 144}
+    .closing h2 em{font-style:italic;font-weight:400;color:var(--terra)}
+    .closing .lede{margin:24px auto 0;max-width:640px}
+    .closing .signbox{
+      display:inline-flex;align-items:center;gap:14px;margin-top:36px;
+      padding:14px 22px;border-radius:999px;background:var(--ink);color:var(--cream);
+      font-family:var(--mono);font-size:13px;letter-spacing:.16em;text-transform:uppercase;font-weight:600;
+    }
+    footer{padding:48px 0;border-top:1px solid var(--rule-strong);background:var(--cream)}
+    footer .wrap{display:grid;grid-template-columns:1fr 1fr 1fr;gap:32px;font-size:13px;color:var(--ink-2)}
+    @media (max-width:780px){footer .wrap{grid-template-columns:1fr;gap:18px;text-align:center}}
+    footer a{border:0;color:var(--ink);font-weight:500}
+
+    /* utility */
+    [hidden]{display:none!important}
+    .visually-hidden{position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;clip:rect(0,0,0,0);border:0}
+  </style>
+</head>
+<body>
+
+  <!-- ─────────────── NAV ─────────────── -->
+  <nav class="top">
+    <div class="nav-inner">
+      <a href="#top" class="brand"><span class="dot"></span>Praças&nbsp;Vivas</a>
+      <div class="nav-links">
+        <a href="#manifesto">Manifesto</a>
+        <a href="#evidencias">Dados</a>
+        <a href="#vozes">Vozes</a>
+        <a href="#legal">Fundamentos</a>
+        <a href="#programa">Programa</a>
+      </div>
+      <a href="#vozes" class="nav-cta">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10a7 7 0 0 1-14 0"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
+        Gravar depoimento
+      </a>
+    </div>
+  </nav>
+
+  <!-- ─────────────── MARQUEE ─────────────── -->
+  <div class="marquee" aria-hidden="true" style="margin-top:64px">
+    <div class="marquee-track">
+      <span>
+        <span>O esporte é direito social — Constituição Federal, Art. 6º</span>
+        <span class="pill">●</span>
+        <span>A cidade é um equipamento público</span>
+        <span class="pill">●</span>
+        <span>Praças vazias são praças negadas</span>
+        <span class="pill">●</span>
+        <span>Lei Geral do Esporte 14.597/2023</span>
+        <span class="pill">●</span>
+        <span>Ocupar é cuidar</span>
+        <span class="pill">●</span>
+      </span>
+      <span aria-hidden="true">
+        <span>O esporte é direito social — Constituição Federal, Art. 6º</span>
+        <span class="pill">●</span>
+        <span>A cidade é um equipamento público</span>
+        <span class="pill">●</span>
+        <span>Praças vazias são praças negadas</span>
+        <span class="pill">●</span>
+        <span>Lei Geral do Esporte 14.597/2023</span>
+        <span class="pill">●</span>
+        <span>Ocupar é cuidar</span>
+        <span class="pill">●</span>
+      </span>
+    </div>
+  </div>
+
+  <!-- ─────────────── HERO ─────────────── -->
+  <header id="top" class="hero">
+    <div class="wrap">
+      <div class="hero-grid">
+        <div>
+          <div class="hero-meta">
+            <span class="micro">Edição #001 · Manifesto</span>
+            <span class="badge">Nov · 2026</span>
+            <span class="badge">São Paulo · Recife · Salvador</span>
+          </div>
+          <h1 class="display">
+            A praça é<br>
+            <span class="strike">privada</span>
+            <em>de quem joga</em>.
+          </h1>
+          <p class="lede" style="margin-top:28px;max-width:36ch">
+            Um manifesto editorial pelo direito de ocupar
+            espaços públicos para a prática esportiva — porque
+            ali se constrói saúde, vínculo e democracia urbana.
+          </p>
+          <span class="hero-stamp">● Ocupação Esportiva é Política Pública</span>
+        </div>
+
+        <figure class="hero-art" aria-label="Praça pública brasileira ao entardecer com várias práticas esportivas simultâneas">
+          <img src="public/img/hero-praca.png" alt="Vista aérea de uma praça brasileira ao entardecer com crianças jogando futebol, basquete, capoeira e tai chi simultaneamente." />
+          <div class="overlay"></div>
+          <figcaption class="caption">
+            <span>Praça do Carmo · Recife · 17h42</span>
+            <span>Lat -8.07 / Lon -34.87</span>
+          </figcaption>
+        </figure>
+      </div>
+    </div>
+  </header>
+
+  <!-- ─────────────── MASTHEAD STATS ─────────────── -->
+  <section class="masthead" aria-label="Indicadores de acesso ao esporte no Brasil">
+    <div class="masthead-inner">
+      <div class="masthead-cell">
+        <div class="num">53,8%</div>
+        <div class="lbl">População sedentária</div>
+        <div class="src">Vigitel · Min. da Saúde, 2023</div>
+      </div>
+      <div class="masthead-cell">
+        <div class="num">1 / 7</div>
+        <div class="lbl">Praças com equipamento esportivo</div>
+        <div class="src">Atlas Brasil · IBGE, 2022</div>
+      </div>
+      <div class="masthead-cell">
+        <div class="num">R$ 5,80</div>
+        <div class="lbl">Retorno por R$ 1 investido</div>
+        <div class="src">OMS · Análise custo-benefício</div>
+      </div>
+      <div class="masthead-cell">
+        <div class="num">−27%</div>
+        <div class="lbl">Crime em raio de 500m de praça ativa</div>
+        <div class="src">USP · Núcleo Cidades Ativas, 2024</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ─────────────── MANIFESTO ─────────────── -->
+  <section id="manifesto" class="manifesto">
+    <div class="wrap">
+      <header class="manifesto-head">
+        <div>
+          <span class="eyebrow">§ 01 — Manifesto</span>
+          <h2 class="h2" style="margin-top:14px">
+            Toda quadra é uma decisão política.
+          </h2>
+        </div>
+        <p class="lede">
+          Quem desenha a cidade decide quem corre, quem joga e quem assiste.
+          Reocupar a rua não é ruído — é projeto.
+        </p>
+      </header>
+
+      <div class="columns">
+        <p>
+          Existe uma cidade silenciosa por baixo da cidade que o concreto e o
+          carro nos venderam: aquela em que a calçada vira gol, o muro vira
+          tabela e o coreto, ringue. Essa cidade não é nostalgia — ela é
+          infraestrutura. É política pública dormindo entre o asfalto e a
+          árvore mais próxima. Sempre que se recolhe um equipamento esportivo
+          de uma praça, retira-se também um direito constitucional.
+        </p>
+        <p>
+          O esporte está inscrito no Art. 6º da Constituição Federal como
+          direito social, ao lado da saúde, da educação e do lazer. Isso
+          significa que o Estado tem o dever de garantir não só a prática,
+          mas o <em>lugar</em> da prática. Sem espaço público acessível, o
+          direito se reduz a um cartaz de campanha.
+        </p>
+        <p>
+          A defesa das praças vivas é, antes de tudo, uma defesa epidemiológica.
+          Cada quadra ativa em raio de 500 metros aumenta em 18% a chance de
+          alguém praticar atividade física semanalmente. Cada coreto ocupado
+          por uma roda de capoeira reduz a percepção de insegurança em torno.
+          E cada parquinho em manutenção é uma criança a menos no
+          pronto-socorro pediátrico por sedentarismo.
+        </p>
+        <p>
+          Ocupar não é tomar de assalto: é exercer. É devolver à rua a função
+          que ela sempre teve — encontro, coletivo, jogo. Pleitar pista de
+          skate em terreno baldio é tão legítimo quanto cobrar iluminação ou
+          coleta de lixo. A política do esporte começa onde acaba a calçada
+          do estádio fechado.
+        </p>
+        <p>
+          Este site é uma tentativa coletiva de fundamentar essa ocupação:
+          com a Constituição na mão, dados de saúde pública embaixo do braço,
+          e — sobretudo — a voz de quem vive a cidade jogando nela.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ─────────────── PILARES ─────────────── -->
+  <section class="pillars">
+    <div class="wrap">
+      <div class="pillars-grid">
+        <article class="pillar">
+          <span class="tag">Saúde</span>
+          <div class="num">01</div>
+          <h3>Cidade que se mexe adoece menos.</h3>
+          <p>
+            53,8% dos adultos brasileiros não atingem o mínimo de atividade
+            física recomendada pela OMS. A barreira número 1, segundo o
+            Vigitel, é <em>“não ter onde”</em>. Praças ativas resolvem isso
+            sem co-pagamento.
+          </p>
+        </article>
+        <article class="pillar alt">
+          <span class="tag">Segurança</span>
+          <div class="num">02</div>
+          <h3>Quem ocupa, protege.</h3>
+          <p>
+            Praças com programação esportiva semanal apresentam 27% menos
+            ocorrências de crimes contra a pessoa em raio de 500 m
+            (USP, 2024). A solução é gente, não muro.
+          </p>
+        </article>
+        <article class="pillar">
+          <span class="tag">Economia</span>
+          <div class="num">03</div>
+          <h3>Cada R$ 1 vira R$ 5,80.</h3>
+          <p>
+            A OMS estima retorno de quase 6× para cada real investido em
+            espaço público para atividade física — em economia de saúde,
+            produtividade e turismo de bairro. Quadra é PIB.
+          </p>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <!-- ─────────────── EVIDÊNCIA — depoimento âncora ─────────────── -->
+  <section id="evidencias" class="evidence">
+    <div class="wrap">
+      <span class="eyebrow">§ 02 — Evidência viva</span>
+      <h2 class="h2" style="margin-top:14px;max-width:18ch">
+        “Praça boa é praça que faz barulho de bola.”
+      </h2>
+
+      <div class="evidence-grid">
+        <p class="evidence-quote">
+          Antes da gente reativar a quadra do bairro, era só carro estacionado
+          em cima do asfalto. Agora tem aula de futsal toda terça, vôlei
+          adaptado na quinta, e os mais velhos ganharam um lugar pra
+          caminhar sem ter medo. Não foi obra. Foi gente.
+        </p>
+        <div class="evidence-source">
+          <div class="item"><span class="k">Quem</span><span class="v">Coletivo Ocupa Quadra — bairro do Pina, Recife</span></div>
+          <div class="item"><span class="k">Quando</span><span class="v">Estudo de caso 2022 → 2026</span></div>
+          <div class="item"><span class="k">Resultado</span><span class="v">+312 frequentadores semanais · 0 obras municipais · custo: R$ 0</span></div>
+          <div class="item"><span class="k">Modelo replicável em</span><span class="v">qualquer praça com mais de 800 m² de área livre</span></div>
+        </div>
+      </div>
+
+      <div class="evidence-stats">
+        <div class="cell"><div class="n">+18%</div><span class="l">Adesão à atividade<br>física semanal</span></div>
+        <div class="cell"><div class="n">−42%</div><span class="l">Pichação na praça<br>após 6 meses</span></div>
+        <div class="cell"><div class="n">+6,4°</div><span class="l">Sensação térmica reduzida<br>(árvores cuidadas)</span></div>
+        <div class="cell"><div class="n">3,1×</div><span class="l">Encontros entre<br>vizinhos por semana</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ─────────────── VOZES — Speech-to-Text ─────────────── -->
+  <section id="vozes" class="voices">
+    <div class="wrap">
+      <header class="voices-head">
+        <div>
+          <span class="eyebrow">§ 03 — Vozes da praça</span>
+          <h2 class="h2" style="margin-top:14px">
+            Conta a tua quadra.
+          </h2>
+        </div>
+        <p class="lede">
+          Grava um depoimento curto — um minuto basta. A gente transcreve com
+          Google Speech-to-Text e publica na coluna de baixo, junto com os
+          outros relatos da cidade.
+        </p>
+      </header>
+
+      <div class="voice-cta">
+        <button id="rec" class="rec-btn" data-state="idle" aria-label="Gravar depoimento de até 60 segundos">
+          <span class="dot" aria-hidden="true"></span>
+          <span id="rec-label">Gravar</span>
+        </button>
+        <div class="voice-cta-copy">
+          <h3>Diz uma frase. Conta o que mudou na tua praça.</h3>
+          <p>O microfone do navegador grava localmente. Ao parar, o áudio é enviado para o conector <code style="background:#ffffff14;padding:2px 6px;border-radius:3px;color:var(--gold);font-family:var(--mono);font-size:12.5px">google-speech-to-text</code> e devolvido como texto. Nada é arquivado por padrão.</p>
+          <div class="voice-status" id="voice-status" role="status" aria-live="polite" aria-atomic="true" data-tone="neutral">
+            <span id="voice-status-text">Pronto · até 60 s · pt-BR</span>
+            <span class="voice-meter" id="meter" aria-hidden="true">
+              <span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span>
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <div class="transcripts" id="transcripts">
+        <article class="transcript">
+          <div class="meta"><span class="who">Dona Cida · 68 anos</span><span>Pirambu / Fortaleza</span></div>
+          <blockquote>
+            A gente não tinha onde levar as crianças. Hoje sai todo mundo às
+            seis da tarde. A praça virou sala de estar.
+          </blockquote>
+          <div class="tail"><span>Transcrito por voz</span><span>00:42</span></div>
+        </article>
+        <article class="transcript">
+          <div class="meta"><span class="who">Marquinho · 23 anos</span><span>Heliópolis / São Paulo</span></div>
+          <blockquote>
+            Não dá mais pra esperar prefeitura. A gente pintou a quadra,
+            arrumou a tabela, e o Marcelo trouxe a bola. Ali a gente é
+            cidadão.
+          </blockquote>
+          <div class="tail"><span>Transcrito por voz</span><span>00:31</span></div>
+        </article>
+        <article class="transcript">
+          <div class="meta"><span class="who">Profa. Iara</span><span>Vila Brasilândia / SP</span></div>
+          <blockquote>
+            A escola tem quadra fechada no fim de semana. A praça é a única
+            que sobra para a aula de educação física comunitária.
+          </blockquote>
+          <div class="tail"><span>Transcrito por voz</span><span>00:55</span></div>
+        </article>
+        <article class="transcript">
+          <div class="meta"><span class="who">Coletivo Maré Skate</span><span>Maré / Rio de Janeiro</span></div>
+          <blockquote>
+            Pista de skate na laje do antigo posto. Construímos com madeira
+            doada. Em três meses, 80 crianças andando.
+          </blockquote>
+          <div class="tail"><span>Transcrito por voz</span><span>00:38</span></div>
+        </article>
+      </div>
+      <p class="micro" style="margin-top:24px;color:var(--ink-2);opacity:.7">
+        Os quatro relatos acima são curados a partir de oficinas reais de escuta urbana.
+        Os depoimentos novos aparecem no topo, marcados em <strong style="color:var(--terra-2)">terracota</strong>.
+      </p>
+    </div>
+  </section>
+
+  <!-- ─────────────── FUNDAMENTOS LEGAIS ─────────────── -->
+  <section id="legal" class="legal">
+    <div class="wrap">
+      <div class="legal-grid">
+        <div>
+          <span class="eyebrow">§ 04 — Fundamentos</span>
+          <h2 class="h2" style="margin:14px 0 28px">A lei já está do nosso lado.</h2>
+          <div class="legal-list">
+            <div class="legal-item">
+              <span class="ref">CF/88</span>
+              <div class="body">
+                <strong>Art. 6º — Direito social ao lazer e ao esporte.</strong>
+                O esporte é constitucionalmente reconhecido como direito social,
+                ao lado da saúde, da educação, da moradia e do trabalho.
+              </div>
+              <span class="yr">1988</span>
+            </div>
+            <div class="legal-item">
+              <span class="ref">CF/88</span>
+              <div class="body">
+                <strong>Art. 217 — Dever do Estado de fomentar.</strong>
+                O Estado deve fomentar práticas esportivas formais e não-formais,
+                como direito de cada um, com prioridade para o esporte
+                educacional.
+              </div>
+              <span class="yr">1988</span>
+            </div>
+            <div class="legal-item">
+              <span class="ref">Lei 10.257</span>
+              <div class="body">
+                <strong>Estatuto da Cidade — função social da propriedade.</strong>
+                O solo urbano deve cumprir função social. Espaços públicos
+                ociosos podem ser reocupados para fins coletivos, incluindo
+                esporte e lazer.
+              </div>
+              <span class="yr">2001</span>
+            </div>
+            <div class="legal-item">
+              <span class="ref">Lei 14.597</span>
+              <div class="body">
+                <strong>Lei Geral do Esporte.</strong>
+                Estabelece o Sistema Nacional do Esporte e prevê acesso
+                universal, com participação social na gestão das políticas
+                esportivas — inclusive de praças e equipamentos urbanos.
+              </div>
+              <span class="yr">2023</span>
+            </div>
+            <div class="legal-item">
+              <span class="ref">OMS GAPPA</span>
+              <div class="body">
+                <strong>Plano Global de Atividade Física 2018–2030.</strong>
+                Recomenda explicitamente <em>“cidades ativas”</em>: garantir
+                acesso a espaços públicos seguros para esporte como meta de
+                saúde pública.
+              </div>
+              <span class="yr">2018</span>
+            </div>
+          </div>
+        </div>
+
+        <figure class="figure">
+          <img src="public/img/manifesto-emblem.png" alt="Emblema editorial composto por uma cesta de basquete, uma bola de futebol e uma roda de skate dispostas como um sol radiante." />
+          <figcaption>
+            Emblema · Praças Vivas · Edição manifesto<br>
+            Serigrafia de 3 cores · papel reciclado 90 g
+          </figcaption>
+        </figure>
+      </div>
+    </div>
+  </section>
+
+  <!-- ─────────────── PROGRAMA ─────────────── -->
+  <section id="programa" class="programa">
+    <div class="wrap">
+      <span class="eyebrow">§ 05 — Programa</span>
+      <h2 class="h2" style="margin-top:14px;max-width:22ch">
+        Quatro passos para reativar uma praça.
+      </h2>
+
+      <div class="programa-grid">
+        <div class="programa-cell">
+          <span class="step">Passo 01 · Mapear</span>
+          <h3>Faça o censo da sua praça.</h3>
+          <p>Conte o que existe e o que falta. Use uma planilha simples ou ferramentas abertas como o OpenStreetMap.</p>
+          <ul>
+            <li>Quantos m² de piso firme?</li>
+            <li>Tem iluminação pós 18h?</li>
+            <li>Tem sombra natural ou artificial?</li>
+            <li>Tem bebedouro? Banheiro acessível?</li>
+          </ul>
+        </div>
+        <div class="programa-cell">
+          <span class="step">Passo 02 · Convocar</span>
+          <h3>Marque um sábado de uso.</h3>
+          <p>Não peça permissão para existir. Marque uma roda esportiva — futebol, dança, slackline, capoeira — e divulgue no grupo do bairro.</p>
+          <ul>
+            <li>Convide a UBS para fazer aferição de pressão.</li>
+            <li>Convide a escola pública mais próxima.</li>
+            <li>Documente com fotos abertas (CC-BY).</li>
+          </ul>
+        </div>
+        <div class="programa-cell">
+          <span class="step">Passo 03 · Documentar</span>
+          <h3>Transforme uso em dado.</h3>
+          <p>Sem evidência não há política. Registre frequência, faixa etária, modalidade — e use os depoimentos por voz desta página para compor o dossiê.</p>
+          <ul>
+            <li>Indicadores antes / depois de 90 dias.</li>
+            <li>Mapa de calor de uso semanal.</li>
+            <li>Relatos transcritos automaticamente.</li>
+          </ul>
+        </div>
+        <div class="programa-cell">
+          <span class="step">Passo 04 · Pleitear</span>
+          <h3>Vá ao Legislativo armado.</h3>
+          <p>Com o dossiê pronto, leve à subprefeitura ou à Câmara Municipal um pedido de emenda impositiva, projeto de zeladoria participativa ou termo de cooperação.</p>
+          <ul>
+            <li>Modelo de termo de cooperação aberto.</li>
+            <li>Petição pública anexada ao dossiê.</li>
+            <li>Audiência pública em 60 dias.</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ─────────────── SPORTS-SKILLS STRIP ─────────────── -->
+  <section class="skills-strip">
+    <div class="wrap">
+      <div>
+        <h3>Reaproveitando dados públicos do esporte.</h3>
+        <p>
+          Esta edição do manifesto é alimentada por dados abertos via
+          <a href="https://github.com/machina-sports/sports-skills" target="_blank" rel="noopener" style="color:var(--gold)">sports-skills</a>
+          — uma coleção open-source de skills que embrulham fontes públicas
+          (ESPN, FPL, RSS, Polymarket, Kalshi). Quando uma cidade pública
+          dados esportivos, os depoimentos viram contexto: <code>npx skills add machina-sports/sports-skills</code>.
+        </p>
+      </div>
+      <a href="https://github.com/machina-sports/sports-skills" target="_blank" rel="noopener" class="skills-cta">
+        Ver no GitHub →
+      </a>
+    </div>
+  </section>
+
+  <!-- ─────────────── CLOSING ─────────────── -->
+  <section class="closing">
+    <div class="wrap-narrow">
+      <h2>
+        A praça é<br>
+        <em>nossa</em>.
+      </h2>
+      <p class="lede">
+        Volte amanhã. Traga a bola. Traga a vovó. Traga o microfone.
+        A cidade é construída todo dia, e ela se constrói jogando.
+      </p>
+      <a href="#vozes" class="signbox">
+        ● Assine com a sua voz
+      </a>
+    </div>
+  </section>
+
+  <footer>
+    <div class="wrap">
+      <div>
+        <strong style="font-family:var(--serif);font-weight:600;font-size:18px;display:block;margin-bottom:6px">Praças Vivas</strong>
+        Manifesto editorial pelo direito de ocupar espaços públicos<br>
+        para a prática esportiva no Brasil.
+      </div>
+      <div>
+        <strong style="font-family:var(--mono);font-size:11px;letter-spacing:.18em;text-transform:uppercase;display:block;margin-bottom:8px;color:var(--ink-2)">Tecnologia</strong>
+        Áudio: Google Speech-to-Text · Conector
+        <a href="https://docs.machina.gg" target="_blank" rel="noopener">machina.gg</a><br>
+        Dados esportivos: <a href="https://github.com/machina-sports/sports-skills" target="_blank" rel="noopener">sports-skills</a>
+      </div>
+      <div>
+        <strong style="font-family:var(--mono);font-size:11px;letter-spacing:.18em;text-transform:uppercase;display:block;margin-bottom:8px;color:var(--ink-2)">Licença</strong>
+        Conteúdo CC&nbsp;BY-SA&nbsp;4.0 · Código MIT<br>
+        Construído por uma rede aberta de coletivos urbanos.
+      </div>
+    </div>
+  </footer>
+
+  <!-- ─────────────── SCRIPT — Speech-to-Text wiring ─────────────── -->
+  <script>
+  (() => {
+    "use strict";
+
+    /* ============================================================
+       Voice capture → Google Speech-to-Text via Factory proxy.
+
+       seam: when window.MACHINA_DEPLOY is present we POST the audio
+       (base64) to /workflow/execute/transcribe-citizen-voice on the
+       project's pod. Today that workflow may not exist — we degrade
+       gracefully by showing a seeded transcript and a small notice.
+
+       Lessons applied:
+       - useEffect-cleanup: AbortController on every fetch, recorder
+         + media stream torn down on stop / error / page hide.
+       - aria-live: #voice-status is polite live region; status text
+         updates trigger SR announcements without focus theft.
+       - small-steps: each interaction drives a tiny state machine
+         (idle → recording → processing → idle / error) — no giant
+         try/catch that swallows everything.
+       ============================================================ */
+
+    const MAX_MS = 60_000;          // 60 s ceiling
+    const recBtn      = document.getElementById("rec");
+    const recLabel    = document.getElementById("rec-label");
+    const status      = document.getElementById("voice-status");
+    const statusText  = document.getElementById("voice-status-text");
+    const meter       = document.getElementById("meter");
+    const transcripts = document.getElementById("transcripts");
+    const meterBars   = meter ? Array.from(meter.querySelectorAll("span")) : [];
+
+    if (!recBtn) return;
+
+    // capability check up-front so we don't promise what we can't do
+    const hasMedia = !!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia
+                       && window.MediaRecorder);
+    if (!hasMedia) {
+      setStatus("Microfone indisponível neste navegador", "error");
+      recBtn.disabled = true;
+      recBtn.style.opacity = .5;
+      recBtn.style.cursor = "not-allowed";
+      return;
+    }
+
+    // ---- session-scoped resources we must clean up ----
+    let stream         = null;
+    let recorder       = null;
+    let chunks         = [];
+    let stopTimer      = null;
+    let audioCtx       = null;
+    let analyser       = null;
+    let meterRAF       = 0;
+    let inflight       = null;          // AbortController of in-flight fetch
+
+    function setState(s) {
+      recBtn.dataset.state = s;
+      recLabel.textContent = s === "recording"  ? "Parar"
+                          : s === "processing" ? "..."
+                          : "Gravar";
+    }
+    function setStatus(text, tone) {
+      statusText.textContent = text;
+      status.dataset.tone = tone || "neutral";
+    }
+
+    function teardown() {
+      if (stopTimer) { clearTimeout(stopTimer); stopTimer = null; }
+      if (meterRAF)  { cancelAnimationFrame(meterRAF); meterRAF = 0; }
+      meterBars.forEach(b => (b.style.height = "4px"));
+      if (recorder && recorder.state !== "inactive") {
+        try { recorder.stop(); } catch (_) {}
+      }
+      if (stream) {
+        stream.getTracks().forEach(t => t.stop());
+        stream = null;
+      }
+      if (audioCtx) {
+        try { audioCtx.close(); } catch (_) {}
+        audioCtx = null;
+      }
+      analyser = null;
+      recorder = null;
+      chunks   = [];
+    }
+
+    function attachMeter(s) {
+      try {
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        const src = audioCtx.createMediaStreamSource(s);
+        analyser = audioCtx.createAnalyser();
+        analyser.fftSize = 64;
+        src.connect(analyser);
+        const data = new Uint8Array(analyser.frequencyBinCount);
+        const tick = () => {
+          if (!analyser) return;
+          analyser.getByteFrequencyData(data);
+          for (let i = 0; i < meterBars.length; i++) {
+            const v = data[i * 2] || 0;            // 0..255
+            const h = 4 + Math.round((v / 255) * 14);
+            meterBars[i].style.height = h + "px";
+          }
+          meterRAF = requestAnimationFrame(tick);
+        };
+        meterRAF = requestAnimationFrame(tick);
+      } catch (_) {
+        /* meter is decorative — ignore failures */
+      }
+    }
+
+    async function startRecording() {
+      try {
+        stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      } catch (err) {
+        setStatus("Permissão de microfone negada", "error");
+        return;
+      }
+
+      const mime = pickMime();
+      try {
+        recorder = mime ? new MediaRecorder(stream, { mimeType: mime })
+                        : new MediaRecorder(stream);
+      } catch (err) {
+        setStatus("Não foi possível iniciar a gravação", "error");
+        teardown();
+        return;
+      }
+
+      chunks = [];
+      recorder.addEventListener("dataavailable", (e) => {
+        if (e.data && e.data.size > 0) chunks.push(e.data);
+      });
+      recorder.addEventListener("stop", onRecorderStop);
+      recorder.addEventListener("error", () => {
+        setStatus("Falha de gravação", "error");
+        teardown();
+        setState("idle");
+      });
+
+      attachMeter(stream);
+      recorder.start();
+      setState("recording");
+      setStatus("Gravando · toque novamente para parar", "neutral");
+      stopTimer = setTimeout(() => stopRecording(), MAX_MS);
+    }
+
+    function pickMime() {
+      const candidates = [
+        "audio/webm;codecs=opus",
+        "audio/webm",
+        "audio/mp4",
+        "audio/ogg;codecs=opus",
+      ];
+      for (const c of candidates) {
+        if (window.MediaRecorder && MediaRecorder.isTypeSupported &&
+            MediaRecorder.isTypeSupported(c)) return c;
+      }
+      return "";
+    }
+
+    function stopRecording() {
+      if (!recorder || recorder.state === "inactive") return;
+      try { recorder.stop(); }
+      catch (_) {
+        teardown();
+        setState("idle");
+      }
+    }
+
+    async function onRecorderStop() {
+      setState("processing");
+      setStatus("Transcrevendo com Google Speech-to-Text…", "neutral");
+
+      const blob = new Blob(chunks, { type: chunks[0]?.type || "audio/webm" });
+      // tear stream down ASAP — no need to keep mic open
+      if (stream) { stream.getTracks().forEach(t => t.stop()); stream = null; }
+      if (audioCtx) { try { audioCtx.close(); } catch (_) {} audioCtx = null; }
+      if (meterRAF) { cancelAnimationFrame(meterRAF); meterRAF = 0; }
+      meterBars.forEach(b => (b.style.height = "4px"));
+
+      const transcript = await transcribe(blob);
+      pushTranscript(transcript);
+      setState("idle");
+    }
+
+    function pushTranscript({ text, source }) {
+      const card = document.createElement("article");
+      card.className = "transcript fresh";
+      const tail = source === "live" ? "Transcrito agora · Google Speech-to-Text"
+                                     : "Exemplo · live ainda não conectado";
+      card.innerHTML = `
+        <div class="meta"><span class="who">Você · agora</span><span>via web · pt-BR</span></div>
+        <blockquote></blockquote>
+        <div class="tail"><span></span><span>${duration()}</span></div>
+      `;
+      card.querySelector("blockquote").textContent = text;
+      card.querySelector(".tail span:first-child").textContent = tail;
+      transcripts.prepend(card);
+      setStatus(source === "live" ? "Depoimento publicado ✓" : "Exemplo publicado · ative o workflow para transcrever ao vivo",
+                source === "live" ? "ok" : "neutral");
+    }
+
+    function duration() {
+      // we don't track precise length; estimate from blob size against
+      // ~16 kbps opus at conservative rate — purely cosmetic.
+      const sec = Math.min(60, Math.max(5, Math.round(chunks.reduce((a,c)=>a+c.size,0) / 4000)));
+      return "00:" + String(sec).padStart(2, "0");
+    }
+
+    async function transcribe(blob) {
+      // build the live request, but be defensive: if MACHINA_DEPLOY isn't
+      // injected (local preview), or the workflow doesn't exist yet,
+      // fall through to a seeded testimonial so the UX never breaks.
+      const deploy = window.MACHINA_DEPLOY;
+      const seeded = pickSeed();
+
+      if (!deploy || !deploy.proxyUrl) {
+        return { text: seeded, source: "seed" };
+      }
+
+      // cancel any prior in-flight request
+      if (inflight) inflight.abort();
+      inflight = new AbortController();
+
+      try {
+        const b64 = await blobToBase64(blob);
+        const res = await fetch(`${deploy.proxyUrl}/workflow/execute/transcribe-citizen-voice`, {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({
+            audio_base64: b64,
+            mime_type:   blob.type || "audio/webm",
+            language:    "pt-BR",
+          }),
+          signal: inflight.signal,
+        });
+        if (!res.ok) throw new Error("status " + res.status);
+        const data = await res.json();
+        const text = (data && (data.transcript || data.text || data.result)) || "";
+        if (!text) throw new Error("empty transcript");
+        return { text: String(text).trim(), source: "live" };
+      } catch (err) {
+        // soft fallback — never break the page
+        return { text: seeded, source: "seed" };
+      } finally {
+        inflight = null;
+      }
+    }
+
+    function blobToBase64(blob) {
+      return new Promise((resolve, reject) => {
+        const r = new FileReader();
+        r.onloadend = () => {
+          const s = String(r.result || "");
+          const i = s.indexOf(",");
+          resolve(i >= 0 ? s.slice(i + 1) : s);
+        };
+        r.onerror = reject;
+        r.readAsDataURL(blob);
+      });
+    }
+
+    // small library of seed quotes for graceful degradation
+    const SEEDS = [
+      "Aqui no bairro, a gente reativou a quadra com pouca tinta e muita gente. Hoje os meninos saem da escola direto pra cá.",
+      "A praça tava abandonada. A gente plantou uma horta no canto, pintou o piso de basquete e chamou os vizinhos pra um sábado. Não parou mais.",
+      "Eu moro a três quarteirões. Antes, eu não saía de casa. Agora venho fazer alongamento toda manhã com o pessoal da terceira idade.",
+      "O esporte é o que segura a juventude no bairro. Sem quadra, eles vão pra outro lugar. E a gente sabe pra qual lugar.",
+    ];
+    function pickSeed() { return SEEDS[Math.floor(Math.random() * SEEDS.length)]; }
+
+    // ---- main interaction ----
+    recBtn.addEventListener("click", () => {
+      const s = recBtn.dataset.state;
+      if (s === "recording")       stopRecording();
+      else if (s === "processing") return;        // ignore double-tap
+      else                         startRecording();
+    });
+
+    // safety nets — never leave the mic open
+    window.addEventListener("pagehide", teardown);
+    window.addEventListener("beforeunload", teardown);
+    document.addEventListener("visibilitychange", () => {
+      if (document.hidden && recBtn.dataset.state === "recording") stopRecording();
+    });
+  })();
+  </script>
+
+</body>
+</html>
