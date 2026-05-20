@@ -1246,12 +1246,63 @@ def _resolve_season(season_id):
     return None, sid, None
 
 
-def _resolve_team_id(team_id):
+def _resolve_team_id(team_id, *, params=None):
+    """Resolve a `team_id` param to an ESPN numeric id.
+
+    Strict callers pass an already-resolved numeric id (or the
+    `urn:machina:team:<id>` form). The Factory agent path however
+    frequently passes a team NAME ("Barcelona", "Lakers", "FC
+    Barcelona") because that's what the user typed in the headline
+    and the agent hard-codes it into the workflow call without
+    doing a `search_team` lookup first. Without resolution, the
+    downstream ESPN call fails with `Missing team_id` silently and
+    the deployed frontend shows blank cells.
+
+    To unblock the common case without forcing every caller to
+    chain a search, we accept a non-numeric `team_id` and do an
+    internal `search_team` against the same `competition_id` /
+    `league_slug` the caller already passed (if any). The first
+    match wins. Costs one extra HTTP roundtrip but only on the
+    "name was passed" path — numeric ids short-circuit.
+    """
     if not team_id:
         return None
-    tid = str(team_id)
+    tid = str(team_id).strip()
+    if not tid:
+        return None
     if tid.startswith("urn:machina:team:"):
         tid = tid.replace("urn:machina:team:", "")
+    # Strict numeric id → ESPN team id. Return as-is.
+    if tid.isdigit():
+        return tid
+    # Best-effort name-based resolution. Pulled in lazily to avoid
+    # a forward-reference dance — search_team is defined later in
+    # this module but in scope by call time.
+    try:
+        search_params = {"query": tid}
+        if params:
+            comp = (
+                params.get("competition_id")
+                or params.get("league_slug")
+                or (params.get("command_attribute") or {}).get("competition_id")
+                or (params.get("command_attribute") or {}).get("league_slug")
+            )
+            if comp:
+                search_params["competition_id"] = comp
+        results = search_team({"params": search_params})  # noqa: F821
+        if isinstance(results, dict):
+            matches = results.get("results") or []
+            if matches:
+                team_obj = matches[0].get("team") or {}
+                resolved = team_obj.get("id") or team_obj.get("team_id")
+                if resolved:
+                    return str(resolved)
+    except Exception:  # noqa: BLE001
+        # Search itself failed — fall through and return the raw
+        # name. Caller's ESPN request will fail and return a
+        # consistent "no events" payload, which is still better
+        # than crashing on an unrelated exception.
+        pass
     return tid
 
 
@@ -2400,7 +2451,7 @@ def get_team_profile(request_data):
     team_id = params.get("team_id") or params.get("command_attribute", {}).get(
         "team_id", ""
     )
-    tid = _resolve_team_id(team_id)
+    tid = _resolve_team_id(team_id, params=params)
     if not tid:
         return {"team": {}, "players": [], "error": True, "message": "Missing team_id"}
     league_slug = params.get("league_slug") or params.get("command_attribute", {}).get(
@@ -2610,7 +2661,7 @@ def get_team_schedule(request_data):
     team_id = params.get("team_id") or params.get("command_attribute", {}).get(
         "team_id", ""
     )
-    tid = _resolve_team_id(team_id)
+    tid = _resolve_team_id(team_id, params=params)
     if not tid:
         return {"team": {}, "events": [], "error": True, "message": "Missing team_id"}
     competition_id = params.get("competition_id") or params.get(
