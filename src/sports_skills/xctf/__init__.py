@@ -19,9 +19,9 @@ def search_athlete(*, name: str, school: str) -> dict:
     profile URL from tfrrs.org and use get_athlete_profile directly.
 
     Args:
-        name: Athlete name to search for (e.g. "Lamiae Mamouni").
+        name: Athlete name to search for (e.g. "Jane Hedengren").
         school: TFRRS team slug from the team page URL
-            (e.g. "CA_college_f_California_Baptist").
+            (e.g. "UT_college_f_BYU").
     """
     result = _connector.search_athlete(name=name, school=school)
     return wrap(result)
@@ -31,9 +31,9 @@ def get_athlete_profile(*, athlete_id: str, school: str, name: str) -> dict:
     """Fetch a TFRRS athlete profile including PRs and full results history.
 
     Args:
-        athlete_id: TFRRS numeric athlete ID (e.g. "8579610").
-        school: School slug as it appears in the TFRRS URL (e.g. "California_Baptist").
-        name: Athlete name slug as it appears in the TFRRS URL (e.g. "Lamiae_Mamouni").
+        athlete_id: TFRRS numeric athlete ID (e.g. "9230145").
+        school: School slug as it appears in the TFRRS URL (e.g. "BYU").
+        name: Athlete name slug as it appears in the TFRRS URL (e.g. "Jane_Hedengren").
     """
     result = _connector.get_athlete_profile(
         athlete_id=athlete_id, school=school, name=name
