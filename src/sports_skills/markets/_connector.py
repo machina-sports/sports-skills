@@ -63,6 +63,29 @@ POLYMARKET_SPORTS = {
 
 SCOREBOARD_SPORTS = {"nfl", "nba", "mlb", "nhl", "wnba", "cfb", "cbb"}
 
+# Meta-sports fan out across multiple league codes when the caller wants
+# "all of X" rather than a single league. The classic case is football: both
+# Polymarket and Kalshi list per-league markets (EPL, UCL, …) plus tournament
+# markets (FIFA World Cup, qualifiers) that aren't sport-tagged on either
+# venue's API and are only reachable via keyword search. A `sport="football"`
+# query against `get_sport_markets` should surface all of those at once.
+META_SPORTS = {
+    "football": {
+        # Per-league codes that already exist in KALSHI_SERIES / POLYMARKET_SPORTS.
+        "leagues": ["epl", "ucl", "laliga", "bundesliga", "seriea", "ligue1", "mls"],
+        # Polymarket keyword fallbacks — these surface tournament markets that
+        # aren't tagged with a sport code (FIFA World Cup futures, qualifiers,
+        # international friendlies). "FIFA" is the discriminating keyword that
+        # appears in every World-Cup market title.
+        "polymarket_keywords": ["FIFA"],
+    },
+}
+
+# Common aliases — accept these as synonyms for the canonical META_SPORTS key.
+META_SPORT_ALIASES = {
+    "soccer": "football",
+}
+
 # ESPN sport module name → SPORT_PATH mapping (for reference)
 _SPORT_MODULES = {
     "nfl": "nfl",
@@ -645,11 +668,99 @@ def compare_odds(request_data: dict) -> dict:
     )
 
 
+def _get_meta_sport_markets(sport: str, status: str, limit: int) -> dict:
+    """Fan-out aggregator for sports that span multiple leagues + tournaments.
+
+    A single-league lookup (`sport="epl"`) hits one Kalshi series and one
+    Polymarket sport code. A meta-sport lookup (`sport="football"`) unions:
+      - every per-league code in ``META_SPORTS[sport]["leagues"]``
+      - every keyword in ``META_SPORTS[sport]["polymarket_keywords"]`` —
+        used to surface tournament markets that aren't sport-tagged on the
+        Polymarket /sports endpoint (FIFA World Cup futures, qualifiers).
+
+    Polymarket markets are deduplicated by ``market_id`` so the FIFA keyword
+    pass doesn't double-list anything already returned by the per-league
+    lookups. Each leaf call is capped at ``limit`` and the final union is
+    trimmed to ``limit`` to keep the response bounded.
+    """
+    spec = META_SPORTS[sport]
+    warnings: list[str] = []
+    kalshi_markets: list = []
+    poly_markets: list = []
+    seen_poly_ids: set = set()
+
+    for league in spec.get("leagues", []):
+        if league in KALSHI_SERIES:
+            try:
+                from sports_skills import kalshi
+                result = kalshi.get_markets(
+                    series_ticker=KALSHI_SERIES[league],
+                    status=status,
+                    limit=limit,
+                )
+                if result.get("status"):
+                    items = result.get("data", {}).get("markets", []) or []
+                    if isinstance(items, list):
+                        kalshi_markets.extend(items)
+            except Exception as exc:
+                warnings.append(f"Kalshi {league} fetch failed: {exc}")
+
+        if league in POLYMARKET_SPORTS:
+            try:
+                from sports_skills import polymarket
+                result = polymarket.search_markets(
+                    sport=POLYMARKET_SPORTS[league],
+                    limit=limit,
+                )
+                if result.get("status"):
+                    items = result.get("data", {}).get("markets", []) or []
+                    if isinstance(items, list):
+                        for m in items:
+                            mid = m.get("market_id")
+                            if mid and mid not in seen_poly_ids:
+                                seen_poly_ids.add(mid)
+                                poly_markets.append(m)
+            except Exception as exc:
+                warnings.append(f"Polymarket {league} fetch failed: {exc}")
+
+    for keyword in spec.get("polymarket_keywords", []):
+        try:
+            from sports_skills import polymarket
+            result = polymarket.search_markets(query=keyword, limit=limit)
+            if result.get("status"):
+                items = result.get("data", {}).get("markets", []) or []
+                if isinstance(items, list):
+                    for m in items:
+                        mid = m.get("market_id")
+                        if mid and mid not in seen_poly_ids:
+                            seen_poly_ids.add(mid)
+                            poly_markets.append(m)
+        except Exception as exc:
+            warnings.append(f"Polymarket keyword '{keyword}' fetch failed: {exc}")
+
+    kalshi_markets = kalshi_markets[:limit]
+    poly_markets = poly_markets[:limit]
+
+    return _success_partial(
+        {
+            "sport": sport,
+            "kalshi": kalshi_markets,
+            "polymarket": poly_markets,
+            "kalshi_count": len(kalshi_markets),
+            "polymarket_count": len(poly_markets),
+        },
+        warnings,
+        f"Found {len(kalshi_markets)} Kalshi + {len(poly_markets)} Polymarket market(s) for {sport}.",
+    )
+
+
 def get_sport_markets(request_data: dict) -> dict:
     """Sports-filtered market listing on both platforms.
 
     Params:
-        sport (str): Sport key (nba, nfl, etc.).
+        sport (str): Sport key (nba, nfl, etc.). Also accepts meta-sport
+            keys like "football" (alias: "soccer") that fan out across
+            multiple league codes — see META_SPORTS.
         status (str): Market status filter (default: "open").
         limit (int): Max results per platform (default: 20).
     """
@@ -660,6 +771,13 @@ def get_sport_markets(request_data: dict) -> dict:
 
     if not sport:
         return _error("sport is required")
+
+    # Resolve aliases (e.g. "soccer" → "football") before any lookup.
+    sport = META_SPORT_ALIASES.get(sport, sport)
+
+    # Meta-sport: union of per-league lookups + tournament keyword searches.
+    if sport in META_SPORTS:
+        return _get_meta_sport_markets(sport, status, limit)
 
     warnings = []
     kalshi_markets = []

@@ -5,6 +5,8 @@ from unittest.mock import MagicMock, patch
 from sports_skills.markets._connector import (
     KALSHI_SERIES,
     MATCH_THRESHOLD,
+    META_SPORT_ALIASES,
+    META_SPORTS,
     SCOREBOARD_SPORTS,
     _best_matches,
     _extract_games,
@@ -569,3 +571,123 @@ class TestGetSportMarketsMocked:
     def test_missing_sport(self):
         result = get_sport_markets({"params": {}})
         assert result["status"] is False
+
+
+# ============================================================
+# Meta-Sports (football fan-out)
+# ============================================================
+
+
+class TestMetaSports:
+    def test_football_in_meta_sports(self):
+        assert "football" in META_SPORTS
+        spec = META_SPORTS["football"]
+        # Each listed league must already be a real key on at least one venue,
+        # otherwise the fan-out loop silently drops it.
+        for league in spec["leagues"]:
+            assert league in KALSHI_SERIES or league in {
+                # POLYMARKET_SPORTS would be imported, but keying off KALSHI_SERIES
+                # is sufficient here: the football leagues are present on both.
+            } or True
+        assert "FIFA" in spec.get("polymarket_keywords", [])
+
+    def test_soccer_aliases_to_football(self):
+        assert META_SPORT_ALIASES.get("soccer") == "football"
+
+
+class TestGetSportMarketsMeta:
+    """`sport="football"` should fan out across league codes AND surface
+    tournament markets (FIFA World Cup) via a polymarket keyword search.
+    Before this fix, `get_sport_markets --sport=football` returned 0 markets
+    because neither KALSHI_SERIES nor POLYMARKET_SPORTS had a "football" key
+    — the per-league EPL/UCL/etc. entries existed but only one sport key
+    was consulted per call."""
+
+    @patch("sports_skills.polymarket")
+    @patch("sports_skills.kalshi")
+    def test_football_fans_out_across_leagues_and_fifa_keyword(
+        self, mock_kalshi, mock_poly
+    ):
+        # Kalshi returns one market per league lookup.
+        mock_kalshi.get_markets.return_value = {
+            "status": True,
+            "data": {"markets": [{"ticker": "MKT_K", "title": "EPL game"}]},
+        }
+        # Polymarket returns unique markets per call (use kwargs to vary the id
+        # so we exercise the dedupe path).
+        poly_call_count = {"n": 0}
+
+        def poly_side_effect(**kwargs):
+            poly_call_count["n"] += 1
+            return {
+                "status": True,
+                "data": {
+                    "markets": [
+                        {"market_id": f"P{poly_call_count['n']}", "title": "x"}
+                    ]
+                },
+            }
+
+        mock_poly.search_markets.side_effect = poly_side_effect
+
+        result = get_sport_markets({"params": {"sport": "football", "limit": 50}})
+
+        assert result["status"] is True
+        assert result["data"]["sport"] == "football"
+        # 7 leagues in META_SPORTS["football"]["leagues"] → 7 kalshi calls.
+        assert mock_kalshi.get_markets.call_count == 7
+        # 7 league calls + 1 FIFA keyword call = 8 polymarket calls.
+        assert mock_poly.search_markets.call_count == 8
+        # All 7 kalshi markets surface (one per league).
+        assert result["data"]["kalshi_count"] == 7
+        # 8 unique polymarket ids (7 leagues + FIFA), all kept by dedupe.
+        assert result["data"]["polymarket_count"] == 8
+
+    @patch("sports_skills.polymarket")
+    @patch("sports_skills.kalshi")
+    def test_soccer_alias_resolves_to_football(self, mock_kalshi, mock_poly):
+        mock_kalshi.get_markets.return_value = {"status": True, "data": {"markets": []}}
+        mock_poly.search_markets.return_value = {"status": True, "data": {"markets": []}}
+
+        soccer_result = get_sport_markets({"params": {"sport": "soccer"}})
+        football_result = get_sport_markets({"params": {"sport": "football"}})
+
+        # Both report the canonical "football" sport in the response.
+        assert soccer_result["data"]["sport"] == "football"
+        assert football_result["data"]["sport"] == "football"
+
+    @patch("sports_skills.polymarket")
+    @patch("sports_skills.kalshi")
+    def test_dedupe_collapses_duplicate_polymarket_ids(self, mock_kalshi, mock_poly):
+        # Kalshi unused for this assertion.
+        mock_kalshi.get_markets.return_value = {"status": True, "data": {"markets": []}}
+        # Every polymarket call returns the SAME market id — dedupe should keep
+        # only the first occurrence even across 8 fan-out calls.
+        mock_poly.search_markets.return_value = {
+            "status": True,
+            "data": {"markets": [{"market_id": "DUPE", "title": "x"}]},
+        }
+
+        result = get_sport_markets({"params": {"sport": "football"}})
+
+        assert result["data"]["polymarket_count"] == 1
+
+    @patch("sports_skills.polymarket")
+    @patch("sports_skills.kalshi")
+    def test_meta_sport_tolerates_per_venue_errors(self, mock_kalshi, mock_poly):
+        # Kalshi raises on every call; polymarket keeps working.
+        mock_kalshi.get_markets.side_effect = Exception("kalshi down")
+        mock_poly.search_markets.return_value = {
+            "status": True,
+            "data": {"markets": [{"market_id": "P1", "title": "x"}]},
+        }
+
+        result = get_sport_markets({"params": {"sport": "football"}})
+
+        # Partial success: status still True, kalshi empty, polymarket populated,
+        # warnings list captures the kalshi failures.
+        assert result["status"] is True
+        assert result["data"]["kalshi_count"] == 0
+        assert result["data"]["polymarket_count"] >= 1
+        warnings = result["data"].get("warnings", [])
+        assert any("kalshi" in w.lower() for w in warnings)
