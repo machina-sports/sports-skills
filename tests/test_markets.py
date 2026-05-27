@@ -7,6 +7,7 @@ from sports_skills.markets._connector import (
     MATCH_THRESHOLD,
     META_SPORT_ALIASES,
     META_SPORTS,
+    POLYMARKET_SPORTS,
     SCOREBOARD_SPORTS,
     _best_matches,
     _extract_games,
@@ -585,10 +586,7 @@ class TestMetaSports:
         # Each listed league must already be a real key on at least one venue,
         # otherwise the fan-out loop silently drops it.
         for league in spec["leagues"]:
-            assert league in KALSHI_SERIES or league in {
-                # POLYMARKET_SPORTS would be imported, but keying off KALSHI_SERIES
-                # is sufficient here: the football leagues are present on both.
-            } or True
+            assert league in KALSHI_SERIES or league in POLYMARKET_SPORTS, league
         assert "FIFA" in spec.get("polymarket_keywords", [])
 
     def test_soccer_aliases_to_football(self):
@@ -614,7 +612,9 @@ class TestGetSportMarketsMeta:
             "data": {"markets": [{"ticker": "MKT_K", "title": "EPL game"}]},
         }
         # Polymarket returns unique markets per call (use kwargs to vary the id
-        # so we exercise the dedupe path).
+        # so we exercise the dedupe path). Fixture uses `id` to match the real
+        # Polymarket payload shape — `market_id` is the renamed key applied
+        # downstream in normalize_market, not present on raw search results.
         poly_call_count = {"n": 0}
 
         def poly_side_effect(**kwargs):
@@ -623,7 +623,7 @@ class TestGetSportMarketsMeta:
                 "status": True,
                 "data": {
                     "markets": [
-                        {"market_id": f"P{poly_call_count['n']}", "title": "x"}
+                        {"id": f"P{poly_call_count['n']}", "title": "x"}
                     ]
                 },
             }
@@ -665,7 +665,7 @@ class TestGetSportMarketsMeta:
         # only the first occurrence even across 8 fan-out calls.
         mock_poly.search_markets.return_value = {
             "status": True,
-            "data": {"markets": [{"market_id": "DUPE", "title": "x"}]},
+            "data": {"markets": [{"id": "DUPE", "title": "x"}]},
         }
 
         result = get_sport_markets({"params": {"sport": "football"}})
@@ -679,7 +679,7 @@ class TestGetSportMarketsMeta:
         mock_kalshi.get_markets.side_effect = Exception("kalshi down")
         mock_poly.search_markets.return_value = {
             "status": True,
-            "data": {"markets": [{"market_id": "P1", "title": "x"}]},
+            "data": {"markets": [{"id": "P1", "title": "x"}]},
         }
 
         result = get_sport_markets({"params": {"sport": "football"}})

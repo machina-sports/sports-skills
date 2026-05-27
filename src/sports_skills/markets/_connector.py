@@ -678,10 +678,12 @@ def _get_meta_sport_markets(sport: str, status: str, limit: int) -> dict:
         used to surface tournament markets that aren't sport-tagged on the
         Polymarket /sports endpoint (FIFA World Cup futures, qualifiers).
 
-    Polymarket markets are deduplicated by ``market_id`` so the FIFA keyword
-    pass doesn't double-list anything already returned by the per-league
-    lookups. Each leaf call is capped at ``limit`` and the final union is
-    trimmed to ``limit`` to keep the response bounded.
+    Polymarket markets are deduplicated by ``id`` (the raw key in
+    Polymarket payloads; older code paths also surface it as ``market_id``,
+    so both are checked) so the FIFA keyword pass doesn't double-list
+    anything already returned by the per-league lookups. Each leaf call is
+    capped at ``limit`` and the final union is trimmed to ``limit`` to keep
+    the response bounded.
     """
     spec = META_SPORTS[sport]
     warnings: list[str] = []
@@ -716,7 +718,7 @@ def _get_meta_sport_markets(sport: str, status: str, limit: int) -> dict:
                     items = result.get("data", {}).get("markets", []) or []
                     if isinstance(items, list):
                         for m in items:
-                            mid = m.get("market_id")
+                            mid = m.get("id") or m.get("market_id")
                             if mid and mid not in seen_poly_ids:
                                 seen_poly_ids.add(mid)
                                 poly_markets.append(m)
@@ -731,7 +733,7 @@ def _get_meta_sport_markets(sport: str, status: str, limit: int) -> dict:
                 items = result.get("data", {}).get("markets", []) or []
                 if isinstance(items, list):
                     for m in items:
-                        mid = m.get("market_id")
+                        mid = m.get("id") or m.get("market_id")
                         if mid and mid not in seen_poly_ids:
                             seen_poly_ids.add(mid)
                             poly_markets.append(m)
