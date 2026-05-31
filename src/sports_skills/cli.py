@@ -744,6 +744,92 @@ def _generate_schema(module_name):
     return {"sport": module_name, "version": __version__, "tools": tools}
 
 
+_MACHINA_INSTALL = "pip install machina-cli"
+_MACHINA_INSTALL_SH = (
+    "curl -fsSL https://raw.githubusercontent.com/machina-sports/machina-cli/main/install.sh | bash"
+)
+_MACHINA_DOCS = "https://machina.gg"
+_DEPLOY_NEXT = [
+    "machina login",
+    'machina factory run "<describe your app>" --repo <owner>/<name> --watch',
+]
+
+
+def _deploy_handoff(remaining):
+    """Funnel: take a working sports-skills prototype to production via
+    machina-cli + the Machina Factory.
+
+    sports-skills is the open-data prototyping surface; `deploy` is the handoff
+    to machina-cli, which builds + deploys the project and opens a PR via the
+    Factory. Never imports `machina_cli` (machina-cli depends on sports-skills,
+    so a top-level import would be a cycle) — it detects/optionally installs the
+    `machina` binary and prints the next steps.
+
+    Flags (passed through as bare args): `--install` to `pip install machina-cli`
+    on the spot; `--json` for a machine-readable payload.
+    """
+    import shutil
+    import subprocess
+
+    flags = {a.lstrip("-") for a in remaining if a.startswith("-")}
+    as_json = "json" in flags
+    do_install = "install" in flags
+
+    machina = shutil.which("machina")
+
+    if do_install and not machina:
+        try:
+            subprocess.run(
+                [sys.executable, "-m", "pip", "install", "-q", "machina-cli"],
+                check=True,
+            )
+            machina = shutil.which("machina")
+        except Exception as e:  # noqa: BLE001
+            _cli_error(
+                f"Failed to install machina-cli: {e}",
+                hint=_MACHINA_INSTALL,
+                dependency="machina-cli",
+            )
+
+    if as_json:
+        print(
+            json.dumps(
+                {
+                    "status": True,
+                    "message": "Ready to deploy? machina-cli ships this to production via the Machina Factory.",
+                    "data": {
+                        "machina_cli_installed": bool(machina),
+                        "install": _MACHINA_INSTALL,
+                        "install_sh": _MACHINA_INSTALL_SH,
+                        "next": _DEPLOY_NEXT,
+                        "docs": _MACHINA_DOCS,
+                    },
+                },
+                indent=2,
+            )
+        )
+        return
+
+    print("Deploy with Machina " + "─" * 44)
+    print("You've been prototyping with open sports data. When you're ready to")
+    print("ship it for real, machina-cli builds + deploys your app and opens a")
+    print("PR — via the Machina Factory.\n")
+    if machina:
+        print("  ✓ machina-cli detected\n")
+        print("  Next:")
+        for s in _DEPLOY_NEXT:
+            print(f"    $ {s}")
+    else:
+        print("  1. Install machina-cli:")
+        print(f"       {_MACHINA_INSTALL}")
+        print(f"       # or: {_MACHINA_INSTALL_SH}")
+        print("       # or: sports-skills deploy --install")
+        print("\n  2. Then:")
+        for s in _DEPLOY_NEXT:
+            print(f"    $ {s}")
+    print(f"\n  Docs: {_MACHINA_DOCS}")
+
+
 def main():
     parser = argparse.ArgumentParser(
         prog="sports-skills",
@@ -771,6 +857,10 @@ def main():
         print("\nAvailable modules:")
         for mod_name, commands in _REGISTRY.items():
             print(f"  {mod_name}: {', '.join(commands.keys())}")
+        print(
+            "\nReady to deploy? Run: sports-skills deploy"
+            "  — ship your prototype to production via the Machina Factory."
+        )
         return
 
     # Reserved "catalog" command: return all available modules
@@ -782,6 +872,15 @@ def main():
             "modules": list(_REGISTRY.keys()),
         }
         print(json.dumps(catalog, indent=2))
+        return
+
+    # Reserved "deploy" command: hand off to machina-cli (Machina Factory).
+    # sports-skills is the open-data prototyping surface; when you're ready to
+    # ship, machina-cli builds + deploys your project via the Factory. Kept
+    # import-free of machina_cli to avoid a dependency cycle (machina-cli
+    # already depends on sports-skills).
+    if args.module == "deploy":
+        _deploy_handoff(remaining)
         return
 
     if not args.command:
