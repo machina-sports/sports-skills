@@ -1,3 +1,8 @@
+## [0.24.4]
+
+### Added
+- **`machina` skill restored:** restored the prompt-only `machina` gateway skill to the open-source repository and documentation.
+
 ## [0.24.2]
 
 ### Fixed
