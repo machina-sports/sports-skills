@@ -1,3 +1,16 @@
+## [0.24.0]
+
+### Added
+- **`skills/metadata/SKILL.md`** — restored the missing SKILL.md for the metadata module. The Python module and CLI commands have shipped since PR #31 but the SKILL.md was never written, so agents couldn't discover the skill via the standard SKILL.md spec.
+
+### Changed
+- **`skills/machina/SKILL.md`** — rewrote to add the required YAML frontmatter (was the only SKILL.md in the repo missing it), explicit project-selection step, common-errors recovery table, and an honest description of how the Machina MCP server is reached (via the agent harness's MCP config, not via `machina-cli`).
+- **README** — aligned every per-skill command table with the current CLI surface. Counts updated across football, NFL (now includes nflverse-backed commands), NBA (live commands), WNBA, NHL, MLB, CFB, CBB (March Madness BPI tools), golf, F1 (telemetry / comparisons), Polymarket (CLOB trading), Kalshi, plus full sections for the previously undocumented `betting`, `markets`, `sports-reporter`, `machina`, and `metadata` skills.
+- **`site/index.html`** — refreshed hero badges, stats, all 15 existing skill cards, added 6 new skill cards (xctf, metadata, betting, markets, sports-reporter, machina), and added XC&Track / Volleyball / Tools&Workflows / Metadata cards to the Coverage section.
+
+### Fixed
+- **CI:** Migrated the `Sports Skills Site Build` workflow from Docker Hub to GitHub Container Registry (ghcr.io). Pushes now use the auto-provisioned `GITHUB_TOKEN` instead of long-lived `DOCKER_USERNAME` / `DOCKER_PASSWORD` / `REGISTRY_URL` secrets, which had been rejecting pushes since v0.20.0 (five consecutive release failures). The AKS deployment's `imagePullSecret` needs to be updated cluster-side to authenticate against ghcr.io.
+
 ## [0.9.4]
 
 ### Changed

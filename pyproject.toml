@@ -4,8 +4,8 @@ build-backend = "hatchling.build"
 
 [project]
 name = "sports-skills"
-version = "0.20.0"
-description = "Lightweight Python SDK for sports data and prediction markets — Kalshi, Polymarket, football, F1, NFL, NBA, WNBA, NHL, MLB, tennis, CFB, CBB, golf, volleyball, betting analysis, and news"
+version = "0.24.0"
+description = "Lightweight Python SDK for sports data — football, F1, NFL, NBA, WNBA, NHL, MLB, tennis, CFB, CBB, golf, volleyball, prediction markets, betting analysis, and news"
 readme = "README_PYPI.md"
 requires-python = ">=3.9"
 license = "MIT"
@@ -31,7 +31,7 @@ dependencies = [
 
 [project.optional-dependencies]
 f1 = ["fastf1>=3.0", "pandas>=2.0"]
-nfl = ["nfl-data-py>=0.3"]
+nfl = ["nflreadpy>=0.1", "nfl-data-py>=0.3"]
 nba = []
 wnba = []
 nhl = []
@@ -41,7 +41,7 @@ cfb = []
 cbb = []
 golf = []
 polymarket = ["py_clob_client>=0.1.8"]
-all = ["fastf1>=3.0", "pandas>=2.0", "nfl-data-py>=0.3", "py_clob_client>=0.1.8"]
+all = ["fastf1>=3.0", "pandas>=2.0", "nflreadpy>=0.1", "nfl-data-py>=0.3", "py_clob_client>=0.1.8"]
 dev = ["ruff>=0.9", "pytest>=8.0", "fastf1>=3.0", "pandas>=2.0"]
 site = ["jinja2>=3.1", "pyyaml>=6.0"]
 

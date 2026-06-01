@@ -21,6 +21,7 @@ MODULES = [
     "sports_skills.golf",
     "sports_skills.tennis",
     "sports_skills.volleyball",
+    "sports_skills.xctf",
     "sports_skills.football",
     "sports_skills.metadata",
     "sports_skills.polymarket",
@@ -77,6 +78,12 @@ def test_cli_registry_commands_callable():
             fn = getattr(mod, command_name, None)
             assert fn is not None, f"{module_name}.{command_name} not found"
             assert callable(fn), f"{module_name}.{command_name} is not callable"
+
+
+def test_nflverse_provider_module_imports():
+    """The nflverse provider module should import without optional deps installed."""
+    mod = importlib.import_module("sports_skills.nfl._nflverse")
+    assert mod is not None
 
 
 def test_response_envelope():

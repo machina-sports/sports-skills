@@ -106,7 +106,7 @@
         </div>
         <div class="skill-desc">{{ skill.description }}</div>
         <div class="skill-meta">
-          <span>{{ skill.command_count }} commands</span>
+          <span>{% if skill.command_count %}{{ skill.command_count }} commands{% else %}prompt-only{% endif %}</span>
           <span>{{ skill.data_source }}</span>
         </div>
       </a>

@@ -39,3 +39,6 @@ node_modules/
 .cursor/
 .pi/
 .windsurf/
+
+# Skills lockfile (local machine only)
+skills-lock.json

@@ -71,7 +71,7 @@
     </div>
 
     <div class="metadata-row">
-      <span>{{ skill.command_count }} commands</span>
+      <span>{% if skill.command_count %}{{ skill.command_count }} commands{% else %}prompt-only{% endif %}</span>
       <span>{{ skill.data_source }}</span>
       {% if skill.version %}
       <span>v{{ skill.version }}</span>
@@ -159,7 +159,7 @@
         </div>
         <div class="skill-desc">{{ s.description }}</div>
         <div class="skill-meta">
-          <span>{{ s.command_count }} commands</span>
+          <span>{% if s.command_count %}{{ s.command_count }} commands{% else %}prompt-only{% endif %}</span>
           <span>{{ s.data_source }}</span>
         </div>
       </a>

@@ -2,7 +2,6 @@
 """Build the sports-skills.sh marketplace from SKILL.md files."""
 
 import json
-import os
 import re
 import shutil
 from pathlib import Path
@@ -46,6 +45,7 @@ CATEGORY_MAP = {
     "golf-data": "Golf",
     "fastf1": "Motorsport",
     "volleyball-data": "Other",
+    "xctf-data": "Other",
     "sports-news": "Other",
     "sports-reporter": "Other",
     "machina": "Machina Skills",
@@ -95,6 +95,8 @@ DATA_SOURCES = {
     "golf-data": "ESPN",
     "fastf1": "FastF1 (open-source)",
     "volleyball-data": "Nevobo API",
+    "xctf-data": "TFRRS, The Stride Report",
+    "metadata": "TheSportsDB",
     "sports-news": "RSS / Google News",
     "sports-reporter": "RSS / Google News",
     "machina": "Machina Platform",
@@ -110,45 +112,78 @@ def parse_skill_md(path: Path) -> dict | None:
     """Parse a SKILL.md file into a dict with frontmatter and content."""
     text = path.read_text(encoding="utf-8")
 
-    # Split frontmatter
-    if text.startswith("---"):
-        parts = text.split("---", 2)
-        if len(parts) >= 3:
-            fm = yaml.safe_load(parts[1]) or {}
-            body = parts[2].strip()
-        else:
-            return None
-    elif text.startswith("# "):
-        # No frontmatter (e.g. machina SKILL.md)
-        fm = {}
-        body = text.strip()
-    else:
+    # Split frontmatter. Every SKILL.md in this repo is expected to have YAML
+    # frontmatter per the Agent Skills spec — skip files that don't.
+    if not text.startswith("---"):
         return None
+    parts = text.split("---", 2)
+    if len(parts) < 3:
+        return None
+    fm = yaml.safe_load(parts[1]) or {}
+    body = parts[2].strip()
 
     return {"frontmatter": fm, "body": body}
 
 
 def extract_commands(body: str) -> list[dict]:
-    """Extract commands from markdown tables with | Command | Description | headers."""
+    """Extract commands from markdown tables that begin with a `Command` column.
+
+    Handles both 2-column tables (`| Command | Description |`) and wider tables
+    like sports-news / metadata (`| Command | Required | Optional | Description |`)
+    by taking the first cell as the name and the last cell as the description.
+
+    Falls back to parsing `sports-skills <module> <cmd>` invocations from
+    `## Quick Start` bash blocks for skills (betting, markets) that document
+    commands as one-liners rather than tables.
+    """
     commands = []
+    seen = set()
+
+    # Pass 1: markdown table starting with "| Command |" (any number of columns).
     lines = body.split("\n")
     in_table = False
     for line in lines:
         stripped = line.strip()
-        if re.match(r"\|\s*Command\s*\|\s*Description\s*\|", stripped, re.IGNORECASE):
+        if re.match(r"^\|\s*Command\s*\|", stripped, re.IGNORECASE):
             in_table = True
             continue
-        if in_table and stripped.startswith("|") and re.match(r"\|\s*[-:]+", stripped):
+        if in_table and stripped.startswith("|") and re.match(r"^\|\s*[-:]+", stripped):
             continue  # separator row
         if in_table and stripped.startswith("|"):
             cells = [c.strip() for c in stripped.split("|")[1:-1]]
             if len(cells) >= 2:
                 name = re.sub(r"`", "", cells[0]).strip()
-                desc = cells[1].strip()
-                if name and not name.startswith("---"):
+                desc = cells[-1].strip()
+                if name and not name.startswith("---") and name not in seen:
                     commands.append({"name": name, "description": desc})
+                    seen.add(name)
         elif in_table and not stripped.startswith("|"):
             in_table = False
+
+    if commands:
+        return commands
+
+    # Pass 2: parse Quick Start bash blocks for `sports-skills <module> <cmd>` lines.
+    in_quickstart = False
+    in_code = False
+    for line in lines:
+        stripped = line.strip()
+        if re.match(r"^#+\s*Quick Start", stripped, re.IGNORECASE):
+            in_quickstart = True
+            continue
+        if in_quickstart and re.match(r"^#+\s", stripped):
+            in_quickstart = False
+            continue
+        if in_quickstart and stripped.startswith("```"):
+            in_code = not in_code
+            continue
+        if in_quickstart and in_code:
+            m = re.match(r"^\s*sports-skills\s+\S+\s+(\w+)", stripped)
+            if m:
+                name = m.group(1)
+                if name not in seen:
+                    commands.append({"name": name, "description": ""})
+                    seen.add(name)
     return commands
 
 

@@ -1,7 +1,7 @@
 ---
 name: nfl-data
 description: |
-  NFL data via ESPN public endpoints — scores, standings, rosters, schedules, game summaries, play-by-play, win probability, injuries, transactions, futures, depth charts, team/player stats, leaders, and news. Zero config, no API keys.
+  NFL data via ESPN public endpoints plus an nflverse backend for schedules, weekly rosters, play-by-play, and normalized player/team stat tables. Zero config, no API keys.
 
   Use when: user asks about NFL scores, standings, team rosters, schedules, game stats, box scores, play-by-play, injuries, transactions, betting futures, depth charts, team/player statistics, or NFL news.
   Don't use when: user asks about football/soccer (use football-data), college football (use cfb-data), or other sports.
@@ -32,6 +32,12 @@ python3 --version  # check version
 # On macOS with Homebrew: /opt/homebrew/bin/python3.12 -m pip install sports-skills
 ```
 No API keys required.
+
+For nflverse-backed commands (`get_nflverse_*`), install the NFL extra:
+```bash
+pip install sports-skills[nfl]
+```
+This installs `nfl-data-py` (or use `nflreadpy` if preferred). Parquet support (`pyarrow`) is also needed for most nflverse data beyond schedules.
 
 ## Quick Start
 
@@ -84,6 +90,11 @@ Derive the current year from the system prompt's date (e.g., `currentDate: 2026-
 | `get_depth_chart` | Depth chart for a team |
 | `get_team_stats` | Team statistical profile |
 | `get_player_stats` | Player statistical profile |
+| `get_nflverse_schedule` | nflverse-backed schedules/results table |
+| `get_nflverse_weekly_rosters` | nflverse-backed weekly rosters |
+| `get_nflverse_player_stats` | nflverse-backed normalized player stat rows |
+| `get_nflverse_team_stats` | nflverse-backed normalized team stat rows |
+| `get_nflverse_play_by_play` | nflverse-backed play-by-play rows |
 
 See `references/api-reference.md` for full parameter lists and return shapes.
 
@@ -130,6 +141,20 @@ Actions:
 2. Call `get_player_stats(player_id="3139477", season_year=<derived_year>)`
 Result: Season stats by category with value, rank, and per-game averages
 
+Example 7: nflverse weekly rosters
+User says: "Give me the Week 1 Chiefs roster from the data table backend"
+Actions:
+1. Derive season year from `currentDate`
+2. Call `get_nflverse_weekly_rosters(season=<derived_year>, week=1, team="KC")`
+Result: Weekly roster rows normalized for team, player, position, jersey, and status
+
+Example 8: nflverse play-by-play
+User says: "Pull Bills Week 3 play-by-play"
+Actions:
+1. Derive season year from `currentDate`
+2. Call `get_nflverse_play_by_play(season=<derived_year>, week=3, team="BUF")`
+Result: Play rows with game_id, down/distance, description, EPA, WP/WPA, and score state
+
 ## Commands that DO NOT exist — never call these
 
 - ~~`get_odds`~~ / ~~`get_betting_odds`~~ — not available. For prediction market odds, use the polymarket or kalshi skill.
@@ -151,6 +176,10 @@ When a command fails, **do not surface raw errors to the user**. Instead:
 Error: `sports-skills` command not found
 Cause: Package not installed
 Solution: Run `pip install sports-skills`. If not on PyPI, install from GitHub: `pip install git+https://github.com/machina-sports/sports-skills.git`
+
+Error: nflverse backend unavailable
+Cause: Optional NFL backend extra not installed
+Solution: Install `sports-skills[nfl]` so the nflverse provider (`nflreadpy` or compatibility fallback) is available
 
 Error: Team not found by ID
 Cause: Wrong or outdated ESPN team ID used

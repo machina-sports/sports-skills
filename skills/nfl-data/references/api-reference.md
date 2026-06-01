@@ -110,6 +110,54 @@ Get full player statistical profile for a season.
 
 Returns `categories[]` with detailed stats including value, rank, and per-game averages.
 
+### get_nflverse_schedule
+Get schedules/results through the nflverse backend.
+- `season` (int, optional): Season year
+- `week` (int, optional): NFL week filter
+
+Returns `events[]` with `game_id`, teams, scores, date/time, line fields, and location.
+
+### get_nflverse_weekly_rosters
+Get weekly roster snapshots through the nflverse backend.
+- `season` (int, optional): Season year
+- `week` (int, optional): NFL week filter
+- `team` (str, optional): Team abbreviation filter (e.g. `KC`)
+
+Returns `players[]` with normalized roster fields: team, player_id, player_name, position, jersey_number, status, college, and experience fields when available.
+
+### get_nflverse_player_stats
+Get normalized nflverse player stat rows.
+- `season` (int, optional): Season year
+- `player_id` (str, optional): nflverse/GSIS player identifier
+- `team` (str, optional): Team abbreviation filter
+- `position` (str, optional): Position filter
+
+Returns `players[]`, each with identity fields (`player_id`, `player_name`, `position`, `team`) plus a `stats` object containing backend columns (completions, passing_yards, passing_tds, rushing_yards, etc.).
+
+### get_nflverse_team_stats
+Get normalized nflverse team stat rows.
+- `season` (int, optional): Season year
+- `team` (str, optional): Team abbreviation filter
+- `week` (int, optional): Week filter when available
+
+Returns `teams[]`, each with team/season context plus a `stats` object containing backend columns. Note: with `nfl_data_py`, team stats fall back to schedule data (game-by-game results) since a dedicated team stats endpoint is not available.
+
+### get_nflverse_play_by_play
+Get normalized nflverse play-by-play rows.
+- `season` (int, optional): Season year
+- `week` (int, optional): Week filter
+- `team` (str, optional): Team abbreviation filter
+- `game_id` (str, optional): nflverse game identifier
+- `limit` (int, optional): Max rows to return
+
+Returns `plays[]` with game/play identifiers, quarter/clock, teams, down/distance, description, EPA, WP/WPA, and score state.
+
+Notes:
+- The nflverse backend requires the `[nfl]` optional extra: `pip install sports-skills[nfl]`. It prefers `nflreadpy` when installed and falls back to `nfl_data_py` for compatibility.
+- These commands keep `nfl-data` as the user-facing skill while exposing table-style datasets under the same module.
+- The ESPN-backed commands (e.g. `get_scoreboard`, `get_standings`) work with zero extra dependencies. The nflverse commands provide deeper historical/analytical data (seasonal aggregates, EPA, win probability per play) but require the optional install.
+- Parquet support (`pyarrow` or `fastparquet`) is needed for most nflverse data beyond schedules.
+
 ## Team IDs
 
 | Team | ID | Team | ID |

@@ -272,6 +272,7 @@ class TestParseValue:
 
         assert _parse_value("limit", "25") == 25
         assert _parse_value("season", "2024") == 2024
+        assert _parse_value("week", "3") == 3
 
     def test_bool_param_string(self):
         from sports_skills.cli import _parse_value
@@ -1302,6 +1303,99 @@ class TestNewsQueryDefaults:
         assert "Provide url or use a query for Google News" in result["message"]
 
 
+class TestNFLverseNormalizers:
+    """Tests for pure nflverse normalizers."""
+
+    def test_normalize_schedule_row(self):
+        from sports_skills.nfl._nflverse import _normalize_schedule_row
+
+        row = {
+            "game_id": "2024_01_KC_BAL",
+            "season": 2024,
+            "week": 1,
+            "game_type": "REG",
+            "gameday": "2024-09-05",
+            "away_team": "BAL",
+            "home_team": "KC",
+            "away_score": 20,
+            "home_score": 27,
+            "location": "GEHA Field",
+            "spread_line": -2.5,
+        }
+        result = _normalize_schedule_row(row)
+        assert result["game_id"] == "2024_01_KC_BAL"
+        assert result["home_team"] == "KC"
+        assert result["away_score"] == 20
+        assert result["spread_line"] == -2.5
+
+    def test_normalize_player_stats_row(self):
+        from sports_skills.nfl._nflverse import _normalize_player_stats_row
+
+        row = {
+            "player_id": "00-0033873",
+            "player_name": "Patrick Mahomes",
+            "position": "QB",
+            "recent_team": "KC",
+            "season": 2024,
+            "season_type": "REG",
+            "passing_yards": 4183,
+            "passing_tds": 31,
+        }
+        result = _normalize_player_stats_row(row)
+        assert result["player_id"] == "00-0033873"
+        assert result["team"] == "KC"
+        assert result["stats"]["passing_yards"] == 4183
+        assert result["stats"]["passing_tds"] == 31
+
+    def test_normalize_pbp_row(self):
+        from sports_skills.nfl._nflverse import _normalize_pbp_row
+
+        row = {
+            "play_id": 55,
+            "game_id": "2024_03_BUF_MIA",
+            "season": 2024,
+            "week": 3,
+            "qtr": 4,
+            "time": "02:31",
+            "posteam": "BUF",
+            "defteam": "MIA",
+            "down": 3,
+            "ydstogo": 7,
+            "desc": "(2:31) J.Allen pass short middle to S.Diggs for 9 yards.",
+            "epa": 1.21,
+            "wpa": 0.08,
+        }
+        result = _normalize_pbp_row(row)
+        assert result["play_id"] == "55"
+        assert result["game_id"] == "2024_03_BUF_MIA"
+        assert result["quarter"] == 4
+        assert result["posteam"] == "BUF"
+        assert result["epa"] == 1.21
+
+
+class TestNFLverseOptionalDependency:
+    """Missing nflverse backends should raise a clear install hint."""
+
+    def test_load_provider_error_message(self, monkeypatch):
+        import builtins
+
+        from sports_skills.nfl._nflverse import _load_provider
+
+        real_import = builtins.__import__
+
+        def fake_import(name, *args, **kwargs):
+            if name in {"nflreadpy", "nfl_data_py"}:
+                raise ImportError(name)
+            return real_import(name, *args, **kwargs)
+
+        monkeypatch.setattr(builtins, "__import__", fake_import)
+
+        import pytest
+
+        with pytest.raises(ImportError, match=r"sports-skills\[nfl\]"):
+            _load_provider()
+
+
 class TestParamsContract:
     """Verify _params() returns a wrapped dict in all modules.
 
@@ -1378,3 +1472,146 @@ class TestParamsContract:
         assert "params" in football_result
         assert nfl_result["params"]["date"] == "2026-02-24"
         assert football_result["params"]["date"] == "2026-02-24"
+
+
+class TestXctfParseMeetTable:
+    """Tests for the meet result table parser."""
+
+    def test_parses_meet_name_date_and_results(self):
+        from sports_skills.xctf._connector import _parse_meet_table
+
+        html = """
+        <table>
+          <tr><td>Stanford Invitational Mar 15, 2026</td></tr>
+          <tr><td>1500</td><td>4:31.80</td><td>1st (F)</td></tr>
+          <tr><td>800</td><td>2:10.30</td></tr>
+        </table>
+        """
+        result = _parse_meet_table(html)
+        assert result is not None
+        assert "Stanford" in result["meet"]
+        assert "2026" in result["date"]
+        assert len(result["results"]) == 2
+        assert result["results"][0]["event"] == "1500"
+        assert result["results"][0]["mark"] == "4:31.80"
+        assert result["results"][0]["place"] == "1st (F)"
+
+    def test_returns_none_when_no_date_in_header(self):
+        from sports_skills.xctf._connector import _parse_meet_table
+
+        html = """
+        <table>
+          <tr><td>Season Best</td></tr>
+          <tr><td>1500</td><td>4:31.80</td></tr>
+        </table>
+        """
+        assert _parse_meet_table(html) is None
+
+    def test_returns_none_for_empty_table(self):
+        from sports_skills.xctf._connector import _parse_meet_table
+
+        assert _parse_meet_table("<table></table>") is None
+
+
+class TestXctfGetNews:
+    """Tests for get_news using a mocked feedparser."""
+
+    @staticmethod
+    def _fake_feed(entries=None):
+        class _Feed:
+            bozo = False
+            bozo_exception = None
+
+        feed = _Feed()
+        feed.entries = entries or [
+            {
+                "title": "McFarland Runs 3:33",
+                "link": "https://www.thestridereport.com/post/mcfarland",
+                "published": "Sun, 19 Apr 2026 00:27:30 GMT",
+                "summary": "Big performance this weekend.",
+                "tags": [{"term": "D1"}, {"term": "OUTDOORS"}],
+                "author": "Admin (Garrett Zatlin)",
+                "enclosures": [{"href": "https://example.com/image.jpg"}],
+            }
+        ]
+        return feed
+
+    def test_returns_articles_with_correct_fields(self, monkeypatch):
+        from sports_skills.xctf._connector import get_news
+
+        monkeypatch.setattr(
+            "sports_skills.xctf._connector.feedparser.parse",
+            lambda url: self._fake_feed(),
+        )
+
+        result = get_news()
+        assert result["source"] == "The Stride Report"
+        assert result["count"] == 1
+        article = result["articles"][0]
+        assert article["title"] == "McFarland Runs 3:33"
+        assert article["categories"] == ["D1", "OUTDOORS"]
+        assert article["image"] == "https://example.com/image.jpg"
+
+    def test_limit_is_respected(self, monkeypatch):
+        entries = [
+            {
+                "title": f"Article {i}",
+                "link": f"https://example.com/{i}",
+                "published": "Sun, 19 Apr 2026 00:00:00 GMT",
+                "summary": "Summary.",
+                "tags": [],
+                "author": "",
+                "enclosures": [],
+            }
+            for i in range(10)
+        ]
+        from sports_skills.xctf._connector import get_news
+
+        monkeypatch.setattr(
+            "sports_skills.xctf._connector.feedparser.parse",
+            lambda url: self._fake_feed(entries=entries),
+        )
+
+        result = get_news(limit=3)
+        assert result["count"] == 3
+        assert len(result["articles"]) == 3
+
+    def test_feed_error_returns_error_dict(self, monkeypatch):
+        class _BrokenFeed:
+            bozo = True
+            bozo_exception = Exception("connection refused")
+            entries = []
+
+        from sports_skills.xctf._connector import get_news
+
+        monkeypatch.setattr(
+            "sports_skills.xctf._connector.feedparser.parse",
+            lambda url: _BrokenFeed(),
+        )
+
+        result = get_news()
+        assert result["error"] is True
+        assert "Stride Report" in result["message"]
+
+    def test_html_entities_unescaped(self, monkeypatch):
+        entries = [
+            {
+                "title": "Elbadra &#38; Engelhardt Clash",
+                "link": "https://example.com/1",
+                "published": "Sun, 19 Apr 2026 00:00:00 GMT",
+                "summary": "A &#38; B",
+                "tags": [],
+                "author": "",
+                "enclosures": [],
+            }
+        ]
+        from sports_skills.xctf._connector import get_news
+
+        monkeypatch.setattr(
+            "sports_skills.xctf._connector.feedparser.parse",
+            lambda url: self._fake_feed(entries=entries),
+        )
+
+        result = get_news()
+        assert result["articles"][0]["title"] == "Elbadra & Engelhardt Clash"
+        assert result["articles"][0]["summary"] == "A & B"
