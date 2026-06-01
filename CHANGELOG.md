@@ -1,3 +1,9 @@
+## [0.24.2]
+
+### Fixed
+- **Site footer:** corrected the Discord invite URL from the broken `discord.gg/machina` placeholder to the canonical `discord.gg/PBYd6FbBSK` (matches the link in README.md).
+- **Site footer:** removed the self-referential `skills.sh` link — the page is already at sports-skills.sh, so the link was a no-op.
+
 ## [0.24.1]
 
 ### Added
