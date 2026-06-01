@@ -49,6 +49,7 @@ A collection of agent skills that wrap **publicly available** sports data source
 - **Betting Analysis**: Pure-compute odds toolkit — conversion, de-vigging, edge detection, Kelly criterion, arbitrage, parlays, line movement
 - **Markets Orchestration**: Cross-platform bridge connecting ESPN live schedules with Kalshi and Polymarket — unified dashboards, odds comparison, entity search, bet evaluation
 - **Sports Reporter**: Generates original journalism (game previews, live reports, recaps, team analysis, player profiles) by composing the data skills above
+- **Machina Sports**: Gateway to the Machina Intelligence Layer — premium templates, licensed real-time data, and zero-latency feeds via `machina-cli` and MCP
 
 Each skill is a SKILL.md file that any compatible AI agent can load and use immediately. Data comes from third-party public sources and is subject to their respective terms of use.
 
@@ -92,6 +93,7 @@ Each skill is a SKILL.md file that any compatible AI agent can load and use imme
 | `betting` | Odds math & bet evaluation | 9 | Pure compute — no API calls |
 | `markets` | ESPN ↔ Kalshi ↔ Polymarket orchestration | 7 | Unified dashboards, cross-platform comparison |
 | `sports-reporter` | Original sports journalism | prompt-only | Composes other skills to write articles |
+| `machina` | Gateway to Machina premium / licensed data | prompt-only | Routes to `machina-cli` + MCP |
 
 ### Football Data Coverage
 

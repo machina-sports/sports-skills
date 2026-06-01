@@ -1,9 +1,3 @@
-## [0.24.3]
-
-### Removed
-- **`machina` skill:** removed the prompt-only `machina` gateway skill from the public deployment as requested.
-- **Documentation:** stripped all references to the `machina` skill from the README and site metadata.
-
 ## [0.24.2]
 
 ### Fixed
