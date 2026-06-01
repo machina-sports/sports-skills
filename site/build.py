@@ -2,6 +2,7 @@
 """Build the sports-skills.sh marketplace from SKILL.md files."""
 
 import json
+import os
 import re
 import shutil
 from pathlib import Path
@@ -15,11 +16,59 @@ SITE = Path(__file__).resolve().parent         # site/
 TEMPLATES = SITE / "templates"
 DIST = SITE / "dist"
 
+# Pro-tier source — checked out by CI as a sibling, overridable for local runs
+# that have it in a non-standard location.
+MACHINA_TEMPLATES = Path(
+    os.environ.get("MACHINA_TEMPLATES_DIR", str(ROOT.parent / "machina-templates"))
+).resolve()
+
 SKILL_SOURCES = [
     {"path": ROOT / "skills", "tier": "open"},
-    {"path": ROOT.parent / "machina-templates" / "skills", "tier": "pro"},
-    {"path": ROOT.parent / "machina-templates" / "connectors", "tier": "pro", "scan": "*/skills/"},
+    {"path": MACHINA_TEMPLATES / "skills", "tier": "pro"},
+    {"path": MACHINA_TEMPLATES / "connectors", "tier": "pro", "scan": "*/skills/"},
 ]
+
+# Skill slug → sports_skills.cli module name. Skills not listed here either have
+# no CLI surface (machina, sports-reporter, pro templates) or rename their
+# module (e.g. football-data → football).
+SLUG_TO_CLI_MODULE = {
+    "football-data": "football",
+    "nfl-data": "nfl",
+    "nba-data": "nba",
+    "wnba-data": "wnba",
+    "nhl-data": "nhl",
+    "mlb-data": "mlb",
+    "tennis-data": "tennis",
+    "cfb-data": "cfb",
+    "cbb-data": "cbb",
+    "golf-data": "golf",
+    "volleyball-data": "volleyball",
+    "xctf-data": "xctf",
+    "fastf1": "f1",
+    "sports-news": "news",
+    "kalshi": "kalshi",
+    "polymarket": "polymarket",
+    "betting": "betting",
+    "markets": "markets",
+    "metadata": "metadata",
+}
+
+
+def _cli_registry():
+    """Return sports_skills.cli._REGISTRY if importable, else None.
+
+    Used to augment SKILL.md command tables with any CLI-registered commands
+    they omit. Optional — the build still works without the package installed,
+    it just falls back to whatever the SKILL.md table happens to list.
+    """
+    try:
+        from sports_skills.cli import _REGISTRY  # type: ignore
+        return _REGISTRY
+    except ImportError:
+        return None
+
+
+CLI_REGISTRY = _cli_registry()
 
 BASE_URL = "https://sports-skills.sh"
 
@@ -208,6 +257,29 @@ def extract_examples(body: str) -> list[str]:
     return examples[:5]
 
 
+def _augment_with_cli(slug: str, commands: list[dict]) -> list[dict]:
+    """Append any CLI-registered commands that aren't already in the SKILL.md table.
+
+    SKILL.md tables are curated and sometimes lag the CLI (e.g. kalshi's
+    `get_sports_config` / `get_todays_events` / `search_markets`, polymarket's
+    trading commands). For the marketplace we want the full surface visible —
+    SKILL.md descriptions win when present; CLI-only commands appear with an
+    empty description.
+    """
+    if CLI_REGISTRY is None:
+        return commands
+    module = SLUG_TO_CLI_MODULE.get(slug)
+    if module is None or module not in CLI_REGISTRY:
+        return commands
+
+    have = {c["name"] for c in commands}
+    for cmd_name in CLI_REGISTRY[module]:
+        if cmd_name not in have:
+            commands.append({"name": cmd_name, "description": ""})
+            have.add(cmd_name)
+    return commands
+
+
 def load_skill(slug: str, skill_dir: Path, tier: str) -> dict:
     """Load a single skill from its directory."""
     skill_md = skill_dir / "SKILL.md"
@@ -249,6 +321,7 @@ def load_skill(slug: str, skill_dir: Path, tier: str) -> dict:
             short_desc = short_desc[: dot + 1]
 
     commands = extract_commands(body)
+    commands = _augment_with_cli(slug, commands)
     examples = extract_examples(body)
     category = CATEGORY_MAP.get(slug, "Other")
 

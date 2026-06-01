@@ -25,6 +25,13 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
+          path: sports-skills
+
+      - name: Checkout machina-templates (for pro-tier skills)
+        uses: actions/checkout@v4
+        with:
+          repository: machina-sports/machina-templates
+          path: machina-templates
 
       - name: Get tag name as release version
         run: echo "RELEASE_NAME=${GITHUB_REF#refs/tags/}" >> $GITHUB_ENV
@@ -38,8 +45,11 @@ jobs:
           python-version: "3.12"
 
       - name: Build site (renders dist/ from SKILL.md files)
+        working-directory: sports-skills
+        env:
+          MACHINA_TEMPLATES_DIR: ${{ github.workspace }}/machina-templates
         run: |
-          pip install --quiet 'jinja2>=3.1' 'pyyaml>=6.0'
+          pip install --quiet -e '.[site]'
           python site/build.py
 
       - name: Login to GitHub Container Registry
@@ -52,8 +62,8 @@ jobs:
       - name: Build and push Docker image
         uses: docker/build-push-action@v6
         with:
-          context: ./site
-          file: ./site/Dockerfile
+          context: ./sports-skills/site
+          file: ./sports-skills/site/Dockerfile
           push: true
           tags: |
             ${{ env.IMAGE }}:${{ env.RELEASE_NAME }}
