@@ -1,3 +1,15 @@
+## [0.24.1]
+
+### Added
+- **`site/build.py` — Jinja2 marketplace generator.** Replaces the hand-maintained `site/index.html` with a build system that reads SKILL.md frontmatter and emits a 21-skill marketplace under `site/dist/`. Editing a SKILL.md now auto-propagates to the published site on the next release.
+- **CLI registry augmentation.** When `sports_skills` is importable in the build environment, `build.py` merges CLI-registered commands into each skill's table — so `kalshi`, `polymarket`, `nba-data`, `cbb-data`, and friends now show their full surface (e.g. polymarket: 12 → 20 commands, kalshi: 8 → 14) without anyone having to hand-edit individual SKILL.md tables.
+- **`machina-templates` integration in CI.** The site build workflow now checks out the public `machina-sports/machina-templates` sibling repo so pro-tier skills (`mkn-constructor` etc.) appear in the marketplace.
+
+### Fixed
+- **`extract_commands()` handles 4-column tables.** `sports-news` and `metadata` use a wider table shape (`| Command | Required | Optional | Description |`) that the original 2-column regex skipped — now takes first cell as name + last as description.
+- **`extract_commands()` falls back to Quick Start parsing.** `betting` and `markets` document commands as bash one-liners rather than tables; a fallback parser now picks up `sports-skills <module> <cmd>` invocations.
+- **Templates render "prompt-only" for skills without a CLI surface** (`machina`, `sports-reporter`, `mkn-constructor`) instead of "0 commands".
+
 ## [0.24.0]
 
 ### Added

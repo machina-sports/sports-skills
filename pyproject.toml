@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "sports-skills"
-version = "0.24.0"
+version = "0.24.1"
 description = "Lightweight Python SDK for sports data — football, F1, NFL, NBA, WNBA, NHL, MLB, tennis, CFB, CBB, golf, volleyball, prediction markets, betting analysis, and news"
 readme = "README_PYPI.md"
 requires-python = ">=3.9"
@@ -12,7 +12,7 @@ license = "MIT"
 authors = [
     { name = "Machina Sports", email = "hello@machina.gg" },
 ]
-keywords = ["sports", "football", "f1", "nfl", "nba", "wnba", "nhl", "mlb", "tennis", "atp", "wta", "cfb", "cbb", "college-football", "college-basketball", "ncaa", "golf", "pga", "lpga", "volleyball", "nevobo", "eredivisie", "polymarket", "kalshi", "prediction-markets", "betting", "odds-comparison", "arbitrage", "news"]
+keywords = ["prediction-markets", "kalshi", "polymarket", "betting", "odds-comparison", "arbitrage", "sports", "football", "f1", "nfl", "nba", "wnba", "nhl", "mlb", "tennis", "atp", "wta", "cfb", "cbb", "college-football", "college-basketball", "ncaa", "golf", "pga", "lpga", "volleyball", "nevobo", "eredivisie", "news"]
 classifiers = [
     "Development Status :: 3 - Alpha",
     "Intended Audience :: Developers",
@@ -43,6 +43,7 @@ golf = []
 polymarket = ["py_clob_client>=0.1.8"]
 all = ["fastf1>=3.0", "pandas>=2.0", "nflreadpy>=0.1", "nfl-data-py>=0.3", "py_clob_client>=0.1.8"]
 dev = ["ruff>=0.9", "pytest>=8.0", "fastf1>=3.0", "pandas>=2.0"]
+site = ["jinja2>=3.1", "pyyaml>=6.0"]
 
 [project.scripts]
 sports-skills = "sports_skills.cli:main"
