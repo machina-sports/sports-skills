@@ -4,7 +4,7 @@ description: |
   ATP and WTA tennis data via ESPN public endpoints — tournament scores, season calendars, player rankings, player profiles, and news. Zero config, no API keys.
 
   Use when: user asks about tennis scores, match results, tournament draws, ATP/WTA rankings, tennis player info, or tennis news.
-  Don't use when: user asks about other sports — use football-data (soccer), nfl-data (NFL), nba-data (NBA), wnba-data (WNBA), nhl-data (NHL), mlb-data (MLB), golf-data (golf), cfb-data (college football), cbb-data (college basketball), or fastf1 (F1). For betting odds use polymarket or kalshi. For news use sports-news. Don't use for live point-by-point data — scores update after each set/match.
+  Don't use when: user asks about other sports — use football-data (soccer), nfl-data (NFL), nba-data (NBA), wnba-data (WNBA), nhl-data (NHL), mlb-data (MLB), golf-data (golf), cricket-data (cricket), cfb-data (college football), cbb-data (college basketball), or fastf1 (F1). For betting odds use polymarket or kalshi. For news use sports-news. Don't use for live point-by-point data — scores update after each set/match.
 license: MIT
 metadata:
   author: machina-sports

@@ -4,7 +4,7 @@ description: |
   MLB data via ESPN public endpoints — scores, standings, rosters, schedules, game summaries, play-by-play, win probability, injuries, transactions, depth charts, team/player stats, leaders, and news. Zero config, no API keys.
 
   Use when: user asks about MLB scores, standings, team rosters, schedules, game stats, box scores, play-by-play, injuries, transactions, depth charts, team/player statistics, or MLB news.
-  Don't use when: user asks about minor league baseball, college baseball, or international baseball. For other sports use: nfl-data (NFL), nba-data (NBA), wnba-data (WNBA), nhl-data (NHL), football-data (soccer), tennis-data (tennis), golf-data (golf), cfb-data (college football), cbb-data (college basketball), fastf1 (F1). For betting odds use polymarket or kalshi. For news use sports-news.
+  Don't use when: user asks about minor league baseball, college baseball, or international baseball. For other sports use: nfl-data (NFL), nba-data (NBA), wnba-data (WNBA), nhl-data (NHL), football-data (soccer), tennis-data (tennis), golf-data (golf), cricket-data (cricket), cfb-data (college football), cbb-data (college basketball), fastf1 (F1). For betting odds use polymarket or kalshi. For news use sports-news.
 license: MIT
 metadata:
   author: machina-sports

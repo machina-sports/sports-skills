@@ -4,7 +4,7 @@ description: |
   Sports metadata via TheSportsDB free API (key=3). Team logos and badges, player photos, stadium info, league info, and biographical data across 100+ leagues. No API key required, zero config.
 
   Use when: user asks for a team logo, crest, badge, banner, jersey, kit, player photo or headshot, stadium info, club description, or wants to search for teams or players by name across sports. Good for enriching responses from other skills with images and visual identifiers.
-  Don't use when: user asks for scores, standings, fixtures, stats, or odds — use the sport-specific skill instead: football-data (soccer), nfl-data (NFL), nba-data (NBA), wnba-data (WNBA), nhl-data (NHL), mlb-data (MLB), tennis-data (tennis), golf-data (golf), cfb-data (college football), cbb-data (college basketball), fastf1 (F1), volleyball-data (Dutch volleyball), xctf-data (NCAA XC/TF). Don't use for prediction markets — use polymarket or kalshi.
+  Don't use when: user asks for scores, standings, fixtures, stats, or odds — use the sport-specific skill instead: football-data (soccer), nfl-data (NFL), nba-data (NBA), wnba-data (WNBA), nhl-data (NHL), mlb-data (MLB), tennis-data (tennis), golf-data (golf), cricket-data (cricket), cfb-data (college football), cbb-data (college basketball), fastf1 (F1), volleyball-data (Dutch volleyball), xctf-data (NCAA XC/TF). Don't use for prediction markets — use polymarket or kalshi.
 license: MIT
 metadata:
   author: machina-sports
