@@ -4,7 +4,7 @@ description: |
   NCAA cross country and track & field athlete data via TFRRS (tfrrs.org) and news via The Stride Report. Fetch athlete profiles including all personal records (PRs), eligibility year, school, full season-by-season results history, and XC/TF news. Zero config, no API keys.
 
   Use when: user asks about NCAA cross country, NCAA track and field, college running, TFRRS athlete profiles, personal records, PRs, XC or TF season results, individual athlete performance history, or XC/TF news.
-  Don't use when: user asks about professional track, Diamond League, or other sports — use nfl-data, nba-data, wnba-data, nhl-data, mlb-data, golf-data, cfb-data, cbb-data, tennis-data, fastf1, or volleyball-data. For betting use polymarket or kalshi.
+  Don't use when: user asks about professional track, Diamond League, or other sports — use nfl-data, nba-data, wnba-data, nhl-data, mlb-data, golf-data, cricket-data, cfb-data, cbb-data, tennis-data, fastf1, or volleyball-data. For betting use polymarket or kalshi.
 license: MIT
 compatibility: Requires Python 3.10+ and internet access to tfrrs.org and thestridereport.com. No API keys required.
 metadata:
