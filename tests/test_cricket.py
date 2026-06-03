@@ -583,3 +583,32 @@ class TestGetNews:
     def test_requires_series_id(self):
         result = _espn.get_news({"params": {}})
         assert result["error"] is True
+
+
+# ── public API envelope ─────────────────────────────────────
+
+
+class TestPublicApi:
+    def test_success_envelope(self):
+        import sports_skills.cricket as cricket
+
+        result = cricket.get_competitions()
+        assert result["status"] is True
+        assert "competitions" in result["data"]
+
+    def test_error_envelope(self, fixture_zip):
+        import sports_skills.cricket as cricket
+
+        result = cricket.get_matches(competition="nope")
+        assert result["status"] is False
+        assert "nope" in result["message"]
+
+    def test_all_ten_commands_exported(self):
+        import sports_skills.cricket as cricket
+
+        for fn in (
+            "get_series", "get_scoreboard", "get_standings", "get_game_summary",
+            "get_news", "get_competitions", "get_matches", "get_match_deliveries",
+            "get_player_stats", "find_player",
+        ):
+            assert callable(getattr(cricket, fn))
