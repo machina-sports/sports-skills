@@ -339,3 +339,36 @@ class TestGetPlayerStats:
             {"params": {"competition": "ipl", "player": "Nobody"}}
         )
         assert result["error"] is True
+
+
+# ── find_player ─────────────────────────────────────────────
+
+PEOPLE_CSV = (
+    "identifier,name,unique_name,key_bcci,key_bcci_2,key_bigbash,key_cricbuzz,"
+    "key_cricheroes,key_crichq,key_cricinfo,key_cricinfo_2,key_cricinfo_3,"
+    "key_cricingif,key_cricketarchive,key_cricketarchive_2,key_cricketworld,"
+    "key_nvplay,key_nvplay_2,key_opta,key_opta_2,key_pulse,key_pulse_2\n"
+    "ba607b88,V Kohli,V Kohli,,,,,,,253802,,,,,,,,,,,,\n"
+    "abc123,RG Sharma,RG Sharma,,,,,,,34102,,,,,,,,,,,,\n"
+)
+
+
+class TestFindPlayer:
+    def test_finds_by_substring_case_insensitive(self, tmp_path, monkeypatch):
+        monkeypatch.setattr(_cricsheet, "_cache_dir", lambda: str(tmp_path))
+        (tmp_path / "people.csv").write_text(PEOPLE_CSV)
+        monkeypatch.setattr(
+            _cricsheet, "_download",
+            lambda url, dest: (_ for _ in ()).throw(AssertionError("no network")),
+        )
+        result = _cricsheet.find_player({"params": {"name": "kohli"}})
+        assert result["count"] == 1
+        p = result["players"][0]
+        assert p["cricsheet_id"] == "ba607b88"
+        assert p["name"] == "V Kohli"
+        assert p["cricinfo_id"] == "253802"
+        assert result["attribution"] == _cricsheet._ATTRIBUTION
+
+    def test_missing_name_errors(self):
+        result = _cricsheet.find_player({"params": {}})
+        assert result["error"] is True

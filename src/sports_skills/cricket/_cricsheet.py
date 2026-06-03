@@ -337,3 +337,40 @@ def get_player_stats(request_data):
     if stale:
         result["stale"] = True
     return result
+
+
+_REGISTRY_URL = "https://cricsheet.org/register/people.csv"
+_MAX_PLAYER_RESULTS = 25
+
+
+def find_player(request_data):
+    """Search the Cricsheet player registry by name substring.
+
+    Returns Cricsheet IDs plus the ESPNcricinfo ID mapping (key_cricinfo),
+    which bridges Cricsheet data to ESPN match data.
+    """
+    params = request_data.get("params", {})
+    name = params.get("name")
+    if not name:
+        return {"error": True, "message": "name is required"}
+    path, stale, err = _fetch_file(_REGISTRY_URL, "people.csv", _REGISTRY_TTL)
+    if err:
+        return err
+    needle = str(name).lower().strip()
+    players = []
+    with open(path, newline="", encoding="utf-8") as f:
+        for row in csv.DictReader(f):
+            haystack = f"{row.get('name', '')} {row.get('unique_name', '')}".lower()
+            if needle in haystack:
+                players.append({
+                    "cricsheet_id": row.get("identifier", ""),
+                    "name": row.get("name", ""),
+                    "unique_name": row.get("unique_name", ""),
+                    "cricinfo_id": row.get("key_cricinfo", ""),
+                })
+                if len(players) >= _MAX_PLAYER_RESULTS:
+                    break
+    result = {"players": players, "count": len(players), "attribution": _ATTRIBUTION}
+    if stale:
+        result["stale"] = True
+    return result
