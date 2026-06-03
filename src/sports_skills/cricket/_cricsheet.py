@@ -54,3 +54,47 @@ def get_competitions(request_data):
         "count": len(competitions),
         "attribution": _ATTRIBUTION,
     }
+
+
+_ZIP_TTL = 24 * 3600          # competition zips: 24h
+_REGISTRY_TTL = 7 * 24 * 3600  # player registry: 7 days
+
+
+def _cache_dir():
+    """Return (and create) the on-disk cache directory."""
+    base = os.environ.get(
+        "XDG_CACHE_HOME", os.path.join(os.path.expanduser("~"), ".cache")
+    )
+    path = os.path.join(base, "sports-skills", "cricsheet")
+    os.makedirs(path, exist_ok=True)
+    return path
+
+
+def _download(url, dest):
+    """Download url to dest atomically (write to .tmp, then rename)."""
+    req = urllib.request.Request(url, headers={"User-Agent": _USER_AGENT})
+    with urllib.request.urlopen(req, timeout=120) as resp:
+        data = resp.read()
+    tmp = dest + ".tmp"
+    with open(tmp, "wb") as f:
+        f.write(data)
+    os.replace(tmp, dest)
+
+
+def _fetch_file(url, filename, ttl):
+    """Return a local path to a cached copy of url, downloading if missing/expired.
+
+    Returns (path, stale, error): on download failure with a stale copy
+    present, serves the stale copy with stale=True instead of erroring.
+    """
+    path = os.path.join(_cache_dir(), filename)
+    if os.path.exists(path) and (time.time() - os.path.getmtime(path)) < ttl:
+        return path, False, None
+    try:
+        _download(url, path)
+        return path, False, None
+    except Exception as e:  # noqa: BLE001 — any failure falls back to stale/error
+        if os.path.exists(path):
+            logger.warning("cricsheet download failed, serving stale %s: %s", filename, e)
+            return path, True, None
+        return None, False, {"error": True, "message": f"Cricsheet download failed: {e}"}
