@@ -9,6 +9,7 @@ import zipfile
 import pytest
 
 from sports_skills.cricket import _cricsheet
+from sports_skills.cricket import _espn
 
 # ── get_competitions ────────────────────────────────────────
 
@@ -371,4 +372,43 @@ class TestFindPlayer:
 
     def test_missing_name_errors(self):
         result = _cricsheet.find_player({"params": {}})
+        assert result["error"] is True
+
+
+# ── ESPN backend fixtures (shapes captured live 2026-06-03) ─
+
+HEADER_PAYLOAD = {
+    "sports": [{
+        "id": "200", "name": "Cricket", "slug": "cricket",
+        "leagues": [
+            {"id": "8048", "name": "Indian Premier League", "abbreviation": "IPL",
+             "isTournament": False,
+             "events": [{"id": "1535465", "date": "2026-05-31T14:00Z",
+                         "name": "Royal Challengers Bengaluru v Gujarat Titans",
+                         "status": "post", "summary": "RCB won"}]},
+            {"id": "24423", "name": "Sri Lanka tour of West Indies 2026",
+             "abbreviation": "SL@WI", "isTournament": False, "events": []},
+        ],
+    }]
+}
+
+
+class TestGetSeries:
+    def test_lists_active_series(self, monkeypatch):
+        monkeypatch.setattr(_espn, "_header_request", lambda: HEADER_PAYLOAD)
+        result = _espn.get_series({})
+        assert result["count"] == 2
+        s = result["series"][0]
+        assert s["series_id"] == "8048"
+        assert s["name"] == "Indian Premier League"
+        assert s["abbreviation"] == "IPL"
+        assert s["event_count"] == 1
+        assert s["events"][0]["event_id"] == "1535465"
+
+    def test_propagates_fetch_error(self, monkeypatch):
+        monkeypatch.setattr(
+            _espn, "_header_request",
+            lambda: {"error": True, "message": "HTTP 503"},
+        )
+        result = _espn.get_series({})
         assert result["error"] is True
