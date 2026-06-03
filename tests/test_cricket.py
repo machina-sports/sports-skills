@@ -500,3 +500,86 @@ class TestGetStandings:
     def test_requires_series_id(self):
         result = _espn.get_standings({"params": {}})
         assert result["error"] is True
+
+    def test_empty_standings_returns_message(self, monkeypatch):
+        monkeypatch.setattr(
+            _espn, "espn_request",
+            lambda sport_path, resource="scoreboard", params=None, **kw: {"leagues": [], "events": []},
+        )
+        result = _espn.get_standings({"params": {"series_id": "24423"}})
+        assert result["count"] == 0
+        assert result["standings"] == []
+        assert "bilateral" in result["message"]
+
+
+SUMMARY_PAYLOAD = {
+    "notes": [{"text": "Final"}],
+    "gameInfo": {"venue": {"fullName": "Narendra Modi Stadium"}},
+    "rosters": [{"team": {"displayName": "RCB"}}],
+    "leaders": [{"team": {"displayName": "RCB"}, "leaders": []}],
+    "matchcards": {"cards": []},
+    "header": {"id": "1535465"},
+    "article": {"headline": "RCB win"},
+    "videos": [],
+    "news": {},
+    "standings": [],
+    "debuts": [],
+    "wallclockAvailable": False,
+    "meta": {},
+}
+
+NEWS_PAYLOAD = {
+    "header": "IPL News",
+    "articles": [
+        {"headline": "Stokes wants deeds, not words",
+         "description": "Captain prepares to move to No.7",
+         "published": "2026-06-02T10:00Z",
+         "type": "Story",
+         "links": {"web": {"href": "https://www.espncricinfo.com/story/x"}}},
+    ],
+}
+
+
+class TestGetGameSummary:
+    def test_returns_trimmed_summary(self, monkeypatch):
+        captured = {}
+
+        def fake_summary(sport_path, event_id, **kw):
+            captured["sport_path"] = sport_path
+            captured["event_id"] = event_id
+            return SUMMARY_PAYLOAD
+
+        monkeypatch.setattr(_espn, "espn_summary", fake_summary)
+        result = _espn.get_game_summary(
+            {"params": {"series_id": "8048", "event_id": "1535465"}}
+        )
+        assert captured["sport_path"] == "cricket/8048"
+        assert captured["event_id"] == "1535465"
+        assert result["game_info"]["venue"]["fullName"] == "Narendra Modi Stadium"
+        assert result["rosters"] == SUMMARY_PAYLOAD["rosters"]
+        assert result["leaders"] == SUMMARY_PAYLOAD["leaders"]
+        assert result["notes"] == [{"text": "Final"}]
+        # noisy keys are dropped
+        assert "videos" not in result
+        assert "meta" not in result
+
+    def test_requires_event_id(self):
+        result = _espn.get_game_summary({"params": {"series_id": "8048"}})
+        assert result["error"] is True
+
+
+class TestGetNews:
+    def test_normalizes_articles(self, monkeypatch):
+        monkeypatch.setattr(
+            _espn, "espn_request",
+            lambda sport_path, resource="scoreboard", params=None, **kw: NEWS_PAYLOAD,
+        )
+        result = _espn.get_news({"params": {"series_id": "8048"}})
+        assert result["count"] == 1
+        a = result["articles"][0]
+        assert a["headline"] == "Stokes wants deeds, not words"
+        assert a["link"] == "https://www.espncricinfo.com/story/x"
+
+    def test_requires_series_id(self):
+        result = _espn.get_news({"params": {}})
+        assert result["error"] is True

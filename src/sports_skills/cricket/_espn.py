@@ -187,3 +187,51 @@ def get_standings(request_data):
             "message": "No standings published for this series (common for bilateral tours)",
         }
     return {"series_id": series_id, "standings": standings, "count": len(standings)}
+
+
+def get_game_summary(request_data):
+    """Match detail: rosters, leaders, matchcards, game info, header."""
+    params = request_data.get("params", {})
+    series_id, err = _validate_series_id(params.get("series_id"))
+    if err:
+        return err
+    event_id = params.get("event_id")
+    if not event_id:
+        return {"error": True, "message": "event_id is required — see get_scoreboard"}
+    data = espn_summary(f"cricket/{series_id}", str(event_id))
+    if data is None:
+        return {"error": True, "message": "ESPN summary request failed"}
+    if isinstance(data, dict) and data.get("error"):
+        return data
+    return {
+        "event_id": str(event_id),
+        "series_id": series_id,
+        "header": data.get("header", {}),
+        "game_info": data.get("gameInfo", {}),
+        "notes": data.get("notes", []),
+        "rosters": data.get("rosters", []),
+        "leaders": data.get("leaders", []),
+        "matchcards": data.get("matchcards", {}),
+        "article": data.get("article", {}),
+    }
+
+
+def get_news(request_data):
+    """News articles for a series."""
+    params = request_data.get("params", {})
+    series_id, err = _validate_series_id(params.get("series_id"))
+    if err:
+        return err
+    data = espn_request(f"cricket/{series_id}", "news")
+    if data.get("error"):
+        return data
+    articles = []
+    for a in data.get("articles", []):
+        articles.append({
+            "headline": a.get("headline", ""),
+            "description": a.get("description", ""),
+            "published": a.get("published", ""),
+            "type": a.get("type", ""),
+            "link": a.get("links", {}).get("web", {}).get("href", ""),
+        })
+    return {"header": data.get("header", ""), "articles": articles, "count": len(articles)}
