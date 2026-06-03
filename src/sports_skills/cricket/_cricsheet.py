@@ -8,7 +8,6 @@ Data lags live play: matches appear roughly a day after completion.
 """
 
 import csv
-import io
 import json
 import logging
 import os

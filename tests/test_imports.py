@@ -20,6 +20,7 @@ MODULES = [
     "sports_skills.cbb",
     "sports_skills.golf",
     "sports_skills.tennis",
+    "sports_skills.cricket",
     "sports_skills.volleyball",
     "sports_skills.xctf",
     "sports_skills.football",
