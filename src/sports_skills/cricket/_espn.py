@@ -10,8 +10,8 @@ import logging
 import urllib.parse
 
 from sports_skills._espn_base import (
-    ESPN_STATUS_MAP,
     _USER_AGENT,
+    ESPN_STATUS_MAP,
     _cache_get,
     _cache_set,
     _espn_rate_limiter,

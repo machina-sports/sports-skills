@@ -8,8 +8,7 @@ import zipfile
 
 import pytest
 
-from sports_skills.cricket import _cricsheet
-from sports_skills.cricket import _espn
+from sports_skills.cricket import _cricsheet, _espn
 
 # ── get_competitions ────────────────────────────────────────
 
@@ -48,7 +47,8 @@ class TestFetchFile:
         path, stale, err = _cricsheet._fetch_file("http://x/file.zip", "file.zip", ttl=60)
         assert err is None
         assert stale is False
-        assert open(path, "rb").read() == b"payload"
+        with open(path, "rb") as f:
+            assert f.read() == b"payload"
         assert calls == ["http://x/file.zip"]
 
     def test_serves_cached_within_ttl(self, tmp_path, monkeypatch):
@@ -62,7 +62,8 @@ class TestFetchFile:
         path, stale, err = _cricsheet._fetch_file("http://x/file.zip", "file.zip", ttl=3600)
         assert err is None
         assert stale is False
-        assert open(path, "rb").read() == b"cached"
+        with open(path, "rb") as f:
+            assert f.read() == b"cached"
 
     def test_serves_stale_on_download_failure(self, tmp_path, monkeypatch):
         monkeypatch.setattr(_cricsheet, "_cache_dir", lambda: str(tmp_path))
@@ -78,7 +79,8 @@ class TestFetchFile:
         path, stale, err = _cricsheet._fetch_file("http://x/file.zip", "file.zip", ttl=60)
         assert err is None
         assert stale is True
-        assert open(path, "rb").read() == b"old"
+        with open(path, "rb") as f:
+            assert f.read() == b"old"
 
     def test_error_when_no_cache_and_download_fails(self, tmp_path, monkeypatch):
         monkeypatch.setattr(_cricsheet, "_cache_dir", lambda: str(tmp_path))
