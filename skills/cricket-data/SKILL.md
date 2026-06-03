@@ -46,6 +46,8 @@ CRITICAL: Before calling any data endpoint, verify:
 - **No ICC rankings** — there is no free source (v1 limitation). Series standings come from `get_standings`, which is empty for most bilateral tours (only league/group tournaments publish a points table).
 - **First Cricsheet call per competition per day downloads a zip.** Large competitions (Tests, ODIs, IPL) are tens of MB. Zips are cached 24h at `~/.cache/sports-skills/cricsheet/`; later calls in the same day are fast.
 
+Agents can run `scripts/validate_params.sh` to pre-validate `--competition`, `--series_id`, and `--date` before querying.
+
 ## Commands
 
 ### ESPN backend (live-ish)
@@ -88,6 +90,21 @@ Dates accept `YYYYMMDD` or `YYYY-MM-DD`. `season` is the start year (e.g. `2020`
 ### Ball-by-ball history
 1. `get_matches --competition=<code> [--season=<year>]` → find the `match_id`.
 2. `get_match_deliveries --competition=<code> --match_id=<id> [--innings=N]`.
+
+### Cricket news
+Cricket news is series-scoped — there is no global feed.
+1. `get_series` → pick the relevant series and note its `series_id`.
+2. `get_news --series_id=<id>` → present the articles.
+
+## Commands that DO NOT exist — never call these
+
+- ~~`get_player`~~ / ~~`get_player_info`~~ — do not exist. Use `find_player` to resolve a name, then `get_player_stats` for career numbers.
+- ~~`get_match`~~ — does not exist. Use `get_matches` (historical list) or `get_game_summary` (one ESPN match's detail).
+- ~~`get_rankings`~~ — does not exist. There is no free ICC rankings source (v1 limitation).
+- ~~`get_teams`~~ / ~~`get_team_roster`~~ — do not exist. Rosters come inside `get_game_summary`.
+- ~~`get_play_by_play`~~ — does not exist. Use `get_match_deliveries` for ball-by-ball data on completed matches.
+
+If a command is not listed in the Commands table above, it does not exist.
 
 ## Attribution
 
