@@ -1,4 +1,4 @@
-## [Unreleased]
+## [0.25.0]
 
 ### Added
 - **`cricket` module + `cricket-data` skill:** new sport coverage across two data planes.
