@@ -10,6 +10,7 @@ import logging
 import urllib.parse
 
 from sports_skills._espn_base import (
+    ESPN_STATUS_MAP,
     _USER_AGENT,
     _cache_get,
     _cache_set,
@@ -82,3 +83,107 @@ def get_series(request_data):
             ],
         })
     return {"series": series, "count": len(series)}
+
+
+def _normalize_competitor(comp):
+    """Normalize a cricket competitor (a team with innings linescores)."""
+    team = comp.get("team", {})
+    return {
+        "team_id": str(team.get("id", "")),
+        "team": team.get("displayName", ""),
+        "abbreviation": team.get("abbreviation", ""),
+        "home_away": comp.get("homeAway", ""),
+        "winner": comp.get("winner", False),
+        "score": comp.get("score", ""),
+        "innings": [
+            {
+                "innings": ls.get("period", 0),
+                "runs": ls.get("runs", 0),
+                "wickets": ls.get("wickets", 0),
+                "overs": ls.get("overs", 0),
+                "is_batting": ls.get("isBatting", False),
+                "description": ls.get("description", ""),
+            }
+            for ls in comp.get("linescores", [])
+        ],
+    }
+
+
+def _normalize_event(event):
+    """Normalize one scoreboard event (a cricket match)."""
+    competitions = event.get("competitions", [])
+    comp = competitions[0] if competitions else {}
+    status_type = comp.get("status", {}).get("type", {})
+    venue = comp.get("venue", {})
+    notes = comp.get("notes", [])
+    return {
+        "event_id": str(event.get("id", "")),
+        "name": event.get("name", ""),
+        "short_name": event.get("shortName", ""),
+        "date": event.get("date", ""),
+        "description": comp.get("description", ""),
+        "status": ESPN_STATUS_MAP.get(status_type.get("name", ""), status_type.get("name", "")),
+        "status_detail": status_type.get("shortDetail", status_type.get("detail", "")),
+        "venue": venue.get("fullName", venue.get("displayName", "")),
+        "note": notes[0].get("text", "") if notes else "",
+        "competitors": [_normalize_competitor(c) for c in comp.get("competitors", [])],
+    }
+
+
+def _fetch_scoreboard(series_id, date=None):
+    """Fetch the raw scoreboard payload for a series."""
+    espn_params = {}
+    if date:
+        espn_params["dates"] = str(date).replace("-", "")
+    return espn_request(f"cricket/{series_id}", "scoreboard", espn_params or None)
+
+
+def get_scoreboard(request_data):
+    """Scoreboard (events + scores) for one series. Use get_series for IDs."""
+    params = request_data.get("params", {})
+    series_id, err = _validate_series_id(params.get("series_id"))
+    if err:
+        return err
+    data = _fetch_scoreboard(series_id, params.get("date"))
+    if data.get("error"):
+        return data
+    leagues = data.get("leagues", [])
+    league = leagues[0] if leagues else {}
+    events = [_normalize_event(e) for e in data.get("events", [])]
+    return {
+        "series": {
+            "series_id": series_id,
+            "name": league.get("name", ""),
+            "abbreviation": league.get("abbreviation", ""),
+        },
+        "events": events,
+        "count": len(events),
+    }
+
+
+def get_standings(request_data):
+    """Points table for a series, extracted from the scoreboard payload."""
+    params = request_data.get("params", {})
+    series_id, err = _validate_series_id(params.get("series_id"))
+    if err:
+        return err
+    data = _fetch_scoreboard(series_id)
+    if data.get("error"):
+        return data
+    standings = []
+    for row in data.get("standings", []):
+        team = row.get("team", {})
+        standings.append({
+            "team_id": str(team.get("id", "")),
+            "team": team.get("displayName", ""),
+            "abbreviation": team.get("abbreviation", ""),
+            "stats": {s.get("name", ""): s.get("value") for s in row.get("stats", [])},
+        })
+    if not standings:
+        return {
+            "series_id": series_id,
+            "standings": [],
+            "count": 0,
+            "message": "No standings published for this series (common for bilateral tours)",
+        }
+    return {"series_id": series_id, "standings": standings, "count": len(standings)}

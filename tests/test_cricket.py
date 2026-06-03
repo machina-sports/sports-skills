@@ -412,3 +412,91 @@ class TestGetSeries:
         )
         result = _espn.get_series({})
         assert result["error"] is True
+
+
+SCOREBOARD_PAYLOAD = {
+    "leagues": [{"id": "8048", "name": "Indian Premier League", "abbreviation": "IPL"}],
+    "standings": [
+        {"team": {"id": "335970", "displayName": "Royal Challengers Bengaluru",
+                  "abbreviation": "RCB"},
+         "stats": [
+             {"name": "rank", "value": 1, "displayValue": "1"},
+             {"name": "matchPoints", "value": 18, "displayValue": "18"},
+         ]},
+    ],
+    "events": [{
+        "id": "1535465",
+        "date": "2026-05-31T14:00Z",
+        "name": "Royal Challengers Bengaluru v Gujarat Titans",
+        "shortName": "RCB v GT",
+        "competitions": [{
+            "id": "1535465",
+            "description": "Final",
+            "venue": {"fullName": "Narendra Modi Stadium"},
+            "status": {"type": {"name": "STATUS_FINAL", "shortDetail": "RCB won"},
+                       "period": 2},
+            "notes": [],
+            "competitors": [
+                {"homeAway": "home", "winner": True,
+                 "team": {"id": "335970", "displayName": "Royal Challengers Bengaluru",
+                          "abbreviation": "RCB"},
+                 "score": "161/5 (18/20 ov, target 156)",
+                 "linescores": [{"period": 2, "runs": 161, "wickets": 5, "overs": 18.0,
+                                 "isBatting": True, "description": "target reached"}]},
+                {"homeAway": "away", "winner": False,
+                 "team": {"id": "335974", "displayName": "Gujarat Titans",
+                          "abbreviation": "GT"},
+                 "score": "155/9 (20 ov)",
+                 "linescores": [{"period": 1, "runs": 155, "wickets": 9, "overs": 20.0,
+                                 "isBatting": False, "description": "complete"}]},
+            ],
+        }],
+    }],
+}
+
+
+class TestGetScoreboard:
+    def test_normalizes_events(self, monkeypatch):
+        captured = {}
+
+        def fake_espn_request(sport_path, resource="scoreboard", params=None, **kw):
+            captured["sport_path"] = sport_path
+            captured["params"] = params
+            return SCOREBOARD_PAYLOAD
+
+        monkeypatch.setattr(_espn, "espn_request", fake_espn_request)
+        result = _espn.get_scoreboard({"params": {"series_id": "8048", "date": "2026-05-31"}})
+        assert captured["sport_path"] == "cricket/8048"
+        assert captured["params"] == {"dates": "20260531"}
+        assert result["series"]["name"] == "Indian Premier League"
+        ev = result["events"][0]
+        assert ev["event_id"] == "1535465"
+        assert ev["status"] == "closed"
+        assert ev["venue"] == "Narendra Modi Stadium"
+        home = ev["competitors"][0]
+        assert home["team"] == "Royal Challengers Bengaluru"
+        assert home["score"] == "161/5 (18/20 ov, target 156)"
+        assert home["winner"] is True
+        assert home["innings"][0]["runs"] == 161
+
+    def test_requires_series_id(self):
+        result = _espn.get_scoreboard({"params": {}})
+        assert result["error"] is True
+
+
+class TestGetStandings:
+    def test_extracts_standings_from_scoreboard(self, monkeypatch):
+        monkeypatch.setattr(
+            _espn, "espn_request",
+            lambda sport_path, resource="scoreboard", params=None, **kw: SCOREBOARD_PAYLOAD,
+        )
+        result = _espn.get_standings({"params": {"series_id": "8048"}})
+        row = result["standings"][0]
+        assert row["team"] == "Royal Challengers Bengaluru"
+        assert row["abbreviation"] == "RCB"
+        assert row["stats"]["rank"] == 1
+        assert row["stats"]["matchPoints"] == 18
+
+    def test_requires_series_id(self):
+        result = _espn.get_standings({"params": {}})
+        assert result["error"] is True
