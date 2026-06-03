@@ -234,3 +234,46 @@ class TestGetMatches:
     def test_missing_competition_errors(self):
         result = _cricsheet.get_matches({"params": {}})
         assert result["error"] is True
+
+
+# ── get_match_deliveries ────────────────────────────────────
+
+
+class TestGetMatchDeliveries:
+    def test_returns_all_innings(self, fixture_zip):
+        result = _cricsheet.get_match_deliveries(
+            {"params": {"competition": "ipl", "match_id": "1001"}}
+        )
+        assert result["match"]["match_id"] == "1001"
+        assert len(result["innings"]) == 2
+        first = result["innings"][0]
+        assert first["innings"] == 1
+        assert first["team"] == "Team A"
+        assert first["count"] == 5
+        d0 = first["deliveries"][0]
+        assert d0 == {
+            "over": 0, "ball": 1, "batter": "A One", "bowler": "B One",
+            "non_striker": "A Two", "runs": {"batter": 4, "extras": 0, "total": 4},
+        }
+        # wide carries its extras dict; wicket ball carries its wickets list
+        assert first["deliveries"][1]["extras"] == {"wides": 1}
+        assert first["deliveries"][4]["wickets"][0]["kind"] == "bowled"
+        assert result["attribution"] == _cricsheet._ATTRIBUTION
+
+    def test_innings_filter(self, fixture_zip):
+        result = _cricsheet.get_match_deliveries(
+            {"params": {"competition": "ipl", "match_id": "1001", "innings": 2}}
+        )
+        assert len(result["innings"]) == 1
+        assert result["innings"][0]["team"] == "Team B"
+
+    def test_match_not_found(self, fixture_zip):
+        result = _cricsheet.get_match_deliveries(
+            {"params": {"competition": "ipl", "match_id": "9999"}}
+        )
+        assert result["error"] is True
+        assert "9999" in result["message"]
+
+    def test_missing_match_id(self, fixture_zip):
+        result = _cricsheet.get_match_deliveries({"params": {"competition": "ipl"}})
+        assert result["error"] is True

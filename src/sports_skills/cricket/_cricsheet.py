@@ -181,3 +181,63 @@ def get_matches(request_data):
     if stale:
         result["stale"] = True
     return result
+
+
+def get_match_deliveries(request_data):
+    """Ball-by-ball deliveries for one match, optionally one innings."""
+    params = request_data.get("params", {})
+    code, err = _validate_competition(params.get("competition"))
+    if err:
+        return err
+    match_id = params.get("match_id")
+    if not match_id:
+        return {"error": True, "message": "match_id is required — see get_matches"}
+    innings_filter = params.get("innings")
+    zf, stale, err = _open_competition(code)
+    if err:
+        return err
+    filename = f"{match_id}.json"
+    with zf:
+        if filename not in zf.namelist():
+            return {
+                "error": True,
+                "message": f"Match '{match_id}' not found in competition '{code}'",
+            }
+        with zf.open(filename) as f:
+            data = json.load(f)
+    info = data.get("info", {})
+    innings_out = []
+    for idx, inn in enumerate(data.get("innings", []), start=1):
+        if innings_filter is not None and idx != int(innings_filter):
+            continue
+        deliveries = []
+        for over in inn.get("overs", []):
+            over_num = over.get("over", 0)
+            for ball_idx, d in enumerate(over.get("deliveries", []), start=1):
+                entry = {
+                    "over": over_num,
+                    "ball": ball_idx,
+                    "batter": d.get("batter", ""),
+                    "bowler": d.get("bowler", ""),
+                    "non_striker": d.get("non_striker", ""),
+                    "runs": d.get("runs", {}),
+                }
+                if d.get("extras"):
+                    entry["extras"] = d["extras"]
+                if d.get("wickets"):
+                    entry["wickets"] = d["wickets"]
+                deliveries.append(entry)
+        innings_out.append({
+            "innings": idx,
+            "team": inn.get("team", ""),
+            "deliveries": deliveries,
+            "count": len(deliveries),
+        })
+    result = {
+        "match": _match_summary(filename, info),
+        "innings": innings_out,
+        "attribution": _ATTRIBUTION,
+    }
+    if stale:
+        result["stale"] = True
+    return result
