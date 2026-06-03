@@ -1,3 +1,12 @@
+## [Unreleased]
+
+### Added
+- **`cricket` module + `cricket-data` skill:** new sport coverage across two data planes.
+  - **ESPN live-ish:** `get_series` (active series discovery), `get_scoreboard` (live/completed match scores), `get_standings` (tournament tables), `get_game_summary` (full event detail), `get_news` (series-scoped headlines).
+  - **Cricsheet historical:** `get_competitions` (supported competition registry), `get_matches` (match-level results with optional season filter), `get_match_deliveries` (ball-by-ball delivery data, innings-filterable), `get_player_stats` (aggregated batting + bowling stats across a competition), `find_player` (fuzzy name lookup against the Cricsheet player registry).
+  - Data is downloaded on first use and cached locally; Cricsheet data carries required ODC-BY 1.0 attribution in every response envelope.
+  - CLI registered under `sports-skills cricket <command>`; skill documentation at `skills/cricket-data/SKILL.md`.
+
 ## [0.24.4]
 
 ### Added
