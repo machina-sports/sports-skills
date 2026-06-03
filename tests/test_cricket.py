@@ -90,3 +90,147 @@ class TestFetchFile:
         assert path is None
         assert err["error"] is True
         assert "network down" in err["message"]
+
+
+# ── cricsheet fixture ───────────────────────────────────────
+
+MATCH_1 = {
+    "meta": {"data_version": "1.0.0", "created": "2024-05-01", "revision": 1},
+    "info": {
+        "city": "Mumbai",
+        "dates": ["2024-04-01"],
+        "event": {"name": "Indian Premier League", "match_number": 1},
+        "gender": "male",
+        "match_type": "T20",
+        "outcome": {"winner": "Team A", "by": {"runs": 10}},
+        "players": {"Team A": ["A One", "A Two"], "Team B": ["B One", "B Two"]},
+        "registry": {"people": {"A One": "aaa111"}},
+        "season": "2024",
+        "teams": ["Team A", "Team B"],
+        "toss": {"decision": "bat", "winner": "Team A"},
+        "venue": "Wankhede Stadium",
+    },
+    "innings": [
+        {
+            "team": "Team A",
+            "overs": [
+                {
+                    "over": 0,
+                    "deliveries": [
+                        # legal ball, boundary four
+                        {"batter": "A One", "bowler": "B One", "non_striker": "A Two",
+                         "runs": {"batter": 4, "extras": 0, "total": 4}},
+                        # wide — not faced by batter, charged to bowler
+                        {"batter": "A One", "bowler": "B One", "non_striker": "A Two",
+                         "runs": {"batter": 0, "extras": 1, "total": 1},
+                         "extras": {"wides": 1}},
+                        # six
+                        {"batter": "A One", "bowler": "B One", "non_striker": "A Two",
+                         "runs": {"batter": 6, "extras": 0, "total": 6}},
+                        # leg byes — faced, NOT charged to bowler
+                        {"batter": "A One", "bowler": "B One", "non_striker": "A Two",
+                         "runs": {"batter": 0, "extras": 1, "total": 1},
+                         "extras": {"legbyes": 1}},
+                        # bowled — credited to bowler
+                        {"batter": "A One", "bowler": "B One", "non_striker": "A Two",
+                         "runs": {"batter": 0, "extras": 0, "total": 0},
+                         "wickets": [{"kind": "bowled", "player_out": "A One"}]},
+                    ],
+                }
+            ],
+        },
+        {
+            "team": "Team B",
+            "overs": [
+                {
+                    "over": 0,
+                    "deliveries": [
+                        # run out — NOT credited to bowler
+                        {"batter": "B One", "bowler": "A Two", "non_striker": "B Two",
+                         "runs": {"batter": 1, "extras": 0, "total": 1},
+                         "wickets": [{"kind": "run out", "player_out": "B One"}]},
+                    ],
+                }
+            ],
+        },
+    ],
+}
+
+MATCH_2 = {
+    "meta": {"data_version": "1.0.0", "created": "2023-05-01", "revision": 1},
+    "info": {
+        "city": "Chennai",
+        "dates": ["2023-04-05"],
+        "event": {"name": "Indian Premier League", "match_number": 7},
+        "gender": "male",
+        "match_type": "T20",
+        "outcome": {"winner": "Team B", "by": {"wickets": 5}},
+        "players": {"Team A": ["A One", "A Two"], "Team B": ["B One", "B Two"]},
+        "registry": {"people": {}},
+        "season": "2023",
+        "teams": ["Team A", "Team B"],
+        "toss": {"decision": "field", "winner": "Team B"},
+        "venue": "Chepauk",
+    },
+    "innings": [
+        {
+            "team": "Team A",
+            "overs": [
+                {
+                    "over": 0,
+                    "deliveries": [
+                        {"batter": "A One", "bowler": "B Two", "non_striker": "A Two",
+                         "runs": {"batter": 1, "extras": 0, "total": 1}},
+                    ],
+                }
+            ],
+        }
+    ],
+}
+
+
+@pytest.fixture
+def fixture_zip(tmp_path, monkeypatch):
+    """Build an in-memory ipl_json.zip in a temp cache dir; block real downloads."""
+    monkeypatch.setattr(_cricsheet, "_cache_dir", lambda: str(tmp_path))
+    buf = io.BytesIO()
+    with zipfile.ZipFile(buf, "w") as zf:
+        zf.writestr("1001.json", json.dumps(MATCH_1))
+        zf.writestr("1002.json", json.dumps(MATCH_2))
+        zf.writestr("README.txt", "not a match")
+    (tmp_path / "ipl_json.zip").write_bytes(buf.getvalue())
+
+    def fail_download(url, dest):
+        raise AssertionError("tests must not hit the network")
+
+    monkeypatch.setattr(_cricsheet, "_download", fail_download)
+    return tmp_path
+
+
+# ── get_matches ─────────────────────────────────────────────
+
+
+class TestGetMatches:
+    def test_lists_matches_newest_first(self, fixture_zip):
+        result = _cricsheet.get_matches({"params": {"competition": "ipl"}})
+        assert result["count"] == 2
+        assert [m["match_id"] for m in result["matches"]] == ["1001", "1002"]
+        m = result["matches"][0]
+        assert m["teams"] == ["Team A", "Team B"]
+        assert m["winner"] == "Team A"
+        assert m["venue"] == "Wankhede Stadium"
+        assert result["attribution"] == _cricsheet._ATTRIBUTION
+
+    def test_season_filter(self, fixture_zip):
+        result = _cricsheet.get_matches({"params": {"competition": "ipl", "season": 2023}})
+        assert result["count"] == 1
+        assert result["matches"][0]["match_id"] == "1002"
+
+    def test_unknown_competition_errors(self):
+        result = _cricsheet.get_matches({"params": {"competition": "nope"}})
+        assert result["error"] is True
+        assert "nope" in result["message"]
+
+    def test_missing_competition_errors(self):
+        result = _cricsheet.get_matches({"params": {}})
+        assert result["error"] is True

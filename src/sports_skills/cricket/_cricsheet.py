@@ -98,3 +98,86 @@ def _fetch_file(url, filename, ttl):
             logger.warning("cricsheet download failed, serving stale %s: %s", filename, e)
             return path, True, None
         return None, False, {"error": True, "message": f"Cricsheet download failed: {e}"}
+
+
+def _validate_competition(code):
+    """Return normalized competition code or error dict."""
+    if not code:
+        return None, {
+            "error": True,
+            "message": "competition is required — see get_competitions for codes",
+        }
+    c = str(code).lower().strip()
+    if c not in _COMPETITIONS:
+        return None, {
+            "error": True,
+            "message": f"Unknown competition '{code}'. Valid: {', '.join(sorted(_COMPETITIONS))}",
+        }
+    return c, None
+
+
+def _open_competition(code):
+    """Return (ZipFile, stale, error) for a competition's cached zip."""
+    url = f"https://cricsheet.org/downloads/{code}_json.zip"
+    path, stale, err = _fetch_file(url, f"{code}_json.zip", _ZIP_TTL)
+    if err:
+        return None, False, err
+    return zipfile.ZipFile(path), stale, None
+
+
+def _season_matches(season_value, season_filter):
+    """Prefix match so --season=2020 matches Cricsheet's '2020/21'."""
+    if season_filter is None:
+        return True
+    return str(season_value).startswith(str(season_filter))
+
+
+def _match_summary(name, info):
+    """Build a one-line match summary from a Cricsheet info block."""
+    outcome = info.get("outcome", {})
+    return {
+        "match_id": name[:-5],
+        "date": (info.get("dates") or [""])[0],
+        "teams": info.get("teams", []),
+        "venue": info.get("venue", ""),
+        "city": info.get("city", ""),
+        "season": str(info.get("season", "")),
+        "match_type": info.get("match_type", ""),
+        "gender": info.get("gender", ""),
+        "event": info.get("event", {}).get("name", ""),
+        "winner": outcome.get("winner", outcome.get("result", "")),
+        "outcome": outcome,
+    }
+
+
+def get_matches(request_data):
+    """List completed matches for a Cricsheet competition, newest first."""
+    params = request_data.get("params", {})
+    code, err = _validate_competition(params.get("competition"))
+    if err:
+        return err
+    season = params.get("season")
+    zf, stale, err = _open_competition(code)
+    if err:
+        return err
+    matches = []
+    with zf:
+        for name in zf.namelist():
+            if not name.endswith(".json"):
+                continue
+            with zf.open(name) as f:
+                data = json.load(f)
+            info = data.get("info", {})
+            if not _season_matches(info.get("season", ""), season):
+                continue
+            matches.append(_match_summary(name, info))
+    matches.sort(key=lambda m: m["date"], reverse=True)
+    result = {
+        "competition": code,
+        "matches": matches,
+        "count": len(matches),
+        "attribution": _ATTRIBUTION,
+    }
+    if stale:
+        result["stale"] = True
+    return result
