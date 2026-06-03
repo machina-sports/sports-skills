@@ -277,3 +277,52 @@ class TestGetMatchDeliveries:
     def test_missing_match_id(self, fixture_zip):
         result = _cricsheet.get_match_deliveries({"params": {"competition": "ipl"}})
         assert result["error"] is True
+
+
+# ── get_player_stats ────────────────────────────────────────
+
+
+class TestGetPlayerStats:
+    def test_batting_aggregation(self, fixture_zip):
+        result = _cricsheet.get_player_stats(
+            {"params": {"competition": "ipl", "player": "A One"}}
+        )
+        bat = result["batting"]
+        assert result["player"] == "A One"
+        assert result["matches"] == 2
+        assert bat["runs"] == 11        # 4+6 in match 1, 1 in match 2
+        assert bat["balls"] == 5        # wide not faced
+        assert bat["fours"] == 1
+        assert bat["sixes"] == 1
+        assert bat["dismissals"] == 1   # bowled in match 1
+        assert bat["strike_rate"] == round(11 / 5 * 100, 2)
+        assert result["attribution"] == _cricsheet._ATTRIBUTION
+
+    def test_bowling_aggregation(self, fixture_zip):
+        result = _cricsheet.get_player_stats(
+            {"params": {"competition": "ipl", "player": "B One"}}
+        )
+        bowl = result["bowling"]
+        assert bowl["balls"] == 4           # wide doesn't count as a ball bowled
+        assert bowl["runs_conceded"] == 11  # 4+6+wide(1); leg-bye not charged
+        assert bowl["wickets"] == 1         # bowled credited
+        assert bowl["economy"] == round(11 / (4 / 6), 2)
+
+    def test_run_out_not_credited_to_bowler(self, fixture_zip):
+        result = _cricsheet.get_player_stats(
+            {"params": {"competition": "ipl", "player": "A Two"}}
+        )
+        assert result["bowling"]["wickets"] == 0
+
+    def test_season_filter(self, fixture_zip):
+        result = _cricsheet.get_player_stats(
+            {"params": {"competition": "ipl", "player": "A One", "season": 2023}}
+        )
+        assert result["matches"] == 1
+        assert result["batting"]["runs"] == 1
+
+    def test_unknown_player_errors(self, fixture_zip):
+        result = _cricsheet.get_player_stats(
+            {"params": {"competition": "ipl", "player": "Nobody"}}
+        )
+        assert result["error"] is True

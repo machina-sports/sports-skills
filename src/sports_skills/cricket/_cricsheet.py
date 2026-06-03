@@ -183,6 +183,10 @@ def get_matches(request_data):
     return result
 
 
+# Dismissal kinds credited to the bowler (standard convention)
+_BOWLER_CREDITED = {"bowled", "caught", "lbw", "stumped", "hit wicket", "caught and bowled"}
+
+
 def get_match_deliveries(request_data):
     """Ball-by-ball deliveries for one match, optionally one innings."""
     params = request_data.get("params", {})
@@ -236,6 +240,98 @@ def get_match_deliveries(request_data):
     result = {
         "match": _match_summary(filename, info),
         "innings": innings_out,
+        "attribution": _ATTRIBUTION,
+    }
+    if stale:
+        result["stale"] = True
+    return result
+
+
+def get_player_stats(request_data):
+    """Aggregate batting and bowling stats for a player across a competition.
+
+    Conventions: batting balls faced exclude wides (no-balls faced);
+    bowling balls exclude wides and no-balls; bowler concedes batter runs
+    + wides + no-balls (not byes/leg-byes/penalty); run outs etc. are not
+    credited to the bowler.
+    """
+    params = request_data.get("params", {})
+    code, err = _validate_competition(params.get("competition"))
+    if err:
+        return err
+    player = params.get("player")
+    if not player:
+        return {"error": True, "message": "player is required — exact name as in Cricsheet (see find_player)"}
+    season = params.get("season")
+    zf, stale, err = _open_competition(code)
+    if err:
+        return err
+
+    matches_played = 0
+    bat = {"runs": 0, "balls": 0, "fours": 0, "sixes": 0, "dismissals": 0}
+    bowl = {"balls": 0, "runs_conceded": 0, "wickets": 0}
+
+    with zf:
+        for name in zf.namelist():
+            if not name.endswith(".json"):
+                continue
+            with zf.open(name) as f:
+                data = json.load(f)
+            info = data.get("info", {})
+            if not _season_matches(info.get("season", ""), season):
+                continue
+            all_players = [p for team in info.get("players", {}).values() for p in team]
+            if player not in all_players:
+                continue
+            matches_played += 1
+            for inn in data.get("innings", []):
+                for over in inn.get("overs", []):
+                    for d in over.get("deliveries", []):
+                        runs = d.get("runs", {})
+                        extras = d.get("extras", {})
+                        wides = extras.get("wides", 0)
+                        noballs = extras.get("noballs", 0)
+                        if d.get("batter") == player:
+                            if not wides:
+                                bat["balls"] += 1
+                            batter_runs = runs.get("batter", 0)
+                            bat["runs"] += batter_runs
+                            if not runs.get("non_boundary"):
+                                if batter_runs == 4:
+                                    bat["fours"] += 1
+                                elif batter_runs == 6:
+                                    bat["sixes"] += 1
+                        if d.get("bowler") == player:
+                            if not wides and not noballs:
+                                bowl["balls"] += 1
+                            bowl["runs_conceded"] += runs.get("batter", 0) + wides + noballs
+                            for w in d.get("wickets", []):
+                                if w.get("kind") in _BOWLER_CREDITED:
+                                    bowl["wickets"] += 1
+                        for w in d.get("wickets", []):
+                            if w.get("player_out") == player:
+                                bat["dismissals"] += 1
+
+    if matches_played == 0:
+        return {
+            "error": True,
+            "message": f"No matches found for player '{player}' in '{code}'"
+            + (f" season {season}" if season else "")
+            + " — names must match Cricsheet exactly (see find_player)",
+        }
+
+    bat["strike_rate"] = round(bat["runs"] / bat["balls"] * 100, 2) if bat["balls"] else 0.0
+    bat["average"] = round(bat["runs"] / bat["dismissals"], 2) if bat["dismissals"] else None
+    bowl["economy"] = round(bowl["runs_conceded"] / (bowl["balls"] / 6), 2) if bowl["balls"] else None
+    bowl["overs"] = f"{bowl['balls'] // 6}.{bowl['balls'] % 6}"
+
+    result = {
+        "player": player,
+        "competition": code,
+        "season": season,
+        "matches": matches_played,
+        "batting": bat,
+        "bowling": bowl,
         "attribution": _ATTRIBUTION,
     }
     if stale:
