@@ -361,6 +361,18 @@ _REGISTRY = {
         "get_player_info": {"required": ["player_id"]},
         "get_news": {"required": ["tour"]},
     },
+    "cricket": {
+        "get_series": {},
+        "get_scoreboard": {"required": ["series_id"], "optional": ["date"]},
+        "get_standings": {"required": ["series_id"]},
+        "get_game_summary": {"required": ["series_id", "event_id"]},
+        "get_news": {"required": ["series_id"]},
+        "get_competitions": {},
+        "get_matches": {"required": ["competition"], "optional": ["season"]},
+        "get_match_deliveries": {"required": ["competition", "match_id"], "optional": ["innings"]},
+        "get_player_stats": {"required": ["competition", "player"], "optional": ["season"]},
+        "find_player": {"required": ["name"]},
+    },
     "cfb": {
         "get_scoreboard": {"optional": ["date", "week", "group", "limit"]},
         "get_standings": {"optional": ["season", "group"]},
@@ -458,6 +470,7 @@ _INT_PARAMS = {
     "page",
     "min_seed",
     "max_seed",
+    "innings",
 }
 
 # Params that should be parsed as float
@@ -592,6 +605,10 @@ def _load_module(name):
         from sports_skills import tennis
 
         return tennis
+    elif name == "cricket":
+        from sports_skills import cricket
+
+        return cricket
     elif name == "cfb":
         from sports_skills import cfb
         return cfb
@@ -833,10 +850,10 @@ def _deploy_handoff(remaining):
 def main():
     parser = argparse.ArgumentParser(
         prog="sports-skills",
-        description="Lightweight CLI for sports data — football, F1, NFL, NBA, WNBA, NHL, MLB, tennis, CFB, CBB, golf, volleyball, prediction markets, betting analysis, metadata, and news.",
+        description="Lightweight CLI for sports data — football, F1, NFL, NBA, WNBA, NHL, MLB, tennis, cricket, CFB, CBB, golf, volleyball, prediction markets, betting analysis, metadata, and news.",
     )
     parser.add_argument(
-        "module", nargs="?", help="Module name: football, f1, nfl, nba, wnba, nhl, mlb, tennis, cfb, cbb, golf, volleyball, xctf, polymarket, kalshi, betting, markets, metadata, news"
+        "module", nargs="?", help="Module name: football, f1, nfl, nba, wnba, nhl, mlb, tennis, cricket, cfb, cbb, golf, volleyball, xctf, polymarket, kalshi, betting, markets, metadata, news"
     )
     parser.add_argument(
         "command", nargs="?", help="Command name (e.g., get_season_standings)"

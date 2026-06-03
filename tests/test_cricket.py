@@ -612,3 +612,34 @@ class TestPublicApi:
             "get_player_stats", "find_player",
         ):
             assert callable(getattr(cricket, fn))
+
+
+# ── CLI registration ────────────────────────────────────────
+
+
+class TestCliRegistration:
+    def test_cricket_in_registry(self):
+        from sports_skills.cli import _REGISTRY
+
+        assert "cricket" in _REGISTRY
+        cmds = _REGISTRY["cricket"]
+        assert cmds["get_scoreboard"] == {"required": ["series_id"], "optional": ["date"]}
+        assert cmds["get_match_deliveries"] == {
+            "required": ["competition", "match_id"], "optional": ["innings"],
+        }
+        assert set(cmds) == {
+            "get_series", "get_scoreboard", "get_standings", "get_game_summary",
+            "get_news", "get_competitions", "get_matches", "get_match_deliveries",
+            "get_player_stats", "find_player",
+        }
+
+    def test_innings_parses_as_int(self):
+        from sports_skills.cli import _parse_value
+
+        assert _parse_value("innings", "2") == 2
+
+    def test_module_loader_resolves_cricket(self):
+        from sports_skills.cli import _load_module
+
+        mod = _load_module("cricket")
+        assert callable(mod.get_series)
