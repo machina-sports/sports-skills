@@ -181,6 +181,10 @@ MATCH_2 = {
                     "deliveries": [
                         {"batter": "A One", "bowler": "B Two", "non_striker": "A Two",
                          "runs": {"batter": 1, "extras": 0, "total": 1}},
+                        # no-ball — faced by batter, not a legal ball for bowler
+                        {"batter": "A One", "bowler": "B Two", "non_striker": "A Two",
+                         "runs": {"batter": 2, "extras": 1, "total": 3},
+                         "extras": {"noballs": 1}},
                     ],
                 }
             ],
@@ -290,12 +294,12 @@ class TestGetPlayerStats:
         bat = result["batting"]
         assert result["player"] == "A One"
         assert result["matches"] == 2
-        assert bat["runs"] == 11        # 4+6 in match 1, 1 in match 2
-        assert bat["balls"] == 5        # wide not faced
+        assert bat["runs"] == 13        # 4+6 in match 1, 1+2 in match 2
+        assert bat["balls"] == 6        # wide not faced, no-ball faced
         assert bat["fours"] == 1
         assert bat["sixes"] == 1
         assert bat["dismissals"] == 1   # bowled in match 1
-        assert bat["strike_rate"] == round(11 / 5 * 100, 2)
+        assert bat["strike_rate"] == round(13 / 6 * 100, 2)
         assert result["attribution"] == _cricsheet._ATTRIBUTION
 
     def test_bowling_aggregation(self, fixture_zip):
@@ -319,7 +323,16 @@ class TestGetPlayerStats:
             {"params": {"competition": "ipl", "player": "A One", "season": 2023}}
         )
         assert result["matches"] == 1
-        assert result["batting"]["runs"] == 1
+        assert result["batting"]["runs"] == 3
+
+    def test_no_ball_not_a_legal_ball_but_charged(self, fixture_zip):
+        result = _cricsheet.get_player_stats(
+            {"params": {"competition": "ipl", "player": "B Two"}}
+        )
+        bowl = result["bowling"]
+        assert bowl["balls"] == 1           # no-ball not a legal delivery
+        assert bowl["runs_conceded"] == 4   # 1 + batter 2 + no-ball 1
+        assert bowl["wickets"] == 0
 
     def test_unknown_player_errors(self, fixture_zip):
         result = _cricsheet.get_player_stats(
