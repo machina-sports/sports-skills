@@ -192,6 +192,15 @@ _REGISTRY = {
             "required": ["sport", "event_id"],
             "optional": ["token_id", "kalshi_ticker", "outcome"],
         },
+        "match_markets": {"required": ["sport"], "optional": ["date"]},
+        "get_market_price": {
+            "required": ["venue"],
+            "optional": ["ticker", "token_id", "at_time"],
+        },
+        "get_price_history": {
+            "required": ["venue"],
+            "optional": ["ticker", "token_id", "interval", "start_time", "end_time"],
+        },
     },
     "metadata": {
         "get_team_logo": {"required": ["team_name"], "optional": ["sport"]},

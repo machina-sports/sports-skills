@@ -507,8 +507,14 @@ def get_event_details(request_data):
         if not event_id and not slug:
             return _error("Either event_id or slug is required")
 
-        endpoint = f"/events/{slug}" if slug else f"/events/{event_id}"
-        response = _gamma_request(endpoint, ttl=60)
+        if slug:
+            # Gamma resolves slugs via query param, not path (the path
+            # segment must be a numeric id).
+            response = _gamma_request("/events", params={"slug": slug}, ttl=60)
+            if isinstance(response, list):
+                response = response[0] if response else {}
+        else:
+            response = _gamma_request(f"/events/{event_id}", ttl=60)
         err = _check_error(response)
         if err:
             return err
