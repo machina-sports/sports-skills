@@ -38,6 +38,10 @@ KALSHI_SERIES = {
     "seriea": "KXSERIEA",
     "ligue1": "KXLIGUE1",
     "mls": "KXMLSGAME",
+    # FIFA World Cup 2026 match winners. The kalshi module's KALSHI_SERIES
+    # covers the full set of WC series (winner, groups, futures); this
+    # single-ticker map points at the match-market series.
+    "worldcup": "KXWCGAME",
 }
 
 # Maps common sport codes to Polymarket sport codes for the /sports endpoint.
@@ -59,6 +63,8 @@ POLYMARKET_SPORTS = {
     "seriea": "sea",
     "ligue1": "fl1",
     "mls": "mls",
+    # FIFA World Cup 2026 (Polymarket series 11433)
+    "worldcup": "fifwc",
 }
 
 SCOREBOARD_SPORTS = {"nfl", "nba", "mlb", "nhl", "wnba", "cfb", "cbb"}
@@ -72,7 +78,7 @@ SCOREBOARD_SPORTS = {"nfl", "nba", "mlb", "nhl", "wnba", "cfb", "cbb"}
 META_SPORTS = {
     "football": {
         # Per-league codes that already exist in KALSHI_SERIES / POLYMARKET_SPORTS.
-        "leagues": ["epl", "ucl", "laliga", "bundesliga", "seriea", "ligue1", "mls"],
+        "leagues": ["epl", "ucl", "laliga", "bundesliga", "seriea", "ligue1", "mls", "worldcup"],
         # Polymarket keyword fallbacks — these surface tournament markets that
         # aren't tagged with a sport code (FIFA World Cup futures, qualifiers,
         # international friendlies). "FIFA" is the discriminating keyword that
