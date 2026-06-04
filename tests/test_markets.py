@@ -546,6 +546,78 @@ class TestEvaluateMarketMocked:
         assert result["data"]["market_prob"] == 0.52
         assert result["data"]["evaluation"] is not None
 
+    @patch("sports_skills.kalshi")
+    @patch("sports_skills.markets._connector._load_sport_module")
+    def test_evaluate_kalshi_dollars_only_payload(self, mock_load, mock_kalshi):
+        # Raw get_market payloads post-migration carry only *_dollars fields;
+        # evaluate_market must still derive a usable market probability.
+        mock_mod = MagicMock()
+        mock_mod.get_game_summary.return_value = {
+            "status": True,
+            "data": {
+                "competitors": [
+                    {"team": {"name": "Boston Celtics"}, "home_away": "home"},
+                    {"team": {"name": "Los Angeles Lakers"}, "home_away": "away"},
+                ],
+                "odds": {"home_odds": -150, "away_odds": 130},
+            },
+        }
+        mock_load.return_value = mock_mod
+        mock_kalshi.get_market.return_value = {
+            "status": True,
+            "data": {"yes_bid_dollars": "0.1630", "last_price_dollars": "0.1680"},
+        }
+
+        result = evaluate_market(
+            {"params": {"sport": "nba", "event_id": "123", "kalshi_ticker": "KX-TEST"}}
+        )
+
+        assert result["status"] is True
+        assert result["data"]["market_prob"] == 0.16
+        assert result["data"]["market_source"] == "kalshi"
+        assert result["data"]["evaluation"] is not None
+
+    @patch("sports_skills.markets._connector._search_polymarket")
+    @patch("sports_skills.kalshi")
+    @patch("sports_skills.markets._connector._load_sport_module")
+    def test_evaluate_kalshi_zero_price_falls_through_to_search(
+        self, mock_load, mock_kalshi, mock_poly_search
+    ):
+        # A zero/missing Kalshi price must leave market_prob as None so the
+        # search fallback still runs (previously it was poisoned to 0.0).
+        mock_mod = MagicMock()
+        mock_mod.get_game_summary.return_value = {
+            "status": True,
+            "data": {
+                "competitors": [
+                    {"team": {"name": "Boston Celtics"}, "home_away": "home"},
+                    {"team": {"name": "Los Angeles Lakers"}, "home_away": "away"},
+                ],
+                "odds": {"home_odds": -150, "away_odds": 130},
+            },
+        }
+        mock_load.return_value = mock_mod
+        mock_kalshi.get_market.return_value = {
+            "status": True,
+            "data": {"yes_bid_dollars": "0.0000"},
+        }
+        mock_poly_search.return_value = [
+            {
+                "source": "polymarket",
+                "title": "Celtics Game",
+                "market_id": "M1",
+                "outcomes": [{"token_id": "T1", "outcome": "Yes", "price": 0.52}],
+            }
+        ]
+
+        result = evaluate_market(
+            {"params": {"sport": "nba", "event_id": "123", "kalshi_ticker": "KX-TEST"}}
+        )
+
+        assert result["status"] is True
+        assert result["data"]["market_prob"] == 0.52
+        assert result["data"]["market_source"] == "polymarket"
+
     @patch("sports_skills.markets._connector._load_sport_module")
     def test_evaluate_missing_odds(self, mock_load):
         mock_mod = MagicMock()

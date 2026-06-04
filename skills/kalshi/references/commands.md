@@ -51,8 +51,8 @@ sports-skills kalshi get_sports_config
 
 ## Commands that DO NOT exist (commonly hallucinated)
 
-- ~~`get_odds`~~ / ~~`get_probability`~~ — market prices ARE the implied probability. Use `get_market(ticker="...")` and read the `last_price` field (e.g., 20 = 20% implied probability).
-- ~~`get_market_odds`~~ — use `get_market` or `get_markets` and interpret `last_price` as probability.
+- ~~`get_odds`~~ / ~~`get_probability`~~ — market prices ARE the implied probability. Use `search_markets` or `get_todays_events`, which return `last_price` in cents (e.g., 20 = 20% implied probability).
+- ~~`get_market_odds`~~ — use `search_markets`/`get_todays_events` and interpret `last_price` as probability. Note: raw `get_market`/`get_markets` payloads carry dollar-string fields instead (`last_price_dollars: "0.2000"`), not integer cents.
 - ~~`get_series_by_sport`~~ — use `get_sports_config()` to see sport codes and series tickers.
 
 ## Other common mistakes

@@ -956,12 +956,20 @@ def evaluate_market(request_data: dict) -> dict:
     if market_prob is None and kalshi_ticker:
         try:
             from sports_skills import kalshi
+            from sports_skills.kalshi._connector import _price_cents
             market_result = kalshi.get_market(ticker=kalshi_ticker)
             if market_result.get("status"):
                 market_data = market_result.get("data", {})
-                yes_price = market_data.get("yes_bid", market_data.get("last_price", 0))
-                market_prob = float(yes_price) / 100.0 if float(yes_price) > 1 else float(yes_price)
-                market_source = "kalshi"
+                # Kalshi raw payloads migrated to *_dollars string fields;
+                # _price_cents reads either form and returns 0-100 cents.
+                # Leave market_prob as None on a zero/missing price so the
+                # search fallback below still runs.
+                yes_price = _price_cents(market_data, "yes_bid") or _price_cents(
+                    market_data, "last_price"
+                )
+                if yes_price:
+                    market_prob = float(yes_price) / 100.0
+                    market_source = "kalshi"
         except Exception as exc:
             warnings.append(f"Kalshi price fetch failed: {exc}")
 
