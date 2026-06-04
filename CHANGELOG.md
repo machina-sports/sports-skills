@@ -1,3 +1,8 @@
+## [0.25.3]
+
+### Added
+- **`kalshi.get_market_orderbook(ticker, depth)`:** wraps Kalshi's public `/markets/{ticker}/orderbook` endpoint. Returns the yes/no bid depth, preferring the current `orderbook_fp` dollar-string levels with a fallback to the legacy integer-cent `orderbook` form.
+
 ## [0.25.2]
 
 ### Fixed

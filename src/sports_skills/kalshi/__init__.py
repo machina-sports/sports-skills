@@ -24,6 +24,9 @@ from sports_skills.kalshi._connector import (
     get_market_candlesticks as _get_market_candlesticks,
 )
 from sports_skills.kalshi._connector import (
+    get_market_orderbook as _get_market_orderbook,
+)
+from sports_skills.kalshi._connector import (
     get_markets as _get_markets,
 )
 from sports_skills.kalshi._connector import (
@@ -126,6 +129,11 @@ def get_markets(
 def get_market(*, ticker: str) -> dict:
     """Get details for a specific market."""
     return _get_market(_req(ticker=ticker))
+
+
+def get_market_orderbook(*, ticker: str, depth: int | None = None) -> dict:
+    """Get the order book (yes/no bid depth) for a specific market."""
+    return _get_market_orderbook(_req(ticker=ticker, depth=depth))
 
 
 def get_trades(
