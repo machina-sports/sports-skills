@@ -84,7 +84,11 @@ def _params(**kwargs):
 
 
 def get_current_season(*, competition_id: str) -> dict:
-    """Detect current season for a competition."""
+    """Detect current season for a competition.
+
+    Args:
+        competition_id: Competition slug from get_competitions() (e.g. "premier-league", "la-liga").
+    """
     return wrap(_get_current_season(_params(competition_id=competition_id)))
 
 
@@ -94,27 +98,47 @@ def get_competitions() -> dict:
 
 
 def get_competition_seasons(*, competition_id: str) -> dict:
-    """Get available seasons for a competition."""
+    """Get available seasons for a competition.
+
+    Args:
+        competition_id: Competition slug from get_competitions() (e.g. "premier-league", "la-liga").
+    """
     return wrap(_get_competition_seasons(_params(competition_id=competition_id)))
 
 
 def get_season_schedule(*, season_id: str) -> dict:
-    """Get full season match schedule."""
+    """Get full season match schedule.
+
+    Args:
+        season_id: Season ID in "{competition}-{year}" form (e.g. "premier-league-2025"), from get_competition_seasons().
+    """
     return wrap(_get_season_schedule(_params(season_id=season_id)))
 
 
 def get_season_standings(*, season_id: str) -> dict:
-    """Get league table for a season."""
+    """Get league table for a season.
+
+    Args:
+        season_id: Season ID in "{competition}-{year}" form (e.g. "premier-league-2025"), from get_competition_seasons().
+    """
     return wrap(_get_season_standings(_params(season_id=season_id)))
 
 
 def get_season_leaders(*, season_id: str) -> dict:
-    """Get top scorers/leaders for a season."""
+    """Get top scorers/leaders for a season.
+
+    Args:
+        season_id: Season ID in "{competition}-{year}" form (e.g. "premier-league-2025"), from get_competition_seasons().
+    """
     return wrap(_get_season_leaders(_params(season_id=season_id)))
 
 
 def get_season_teams(*, season_id: str) -> dict:
-    """Get teams in a season."""
+    """Get teams in a season.
+
+    Args:
+        season_id: Season ID in "{competition}-{year}" form (e.g. "premier-league-2025"), from get_competition_seasons().
+    """
     return wrap(_get_season_teams(_params(season_id=season_id)))
 
 
@@ -130,12 +154,22 @@ def search_player(*, query: str) -> dict:
 
 
 def search_team(*, query: str, competition_id: str | None = None) -> dict:
-    """Search for a team by name across all leagues."""
+    """Search for a team by name across all leagues.
+
+    Args:
+        query: Team name to search for (e.g. "Arsenal", "Real Madrid").
+        competition_id: Competition slug from get_competitions() (e.g. "premier-league", "la-liga"). Optional — narrows the search.
+    """
     return wrap(_search_team(_params(query=query, competition_id=competition_id)))
 
 
 def get_team_profile(*, team_id: str, league_slug: str | None = None) -> dict:
-    """Get team profile with squad/roster."""
+    """Get team profile with squad/roster.
+
+    Args:
+        team_id: ESPN team ID (numeric string), from search_team().
+        league_slug: ESPN league slug (e.g. "eng.1", "esp.1"); narrows the lookup to one league.
+    """
     return wrap(_get_team_profile(_params(team_id=team_id, league_slug=league_slug)))
 
 
@@ -149,22 +183,38 @@ def get_daily_schedule(*, date: str | None = None) -> dict:
 
 
 def get_event_summary(*, event_id: str) -> dict:
-    """Get match summary with basic info and scores."""
+    """Get match summary with basic info and scores.
+
+    Args:
+        event_id: ESPN match/event ID (numeric string), from schedules or get_daily_schedule().
+    """
     return wrap(_get_event_summary(_params(event_id=event_id)))
 
 
 def get_event_lineups(*, event_id: str) -> dict:
-    """Get match lineups."""
+    """Get match lineups.
+
+    Args:
+        event_id: ESPN match/event ID (numeric string), from schedules or get_daily_schedule().
+    """
     return wrap(_get_event_lineups(_params(event_id=event_id)))
 
 
 def get_event_statistics(*, event_id: str) -> dict:
-    """Get match team statistics."""
+    """Get match team statistics.
+
+    Args:
+        event_id: ESPN match/event ID (numeric string), from schedules or get_daily_schedule().
+    """
     return wrap(_get_event_statistics(_params(event_id=event_id)))
 
 
 def get_event_timeline(*, event_id: str) -> dict:
-    """Get match timeline/key events."""
+    """Get match timeline/key events.
+
+    Args:
+        event_id: ESPN match/event ID (numeric string), from schedules or get_daily_schedule().
+    """
     return wrap(_get_event_timeline(_params(event_id=event_id)))
 
 
@@ -175,7 +225,14 @@ def get_team_schedule(
     season_year: str | None = None,
     competition_id: str | None = None,
 ) -> dict:
-    """Get schedule for a specific team."""
+    """Get schedule for a specific team.
+
+    Args:
+        team_id: ESPN team ID (numeric string), from search_team().
+        league_slug: ESPN league slug (e.g. "eng.1", "esp.1"); narrows the lookup to one league.
+        season_year: 4-digit season year (e.g. "2025"). NOT a season/league slug.
+        competition_id: Competition slug from get_competitions() (e.g. "premier-league", "la-liga"). Optional — filters the schedule to one competition.
+    """
     return wrap(
         _get_team_schedule(
             _params(
@@ -189,29 +246,51 @@ def get_team_schedule(
 
 
 def get_head_to_head(*, team_id: str, team_id_2: str) -> dict:
-    """Get head-to-head history between two teams."""
+    """Get head-to-head history between two teams.
+
+    Args:
+        team_id: ESPN team ID of the first team (numeric string), from search_team().
+        team_id_2: ESPN team ID of the second team (numeric string).
+    """
     return wrap(_get_head_to_head(_params(team_id=team_id, team_id_2=team_id_2)))
 
 
 def get_event_xg(*, event_id: str) -> dict:
-    """Get expected goals (xG) data from Understat."""
+    """Get expected goals (xG) data from Understat.
+
+    Args:
+        event_id: ESPN match/event ID (numeric string), from schedules or get_daily_schedule().
+    """
     return wrap(_get_event_xg(_params(event_id=event_id)))
 
 
 def get_event_players_statistics(*, event_id: str) -> dict:
-    """Get player-level match statistics."""
+    """Get player-level match statistics.
+
+    Args:
+        event_id: ESPN match/event ID (numeric string), from schedules or get_daily_schedule().
+    """
     return wrap(_get_event_players_statistics(_params(event_id=event_id)))
 
 
 def get_missing_players(*, season_id: str) -> dict:
-    """Get injured/missing/doubtful players (PL only via FPL)."""
+    """Get injured/missing/doubtful players (PL only via FPL).
+
+    Args:
+        season_id: Season ID in "{competition}-{year}" form (e.g. "premier-league-2025"), from get_competition_seasons(). Premier League seasons only.
+    """
     return wrap(_get_missing_players(_params(season_id=season_id)))
 
 
 def get_season_transfers(
     *, season_id: str, tm_player_ids: list[str] | None = None
 ) -> dict:
-    """Get season transfers via Transfermarkt."""
+    """Get season transfers via Transfermarkt.
+
+    Args:
+        season_id: Season ID in "{competition}-{year}" form (e.g. "premier-league-2025"), from get_competition_seasons().
+        tm_player_ids: Optional comma-separated Transfermarkt player IDs to filter by.
+    """
     return wrap(
         _get_season_transfers(_params(season_id=season_id, tm_player_ids=tm_player_ids))
     )

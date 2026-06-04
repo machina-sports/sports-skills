@@ -91,7 +91,11 @@ def get_team_info(*, year: int, team: str | None = None) -> dict:
 
 
 def get_race_schedule(*, year: int) -> dict:
-    """Get race schedule for a season."""
+    """Get race schedule for a season.
+
+    Args:
+        year: 4-digit championship year (e.g. 2026).
+    """
     return _get_race_schedule(_req(year=year))
 
 

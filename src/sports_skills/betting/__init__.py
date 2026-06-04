@@ -23,22 +23,43 @@ def _req(**kwargs):
 
 
 def convert_odds(*, odds: float, from_format: str = "american") -> dict:
-    """Convert odds between American, decimal, and probability formats."""
+    """Convert odds between American, decimal, and probability formats.
+
+    Args:
+        odds: The odds value to convert (e.g. -150, 2.5, or 0.6).
+        from_format: Source format — "american" (default), "decimal", or "probability".
+    """
     return _convert_odds(_req(odds=odds, from_format=from_format))
 
 
 def devig(*, odds: str, format: str = "american") -> dict:
-    """Remove vig/juice from sportsbook odds to get fair probabilities."""
+    """Remove vig/juice from sportsbook odds to get fair probabilities.
+
+    Args:
+        odds: Comma-separated odds for ALL outcomes (e.g. "-150,+130" for a
+            2-way market, "-110,-110" for spread/total).
+        format: Odds format — "american" (default), "decimal", or "probability".
+    """
     return _devig(_req(odds=odds, format=format))
 
 
 def find_edge(*, fair_prob: float, market_prob: float) -> dict:
-    """Compare fair probability to market price — compute edge, EV, and Kelly."""
+    """Compare fair probability to market price — compute edge, EV, and Kelly.
+
+    Args:
+        fair_prob: True/fair probability of the outcome, 0-1 (e.g. 0.58).
+        market_prob: Market price / implied probability to bet at, 0-1 (e.g. 0.52).
+    """
     return _find_edge(_req(fair_prob=fair_prob, market_prob=market_prob))
 
 
 def kelly_criterion(*, fair_prob: float, market_prob: float) -> dict:
-    """Compute the Kelly fraction from fair and market probabilities."""
+    """Compute the Kelly fraction from fair and market probabilities.
+
+    Args:
+        fair_prob: True/fair probability of winning, 0-1 (e.g. 0.58).
+        market_prob: Market price you would buy at, 0-1 (e.g. 0.52).
+    """
     return _kelly_criterion(_req(fair_prob=fair_prob, market_prob=market_prob))
 
 
@@ -49,7 +70,18 @@ def evaluate_bet(
     book_format: str = "american",
     outcome: int = 0,
 ) -> dict:
-    """Full bet evaluation: book odds + market price → devig → edge → Kelly."""
+    """Full bet evaluation: book odds + market price → devig → edge → Kelly.
+
+    Args:
+        book_odds: Comma-separated sportsbook odds for ALL outcomes
+            (e.g. "-150,+130" for a 2-way market).
+        market_prob: Prediction market price (0-1) for the outcome being
+            evaluated.
+        book_format: Format of book_odds — "american" (default), "decimal",
+            or "probability".
+        outcome: Which outcome to evaluate, 0-indexed into book_odds
+            (default: 0 = first outcome).
+    """
     return _evaluate_bet(
         _req(
             book_odds=book_odds,
@@ -63,7 +95,13 @@ def evaluate_bet(
 def find_arbitrage(
     *, market_probs: str, labels: str | None = None
 ) -> dict:
-    """Detect arbitrage opportunities across outcomes."""
+    """Detect arbitrage opportunities across outcomes.
+
+    Args:
+        market_probs: Comma-separated market probabilities for ALL outcomes,
+            0-1 each (e.g. "0.48,0.49" for 2-way, "0.40,0.25,0.30" for 3-way).
+        labels: Optional comma-separated outcome labels (e.g. "home,away").
+    """
     return _find_arbitrage(_req(market_probs=market_probs, labels=labels))
 
 
@@ -74,7 +112,17 @@ def parlay_analysis(
     odds_format: str = "american",
     correlation: float = 0.0,
 ) -> dict:
-    """Analyze a multi-leg parlay: combined probability, EV, and Kelly."""
+    """Analyze a multi-leg parlay: combined probability, EV, and Kelly.
+
+    Args:
+        legs: Comma-separated fair probabilities per leg, 0-1 each
+            (e.g. "0.58,0.62,0.55").
+        parlay_odds: Offered parlay payout (e.g. 600 for +600 American,
+            or 7.0 decimal).
+        odds_format: Format of parlay_odds — "american" (default) or "decimal".
+        correlation: Correlation adjustment, 0.0-0.5 (0.0 = independent legs;
+            positive for correlated legs like same-game parlays).
+    """
     return _parlay_analysis(
         _req(
             legs=legs,
@@ -103,7 +151,15 @@ def line_movement(
     close_line: float | None = None,
     market_type: str = "moneyline",
 ) -> dict:
-    """Analyze line movement between open and close."""
+    """Analyze line movement between open and close.
+
+    Args:
+        open_odds: Opening American odds (e.g. -140). For moneyline markets.
+        close_odds: Closing American odds (e.g. -160). For moneyline markets.
+        open_line: Opening spread/total line (e.g. -6.5). For spread/total markets.
+        close_line: Closing spread/total line (e.g. -7.5). For spread/total markets.
+        market_type: "moneyline" (default), "spread", or "total".
+    """
     return _line_movement(
         _req(
             open_odds=open_odds,
