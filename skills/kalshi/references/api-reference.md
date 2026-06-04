@@ -49,6 +49,7 @@
 | Serie A | `seriea` | KXSERIEA |
 | Ligue 1 | `ligue1` | KXLIGUE1 |
 | MLS | `mls` | KXMLSGAME |
+| FIFA World Cup 2026 | `worldcup` | KXMENWORLDCUP, KXWCGAME, KXWCGROUPQUAL, KXWCGROUPORDER, KXWCSTAGE, KXWCHOSTSTAGE, KXWCBESTHOST, KXWCNOEURSA, KXWCREGIONKO, KXWCEVERYTEAMGOAL |
 
 See `references/series-tickers.md` for the full series ticker list and `references/api.md` for raw API documentation.
 

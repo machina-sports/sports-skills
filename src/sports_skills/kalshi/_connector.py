@@ -496,6 +496,21 @@ KALSHI_SERIES = {
     "seriea": ["KXSERIEA"],
     "ligue1": ["KXLIGUE1"],
     "mls": ["KXMLSGAME"],
+    # FIFA World Cup 2026 — winner, match, group, and futures series. These
+    # markets are NOT reachable via the no-sport /events page scan (that
+    # returns one page of all Kalshi events); series tickers are the only path.
+    "worldcup": [
+        "KXMENWORLDCUP",      # tournament winner
+        "KXWCGAME",           # match winners
+        "KXWCGROUPQUAL",      # group qualification
+        "KXWCGROUPORDER",     # group exact order
+        "KXWCSTAGE",          # furthest stage advanced
+        "KXWCHOSTSTAGE",      # furthest stage by a host nation
+        "KXWCBESTHOST",       # best performing host nation
+        "KXWCNOEURSA",        # winner outside Europe/South America
+        "KXWCREGIONKO",       # region teams reaching knockout stage
+        "KXWCEVERYTEAMGOAL",  # every team to score a goal
+    ],
 }
 
 
@@ -525,7 +540,7 @@ def get_todays_events(request_data):
     Params:
         sport (str): Sport code (required) — 'nba', 'nfl', 'nhl', 'mlb',
             'wnba', 'cfb', 'cbb', 'epl', 'ucl', 'laliga', 'bundesliga',
-            'seriea', 'ligue1', 'mls'.
+            'seriea', 'ligue1', 'mls', 'worldcup'.
         limit (int): Max events (default: 50, max: 200).
     """
     try:
@@ -581,7 +596,7 @@ def search_markets(request_data):
     Params:
         sport (str): Sport code (e.g. 'nba', 'nfl', 'nhl', 'mlb', 'wnba',
             'cfb', 'cbb', 'epl', 'ucl', 'laliga', 'bundesliga', 'seriea',
-            'ligue1', 'mls'). Resolves to series_ticker(s) automatically.
+            'ligue1', 'mls', 'worldcup'). Resolves to series_ticker(s) automatically.
         query (str): Keyword to match in event/market titles.
         status (str): Market status filter (default: 'open').
         limit (int): Max results (default: 50, max: 200).

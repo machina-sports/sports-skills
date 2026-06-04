@@ -1,3 +1,9 @@
+## [0.25.1]
+
+### Added
+- **`worldcup` sport key for Kalshi:** FIFA World Cup 2026 markets live in dedicated series (`KXMENWORLDCUP`, `KXWCGAME`, `KXWCGROUPQUAL`, `KXWCSTAGE`, …) that were unreachable before — `kalshi.search_markets` without a sport scans a single unfiltered `/events` page (all of Kalshi: politics, weather, …), so World Cup queries always returned 0. `search_markets(sport="worldcup")` and `get_todays_events(sport="worldcup")` now fan out across 10 World Cup series.
+- **`worldcup` in the cross-venue markets module:** `KALSHI_SERIES["worldcup"] = "KXWCGAME"` (match winners), `POLYMARKET_SPORTS["worldcup"] = "fifwc"` (Polymarket's FIFA World Cup sport code), and `worldcup` joins the `football`/`soccer` meta-sport fan-out — `get_sport_markets(sport="football")` now surfaces World Cup match markets on both venues.
+
 ## [0.25.0]
 
 ### Added

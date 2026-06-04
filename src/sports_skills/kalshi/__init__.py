@@ -178,7 +178,7 @@ def get_sports_config() -> dict:
     get_todays_events(sport=...).
 
     US sports: 'nba', 'nfl', 'nhl', 'mlb', 'wnba', 'cfb', 'cbb'.
-    Football: 'epl', 'ucl', 'laliga', 'bundesliga', 'seriea', 'ligue1', 'mls'.
+    Football: 'epl', 'ucl', 'laliga', 'bundesliga', 'seriea', 'ligue1', 'mls', 'worldcup'.
     """
     return _get_sports_config(_req())
 
@@ -192,7 +192,7 @@ def get_todays_events(*, sport: str, limit: int = 50) -> dict:
     Args:
         sport: Sport code — US sports: 'nba', 'nfl', 'nhl', 'mlb', 'wnba',
             'cfb', 'cbb'. Football: 'epl', 'ucl', 'laliga', 'bundesliga',
-            'seriea', 'ligue1', 'mls'.
+            'seriea', 'ligue1', 'mls', 'worldcup'.
         limit: Max events (default: 50, max: 200).
     """
     return _get_todays_events(_req(sport=sport, limit=limit))
@@ -213,7 +213,7 @@ def search_markets(
     Args:
         sport: Sport code — US sports: 'nba', 'nfl', 'nhl', 'mlb', 'wnba',
             'cfb', 'cbb'. Football: 'epl', 'ucl', 'laliga', 'bundesliga',
-            'seriea', 'ligue1', 'mls'. Resolves to series_ticker(s).
+            'seriea', 'ligue1', 'mls', 'worldcup'. Resolves to series_ticker(s).
         query: Keyword to match in event/market titles.
         status: Market status filter (default: 'open').
         limit: Max results (default: 50, max: 200).

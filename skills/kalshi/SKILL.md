@@ -51,7 +51,7 @@ RIGHT: search_markets(sport='epl', query='Leeds') → returns all Leeds markets
 
 ## Important Notes
 
-- **On Kalshi, "Football" = NFL.** For football/soccer (EPL, La Liga, etc.), use sport codes: `epl`, `ucl`, `laliga`, `bundesliga`, `seriea`, `ligue1`, `mls`.
+- **On Kalshi, "Football" = NFL.** For football/soccer (EPL, La Liga, etc.), use sport codes: `epl`, `ucl`, `laliga`, `bundesliga`, `seriea`, `ligue1`, `mls`, `worldcup`.
 - **Prices are probabilities.** A `last_price` of 20 means 20% implied probability. Scale is 0-100 (not 0-1 like Polymarket).
 - **Always use `status="open"`** when querying markets, otherwise results include settled/closed markets.
 - **Shared interface with Polymarket:** `search_markets(sport=...)`, `get_todays_events(sport=...)`, and `get_sports_config()` work the same way on both platforms.

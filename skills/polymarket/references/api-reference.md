@@ -42,7 +42,7 @@
 | `cfb` | College Football | `ucl` | Champions League |
 | `cbb` | College Basketball | `uel` | Europa League |
 | `atp` | ATP Tennis | `mls` | MLS |
-| `wta` | WTA Tennis | | |
+| `wta` | WTA Tennis | `fifwc` | FIFA World Cup 2026 |
 
 Run `get_sports_config()` for the full list of 120+ sport codes.
 

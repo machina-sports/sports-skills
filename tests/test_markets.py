@@ -139,6 +139,13 @@ class TestMappingTables:
         football_sports = {"epl", "ucl", "laliga", "bundesliga", "seriea", "ligue1", "mls"}
         assert football_sports.issubset(set(KALSHI_SERIES.keys()))
 
+    def test_worldcup_on_both_venues(self):
+        # FIFA World Cup 2026 markets live in dedicated Kalshi series and a
+        # dedicated Polymarket sport code (fifwc); neither is reachable via
+        # keyword search alone.
+        assert KALSHI_SERIES["worldcup"] == "KXWCGAME"
+        assert POLYMARKET_SPORTS["worldcup"] == "fifwc"
+
     def test_kalshi_series_values_are_strings(self):
         for series in KALSHI_SERIES.values():
             assert isinstance(series, str)
@@ -588,9 +595,27 @@ class TestMetaSports:
         for league in spec["leagues"]:
             assert league in KALSHI_SERIES or league in POLYMARKET_SPORTS, league
         assert "FIFA" in spec.get("polymarket_keywords", [])
+        # World Cup match markets ride along with the football fan-out.
+        assert "worldcup" in spec["leagues"]
 
     def test_soccer_aliases_to_football(self):
         assert META_SPORT_ALIASES.get("soccer") == "football"
+
+
+class TestKalshiWorldCupSeries:
+    def test_kalshi_module_worldcup_series(self):
+        # The kalshi module maps 'worldcup' to the full set of FIFA World Cup
+        # 2026 series. Without these, search_markets falls back to a single
+        # unfiltered /events page scan and never sees World Cup markets.
+        from sports_skills.kalshi._connector import (
+            KALSHI_SERIES as KALSHI_MODULE_SERIES,
+        )
+
+        tickers = KALSHI_MODULE_SERIES["worldcup"]
+        assert "KXMENWORLDCUP" in tickers
+        assert "KXWCGAME" in tickers
+        assert "KXWCGROUPQUAL" in tickers
+        assert all(t.startswith("KX") for t in tickers)
 
 
 class TestGetSportMarketsMeta:
@@ -634,14 +659,15 @@ class TestGetSportMarketsMeta:
 
         assert result["status"] is True
         assert result["data"]["sport"] == "football"
-        # 7 leagues in META_SPORTS["football"]["leagues"] → 7 kalshi calls.
-        assert mock_kalshi.get_markets.call_count == 7
-        # 7 league calls + 1 FIFA keyword call = 8 polymarket calls.
-        assert mock_poly.search_markets.call_count == 8
-        # All 7 kalshi markets surface (one per league).
-        assert result["data"]["kalshi_count"] == 7
-        # 8 unique polymarket ids (7 leagues + FIFA), all kept by dedupe.
-        assert result["data"]["polymarket_count"] == 8
+        # 8 leagues in META_SPORTS["football"]["leagues"] (7 club leagues
+        # + worldcup) → 8 kalshi calls.
+        assert mock_kalshi.get_markets.call_count == 8
+        # 8 league calls + 1 FIFA keyword call = 9 polymarket calls.
+        assert mock_poly.search_markets.call_count == 9
+        # All 8 kalshi markets surface (one per league).
+        assert result["data"]["kalshi_count"] == 8
+        # 9 unique polymarket ids (8 leagues + FIFA), all kept by dedupe.
+        assert result["data"]["polymarket_count"] == 9
 
     @patch("sports_skills.polymarket")
     @patch("sports_skills.kalshi")
