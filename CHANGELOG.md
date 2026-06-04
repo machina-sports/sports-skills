@@ -1,3 +1,11 @@
+## [0.26.1]
+
+### Improved
+- **Tool schemas: 100% param descriptions (was 77%):** the generated tool schemas (`sports-skills <module> schema`) are what agents read to decide arguments — 107 params across betting, kalshi, polymarket, football, and f1 had no description, so models guessed argument shapes (issue #69 item 3). Every wrapper now carries a Google-style `Args:` section that flows into the schemas; a new test guard fails CI if a future command ships an undocumented param.
+
+### Fixed
+- **`polymarket.get_price_history` fidelity documented as seconds — it is minutes:** verified empirically (fidelity=60 → hourly points, 1440 → daily).
+
 ## [0.26.0]
 
 ### Added

@@ -926,7 +926,7 @@ def get_price_history(request_data):
     Params:
         token_id (str): CLOB token ID (required)
         interval (str): Time range - "1d", "1w", "1m", "max" (default: "max")
-        fidelity (int): Seconds between data points (default: 120)
+        fidelity (int): Resolution of data points in minutes (default: 120)
     """
     try:
         params = request_data.get("params", {})
