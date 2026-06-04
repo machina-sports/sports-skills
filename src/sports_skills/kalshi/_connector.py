@@ -590,6 +590,42 @@ def get_todays_events(request_data):
         return _error(f"Error fetching today's events: {str(e)}")
 
 
+def _price_cents(market, key):
+    """Read a market price in cents, tolerating Kalshi's dollars migration.
+
+    Kalshi's API moved from integer-cent fields (``yes_bid: 29``) to
+    dollar-string fields (``yes_bid_dollars: "0.2900"``); nested market
+    objects on /events now carry only the dollar form. Prefer the legacy
+    cent field when present and non-zero, fall back to converting the
+    dollar string back to cents so the compact record keeps its
+    documented 0-100 unit.
+    """
+    value = market.get(key)
+    if value not in (None, "", 0, "0"):
+        return value
+    raw = market.get(f"{key}_dollars")
+    if raw not in (None, ""):
+        try:
+            return round(float(raw) * 100)
+        except (TypeError, ValueError):
+            pass
+    return 0
+
+
+def _volume_units(market):
+    """Read market volume, tolerating the *_fp string-field migration."""
+    value = market.get("volume")
+    if value not in (None, "", 0, "0"):
+        return value
+    raw = market.get("volume_fp")
+    if raw not in (None, ""):
+        try:
+            return float(raw)
+        except (TypeError, ValueError):
+            pass
+    return 0
+
+
 def search_markets(request_data):
     """Search Kalshi markets by sport and/or keyword.
 
@@ -722,10 +758,10 @@ def search_markets(request_data):
                     "title": m.get("title", m.get("subtitle", "")),
                     "subtitle": m.get("subtitle", ""),
                     "event_title": title,
-                    "yes_bid": m.get("yes_bid", 0),
-                    "no_bid": m.get("no_bid", 0),
-                    "last_price": m.get("last_price", 0),
-                    "volume": m.get("volume", 0),
+                    "yes_bid": _price_cents(m, "yes_bid"),
+                    "no_bid": _price_cents(m, "no_bid"),
+                    "last_price": _price_cents(m, "last_price"),
+                    "volume": _volume_units(m),
                     "status": m.get("status", ""),
                 })
 

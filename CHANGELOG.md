@@ -1,3 +1,8 @@
+## [0.25.2]
+
+### Fixed
+- **Kalshi compact prices were all zero:** Kalshi's API migrated from integer-cent price fields (`yes_bid: 29`) to dollar-string fields (`yes_bid_dollars: "0.2900"`), and nested market objects on `/events` now carry only the dollar form — so `search_markets`' compact records returned `yes_bid`/`no_bid`/`last_price`/`volume` as 0 for **every sport**. Prices now fall back to converting the `*_dollars` strings to cents (keeping the documented 0-100 unit) and volume falls back to `volume_fp`.
+
 ## [0.25.1]
 
 ### Added
