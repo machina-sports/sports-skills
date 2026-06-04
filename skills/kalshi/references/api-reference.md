@@ -20,6 +20,7 @@
 | `get_event` | event_ticker | with_nested_markets | Event details |
 | `get_markets` | | limit, cursor, event_ticker, series_ticker, status, tickers | Market listing |
 | `get_market` | ticker | | Market details |
+| `get_market_orderbook` | ticker | depth | Order book — yes/no bid depth (dollar-string levels) |
 | `get_trades` | | limit, cursor, ticker, min_ts, max_ts | Recent trades |
 | `get_market_candlesticks` | series_ticker, ticker, start_ts, end_ts, period_interval | | OHLC data |
 | `get_sports_filters` | | | Filter categories |

@@ -27,6 +27,7 @@ These query the Kalshi API directly using series/event/market tickers:
 - `get_event`
 - `get_markets`
 - `get_market`
+- `get_market_orderbook`
 - `get_trades`
 - `get_market_candlesticks`
 - `get_sports_filters`

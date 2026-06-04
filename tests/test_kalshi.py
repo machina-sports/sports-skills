@@ -90,3 +90,33 @@ class TestGetTodaysEventsNormalization:
         assert m["no_bid"] == 84
         assert m["last_price"] == 17
         assert m["volume"] == 123.45
+
+
+class TestGetMarketOrderbook:
+    @patch("sports_skills.kalshi._connector._request")
+    def test_orderbook_fp_preferred(self, mock_request):
+        mock_request.return_value = {
+            "orderbook_fp": {
+                "yes_dollars": [["0.1600", "42.55"]],
+                "no_dollars": [["0.8300", "100.00"]],
+            }
+        }
+        from sports_skills.kalshi._connector import get_market_orderbook
+
+        result = get_market_orderbook({"params": {"ticker": "KXTEST-1-A"}})
+        assert result["status"] is True
+        assert result["data"]["orderbook"]["yes_dollars"] == [["0.1600", "42.55"]]
+
+    @patch("sports_skills.kalshi._connector._request")
+    def test_legacy_orderbook_fallback(self, mock_request):
+        mock_request.return_value = {"orderbook": {"yes": [[16, 42]], "no": [[83, 100]]}}
+        from sports_skills.kalshi._connector import get_market_orderbook
+
+        result = get_market_orderbook({"params": {"ticker": "KXTEST-1-A"}})
+        assert result["data"]["orderbook"]["yes"] == [[16, 42]]
+
+    def test_ticker_required(self):
+        from sports_skills.kalshi._connector import get_market_orderbook
+
+        result = get_market_orderbook({"params": {}})
+        assert result["status"] is False

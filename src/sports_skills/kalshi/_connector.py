@@ -364,6 +364,44 @@ def get_market(request_data):
         return _error(f"Error fetching market: {str(e)}")
 
 
+def get_market_orderbook(request_data):
+    """Get the order book (bid depth) for a specific market.
+
+    Kalshi returns yes/no bid levels as dollar-string pairs under
+    ``orderbook_fp`` (e.g. ``{"yes_dollars": [["0.1600", "42.55"], ...]}``);
+    legacy integer-cent levels appear under ``orderbook`` when present.
+    Both forms are returned untouched.
+
+    Params:
+        ticker (str): Market ticker (required)
+        depth (int): Max price levels per side (optional)
+    """
+    try:
+        params = request_data.get("params", {})
+        ticker = params.get("ticker", "")
+        if not ticker:
+            return _error("ticker is required")
+
+        query = {}
+        if params.get("depth"):
+            query["depth"] = int(params["depth"])
+
+        response = _request(
+            f"/markets/{ticker}/orderbook", params=query or None, ttl=15
+        )
+        err = _check_error(response)
+        if err:
+            return err
+
+        orderbook = response.get("orderbook_fp") or response.get("orderbook") or {}
+        return _success(
+            {"ticker": ticker, "orderbook": orderbook},
+            f"Retrieved order book: {ticker}",
+        )
+    except Exception as e:
+        return _error(f"Error fetching order book: {str(e)}")
+
+
 def get_trades(request_data):
     """Get recent trades with optional filtering.
 

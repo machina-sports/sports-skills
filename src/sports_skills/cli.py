@@ -136,6 +136,7 @@ _REGISTRY = {
             ]
         },
         "get_market": {"required": ["ticker"]},
+        "get_market_orderbook": {"required": ["ticker"], "optional": ["depth"]},
         "get_trades": {"optional": ["limit", "cursor", "ticker", "min_ts", "max_ts"]},
         "get_market_candlesticks": {
             "required": [
