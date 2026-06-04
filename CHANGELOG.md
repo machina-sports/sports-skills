@@ -6,6 +6,8 @@
 - **`markets.get_price_history(venue, ..., interval)` — unified price history:** `{timestamp, price}` points (0-1 yes probability) at `1m`/`1h`/`1d` resolution, same shape regardless of venue.
 
 ### Fixed
+- **CLI silently dropped space-separated flag values:** `--query FIFA` parsed the flag as a boolean and discarded the value (searching for `"true"`), returning silently-empty results. Both `--flag=value` and `--flag value` forms now work, and a value-expecting flag with no value fails loudly.
+- **CLI raised a raw traceback on wrong-typed values:** `--season_year=premier-league-2026` crashed with `ValueError`. Bad values now return a structured error (`{"status": false, "message": "Invalid value for --season_year: ... (expected an integer)."}`) with exit code 1.
 - **`polymarket.get_event_details(slug=...)` returned a 422:** the Gamma API resolves slugs via the `?slug=` query param, not the path (which must be a numeric id). Slug lookups now work.
 
 ## [0.25.3]
