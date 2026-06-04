@@ -193,6 +193,15 @@ _REGISTRY = {
             "required": ["sport", "event_id"],
             "optional": ["token_id", "kalshi_ticker", "outcome"],
         },
+        "match_markets": {"required": ["sport"], "optional": ["date"]},
+        "get_market_price": {
+            "required": ["venue"],
+            "optional": ["ticker", "token_id", "at_time"],
+        },
+        "get_price_history": {
+            "required": ["venue"],
+            "optional": ["ticker", "token_id", "interval", "start_time", "end_time"],
+        },
     },
     "metadata": {
         "get_team_logo": {"required": ["team_name"], "optional": ["sport"]},
@@ -644,6 +653,53 @@ def _parse_value(key, value):
     return value
 
 
+def _parse_cli_kwargs(args):
+    """Parse --key=value, --key value, and --flag CLI args into kwargs.
+
+    Both the equals form (``--query=FIFA``) and the conventional
+    space-separated form (``--query FIFA``) are accepted. A
+    value-expecting flag with no value fails loudly instead of being
+    silently coerced to a boolean, and a wrong-typed value returns a
+    structured error instead of a traceback.
+    """
+    kwargs = {}
+    i = 0
+    while i < len(args):
+        arg = args[i]
+        if not arg.startswith("--"):
+            _cli_error(
+                f"Unexpected argument '{arg}'. "
+                "Pass parameters as --key=value or --key value."
+            )
+        arg = arg[2:]
+        if "=" in arg:
+            key, value = arg.split("=", 1)
+        elif i + 1 < len(args) and not args[i + 1].startswith("--"):
+            # Space-separated form: --query FIFA
+            key, value = arg, args[i + 1]
+            i += 1
+        elif arg in _BOOL_PARAMS:
+            key, value = arg, True
+        else:
+            _cli_error(
+                f"Flag --{arg} expects a value. "
+                f"Use --{arg}=<value> or --{arg} <value>."
+            )
+        try:
+            kwargs[key] = _parse_value(key, value)
+        except (TypeError, ValueError):
+            expected = (
+                "an integer"
+                if key in _INT_PARAMS
+                else "a number"
+                if key in _FLOAT_PARAMS
+                else "a valid value"
+            )
+            _cli_error(f"Invalid value for --{key}: '{value}' (expected {expected}).")
+        i += 1
+    return kwargs
+
+
 def _parse_docstring_args(docstring):
     """Parse Google-style docstring Args section into a dict of {param: description}."""
     if not docstring:
@@ -950,17 +1006,8 @@ def main():
             f"Available: {', '.join(_REGISTRY[module_name].keys())}"
         )
 
-    # Parse --key=value and --flag params
-    kwargs = {}
-    for arg in remaining:
-        if arg.startswith("--"):
-            arg = arg[2:]
-            if "=" in arg:
-                key, value = arg.split("=", 1)
-                kwargs[key] = _parse_value(key, value)
-            else:
-                # Boolean flag (e.g., --google_news)
-                kwargs[arg] = _parse_value(arg, True)
+    # Parse --key=value, --key value, and --flag params
+    kwargs = _parse_cli_kwargs(remaining)
 
     # Check required params
     cmd_info = _REGISTRY[module_name][command_name]

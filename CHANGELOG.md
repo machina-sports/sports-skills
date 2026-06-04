@@ -1,3 +1,15 @@
+## [0.26.0]
+
+### Added
+- **`markets.match_markets(sport, date)` — cross-venue game matching:** pairs the same game across Kalshi and Polymarket. Single-game markets encode `{date, away, home}` deterministically in Kalshi event tickers (`KXMLBGAME-26JUN062210NYMSD`) and Polymarket slugs (`mlb-nym-sd-2026-06-06`); games are joined on date + team codes, with fuzzy title matching as a fallback for leagues where the venues use different code conventions (e.g. World Cup ISO vs FIFA country codes). Each match carries the Kalshi market tickers and the Polymarket moneyline token IDs, so prices can be compared directly without keyword searching.
+- **`markets.get_market_price(venue, ..., at_time)` — unified point-in-time prices:** one shape for both venues — `yes`/`no` sides as 0-1 probabilities. Live price by default; pass `at_time` (Unix or ISO 8601) for the price as of any past moment (backed by Kalshi candlesticks / Polymarket price history).
+- **`markets.get_price_history(venue, ..., interval)` — unified price history:** `{timestamp, price}` points (0-1 yes probability) at `1m`/`1h`/`1d` resolution, same shape regardless of venue.
+
+### Fixed
+- **CLI silently dropped space-separated flag values:** `--query FIFA` parsed the flag as a boolean and discarded the value (searching for `"true"`), returning silently-empty results. Both `--flag=value` and `--flag value` forms now work, and a value-expecting flag with no value fails loudly.
+- **CLI raised a raw traceback on wrong-typed values:** `--season_year=premier-league-2026` crashed with `ValueError`. Bad values now return a structured error (`{"status": false, "message": "Invalid value for --season_year: ... (expected an integer)."}`) with exit code 1.
+- **`polymarket.get_event_details(slug=...)` returned a 422:** the Gamma API resolves slugs via the `?slug=` query param, not the path (which must be a numeric id). Slug lookups now work.
+
 ## [0.25.3]
 
 ### Added

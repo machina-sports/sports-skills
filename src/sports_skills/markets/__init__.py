@@ -16,6 +16,12 @@ from sports_skills.markets._connector import (
     evaluate_market as _evaluate_market,
 )
 from sports_skills.markets._connector import (
+    get_market_price as _get_market_price,
+)
+from sports_skills.markets._connector import (
+    get_price_history as _get_price_history,
+)
+from sports_skills.markets._connector import (
     get_sport_markets as _get_sport_markets,
 )
 from sports_skills.markets._connector import (
@@ -23,6 +29,9 @@ from sports_skills.markets._connector import (
 )
 from sports_skills.markets._connector import (
     get_todays_markets as _get_todays_markets,
+)
+from sports_skills.markets._connector import (
+    match_markets as _match_markets,
 )
 from sports_skills.markets._connector import (
     normalize_price as _normalize_price,
@@ -86,6 +95,80 @@ def get_sport_schedule(*, sport: str | None = None, date: str | None = None) -> 
         date: Date in YYYY-MM-DD format. Defaults to today.
     """
     return _get_sport_schedule(_req(sport=sport, date=date))
+
+
+def match_markets(*, sport: str, date: str | None = None) -> dict:
+    """Pair the same game across Kalshi and Polymarket.
+
+    Single-game markets encode {date, away, home} deterministically in
+    Kalshi event tickers and Polymarket slugs; games are joined on
+    date + team codes, with fuzzy title matching as a fallback. Each
+    match carries the Kalshi market tickers and the Polymarket token IDs
+    so prices can be compared directly.
+
+    Args:
+        sport: League code available on both venues (mlb, nfl, nba, nhl,
+            epl, worldcup, ...).
+        date: Optional YYYY-MM-DD filter. Omit for all upcoming games.
+    """
+    return _match_markets(_req(sport=sport, date=date))
+
+
+def get_market_price(
+    *,
+    venue: str,
+    ticker: str | None = None,
+    token_id: str | None = None,
+    at_time: int | str | None = None,
+) -> dict:
+    """Current or point-in-time price for a market on either venue.
+
+    Returns both sides as 0-1 probabilities in one shape regardless
+    of venue.
+
+    Args:
+        venue: 'kalshi' or 'polymarket'.
+        ticker: Kalshi market ticker (required for kalshi).
+        token_id: Polymarket CLOB token ID (required for polymarket).
+        at_time: Unix timestamp or ISO 8601 datetime for a historical
+            price. Omit for the live price.
+    """
+    return _get_market_price(
+        _req(venue=venue, ticker=ticker, token_id=token_id, at_time=at_time)
+    )
+
+
+def get_price_history(
+    *,
+    venue: str,
+    ticker: str | None = None,
+    token_id: str | None = None,
+    interval: str | None = None,
+    start_time: int | str | None = None,
+    end_time: int | str | None = None,
+) -> dict:
+    """Price history for a market on either venue, in one shape.
+
+    Points are {timestamp, price} with price as the 0-1 yes probability.
+
+    Args:
+        venue: 'kalshi' or 'polymarket'.
+        ticker: Kalshi market ticker (required for kalshi).
+        token_id: Polymarket CLOB token ID (required for polymarket).
+        interval: '1m', '1h', or '1d' (default: '1d').
+        start_time: Unix timestamp or ISO 8601 (defaults by interval).
+        end_time: Unix timestamp or ISO 8601 (default: now).
+    """
+    return _get_price_history(
+        _req(
+            venue=venue,
+            ticker=ticker,
+            token_id=token_id,
+            interval=interval,
+            start_time=start_time,
+            end_time=end_time,
+        )
+    )
 
 
 def normalize_price(*, price: float, source: str) -> dict:
