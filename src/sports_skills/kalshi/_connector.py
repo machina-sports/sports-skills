@@ -579,6 +579,14 @@ def get_todays_events(request_data):
                 event_ticker = event.get("event_ticker", "")
                 if event_ticker not in seen_tickers:
                     seen_tickers.add(event_ticker)
+                    # Kalshi's dollars migration dropped the legacy cent
+                    # fields from nested markets; re-inject them so the
+                    # documented 0-100 price fields stay readable.
+                    for m in event.get("markets", []) or []:
+                        m["yes_bid"] = _price_cents(m, "yes_bid")
+                        m["no_bid"] = _price_cents(m, "no_bid")
+                        m["last_price"] = _price_cents(m, "last_price")
+                        m["volume"] = _volume_units(m)
                     all_events.append(event)
 
         return _success(
