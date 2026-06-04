@@ -37,6 +37,7 @@
 | Serie A | `seriea` | KXSERIEA | `sea` |
 | Ligue 1 | `ligue1` | KXLIGUE1 | `fl1` |
 | MLS | `mls` | KXMLSGAME | `mls` |
+| FIFA World Cup 2026 | `worldcup` | KXWCGAME | `fifwc` |
 
 ## Price Normalization
 

@@ -25,6 +25,7 @@
 | Serie A | `seriea` | KXSERIEA |
 | Ligue 1 | `ligue1` | KXLIGUE1 |
 | MLS | `mls` | KXMLSGAME |
+| FIFA World Cup 2026 | `worldcup` | KXMENWORLDCUP, KXWCGAME, KXWCGROUPQUAL, KXWCGROUPORDER, KXWCSTAGE, KXWCHOSTSTAGE, KXWCBESTHOST, KXWCNOEURSA, KXWCREGIONKO, KXWCEVERYTEAMGOAL |
 
 Use `get_sports_config()` to see all available codes.
 

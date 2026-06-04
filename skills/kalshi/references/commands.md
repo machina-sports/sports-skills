@@ -46,7 +46,7 @@ sports-skills kalshi get_todays_events --sport=epl
 ### Discovering sport codes
 ```bash
 sports-skills kalshi get_sports_config
-# Returns: nba, nfl, mlb, nhl, wnba, cfb, cbb, epl, ucl, laliga, bundesliga, seriea, ligue1, mls
+# Returns: nba, nfl, mlb, nhl, wnba, cfb, cbb, epl, ucl, laliga, bundesliga, seriea, ligue1, mls, worldcup
 ```
 
 ## Commands that DO NOT exist (commonly hallucinated)
