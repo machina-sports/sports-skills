@@ -79,7 +79,33 @@ def get_session_data(request_data):
         event = _validate_event(year, event)
         session = fastf1.get_session(year, event, session_type)
 
-        session.load()
+        # Optimize load: only load results, avoiding heavy telemetry and lap downloads/parsing
+        session.load(laps=False, telemetry=False, weather=False, messages=False)
+
+        results_list = []
+        if session.results is not None and not session.results.empty:
+            for _, result in session.results.iterrows():
+                driver_abbr = result.get("Abbreviation", "")
+                result_data = {
+                    "position": _safe_int(result.get("Position")),
+                    "driver_number": result.get("DriverNumber", ""),
+                    "driver": driver_abbr,
+                    "full_name": result.get("FullName", ""),
+                    "team": result.get("TeamName", ""),
+                    "status": result.get("Status", ""),
+                    "grid_position": _safe_int(result.get("GridPosition")),
+                }
+                if "Q1" in result:
+                    result_data["q1"] = _format_timedelta(result.get("Q1"))
+                if "Q2" in result:
+                    result_data["q2"] = _format_timedelta(result.get("Q2"))
+                if "Q3" in result:
+                    result_data["q3"] = _format_timedelta(result.get("Q3"))
+                if "Points" in result:
+                    result_data["points"] = _safe_int(result.get("Points"))
+                if "Time" in result:
+                    result_data["time"] = _format_timedelta(result.get("Time"))
+                results_list.append(result_data)
 
         result = {
             "session": str(session),
@@ -87,6 +113,7 @@ def get_session_data(request_data):
             "event_date": str(getattr(session.event, "date", "Unknown Date")),
             "session_type": getattr(session, "session_type", "Unknown Session Type"),
             "track_name": getattr(session.event, "circuit_name", "Unknown Track"),
+            "results": results_list,
         }
 
         return {
@@ -118,7 +145,7 @@ def get_driver_info(request_data):
         # Load the last race to get driver info from results
         last_race = races.iloc[-1]["EventName"]
         session = fastf1.get_session(year, last_race, "R")
-        session.load()
+        session.load(laps=False, telemetry=False, weather=False, messages=False)
         results = session.results
 
         if driver:
@@ -199,7 +226,7 @@ def get_team_info(request_data):
 
         last_race = races.iloc[-1]["EventName"]
         session = fastf1.get_session(year, last_race, "R")
-        session.load()
+        session.load(laps=False, telemetry=False, weather=False, messages=False)
         results = session.results
 
         # Extract unique teams
@@ -312,7 +339,7 @@ def get_lap_data(request_data):
 
         event = _validate_event(year, event)
         session = fastf1.get_session(year, event, session_type)
-        session.load()
+        session.load(telemetry=False, weather=False, messages=False)
 
         if driver:
             laps = session.laps.pick_drivers(driver)
@@ -1239,7 +1266,7 @@ def get_driver_comparison(request_data):
             races = schedule[schedule["EventFormat"] != "testing"]
             last_race = races.iloc[-1]["EventName"]
             session = fastf1.get_session(year, last_race, "R")
-            session.load()
+            session.load(laps=False, telemetry=False, weather=False, messages=False)
             abbrevs = session.results["Abbreviation"].tolist()
             return {
                 "status": False,
@@ -1499,7 +1526,7 @@ def get_race_results(request_data):
 
         event = _validate_event(year, event)
         session = fastf1.get_session(year, event, "R")
-        session.load()
+        session.load(laps=False, telemetry=False, weather=False, messages=False)
 
         results = session.results
 
