@@ -1,3 +1,11 @@
+## [0.26.2]
+
+### Added
+- **`world-cup` premium skill (prompt-only):** routes agents to the hosted World Cup Intelligence project's MCP server via `machina-cli` — read-only fixtures/standings/squads/injuries + live Kalshi/Polymarket market state + AI-grounded briefs, joined under canonical machina URNs. Mirrors the `machina` gateway pattern: free MIT SKILL.md, no local code, no shipped keys, metered server-side.
+
+### Improved
+- **F1 session loading:** `get_session_data`, `get_driver_info`, `get_team_info`, `get_driver_comparison` (error path), and `get_race_results` now load sessions with `laps=False, telemetry=False, weather=False, messages=False` — the heavy lap/telemetry downloads were fetched and never used. `get_lap_data` keeps lap loading but skips telemetry/weather/messages. `get_session_data` now also returns a `results` list (position, driver, team, status, grid, Q1-Q3/points/time where applicable).
+
 ## [0.26.1]
 
 ### Improved

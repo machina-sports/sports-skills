@@ -50,6 +50,7 @@ A collection of agent skills that wrap **publicly available** sports data source
 - **Markets Orchestration**: Cross-platform bridge connecting ESPN live schedules with Kalshi and Polymarket — unified dashboards, odds comparison, entity search, bet evaluation
 - **Sports Reporter**: Generates original journalism (game previews, live reports, recaps, team analysis, player profiles) by composing the data skills above
 - **Machina Sports**: Gateway to the Machina Intelligence Layer — premium templates, licensed real-time data, and zero-latency feeds via `machina-cli` and MCP
+- **World Cup 2026**: Premium, read-only World Cup intelligence — official match truth + live Kalshi/Polymarket state + AI-grounded briefs, joined under one canonical id space, via `machina-cli` and MCP
 
 Each skill is a SKILL.md file that any compatible AI agent can load and use immediately. Data comes from third-party public sources and is subject to their respective terms of use.
 
@@ -94,6 +95,7 @@ Each skill is a SKILL.md file that any compatible AI agent can load and use imme
 | `markets` | ESPN ↔ Kalshi ↔ Polymarket orchestration | 7 | Unified dashboards, cross-platform comparison |
 | `sports-reporter` | Original sports journalism | prompt-only | Composes other skills to write articles |
 | `machina` | Gateway to Machina premium / licensed data | prompt-only | Routes to `machina-cli` + MCP |
+| `world-cup` | Premium World Cup 2026 market + match intelligence (read-only) | prompt-only | Routes to a hosted Machina MCP project |
 
 ### Football Data Coverage
 
@@ -201,6 +203,7 @@ Pick the sports you need. Each skill installs independently.
 | `markets` | ESPN + Kalshi + Polymarket orchestration | `npx skills add machina-sports/sports-skills@markets` | [skills.sh](https://skills.sh/machina-sports/sports-skills/markets) |
 | `sports-reporter` | Original sports articles from real data | `npx skills add machina-sports/sports-skills@sports-reporter` | [skills.sh](https://skills.sh/machina-sports/sports-skills/sports-reporter) |
 | `machina` | Premium templates & licensed data gateway | `npx skills add machina-sports/sports-skills@machina` | [skills.sh](https://skills.sh/machina-sports/sports-skills/machina) |
+| `world-cup` | Premium World Cup 2026 intelligence (read-only) | `npx skills add machina-sports/sports-skills@world-cup` | [skills.sh](https://skills.sh/machina-sports/sports-skills/world-cup) |
 
 ---
 
@@ -606,6 +609,24 @@ pip install machina-cli
 machina login
 ```
 
+### world-cup
+
+Prompt-only, **premium** skill (no CLI of its own — builds on `machina`). Routes the
+agent to the hosted **World Cup Intelligence** project's MCP server, a **read-only**
+layer that fuses official 2026 match truth (fixtures, standings, squads, injuries,
+player performance) with live Kalshi/Polymarket state (prices, order books, history,
+movers, cross-venue edges) and AI-grounded context (briefs, move explanations, fan
+pulse) — every entity joined under one canonical machina URN. Metered (Machina
+Credits / x402). No order-placement: execution is the user's own, elsewhere. Use when
+a user wants World Cup odds + match context together, "what moved and why", or a
+grounded brief on a fixture.
+
+```bash
+pip install machina-cli
+machina login
+machina project use <world-cup-project-id>
+```
+
 ---
 
 ## Architecture
@@ -633,7 +654,8 @@ sports-skills.sh
 │   ├── betting/SKILL.md               # Pure-compute odds toolkit
 │   ├── markets/SKILL.md               # ESPN ↔ Kalshi ↔ Polymarket orchestration
 │   ├── sports-reporter/SKILL.md       # Article generation (prompt-only)
-│   └── machina/SKILL.md               # Premium / licensed data gateway (prompt-only)
+│   ├── machina/SKILL.md               # Premium / licensed data gateway (prompt-only)
+│   └── world-cup/SKILL.md             # Premium World Cup 2026 intelligence (prompt-only)
 ├── src/sports_skills/                 # Python runtime (used by skills)
 ├── site/                              # Landing page (sports-skills.sh)
 ├── LICENSE
