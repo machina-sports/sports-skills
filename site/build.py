@@ -98,6 +98,7 @@ CATEGORY_MAP = {
     "sports-news": "Other",
     "sports-reporter": "Other",
     "machina": "Machina Skills",
+    "world-cup": "Machina Skills",
     "metadata": "Other",
 }
 
@@ -149,6 +150,7 @@ DATA_SOURCES = {
     "sports-news": "RSS / Google News",
     "sports-reporter": "RSS / Google News",
     "machina": "Machina Platform",
+    "world-cup": "Machina Platform",
     "mkn-constructor": "Machina Platform",
     "polymarket-sync-events": "Polymarket API",
     "polymarket-sync-series": "Polymarket API",
