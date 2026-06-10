@@ -201,3 +201,18 @@ class TestEventsPagination:
         result = get_todays_events({"params": {"sport": "worldcup", "limit": 1000}})
         assert result["status"] is True
         assert result["data"]["count"] == 220
+
+    @patch("sports_skills.kalshi._connector._request")
+    def test_all_series_failing_returns_error(self, mock_request):
+        from sports_skills.kalshi._connector import search_markets
+
+        # Every series' first page fails — must NOT look like "no markets".
+        mock_request.return_value = {"error": True, "status_code": 503, "message": "down"}
+
+        result = search_markets({"params": {"sport": "worldcup", "limit": 50}})
+        assert result["status"] is False
+        assert "503" in result["message"]
+
+        result = get_todays_events({"params": {"sport": "worldcup", "limit": 50}})
+        assert result["status"] is False
+        assert "503" in result["message"]

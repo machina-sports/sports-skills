@@ -155,7 +155,9 @@ def _fetch_events_paged(base_query, max_events, ttl=60):
         response = _request("/events", params=query, ttl=ttl)
         err = _check_error(response)
         if err:
-            return events, (err if not events else None)
+            if events:
+                return events, None
+            return [], err
         page = response.get("events", [])
         events.extend(page)
         cursor = response.get("cursor", "")
@@ -619,8 +621,9 @@ def get_todays_events(request_data):
         sport (str): Sport code (required) — 'nba', 'nfl', 'nhl', 'mlb',
             'wnba', 'cfb', 'cbb', 'epl', 'ucl', 'laliga', 'bundesliga',
             'seriea', 'ligue1', 'mls', 'worldcup'.
-        limit (int): Max events (default: 50, max: 1000). Each series is
-            paged through in full (cursor-following).
+        limit (int): Max events per series (default: 50, max: 1000), and cap
+            on the merged event list. Each series is paged through in full
+            (cursor-following).
     """
     try:
         params = request_data.get("params", {})
@@ -639,6 +642,7 @@ def get_todays_events(request_data):
         # Query all series tickers for this sport and merge results
         all_events = []
         seen_tickers = set()
+        last_err = None
         for series_ticker in series_tickers:
             query = {
                 "series_ticker": series_ticker,
@@ -646,7 +650,9 @@ def get_todays_events(request_data):
                 "with_nested_markets": "true",
             }
 
-            events, _err = _fetch_events_paged(query, max_events=limit, ttl=60)
+            events, err = _fetch_events_paged(query, max_events=limit, ttl=60)
+            if err:
+                last_err = err
 
             for event in events:
                 event_ticker = event.get("event_ticker", "")
@@ -661,6 +667,11 @@ def get_todays_events(request_data):
                         m["last_price"] = _price_cents(m, "last_price")
                         m["volume"] = _volume_units(m)
                     all_events.append(event)
+
+        # Every series failed and nothing was collected — surface the error
+        # instead of a success that looks like "no open events".
+        if not all_events and last_err:
+            return last_err
 
         return _success(
             {"events": all_events[:limit], "count": len(all_events[:limit]), "sport": sport},
@@ -716,10 +727,12 @@ def search_markets(request_data):
             'ligue1', 'mls', 'worldcup'). Resolves to series_ticker(s) automatically.
         query (str): Keyword to match in event/market titles.
         status (str): Market status filter (default: 'open').
-        limit (int): Max results (default: 50, max: 1000). Each series is
-            paged through in full (cursor-following), so a multi-series sport
-            like 'worldcup' is no longer cut off at one page — previously the
-            soonest matchdays were silently dropped.
+        limit (int): Max events fetched per series (default: 50, max: 1000) —
+            the returned market count can exceed this, since each event holds
+            several markets. Each series is paged through in full
+            (cursor-following), so a multi-series sport like 'worldcup' is no
+            longer cut off at one page — previously the soonest matchdays were
+            silently dropped.
     """
     try:
         params = request_data.get("params", {})
@@ -743,18 +756,25 @@ def search_markets(request_data):
         seen_event_tickers = set()
 
         if series_tickers:
+            last_err = None
             for series_ticker in series_tickers:
                 event_query = {
                     "status": status,
                     "with_nested_markets": "true",
                     "series_ticker": series_ticker,
                 }
-                events, _err = _fetch_events_paged(event_query, max_events=limit, ttl=60)
+                events, err = _fetch_events_paged(event_query, max_events=limit, ttl=60)
+                if err:
+                    last_err = err
                 for event in events:
                     et = event.get("event_ticker", "")
                     if et not in seen_event_tickers:
                         seen_event_tickers.add(et)
                         all_events.append(event)
+            # Every series failed and nothing was collected — surface the
+            # error instead of a success that looks like "no markets".
+            if not all_events and last_err:
+                return last_err
         else:
             # No sport filter — page through the global events feed.
             event_query = {
