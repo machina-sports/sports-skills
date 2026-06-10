@@ -135,6 +135,37 @@ def _check_error(response):
     return None
 
 
+def _fetch_events_paged(base_query, max_events, ttl=60):
+    """Collect `/events` pages, following Kalshi's cursor until exhaustion.
+
+    Kalshi caps `/events` at 200 items per page; a single un-paged call
+    silently drops the tail of any series with more events than one page —
+    for date-ordered series that's the SOONEST games, the worst possible loss.
+
+    Returns (events, error): error is non-None only when the first page fails
+    (later page failures return the partial result instead of nothing).
+    """
+    events = []
+    cursor = ""
+    while len(events) < max_events:
+        query = dict(base_query)
+        query["limit"] = min(200, max_events - len(events))
+        if cursor:
+            query["cursor"] = cursor
+        response = _request("/events", params=query, ttl=ttl)
+        err = _check_error(response)
+        if err:
+            if events:
+                return events, None
+            return [], err
+        page = response.get("events", [])
+        events.extend(page)
+        cursor = response.get("cursor", "")
+        if not cursor or not page:
+            break
+    return events[:max_events], None
+
+
 # ============================================================
 # Commands — Public Endpoints
 # ============================================================
@@ -191,9 +222,7 @@ def get_series_list(request_data):
             return err
 
         series = response.get("series") or []
-        return _success(
-            {"series": series, "count": len(series)}, f"Retrieved {len(series)} series"
-        )
+        return _success({"series": series, "count": len(series)}, f"Retrieved {len(series)} series")
     except Exception as e:
         return _error(f"Error fetching series list: {str(e)}")
 
@@ -279,9 +308,7 @@ def get_event(request_data):
         if params.get("with_nested_markets"):
             query["with_nested_markets"] = "true"
 
-        response = _request(
-            f"/events/{ticker}", params=query if query else None, ttl=60
-        )
+        response = _request(f"/events/{ticker}", params=query if query else None, ttl=60)
         err = _check_error(response)
         if err:
             return err
@@ -386,9 +413,7 @@ def get_market_orderbook(request_data):
         if params.get("depth"):
             query["depth"] = int(params["depth"])
 
-        response = _request(
-            f"/markets/{ticker}/orderbook", params=query or None, ttl=15
-        )
+        response = _request(f"/markets/{ticker}/orderbook", params=query or None, ttl=15)
         err = _check_error(response)
         if err:
             return err
@@ -519,8 +544,28 @@ def get_sports_filters(request_data):
 # Football leagues have multiple series per league (game, total, btts, spread, goal).
 KALSHI_SERIES = {
     # US sports — single series per sport
-    "nfl": ["KXNFL", "KXNFLGAME", "KXNFLSPREAD", "KXNFLTOTAL", "KXNFLTEAMTOTAL", "KXNFLANYTD", "KXNFL1HWINNER", "KXNFL2HWINNER"],
-    "nba": ["KXNBA", "KXNBAGAME", "KXNBASPREAD", "KXNBATOTAL", "KXNBATEAMTOTAL", "KXNBAPTS", "KXNBAPRA", "KXNBAREB", "KXNBAAST", "KXNBA3PT"],
+    "nfl": [
+        "KXNFL",
+        "KXNFLGAME",
+        "KXNFLSPREAD",
+        "KXNFLTOTAL",
+        "KXNFLTEAMTOTAL",
+        "KXNFLANYTD",
+        "KXNFL1HWINNER",
+        "KXNFL2HWINNER",
+    ],
+    "nba": [
+        "KXNBA",
+        "KXNBAGAME",
+        "KXNBASPREAD",
+        "KXNBATOTAL",
+        "KXNBATEAMTOTAL",
+        "KXNBAPTS",
+        "KXNBAPRA",
+        "KXNBAREB",
+        "KXNBAAST",
+        "KXNBA3PT",
+    ],
     "mlb": ["KXMLB", "KXMLBGAME", "KXMLBSPREAD", "KXMLBTOTAL", "KXMLBTEAMTOTAL", "KXMLBHR", "KXMLB1H"],
     "nhl": ["KXNHL", "KXNHLGAME", "KXNHLSPREAD", "KXNHLTOTAL", "KXNHLTEAMTOTAL", "KXNHLPTS", "KXNHLGOAL"],
     "wnba": ["KXWNBA", "KXWNBAGAME", "KXWNBASPREAD", "KXWNBATOTAL", "KXWNBAPTS"],
@@ -538,15 +583,15 @@ KALSHI_SERIES = {
     # markets are NOT reachable via the no-sport /events page scan (that
     # returns one page of all Kalshi events); series tickers are the only path.
     "worldcup": [
-        "KXMENWORLDCUP",      # tournament winner
-        "KXWCGAME",           # match winners
-        "KXWCGROUPQUAL",      # group qualification
-        "KXWCGROUPORDER",     # group exact order
-        "KXWCSTAGE",          # furthest stage advanced
-        "KXWCHOSTSTAGE",      # furthest stage by a host nation
-        "KXWCBESTHOST",       # best performing host nation
-        "KXWCNOEURSA",        # winner outside Europe/South America
-        "KXWCREGIONKO",       # region teams reaching knockout stage
+        "KXMENWORLDCUP",  # tournament winner
+        "KXWCGAME",  # match winners
+        "KXWCGROUPQUAL",  # group qualification
+        "KXWCGROUPORDER",  # group exact order
+        "KXWCSTAGE",  # furthest stage advanced
+        "KXWCHOSTSTAGE",  # furthest stage by a host nation
+        "KXWCBESTHOST",  # best performing host nation
+        "KXWCNOEURSA",  # winner outside Europe/South America
+        "KXWCREGIONKO",  # region teams reaching knockout stage
         "KXWCEVERYTEAMGOAL",  # every team to score a goal
     ],
 }
@@ -560,10 +605,7 @@ def get_sports_config(request_data):
 
     No params required.
     """
-    sports = [
-        {"sport": code, "series_tickers": tickers}
-        for code, tickers in sorted(KALSHI_SERIES.items())
-    ]
+    sports = [{"sport": code, "series_tickers": tickers} for code, tickers in sorted(KALSHI_SERIES.items())]
     return _success(
         {"sports": sports, "count": len(sports)},
         f"Retrieved {len(sports)} sport configurations",
@@ -579,18 +621,18 @@ def get_todays_events(request_data):
         sport (str): Sport code (required) — 'nba', 'nfl', 'nhl', 'mlb',
             'wnba', 'cfb', 'cbb', 'epl', 'ucl', 'laliga', 'bundesliga',
             'seriea', 'ligue1', 'mls', 'worldcup'.
-        limit (int): Max events (default: 50, max: 200).
+        limit (int): Max events per series (default: 50, max: 1000), and cap
+            on the merged event list. Each series is paged through in full
+            (cursor-following).
     """
     try:
         params = request_data.get("params", {})
         sport = str(params.get("sport") or "").lower()
-        limit = min(int(params.get("limit", 50)), 200)
+        limit = min(int(params.get("limit", 50)), 1000)
 
         if not sport:
             available = ", ".join(sorted(KALSHI_SERIES.keys()))
-            return _error(
-                f"sport is required. Available: {available}"
-            )
+            return _error(f"sport is required. Available: {available}")
 
         series_tickers = KALSHI_SERIES.get(sport)
         if not series_tickers:
@@ -600,20 +642,19 @@ def get_todays_events(request_data):
         # Query all series tickers for this sport and merge results
         all_events = []
         seen_tickers = set()
+        last_err = None
         for series_ticker in series_tickers:
             query = {
-                "limit": limit,
                 "series_ticker": series_ticker,
                 "status": "open",
                 "with_nested_markets": "true",
             }
 
-            response = _request("/events", params=query, ttl=60)
-            err = _check_error(response)
+            events, err = _fetch_events_paged(query, max_events=limit, ttl=60)
             if err:
-                continue
+                last_err = err
 
-            for event in response.get("events", []):
+            for event in events:
                 event_ticker = event.get("event_ticker", "")
                 if event_ticker not in seen_tickers:
                     seen_tickers.add(event_ticker)
@@ -626,6 +667,11 @@ def get_todays_events(request_data):
                         m["last_price"] = _price_cents(m, "last_price")
                         m["volume"] = _volume_units(m)
                     all_events.append(event)
+
+        # Every series failed and nothing was collected — surface the error
+        # instead of a success that looks like "no open events".
+        if not all_events and last_err:
+            return last_err
 
         return _success(
             {"events": all_events[:limit], "count": len(all_events[:limit]), "sport": sport},
@@ -681,14 +727,19 @@ def search_markets(request_data):
             'ligue1', 'mls', 'worldcup'). Resolves to series_ticker(s) automatically.
         query (str): Keyword to match in event/market titles.
         status (str): Market status filter (default: 'open').
-        limit (int): Max results (default: 50, max: 200).
+        limit (int): Max events fetched per series (default: 50, max: 1000) —
+            the returned market count can exceed this, since each event holds
+            several markets. Each series is paged through in full
+            (cursor-following), so a multi-series sport like 'worldcup' is no
+            longer cut off at one page — previously the soonest matchdays were
+            silently dropped.
     """
     try:
         params = request_data.get("params", {})
         sport = str(params.get("sport") or "").lower()
         query = str(params.get("query") or "").lower()
         status = params.get("status", "open")
-        limit = min(int(params.get("limit", 50)), 200)
+        limit = min(int(params.get("limit", 50)), 1000)
 
         # Resolve sport to series_tickers list
         explicit_ticker = params.get("series_ticker")
@@ -699,38 +750,40 @@ def search_markets(request_data):
         else:
             series_tickers = []
 
-        # Fetch events across all series tickers and merge
+        # Fetch events across all series tickers and merge (cursor-paged, so
+        # a series with more events than one page is collected in full).
         all_events = []
         seen_event_tickers = set()
 
         if series_tickers:
+            last_err = None
             for series_ticker in series_tickers:
                 event_query = {
-                    "limit": limit,
                     "status": status,
                     "with_nested_markets": "true",
                     "series_ticker": series_ticker,
                 }
-                response = _request("/events", params=event_query, ttl=60)
-                if _check_error(response):
-                    continue
-                for event in response.get("events", []):
+                events, err = _fetch_events_paged(event_query, max_events=limit, ttl=60)
+                if err:
+                    last_err = err
+                for event in events:
                     et = event.get("event_ticker", "")
                     if et not in seen_event_tickers:
                         seen_event_tickers.add(et)
                         all_events.append(event)
+            # Every series failed and nothing was collected — surface the
+            # error instead of a success that looks like "no markets".
+            if not all_events and last_err:
+                return last_err
         else:
-            # No sport filter — single query
+            # No sport filter — page through the global events feed.
             event_query = {
-                "limit": limit,
                 "status": status,
                 "with_nested_markets": "true",
             }
-            response = _request("/events", params=event_query, ttl=60)
-            err = _check_error(response)
+            all_events, err = _fetch_events_paged(event_query, max_events=limit, ttl=60)
             if err:
                 return err
-            all_events = response.get("events", [])
 
         # Filter by query if provided
         all_markets = []
@@ -769,7 +822,7 @@ def search_markets(request_data):
                 "raptors": ["toronto", "raptors"],
                 "blazers": ["portland", "trail blazers", "blazers"],
                 "rockets": ["houston", "rockets"],
-                "wizards": ["washington", "wizards"]
+                "wizards": ["washington", "wizards"],
             }
 
             # Expand query into possible matches
@@ -798,18 +851,20 @@ def search_markets(request_data):
 
             markets = event.get("markets", [])
             for m in markets:
-                all_markets.append({
-                    "ticker": m.get("ticker", ""),
-                    "event_ticker": event.get("event_ticker", ""),
-                    "title": m.get("title", m.get("subtitle", "")),
-                    "subtitle": m.get("subtitle", ""),
-                    "event_title": title,
-                    "yes_bid": _price_cents(m, "yes_bid"),
-                    "no_bid": _price_cents(m, "no_bid"),
-                    "last_price": _price_cents(m, "last_price"),
-                    "volume": _volume_units(m),
-                    "status": m.get("status", ""),
-                })
+                all_markets.append(
+                    {
+                        "ticker": m.get("ticker", ""),
+                        "event_ticker": event.get("event_ticker", ""),
+                        "title": m.get("title", m.get("subtitle", "")),
+                        "subtitle": m.get("subtitle", ""),
+                        "event_title": title,
+                        "yes_bid": _price_cents(m, "yes_bid"),
+                        "no_bid": _price_cents(m, "no_bid"),
+                        "last_price": _price_cents(m, "last_price"),
+                        "volume": _volume_units(m),
+                        "status": m.get("status", ""),
+                    }
+                )
 
         return _success(
             {

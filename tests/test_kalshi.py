@@ -120,3 +120,99 @@ class TestGetMarketOrderbook:
 
         result = get_market_orderbook({"params": {}})
         assert result["status"] is False
+
+
+class TestEventsPagination:
+    """search_markets/get_todays_events must follow the /events cursor —
+    a single un-paged call drops the soonest matchdays of large series."""
+
+    @staticmethod
+    def _event(i, n_markets=3):
+        return {
+            "event_ticker": f"KXWCGAME-26JUN{i:02d}AAABBB",
+            "title": f"Team A vs Team B {i}",
+            "markets": [
+                {
+                    "ticker": f"KXWCGAME-26JUN{i:02d}AAABBB-{j}",
+                    "title": "Winner?",
+                    "subtitle": "",
+                    "yes_bid": 50,
+                    "no_bid": 50,
+                    "last_price": 50,
+                    "volume": 100,
+                    "status": "active",
+                }
+                for j in range(n_markets)
+            ],
+        }
+
+    @patch("sports_skills.kalshi._connector._request")
+    def test_search_markets_follows_cursor(self, mock_request):
+        from sports_skills.kalshi._connector import search_markets
+
+        page1 = {"events": [self._event(i) for i in range(1, 201)], "cursor": "next-page"}
+        page2 = {"events": [self._event(i) for i in range(201, 251)], "cursor": ""}
+        mock_request.side_effect = [page1, page2]
+
+        result = search_markets({"params": {"series_ticker": "KXWCGAME", "limit": 1000}})
+        assert result["status"] is True
+        # 250 events x 3 markets — everything past the first page included.
+        assert result["data"]["count"] == 750
+        assert mock_request.call_count == 2
+        # Second call carried the cursor.
+        assert (
+            mock_request.call_args_list[1].kwargs.get("params", {}).get("cursor") == "next-page"
+            or mock_request.call_args_list[1][1].get("params", {}).get("cursor") == "next-page"
+        )
+
+    @patch("sports_skills.kalshi._connector._request")
+    def test_limit_caps_total_and_stops_paging(self, mock_request):
+        from sports_skills.kalshi._connector import search_markets
+
+        page1 = {"events": [self._event(i) for i in range(1, 51)], "cursor": "more"}
+        mock_request.side_effect = [page1]
+
+        result = search_markets({"params": {"series_ticker": "KXWCGAME", "limit": 50}})
+        assert result["status"] is True
+        # 50 events fetched (= limit) -> no second page requested.
+        assert mock_request.call_count == 1
+
+    @patch("sports_skills.kalshi._connector._request")
+    def test_later_page_failure_returns_partial(self, mock_request):
+        from sports_skills.kalshi._connector import search_markets
+
+        page1 = {"events": [self._event(i) for i in range(1, 201)], "cursor": "next"}
+        boom = {"error": True, "status_code": 500, "message": "upstream"}
+        mock_request.side_effect = [page1, boom]
+
+        result = search_markets({"params": {"series_ticker": "KXWCGAME", "limit": 1000}})
+        assert result["status"] is True
+        assert result["data"]["count"] == 600  # first page preserved
+
+    @patch("sports_skills.kalshi._connector._request")
+    def test_get_todays_events_follows_cursor(self, mock_request):
+        page1 = {"events": [self._event(i) for i in range(1, 201)], "cursor": "n2"}
+        page2 = {"events": [self._event(i) for i in range(201, 221)], "cursor": ""}
+        # get_todays_events iterates every series of the sport; return empty
+        # final pages for the remaining worldcup series.
+        empty = {"events": [], "cursor": ""}
+        mock_request.side_effect = [page1, page2] + [empty] * 20
+
+        result = get_todays_events({"params": {"sport": "worldcup", "limit": 1000}})
+        assert result["status"] is True
+        assert result["data"]["count"] == 220
+
+    @patch("sports_skills.kalshi._connector._request")
+    def test_all_series_failing_returns_error(self, mock_request):
+        from sports_skills.kalshi._connector import search_markets
+
+        # Every series' first page fails — must NOT look like "no markets".
+        mock_request.return_value = {"error": True, "status_code": 503, "message": "down"}
+
+        result = search_markets({"params": {"sport": "worldcup", "limit": 50}})
+        assert result["status"] is False
+        assert "503" in result["message"]
+
+        result = get_todays_events({"params": {"sport": "worldcup", "limit": 50}})
+        assert result["status"] is False
+        assert "503" in result["message"]

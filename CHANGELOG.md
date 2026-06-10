@@ -1,3 +1,8 @@
+## [0.26.3]
+
+### Fixed
+- **Kalshi `/events` pagination — the soonest games were silently dropped:** `kalshi.search_markets` and `kalshi.get_todays_events` fetched a single un-paged `/events` page per series (Kalshi caps pages at 200 items) and clamped `limit` at 200 total. For multi-series sports like `worldcup` (500+ open markets) the tail of the response — the EARLIEST matchdays, e.g. Brazil vs Morocco on 2026-06-13 with $300k+ volume — never appeared in results while later matchdays did. Both commands now follow Kalshi's cursor until each series is exhausted, and `limit` accepts up to 1000 (default unchanged at 50). A later-page failure returns the partial result instead of nothing.
+
 ## [0.26.2]
 
 ### Added
