@@ -647,6 +647,12 @@ def _parse_value(key, value):
     if key in _INT_PARAMS:
         return int(value)
     if key in _FLOAT_PARAMS:
+        # Comma-separated multi-outcome values pass through as strings:
+        # `odds` is a single float for convert_odds but a comma-separated
+        # string for devig (e.g. --odds=-230,+330,+750). Commands validate
+        # the shape downstream and fail gracefully either way.
+        if isinstance(value, str) and "," in value:
+            return value
         return float(value)
     if key in _LIST_PARAMS:
         return [v.strip() for v in value.split(",")]
