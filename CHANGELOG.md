@@ -1,6 +1,7 @@
 ## [0.26.3]
 
 ### Fixed
+- **`betting devig` was unusable through the CLI:** the CLI's `_FLOAT_PARAMS` coercion force-floated every `--odds` value, but `devig` takes comma-separated odds for ALL outcomes (e.g. `--odds=-230,+330,+750`), so any multi-outcome call died with `Invalid value for --odds … (expected a number)` — including for agents calling through tool bridges (the sportsclaw engine invokes commands via this CLI). Comma-separated values now pass through as strings; single values still coerce to float for `convert_odds`. Commands validate the shape downstream and fail gracefully either way.
 - **Kalshi `/events` pagination — the soonest games were silently dropped:** `kalshi.search_markets` and `kalshi.get_todays_events` fetched a single un-paged `/events` page per series (Kalshi caps pages at 200 items) and clamped `limit` at 200 total. For multi-series sports like `worldcup` (500+ open markets) the tail of the response — the EARLIEST matchdays, e.g. Brazil vs Morocco on 2026-06-13 with $300k+ volume — never appeared in results while later matchdays did. Both commands now follow Kalshi's cursor until each series is exhausted, and `limit` accepts up to 1000 (default unchanged at 50). A later-page failure returns the partial result instead of nothing.
 
 ## [0.26.2]

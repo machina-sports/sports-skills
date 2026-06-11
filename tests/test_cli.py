@@ -39,6 +39,20 @@ class TestParseCliKwargs:
             "price": 0.5,
         }
 
+    def test_float_param_single_value_coerced(self):
+        assert _parse_cli_kwargs(["--odds=-150"]) == {"odds": -150.0}
+
+    def test_float_param_comma_separated_passes_through(self):
+        # `odds` is a float for convert_odds but a comma-separated string
+        # for devig — previously float() rejected the multi-outcome form
+        # and devig was unusable through the CLI.
+        assert _parse_cli_kwargs(["--odds=-230,+330,+750"]) == {
+            "odds": "-230,+330,+750"
+        }
+
+    def test_float_param_comma_separated_space_form(self):
+        assert _parse_cli_kwargs(["--odds", "-110,-110"]) == {"odds": "-110,-110"}
+
     def test_valueless_flag_fails_loudly(self, capsys):
         with pytest.raises(SystemExit):
             _parse_cli_kwargs(["--query"])
