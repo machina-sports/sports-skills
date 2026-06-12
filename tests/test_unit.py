@@ -1615,3 +1615,56 @@ class TestXctfGetNews:
         result = get_news()
         assert result["articles"][0]["title"] == "Elbadra & Engelhardt Clash"
         assert result["articles"][0]["summary"] == "A & B"
+
+
+class TestPolymarketOrderBook:
+    """get_order_book must not assume CLOB price-level ordering.
+
+    The CLOB /book endpoint returns the BEST price at the END of each array
+    (bids ascending, asks descending). Taking index 0 reported best_bid=0.01 /
+    best_ask=0.99 (spread 0.98) for a deeply liquid 0.23/0.24 book.
+    """
+
+    CLOB_BOOK = {
+        "bids": [
+            {"price": "0.01", "size": "5000"},
+            {"price": "0.21", "size": "61443.8"},
+            {"price": "0.22", "size": "120844.02"},
+            {"price": "0.23", "size": "618483.98"},
+        ],
+        "asks": [
+            {"price": "0.99", "size": "4000"},
+            {"price": "0.26", "size": "346741.24"},
+            {"price": "0.25", "size": "1193340.58"},
+            {"price": "0.24", "size": "49661.37"},
+        ],
+    }
+
+    def test_best_prices_from_unsorted_levels(self, monkeypatch):
+        from sports_skills.polymarket import _connector
+
+        monkeypatch.setattr(
+            "sports_skills.polymarket._connector._clob_request",
+            lambda *a, **k: self.CLOB_BOOK,
+        )
+        result = _connector.get_order_book({"params": {"token_id": "tok"}})
+        data = result["data"]
+        assert data["best_bid"] == 0.23
+        assert data["best_ask"] == 0.24
+        assert data["spread"] == 0.01
+        # arrays come back best-first so consumers reading [0] get the touch
+        assert data["bids"][0] == {"price": 0.23, "size": 618483.98}
+        assert data["asks"][0] == {"price": 0.24, "size": 49661.37}
+        assert data["bid_depth"] == 4 and data["ask_depth"] == 4
+
+    def test_empty_book(self, monkeypatch):
+        from sports_skills.polymarket import _connector
+
+        monkeypatch.setattr(
+            "sports_skills.polymarket._connector._clob_request",
+            lambda *a, **k: {"bids": [], "asks": []},
+        )
+        result = _connector.get_order_book({"params": {"token_id": "tok"}})
+        data = result["data"]
+        assert data["best_bid"] == 0 and data["best_ask"] == 0
+        assert data["spread"] is None
