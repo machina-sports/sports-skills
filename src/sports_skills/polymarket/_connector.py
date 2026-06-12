@@ -615,27 +615,33 @@ def get_order_book(request_data):
         bids = response.get("bids", [])
         asks = response.get("asks", [])
 
-        # Calculate spread
-        best_bid = _safe_float(bids[0].get("price")) if bids else 0
-        best_ask = _safe_float(asks[0].get("price")) if asks else 0
+        # The CLOB returns price levels with the BEST price at the END of
+        # each array (bids ascending, asks descending). Never assume order:
+        # best bid is the highest bid, best ask is the lowest ask. Returned
+        # arrays are sorted best-first so consumers reading [0] get the touch.
+        norm_bids = sorted(
+            (
+                {"price": _safe_float(b.get("price")), "size": _safe_float(b.get("size"))}
+                for b in bids
+            ),
+            key=lambda level: level["price"],
+            reverse=True,
+        )
+        norm_asks = sorted(
+            (
+                {"price": _safe_float(a.get("price")), "size": _safe_float(a.get("size"))}
+                for a in asks
+            ),
+            key=lambda level: level["price"],
+        )
+        best_bid = norm_bids[0]["price"] if norm_bids else 0
+        best_ask = norm_asks[0]["price"] if norm_asks else 0
         spread = round(best_ask - best_bid, 4) if best_bid and best_ask else None
 
         book = {
             "token_id": token_id,
-            "bids": [
-                {
-                    "price": _safe_float(b.get("price")),
-                    "size": _safe_float(b.get("size")),
-                }
-                for b in bids
-            ],
-            "asks": [
-                {
-                    "price": _safe_float(a.get("price")),
-                    "size": _safe_float(a.get("size")),
-                }
-                for a in asks
-            ],
+            "bids": norm_bids,
+            "asks": norm_asks,
             "best_bid": best_bid,
             "best_ask": best_ask,
             "spread": spread,
