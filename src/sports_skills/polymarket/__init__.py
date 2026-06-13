@@ -1,7 +1,7 @@
 """Polymarket sports prediction markets — prices, order books, events, and series.
 
 Uses Gamma API (public, no auth) and CLOB API (public reads) via stdlib only.
-Trading operations use the ``py_clob_client`` Python SDK (no CLI binary needed).
+Trading operations use the ``py_clob_client_v2`` Python SDK (no CLI binary needed).
 """
 
 from __future__ import annotations
@@ -285,7 +285,7 @@ def get_last_trade_price(*, token_id: str) -> dict:
 
 
 # ============================================================
-# Trading Commands (requires py_clob_client + wallet)
+# Trading Commands (requires py_clob_client_v2 + wallet)
 # ============================================================
 
 
