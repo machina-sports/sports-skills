@@ -1,3 +1,8 @@
+## [0.26.5]
+
+### Fixed
+- **Polymarket trading was completely broken by the CLOB v2 migration:** every order through `polymarket.create_order` / `market_order` died with `order_version_mismatch` ("invalid order version, please use the latest clob-client") after Polymarket's late-April-2026 CLOB v2 migration. The old `py_clob_client` SDK was archived and is permanently broken against the migrated backend. Migrated all trading to **`py-clob-client-v2`** (the `polymarket` extra now depends on `py-clob-client-v2>=1.0.1` instead of `py_clob_client`). API changes handled internally: `create_and_post_order` / `create_and_post_market_order` with `PartialCreateOrderOptions(tick_size=...)`, `Side`/`OrderType` enums, `create_or_derive_api_key`, `get_open_orders`, `cancel_orders([id])`. Verified end-to-end with real matched on-chain orders (EOA, signature_type 0). Also adds `funder` support (env `POLYMARKET_FUNDER_ADDRESS` or `configure(funder=...)`) for proxy/email wallets. Read-only market data (prices, order books, events) was unaffected and is unchanged.
+
 ## [0.26.4]
 
 ### Fixed

@@ -53,13 +53,16 @@ RIGHT: search_markets(sport='epl', query='Leeds') → returns all Leeds markets
 **Core commands** (no dependencies, no API keys):
 All read commands work out of the box.
 
-**Trading commands** require `py_clob_client`:
+**Trading commands** require `py-clob-client-v2`:
 ```bash
 pip install sports-skills[polymarket]
 ```
 Additionally requires a configured wallet:
 ```bash
 export POLYMARKET_PRIVATE_KEY=0x...
+# Only for proxy / email (Magic) wallets, where the signer differs from the
+# funds holder. EOA wallets don't need it.
+export POLYMARKET_FUNDER_ADDRESS=0x...
 ```
 
 ## Workflows
@@ -163,5 +166,5 @@ Cause: Low-liquidity market — may have wide spreads and infrequent trades
 Solution: Check `get_last_trade_price(token_id=<id>)` for the most recent actual trade price
 
 Error: Trading commands fail
-Cause: `py_clob_client` is not installed or wallet is not configured
+Cause: `py-clob-client-v2` is not installed or wallet is not configured
 Solution: Run `pip install sports-skills[polymarket]` and set `POLYMARKET_PRIVATE_KEY` environment variable

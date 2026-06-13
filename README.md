@@ -508,7 +508,7 @@ Kalshi's [official public API](https://trading-api.readme.io/reference/getmarket
 
 ### polymarket
 
-Polymarket's official public APIs ([Gamma](https://gamma-api.polymarket.com) + [CLOB](https://docs.polymarket.com)). No API key needed for read-only data. CLOB trading requires a wallet and `py_clob_client` — configure once via `configure`.
+Polymarket's official public APIs ([Gamma](https://gamma-api.polymarket.com) + [CLOB](https://docs.polymarket.com)). No API key needed for read-only data. CLOB trading requires a wallet and `py-clob-client-v2` — configure once via `configure`.
 
 **Read:**
 

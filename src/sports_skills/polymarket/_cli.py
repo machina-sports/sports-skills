@@ -1,14 +1,17 @@
-"""Polymarket trading via py_clob_client Python SDK.
+"""Polymarket trading via the py-clob-client-v2 Python SDK.
 
-Uses the native ``py_clob_client`` library for CLOB trading operations.
-No external CLI binary required.  Install with::
+Uses ``py_clob_client_v2`` — Polymarket's CLOB **v2** client. The original
+``py_clob_client`` was archived after the late-April-2026 CLOB v2 migration and
+now fails every order with ``order_version_mismatch`` ("invalid order version,
+please use the latest clob-client"), so trading must go through v2. Install::
 
     pip install sports-skills[polymarket]
 
 For trading commands, configure a wallet via one of:
 
-    # Option 1 — environment variable
+    # Option 1 — environment variables
     export POLYMARKET_PRIVATE_KEY=0x...
+    export POLYMARKET_FUNDER_ADDRESS=0x...   # only for proxy/email wallets
 
     # Option 2 — Python SDK
     from sports_skills import polymarket
@@ -27,7 +30,7 @@ import os
 _CONFIG: dict = {}
 _client_instance = None
 
-# Mapping from human-readable names to py_clob_client integer codes.
+# Mapping from human-readable names to clob-client integer signature codes.
 _SIG_TYPE_MAP = {
     "eoa": 0,
     "poly_gnosis_safe": 1,
@@ -42,6 +45,7 @@ def configure(
     *,
     private_key: str | None = None,
     signature_type: str | int | None = None,
+    funder: str | None = None,
 ) -> dict:
     """Configure wallet for trading commands.
 
@@ -53,11 +57,17 @@ def configure(
         private_key: Polygon wallet private key (hex string starting with 0x).
         signature_type: Signature type — 0 / "eoa" (default), 1 / "gnosis-safe",
             or 2 / "proxy".
+        funder: Funding address (the wallet holding collateral). Required for
+            proxy / email (Magic) wallets where the signer differs from the
+            funds holder; defaults to the signing address for EOA wallets.
     """
     global _client_instance
     if private_key is not None:
         _CONFIG["private_key"] = private_key
         _client_instance = None  # force re-init
+    if funder is not None:
+        _CONFIG["funder"] = funder
+        _client_instance = None
     if signature_type is not None:
         if isinstance(signature_type, str):
             resolved = _SIG_TYPE_MAP.get(signature_type.lower())
@@ -111,13 +121,13 @@ CHAIN_ID = 137
 
 
 def _get_client():
-    """Lazily initialize and return an authenticated ClobClient instance."""
+    """Lazily initialize and return an authenticated v2 ClobClient instance."""
     global _client_instance
     if _client_instance is not None:
         return _client_instance
 
     try:
-        from py_clob_client.client import ClobClient
+        from py_clob_client_v2 import ClobClient
     except ImportError:
         return None
 
@@ -126,22 +136,25 @@ def _get_client():
         return None
 
     sig_type = _CONFIG.get("signature_type", 0)
+    funder = _CONFIG.get("funder") or os.environ.get("POLYMARKET_FUNDER_ADDRESS")
 
     client = ClobClient(
-        CLOB_HOST,
-        key=key,
+        host=CLOB_HOST,
         chain_id=CHAIN_ID,
+        key=key,
         signature_type=sig_type,
+        funder=funder,
     )
-    client.set_api_creds(client.create_or_derive_api_creds())
+    # Derive (or look up) the L2 API credentials and attach them.
+    client.set_api_creds(client.create_or_derive_api_key())
     _client_instance = client
     return _client_instance
 
 
 def is_cli_available() -> bool:
-    """Check whether the py_clob_client package is installed."""
+    """Check whether the py_clob_client_v2 package is installed."""
     try:
-        import py_clob_client  # noqa: F401
+        import py_clob_client_v2  # noqa: F401
         return True
     except ImportError:
         return False
@@ -155,13 +168,31 @@ def _require_client():
 
     if not is_cli_available():
         return None, _error(
-            "py_clob_client not installed. Install with: "
+            "py_clob_client_v2 not installed. Install with: "
             "pip install sports-skills[polymarket]"
         )
     return None, _error(
         "No private key configured. Set POLYMARKET_PRIVATE_KEY env var "
         "or call configure(private_key='0x...')"
     )
+
+
+def _order_type(name: str):
+    """Resolve a string order-type to the v2 OrderType enum (default GTC)."""
+    from py_clob_client_v2 import OrderType
+
+    return {
+        "GTC": OrderType.GTC,
+        "FOK": OrderType.FOK,
+        "FAK": OrderType.FAK,
+        "GTD": OrderType.GTD,
+    }.get(name.upper(), OrderType.GTC)
+
+
+def _side(name: str):
+    from py_clob_client_v2 import Side
+
+    return Side.BUY if name.lower() == "buy" else Side.SELL
 
 
 # ============================================================
@@ -185,28 +216,26 @@ def create_order(
         side: Order side — "buy" or "sell".
         price: Limit price (0.01–0.99).
         size: Number of shares.
-        order_type: Order type — "GTC" (default), "FOK", or "GTD".
+        order_type: Order type — "GTC" (default), "FOK", "FAK", or "GTD".
     """
     client, err = _require_client()
     if err:
         return err
 
-    from py_clob_client.clob_types import OrderArgs, OrderType
-    from py_clob_client.order_builder.constants import BUY, SELL
-
-    side_const = BUY if side.lower() == "buy" else SELL
-    otype_map = {"GTC": OrderType.GTC, "FOK": OrderType.FOK, "GTD": OrderType.GTD}
-    otype = otype_map.get(order_type.upper(), OrderType.GTC)
+    from py_clob_client_v2 import OrderArgs, PartialCreateOrderOptions
 
     try:
         order_args = OrderArgs(
             token_id=token_id,
             price=float(price),
             size=float(size),
-            side=side_const,
+            side=_side(side),
         )
-        signed_order = client.create_order(order_args)
-        resp = client.post_order(signed_order, otype)
+        resp = client.create_and_post_order(
+            order_args=order_args,
+            options=PartialCreateOrderOptions(tick_size=str(client.get_tick_size(token_id))),
+            order_type=_order_type(order_type),
+        )
         return _success(resp, "Order placed successfully.")
     except Exception as e:
         return _error(f"Failed to create order: {e}")
@@ -214,30 +243,31 @@ def create_order(
 
 @_wrap_required_params
 def market_order(*, token_id: str, side: str, amount: str) -> dict:
-    """Place a market order.
+    """Place a market order (Fill-or-Kill).
 
     Args:
         token_id: Market token ID.
         side: Order side — "buy" or "sell".
-        amount: USDC amount to spend.
+        amount: For a buy, USDC to spend; for a sell, number of shares.
     """
     client, err = _require_client()
     if err:
         return err
 
-    from py_clob_client.clob_types import MarketOrderArgs, OrderType
-    from py_clob_client.order_builder.constants import BUY, SELL
-
-    side_const = BUY if side.lower() == "buy" else SELL
+    from py_clob_client_v2 import MarketOrderArgs, OrderType, PartialCreateOrderOptions
 
     try:
         mo_args = MarketOrderArgs(
             token_id=token_id,
             amount=float(amount),
-            side=side_const,
+            side=_side(side),
+            order_type=OrderType.FOK,
         )
-        signed_order = client.create_market_order(mo_args)
-        resp = client.post_order(signed_order, OrderType.FOK)
+        resp = client.create_and_post_market_order(
+            order_args=mo_args,
+            options=PartialCreateOrderOptions(tick_size=str(client.get_tick_size(token_id))),
+            order_type=OrderType.FOK,
+        )
         return _success(resp, "Market order placed successfully.")
     except Exception as e:
         return _error(f"Failed to place market order: {e}")
@@ -248,14 +278,14 @@ def cancel_order(*, order_id: str) -> dict:
     """Cancel a specific order.
 
     Args:
-        order_id: The ID of the order to cancel.
+        order_id: The ID (hash) of the order to cancel.
     """
     client, err = _require_client()
     if err:
         return err
 
     try:
-        resp = client.cancel(order_id)
+        resp = client.cancel_orders([order_id])
         return _success(resp, "Order cancelled.")
     except Exception as e:
         return _error(f"Failed to cancel order: {e}")
@@ -285,10 +315,10 @@ def get_orders(*, market: str | None = None) -> dict:
         return err
 
     try:
-        from py_clob_client.clob_types import OpenOrderParams
+        from py_clob_client_v2 import OpenOrderParams
 
         params = OpenOrderParams(market=market) if market else OpenOrderParams()
-        resp = client.get_orders(params)
+        resp = client.get_open_orders(params)
         return _success(resp, "Open orders retrieved.")
     except Exception as e:
         return _error(f"Failed to get orders: {e}")

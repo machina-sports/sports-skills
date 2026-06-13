@@ -26,7 +26,7 @@ These work out of the box:
 - `get_price_history` — historical prices (requires token_id)
 - `get_last_trade_price` — most recent trade (requires token_id)
 
-## Trading Commands (requires py_clob_client + wallet)
+## Trading Commands (requires py-clob-client-v2 + wallet)
 
 - `configure` — set wallet private key
 - `create_order` — place a limit order (token_id, side, price, size)
