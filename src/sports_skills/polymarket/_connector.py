@@ -875,7 +875,7 @@ def _get_sports_config():
 def get_todays_events(request_data):
     """Get today's events (single-game markets) for a specific sport.
 
-    Returns events sorted by start date (most recent first) for the given
+    Returns events sorted by volume (most liquid first) for the given
     sport/league. Each event includes its nested markets with prices.
 
     Params:
