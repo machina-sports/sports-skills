@@ -704,14 +704,19 @@ def search_markets(request_data):
 
         all_markets = []
 
-        # Strategy 1: If we have a series_id (from sport param), query events for that league
+        # Strategy 1: If we have a series_id (from sport param), query events for that league.
+        # Order by VOLUME, not startDate: many Polymarket events carry placeholder
+        # start dates (e.g. World Cup moneyline events show an April date for a June
+        # game), so startDate-desc sorting buries the liquid 1X2 winner markets past
+        # the 100-event limit, leaving only props. Volume-desc surfaces the tradeable
+        # markets first.
         if series_id:
             event_params = {
                 "series_id": series_id,
                 "limit": 100,
                 "active": "true",
                 "closed": "false",
-                "order": "startDate",
+                "order": "volume",
                 "ascending": "false",
             }
             response = _gamma_request("/events", params=event_params, ttl=60)
@@ -751,15 +756,16 @@ def search_markets(request_data):
                             continue
                         all_markets.append(_normalize_market(m))
 
-        # Strategy 3: If query provided but no sport, also search /events sorted by
-        # start date (descending) to find recent single-game events by name
+        # Strategy 3: If query provided but no sport, also search /events by volume
+        # to find single-game events by name (volume-desc, not startDate — placeholder
+        # start dates otherwise bury liquid winner markets; see Strategy 1).
         if query and not series_id and len(all_markets) < limit:
             event_params = {
                 "tag_id": params.get("tag_id", SPORTS_TAG_ID),
                 "limit": 100,
                 "active": "true",
                 "closed": "false",
-                "order": "startDate",
+                "order": "volume",
                 "ascending": "false",
             }
             response = _gamma_request("/events", params=event_params, ttl=60)
@@ -869,7 +875,7 @@ def _get_sports_config():
 def get_todays_events(request_data):
     """Get today's events (single-game markets) for a specific sport.
 
-    Returns events sorted by start date (most recent first) for the given
+    Returns events sorted by volume (most liquid first) for the given
     sport/league. Each event includes its nested markets with prices.
 
     Params:
@@ -897,12 +903,16 @@ def get_todays_events(request_data):
                 f"Unknown sport '{sport}'. Available: {available}"
             )
 
+        # Order by VOLUME, not startDate: Polymarket events often carry placeholder
+        # start dates (a World Cup 1X2 event for a June game shows an April date), so
+        # startDate-desc sorting buries the liquid winner markets past the limit and
+        # returns only prop events. Volume-desc surfaces the real tradeable games.
         event_params = {
             "series_id": series_id,
             "limit": limit,
             "active": "true",
             "closed": "false",
-            "order": "startDate",
+            "order": "volume",
             "ascending": "false",
         }
 

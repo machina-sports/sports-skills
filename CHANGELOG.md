@@ -1,3 +1,8 @@
+## [0.26.6]
+
+### Fixed
+- **Polymarket WC (and other sports) winner markets were invisible — only props returned:** `search_markets`, `get_todays_events`, and the keyword event search queried Gamma `/events` with `order=startDate&ascending=false`. Many Polymarket events carry placeholder start dates (a World Cup 1X2 event for a June 15 game shows an April date), so startDate-desc sorting buried the liquid moneyline/1X2 winner events past the 100-event limit — callers got only the prop events (first-to-score, corners, totals) and concluded "no winner market exists." Empirically, `/events?series_id=11433&order=startDate&ascending=false` returned **0** events with a moneyline market while `order=volume` returned **56**. Switched those event queries to `order=volume&ascending=false`, which surfaces the liquid tradeable markets first (also a better default for traders). `get_todays_events(sport="fifwc")` now returns 33 moneyline markets where it returned 0; `search_markets(query="Spain", sport="fifwc", sports_market_types="moneyline")` now returns "Will Spain win on 2026-06-15?" @ 0.925 etc. with CLOB token ids.
+
 ## [0.26.5]
 
 ### Fixed
