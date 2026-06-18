@@ -702,6 +702,19 @@ Works with every agent that supports the SKILL.md format:
 
 ---
 
+## Going premium
+
+The open-source skills run on free public APIs (snapshot data, rate-limited). When you need licensed or real-time feeds, two CLI surfaces hand off to [`machina-cli`](https://github.com/machina-sports/machina-cli) — the open-source skills themselves stay premium-agnostic and never gate anything:
+
+- **`sports-skills premium`** — connect to the premium **data** path (licensed / real-time feeds via Machina templates + connectors). Detects `machina-cli` (or installs it with `--install`) and prints the next steps; `--json` for agents.
+- **`sports-skills deploy`** — ship a prototype to production via the Machina Factory.
+
+When a public API rate-limits a request (HTTP 429), the response carries an additive `upgrade` block pointing at the premium data path (and a reserved `x402` field for future agent-native pay-per-call). It's purely informational and never changes the data shape. Suppress it with `SPORTS_SKILLS_NO_UPGRADE_HINTS=1`.
+
+The premium catalog (what's licensed / real-time) lives in Machina templates and connectors, discovered through `machina-cli` — it is never enumerated in this repo.
+
+---
+
 ## Coming Soon
 
 Licensed data skills — coming soon via [Machina Sports](https://machina.gg):

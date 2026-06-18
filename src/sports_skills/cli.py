@@ -18,6 +18,8 @@ import argparse
 import json
 import sys
 
+from sports_skills import _premium
+
 # Registry of modules → commands → functions (lazy-loaded)
 _REGISTRY = {
     "football": {
@@ -824,11 +826,10 @@ def _generate_schema(module_name):
     return {"sport": module_name, "version": __version__, "tools": tools}
 
 
-_MACHINA_INSTALL = "pip install machina-cli"
-_MACHINA_INSTALL_SH = (
-    "curl -fsSL https://raw.githubusercontent.com/machina-sports/machina-cli/main/install.sh | bash"
-)
-_MACHINA_DOCS = "https://machina.gg"
+# Single source of truth lives in _premium (shared with the `premium` handoff).
+_MACHINA_INSTALL = _premium.MACHINA_INSTALL
+_MACHINA_INSTALL_SH = _premium.MACHINA_INSTALL_SH
+_MACHINA_DOCS = _premium.SITE_URL
 _DEPLOY_NEXT = [
     "machina login",
     'machina factory run "<describe your app>" --repo <owner>/<name> --watch',
@@ -941,6 +942,10 @@ def main():
             "\nReady to deploy? Run: sports-skills deploy"
             "  — ship your prototype to production via the Machina Factory."
         )
+        print(
+            "Need licensed or real-time data? Run: sports-skills premium"
+            "  — connect to premium feeds via machina-cli."
+        )
         return
 
     # Reserved "catalog" command: return all available modules
@@ -961,6 +966,13 @@ def main():
     # already depends on sports-skills).
     if args.module == "deploy":
         _deploy_handoff(remaining)
+        return
+
+    # Reserved "premium" command: hand off to machina-cli for the premium DATA
+    # motion (licensed / real-time feeds via templates + connectors). The data
+    # twin of `deploy`. The premium catalog lives in machina, not here.
+    if args.module == "premium":
+        _premium.premium_handoff(remaining)
         return
 
     if not args.command:
@@ -1044,6 +1056,7 @@ def main():
 
     try:
         result = func(**kwargs)
+        result = _premium.attach(result)
         print(json.dumps(result, indent=2, default=str, ensure_ascii=False))
     except TypeError as e:
         _cli_error(
