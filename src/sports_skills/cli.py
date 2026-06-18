@@ -826,7 +826,6 @@ def _generate_schema(module_name):
     return {"sport": module_name, "version": __version__, "tools": tools}
 
 
-# Single source of truth lives in _premium (shared with the `premium` handoff).
 _MACHINA_INSTALL = _premium.MACHINA_INSTALL
 _MACHINA_INSTALL_SH = _premium.MACHINA_INSTALL_SH
 _MACHINA_DOCS = _premium.SITE_URL
@@ -837,18 +836,7 @@ _DEPLOY_NEXT = [
 
 
 def _deploy_handoff(remaining):
-    """Funnel: take a working sports-skills prototype to production via
-    machina-cli + the Machina Factory.
-
-    sports-skills is the open-data prototyping surface; `deploy` is the handoff
-    to machina-cli, which builds + deploys the project and opens a PR via the
-    Factory. Never imports `machina_cli` (machina-cli depends on sports-skills,
-    so a top-level import would be a cycle) — it detects/optionally installs the
-    `machina` binary and prints the next steps.
-
-    Flags (passed through as bare args): `--install` to `pip install machina-cli`
-    on the spot; `--json` for a machine-readable payload.
-    """
+    """Handle the ``sports-skills deploy`` command."""
     import shutil
     import subprocess
 
@@ -968,9 +956,7 @@ def main():
         _deploy_handoff(remaining)
         return
 
-    # Reserved "premium" command: hand off to machina-cli for the premium DATA
-    # motion (licensed / real-time feeds via templates + connectors). The data
-    # twin of `deploy`. The premium catalog lives in machina, not here.
+    # Reserved "premium" command.
     if args.module == "premium":
         _premium.premium_handoff(remaining)
         return

@@ -702,16 +702,19 @@ Works with every agent that supports the SKILL.md format:
 
 ---
 
-## Going premium
+## `sports-skills premium`
 
-The open-source skills run on free public APIs (snapshot data, rate-limited). When you need licensed or real-time feeds, two CLI surfaces hand off to [`machina-cli`](https://github.com/machina-sports/machina-cli) — the open-source skills themselves stay premium-agnostic and never gate anything:
+Hands off to [`machina-cli`](https://github.com/machina-sports/machina-cli) for licensed and real-time data feeds. Detects `machina-cli` and prints the setup steps:
 
-- **`sports-skills premium`** — connect to the premium **data** path (licensed / real-time feeds via Machina templates + connectors). Detects `machina-cli` (or installs it with `--install`) and prints the next steps; `--json` for agents.
-- **`sports-skills deploy`** — ship a prototype to production via the Machina Factory.
+```bash
+sports-skills premium              # detect + show next steps
+sports-skills premium --install    # install machina-cli first
+sports-skills premium --json       # machine-readable output
+```
 
-When a public API rate-limits a request (HTTP 429), the response carries an additive `upgrade` block pointing at the premium data path (and a reserved `x402` field for future agent-native pay-per-call). It's purely informational and never changes the data shape. Suppress it with `SPORTS_SKILLS_NO_UPGRADE_HINTS=1`.
+### Rate-limit upgrade hint
 
-The premium catalog (what's licensed / real-time) lives in Machina templates and connectors, discovered through `machina-cli` — it is never enumerated in this repo.
+When a public API rate-limits a request (HTTP 429), the JSON response gains an additional `upgrade` field pointing at `sports-skills premium`. It's additive — the existing response data is unchanged. Suppress it by setting `SPORTS_SKILLS_NO_UPGRADE_HINTS=1`.
 
 ---
 

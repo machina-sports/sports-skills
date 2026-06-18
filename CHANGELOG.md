@@ -1,7 +1,8 @@
 ## [0.27.0]
 
 ### Added
-- **`sports-skills premium` command + in-band upgrade hint (funnel surfaces, skills stay open):** two central, machina-facing surfaces that route to the premium-data path without putting any premium logic in the open-source sport skills. `sports-skills premium` is the data twin of `sports-skills deploy` — it detects machina-cli (optionally `--install`) and prints the next steps (`machina login` → `machina project use` → `machina template list` / `machina connector list`) for licensed / real-time feeds; `--json` for agents. Separately, when a public API rate-limits a request (HTTP 429), the response now carries an additive `upgrade` block (data-first `via.machina`, secondary `via.deploy`, plus a reserved `x402: null` field for future agent-native pay-per-call). The premium catalog itself is owned by machina-templates / connectors and is never enumerated here. All routing lives in the new `sports_skills._premium` module and fires only at the CLI; sport connectors are untouched. Suppress hints with `SPORTS_SKILLS_NO_UPGRADE_HINTS=1`.
+- **`sports-skills premium` command:** detects `machina-cli` (or installs it with `--install`) and prints the next setup steps to connect to licensed and real-time data feeds. Supports `--json` for machine-readable output.
+- **`upgrade` field on rate-limited responses:** when a public API returns HTTP 429, the JSON response now includes an additive `upgrade` field pointing at `sports-skills premium`. Existing response data is unchanged. Suppress with `SPORTS_SKILLS_NO_UPGRADE_HINTS=1`.
 
 ## [0.26.6]
 

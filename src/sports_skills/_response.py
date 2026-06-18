@@ -29,8 +29,6 @@ def wrap(result):
     # Error format from connectors
     if result.get("error"):
         wrapped = error(result.get("message", "Unknown error"))
-        # Preserve the upstream HTTP status code (neutral technical field) so the
-        # CLI can surface a generic rate-limit hint without any per-skill logic.
         if "status_code" in result:
             wrapped["status_code"] = result["status_code"]
         return wrapped

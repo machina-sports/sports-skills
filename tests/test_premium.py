@@ -1,10 +1,4 @@
-"""Tests for the central premium-funnel surface (sports_skills._premium).
-
-Covers the in-band rate-limit upgrade hint, env suppression, status_code
-preservation through the response envelope, and the `premium` handoff command.
-The open-source sport skills carry no premium logic — these tests assert the
-funnel lives entirely in the central module + CLI chokepoint.
-"""
+"""Tests for premium data CLI helpers."""
 
 import json
 
@@ -18,11 +12,9 @@ class TestBuildHint:
         assert hint["trigger"] == "rate_limited"
         assert hint["reason"]
         assert hint["capability"]
-        # Data-first: premium DATA path is primary, deploy is secondary.
         assert hint["via"]["data"]["command"] == "sports-skills premium"
         assert hint["via"]["data"]["docs"] == "http://docs.machina.gg/"
         assert hint["via"]["deploy"]["command"] == "sports-skills deploy"
-        # x402 reserved but not wired in this version.
         assert hint["x402"] is None
 
     def test_unknown_trigger_returns_none(self):
@@ -86,7 +78,6 @@ class TestWrapStatusCode:
         assert "status_code" not in wrapped
 
     def test_end_to_end_429_to_hint(self):
-        # A connector 429 → wrap() preserves the code → attach() renders the hint.
         out = _premium.attach(wrap({"error": True, "status_code": 429, "message": "rate limited"}))
         assert out["upgrade"]["trigger"] == "rate_limited"
 
