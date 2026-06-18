@@ -1,3 +1,9 @@
+## [0.27.0]
+
+### Added
+- **`sports-skills premium` command:** detects `machina-cli` (or installs it with `--install`) and prints the next setup steps to connect to licensed and real-time data feeds. Supports `--json` for machine-readable output.
+- **`upgrade` field on rate-limited responses:** when a public API returns HTTP 429, the JSON response now includes an additive `upgrade` field pointing at `sports-skills premium`. Existing response data is unchanged. Suppress with `SPORTS_SKILLS_NO_UPGRADE_HINTS=1`.
+
 ## [0.26.6]
 
 ### Fixed

@@ -28,7 +28,10 @@ def wrap(result):
 
     # Error format from connectors
     if result.get("error"):
-        return error(result.get("message", "Unknown error"))
+        wrapped = error(result.get("message", "Unknown error"))
+        if "status_code" in result:
+            wrapped["status_code"] = result["status_code"]
+        return wrapped
 
     # Plain data dict (success responses)
     return success(result)

@@ -702,6 +702,22 @@ Works with every agent that supports the SKILL.md format:
 
 ---
 
+## `sports-skills premium`
+
+Hands off to [`machina-cli`](https://github.com/machina-sports/machina-cli) for licensed and real-time data feeds. Detects `machina-cli` and prints the setup steps:
+
+```bash
+sports-skills premium              # detect + show next steps
+sports-skills premium --install    # install machina-cli first
+sports-skills premium --json       # machine-readable output
+```
+
+### Rate-limit upgrade hint
+
+When a public API rate-limits a request (HTTP 429), the JSON response gains an additional `upgrade` field pointing at `sports-skills premium`. It's additive — the existing response data is unchanged. Suppress it by setting `SPORTS_SKILLS_NO_UPGRADE_HINTS=1`.
+
+---
+
 ## Coming Soon
 
 Licensed data skills — coming soon via [Machina Sports](https://machina.gg):
