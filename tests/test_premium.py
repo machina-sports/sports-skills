@@ -17,8 +17,15 @@ class TestBuildHint:
         assert hint["via"]["deploy"]["command"] == "sports-skills deploy"
         assert hint["x402"] is None
 
+    def test_licensed_data_shape(self):
+        hint = _premium.build_hint("licensed_data")
+        assert hint["trigger"] == "licensed_data"
+        assert hint["reason"]
+        assert hint["capability"]
+        assert hint["via"]["data"]["command"] == "sports-skills premium"
+        assert hint["x402"] is None
+
     def test_unknown_trigger_returns_none(self):
-        assert _premium.build_hint("licensed_data") is None
         assert _premium.build_hint("nope") is None
 
 
@@ -105,3 +112,39 @@ class TestRegression:
 
     def test_plain_error_has_no_upgrade(self):
         assert "upgrade" not in _premium.attach(error("not found"))
+
+
+class TestPremiumTier:
+    def test_shape(self):
+        t = _premium.premium_tier()
+        assert t["available"] is True
+        assert "machina" in t["skills"]
+        assert t["activate"] == "sports-skills premium"
+        assert t["docs"] == "http://docs.machina.gg/"
+        assert isinstance(t["machina_cli_installed"], bool)
+
+
+class TestCatalog:
+    """`catalog` is a public contract consumed by downstream tooling (sportsclaw)."""
+
+    def test_modules_key_preserved(self):
+        from sports_skills.cli import _REGISTRY, build_catalog
+
+        cat = build_catalog()
+        assert isinstance(cat["modules"], list) and cat["modules"]
+        assert "version" in cat
+        # back-compat: top-level modules must equal the registry (what sportsclaw reads)
+        assert cat["modules"] == list(_REGISTRY.keys())
+
+    def test_premium_tier_advertised_additively(self):
+        from sports_skills.cli import build_catalog
+
+        cat = build_catalog()
+        assert "machina" in cat["tiers"]["premium"]["skills"]
+        # back-compat guard: top-level modules must equal the open tier's modules
+        assert cat["modules"] == cat["tiers"]["open"]["modules"]
+
+    def test_output_is_json_serializable(self):
+        from sports_skills.cli import build_catalog
+
+        json.dumps(build_catalog())  # must not raise

@@ -899,6 +899,25 @@ def _deploy_handoff(remaining):
     print(f"\n  Docs: {_MACHINA_DOCS}")
 
 
+def build_catalog():
+    """Return the ``catalog`` payload.
+
+    ``modules`` is a stable public contract (consumed by downstream tooling); the
+    ``tiers`` block is additive metadata describing the open and premium tiers.
+    """
+    from sports_skills import __version__
+
+    modules = list(_REGISTRY.keys())
+    return {
+        "version": __version__,
+        "modules": modules,
+        "tiers": {
+            "open": {"modules": modules, "license": "MIT", "use": "personal, non-commercial"},
+            "premium": _premium.premium_tier(),
+        },
+    }
+
+
 def main():
     parser = argparse.ArgumentParser(
         prog="sports-skills",
@@ -938,13 +957,7 @@ def main():
 
     # Reserved "catalog" command: return all available modules
     if args.module == "catalog":
-        from sports_skills import __version__
-
-        catalog = {
-            "version": __version__,
-            "modules": list(_REGISTRY.keys()),
-        }
-        print(json.dumps(catalog, indent=2))
+        print(json.dumps(build_catalog(), indent=2))
         return
 
     # Reserved "deploy" command: hand off to machina-cli (Machina Factory).

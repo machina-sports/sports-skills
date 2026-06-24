@@ -11,6 +11,10 @@ SITE_URL = "https://machina.gg"
 MACHINA_INSTALL = "pip install machina-cli"
 MACHINA_INSTALL_SH = "curl -fsSL https://raw.githubusercontent.com/machina-sports/machina-cli/main/install.sh | bash"
 
+# Skills available on the premium tier. The gateway entry point lives here; the
+# full premium catalog is served by the platform, not this open package.
+PREMIUM_SKILLS = ["machina"]
+
 _PREMIUM_NEXT = [
     "machina login",
     "machina project use <project-id>",
@@ -24,6 +28,10 @@ TRIGGERS = {
     "rate_limited": {
         "reason": "The public API rate-limited this request.",
         "capability": ("Machina's licensed feeds offer higher throughput plus real-time, zero-latency data."),
+    },
+    "licensed_data": {
+        "reason": "This request needs licensed or real-time data the public API does not provide.",
+        "capability": ("Machina's licensed feeds add real-time, zero-latency, and proprietary data."),
     },
 }
 
@@ -50,6 +58,23 @@ def build_hint(trigger):
             "deploy": {"command": "sports-skills deploy"},
         },
         "x402": None,
+    }
+
+
+def premium_tier():
+    """Static metadata describing the premium tier, for the ``catalog`` command.
+
+    Purely declarative — no secrets, no network. Safe to ship in the open package.
+    ``machina_cli_installed`` is a local ``which`` check so tooling can tell whether
+    the optional CLI is already present.
+    """
+    return {
+        "available": True,
+        "skills": PREMIUM_SKILLS,
+        "activate": "sports-skills premium",
+        "requires": "machina-cli",
+        "machina_cli_installed": shutil.which("machina") is not None,
+        "docs": DOCS_URL,
     }
 
 
