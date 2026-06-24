@@ -120,7 +120,7 @@ class TestPremiumTier:
         assert t["available"] is True
         assert "machina" in t["skills"]
         assert t["activate"] == "sports-skills premium"
-        assert t["docs"] == "http://docs.machina.gg/"
+        assert t["docs"] == "https://docs.machina.gg/"
         assert isinstance(t["machina_cli_installed"], bool)
 
 
