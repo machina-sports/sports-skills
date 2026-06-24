@@ -912,7 +912,7 @@ def build_catalog():
         "version": __version__,
         "modules": modules,
         "tiers": {
-            "open": {"modules": modules, "license": "MIT", "use": "personal, non-commercial"},
+            "open": {"modules": list(modules), "license": "MIT", "use": "personal, non-commercial"},
             "premium": _premium.premium_tier(),
         },
     }

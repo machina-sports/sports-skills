@@ -11,6 +11,10 @@ SITE_URL = "https://machina.gg"
 MACHINA_INSTALL = "pip install machina-cli"
 MACHINA_INSTALL_SH = "curl -fsSL https://raw.githubusercontent.com/machina-sports/machina-cli/main/install.sh | bash"
 
+# Command that activates the premium tier. Surfaced in both the upgrade hint and
+# the catalog's premium metadata, so keep it as one constant to avoid drift.
+_PREMIUM_COMMAND = "sports-skills premium"
+
 # Skills available on the premium tier. The gateway entry point lives here; the
 # full premium catalog is served by the platform, not this open package.
 PREMIUM_SKILLS = ["machina"]
@@ -52,7 +56,7 @@ def build_hint(trigger):
         "via": {
             "data": {
                 "skill": "machina",
-                "command": "sports-skills premium",
+                "command": _PREMIUM_COMMAND,
                 "docs": DOCS_URL,
             },
             "deploy": {"command": "sports-skills deploy"},
@@ -71,7 +75,7 @@ def premium_tier():
     return {
         "available": True,
         "skills": PREMIUM_SKILLS,
-        "activate": "sports-skills premium",
+        "activate": _PREMIUM_COMMAND,
         "requires": "machina-cli",
         "machina_cli_installed": shutil.which("machina") is not None,
         "docs": DOCS_URL,
