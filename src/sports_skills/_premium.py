@@ -6,7 +6,7 @@ import shutil
 import subprocess
 import sys
 
-DOCS_URL = "http://docs.machina.gg/"
+DOCS_URL = "https://docs.machina.gg/"
 SITE_URL = "https://machina.gg"
 MACHINA_INSTALL = "pip install machina-cli"
 MACHINA_INSTALL_SH = "curl -fsSL https://raw.githubusercontent.com/machina-sports/machina-cli/main/install.sh | bash"

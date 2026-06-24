@@ -13,7 +13,7 @@ class TestBuildHint:
         assert hint["reason"]
         assert hint["capability"]
         assert hint["via"]["data"]["command"] == "sports-skills premium"
-        assert hint["via"]["data"]["docs"] == "http://docs.machina.gg/"
+        assert hint["via"]["data"]["docs"] == "https://docs.machina.gg/"
         assert hint["via"]["deploy"]["command"] == "sports-skills deploy"
         assert hint["x402"] is None
 
@@ -94,7 +94,7 @@ class TestPremiumHandoff:
         _premium.premium_handoff(["--json"])
         payload = json.loads(capsys.readouterr().out)
         assert payload["status"] is True
-        assert payload["data"]["docs"] == "http://docs.machina.gg/"
+        assert payload["data"]["docs"] == "https://docs.machina.gg/"
         assert payload["data"]["install"] == "pip install machina-cli"
         assert "machina_cli_installed" in payload["data"]
         assert any("machina login" in step for step in payload["data"]["next"])
@@ -102,7 +102,7 @@ class TestPremiumHandoff:
     def test_human_output_mentions_docs(self, capsys):
         _premium.premium_handoff([])
         out = capsys.readouterr().out
-        assert "http://docs.machina.gg/" in out
+        assert "https://docs.machina.gg/" in out
         assert "machina" in out.lower()
 
 
