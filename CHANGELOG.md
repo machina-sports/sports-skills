@@ -1,3 +1,12 @@
+## [0.27.1]
+
+### Added
+- **`catalog` advertises the premium tier:** `sports-skills catalog` gains an additive `tiers` block describing the `open` (MIT) and `premium` (Machina) tiers alongside the existing `modules` list. Top-level `modules` is unchanged — byte-identical, back-compat verified — so downstream consumers (e.g. sportsclaw's `discoverAvailableSkills`) are unaffected. `premium_tier()` is static metadata only (skills, `activate`, `requires`, a local `which machina` check, docs URL); no secrets, no network.
+- **`licensed_data` upgrade trigger:** registered in `_premium.TRIGGERS`, so `build_hint("licensed_data")` returns a structured upgrade block (the stub previously returned `None`). Not yet auto-emitted at runtime — `attach()` still fires only on HTTP 429.
+
+### Fixed
+- **Machina docs URL now uses HTTPS** (`http://docs.machina.gg/` → `https://docs.machina.gg/`).
+
 ## [0.27.0]
 
 ### Added
