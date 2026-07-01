@@ -8,7 +8,7 @@ description: |
 license: MIT
 metadata:
   author: machina-sports
-  version: "0.2.0"
+  version: "0.3.0"
 ---
 
 # Markets Orchestration
@@ -25,6 +25,9 @@ sports-skills markets get_sport_markets --sport=nfl
 sports-skills markets get_sport_schedule --sport=nba
 sports-skills markets normalize_price --price=0.65 --source=polymarket
 sports-skills markets evaluate_market --sport=nba --event_id=401234567
+sports-skills markets match_markets --sport=mlb --date=2026-06-06
+sports-skills markets get_market_price --venue=kalshi --ticker=KXMENWORLDCUP-26-FR
+sports-skills markets get_price_history --venue=kalshi --ticker=KXMENWORLDCUP-26-FR --interval=1d
 ```
 
 Python SDK:
@@ -38,6 +41,9 @@ markets.get_sport_markets(sport="nfl")
 markets.get_sport_schedule(sport="nba", date="2025-02-26")
 markets.normalize_price(price=0.65, source="polymarket")
 markets.evaluate_market(sport="nba", event_id="401234567")
+markets.match_markets(sport="mlb", date="2026-06-06")
+markets.get_market_price(venue="kalshi", ticker="KXMENWORLDCUP-26-FR", at_time="2026-05-01T12:00:00+00:00")
+markets.get_price_history(venue="polymarket", token_id="<token_id>", interval="1h")
 ```
 
 ## CRITICAL: Before Any Query
@@ -73,6 +79,17 @@ Returns each game with ESPN info, DraftKings odds, matching Kalshi markets, and 
 2. Fetches ESPN odds and matching prediction market price
 3. Pipes through `betting.evaluate_bet`: devig → edge → Kelly
 4. Returns fair probability, edge, EV, Kelly fraction, and recommendation
+
+### Same Game on Both Venues
+
+1. `match_markets --sport=mlb --date=2026-06-06`
+2. Each match pairs the Kalshi event (with market tickers) and the Polymarket event (with moneyline token IDs) for the same game — joined deterministically on date + team codes, fuzzy title match as fallback.
+3. Feed `kalshi.market_tickers[i]` and `polymarket.markets[i].token_ids[j]` straight into `get_market_price` to compare prices.
+
+### Price Movement Over Time
+
+1. `get_market_price --venue=kalshi --ticker=<ticker> --at_time=2026-05-01` for a single point-in-time price (both `yes`/`no` sides, 0-1).
+2. `get_price_history --venue=kalshi --ticker=<ticker> --interval=1d` for the full series — same `{timestamp, price}` shape on either venue.
 
 ## Examples
 
@@ -113,6 +130,18 @@ User says: "Convert a Polymarket price of 65 cents to American odds"
 Actions:
 1. Call `normalize_price(price=0.65, source="polymarket")`
 Result: Common structure with implied probability (0.65), American odds (-185.7), and decimal (1.54)
+
+Example 7: Pair a game across venues
+User says: "Find the Mets game on both Kalshi and Polymarket"
+Actions:
+1. Call `match_markets(sport="mlb", date="<game date>")`
+Result: The game paired across venues — Kalshi market tickers and Polymarket moneyline token IDs side by side
+
+Example 8: Historical price
+User says: "What was France's World Cup price a month ago?"
+Actions:
+1. Call `get_market_price(venue="kalshi", ticker="KXMENWORLDCUP-26-FR", at_time="2026-05-03T12:00:00+00:00")`
+Result: Yes/no prices (0-1) as of that moment; use `get_price_history` for the full curve
 
 ## Commands that DO NOT exist — never call these
 

@@ -18,7 +18,7 @@
 | `get_price_history` | token_id | interval, fidelity | Historical prices |
 | `get_last_trade_price` | token_id | | Most recent trade |
 
-## Trading Commands (requires py_clob_client + wallet)
+## Trading Commands (requires py-clob-client-v2 + wallet)
 
 | Command | Required | Optional | Description |
 |---|---|---|---|
@@ -42,7 +42,7 @@
 | `cfb` | College Football | `ucl` | Champions League |
 | `cbb` | College Basketball | `uel` | Europa League |
 | `atp` | ATP Tennis | `mls` | MLS |
-| `wta` | WTA Tennis | | |
+| `wta` | WTA Tennis | `fifwc` | FIFA World Cup 2026 |
 
 Run `get_sports_config()` for the full list of 120+ sport codes.
 

@@ -4,7 +4,7 @@ description: |
   NHL data via ESPN public endpoints — scores, standings, rosters, schedules, game summaries, play-by-play, injuries, transactions, futures, team/player stats, leaders, and news. Zero config, no API keys.
 
   Use when: user asks about NHL scores, standings, team rosters, schedules, game stats, box scores, play-by-play, injuries, transactions, betting futures, team/player statistics, or NHL news.
-  Don't use when: user asks about other hockey leagues (AHL, KHL, college hockey). For other sports use: nfl-data (NFL), nba-data (NBA), wnba-data (WNBA), mlb-data (MLB), football-data (soccer), tennis-data (tennis), golf-data (golf), cfb-data (college football), cbb-data (college basketball), fastf1 (F1). For betting odds use polymarket or kalshi. For news use sports-news.
+  Don't use when: user asks about other hockey leagues (AHL, KHL, college hockey). For other sports use: nfl-data (NFL), nba-data (NBA), wnba-data (WNBA), mlb-data (MLB), football-data (soccer), tennis-data (tennis), golf-data (golf), cricket-data (cricket), cfb-data (college football), cbb-data (college basketball), fastf1 (F1). For betting odds use polymarket or kalshi. For news use sports-news.
 license: MIT
 metadata:
   author: machina-sports

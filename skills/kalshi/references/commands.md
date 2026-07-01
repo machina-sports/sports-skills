@@ -27,6 +27,7 @@ These query the Kalshi API directly using series/event/market tickers:
 - `get_event`
 - `get_markets`
 - `get_market`
+- `get_market_orderbook`
 - `get_trades`
 - `get_market_candlesticks`
 - `get_sports_filters`
@@ -46,13 +47,13 @@ sports-skills kalshi get_todays_events --sport=epl
 ### Discovering sport codes
 ```bash
 sports-skills kalshi get_sports_config
-# Returns: nba, nfl, mlb, nhl, wnba, cfb, cbb, epl, ucl, laliga, bundesliga, seriea, ligue1, mls
+# Returns: nba, nfl, mlb, nhl, wnba, cfb, cbb, epl, ucl, laliga, bundesliga, seriea, ligue1, mls, worldcup
 ```
 
 ## Commands that DO NOT exist (commonly hallucinated)
 
-- ~~`get_odds`~~ / ~~`get_probability`~~ — market prices ARE the implied probability. Use `get_market(ticker="...")` and read the `last_price` field (e.g., 20 = 20% implied probability).
-- ~~`get_market_odds`~~ — use `get_market` or `get_markets` and interpret `last_price` as probability.
+- ~~`get_odds`~~ / ~~`get_probability`~~ — market prices ARE the implied probability. Use `search_markets` or `get_todays_events`, which return `last_price` in cents (e.g., 20 = 20% implied probability).
+- ~~`get_market_odds`~~ — use `search_markets`/`get_todays_events` and interpret `last_price` as probability. Note: raw `get_market`/`get_markets` payloads carry dollar-string fields instead (`last_price_dollars: "0.2000"`), not integer cents.
 - ~~`get_series_by_sport`~~ — use `get_sports_config()` to see sport codes and series tickers.
 
 ## Other common mistakes

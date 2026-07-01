@@ -14,9 +14,9 @@ https://www.tfrrs.org/athletes/{athlete_id}/{school}/{name}.html
 
 | Component | Description | Example |
 |---|---|---|
-| `athlete_id` | Numeric TFRRS ID | `8579610` |
-| `school` | School name slug (underscores, Title_Case) | `California_Baptist` |
-| `name` | Athlete name slug (underscores, Title_Case) | `Lamiae_Mamouni` |
+| `athlete_id` | Numeric TFRRS ID | `9230145` |
+| `school` | School name slug (underscores, Title_Case) | `BYU` |
+| `name` | Athlete name slug (underscores, Title_Case) | `Jane_Hedengren` |
 
 Slugs are **case-sensitive** and must match the TFRRS URL exactly. Find them by navigating to the athlete's profile on tfrrs.org.
 
@@ -36,8 +36,8 @@ Searches the current XC and TF team roster pages for athletes matching the given
 
 | Parameter | Type | Required | Description |
 |---|---|---|---|
-| `name` | string | Yes | Athlete name to search for (e.g. `"Lamiae Mamouni"`) |
-| `school` | string | Yes | TFRRS team slug from the team page URL (e.g. `"CA_college_f_California_Baptist"`) |
+| `name` | string | Yes | Athlete name to search for (e.g. `"Jane Hedengren"`) |
+| `school` | string | Yes | TFRRS team slug from the team page URL (e.g. `"UT_college_f_BYU"`) |
 
 The team page URL pattern is:
 ```
@@ -55,18 +55,18 @@ Note: the team slug (e.g. `CA_college_f_UC_Davis`) differs from the athlete prof
   "data": {
     "matches": [
       {
-        "athlete_id": "8579610",
-        "school": "California_Baptist",
-        "name": "Lamiae_Mamouni",
+        "athlete_id": "9230145",
+        "school": "BYU",
+        "name": "Jane_Hedengren",
         "sport": "xc",
-        "url": "https://www.tfrrs.org/athletes/8579610/California_Baptist/Lamiae_Mamouni.html"
+        "url": "https://www.tfrrs.org/athletes/9230145/BYU/Jane_Hedengren.html"
       },
       {
-        "athlete_id": "8579610",
-        "school": "California_Baptist",
-        "name": "Lamiae_Mamouni",
+        "athlete_id": "9230145",
+        "school": "BYU",
+        "name": "Jane_Hedengren",
         "sport": "tf",
-        "url": "https://www.tfrrs.org/athletes/8579610/California_Baptist/Lamiae_Mamouni.html"
+        "url": "https://www.tfrrs.org/athletes/9230145/BYU/Jane_Hedengren.html"
       }
     ]
   }
@@ -80,8 +80,8 @@ Note: the team slug (e.g. `CA_college_f_UC_Davis`) differs from the athlete prof
 | `matches` | Empty list if no athletes match the name on the current roster. |
 | `matches[].sport` | `"xc"` or `"tf"` — an athlete may appear in both if listed on both rosters. |
 | `matches[].athlete_id` | Use this directly as `athlete_id` in `get_athlete_profile`. |
-| `matches[].school` | Athlete profile school slug (e.g. `California_Baptist`) — use as `school` in `get_athlete_profile`. |
-| `matches[].name` | Athlete name slug (e.g. `Lamiae_Mamouni`) — use as `name` in `get_athlete_profile`. |
+| `matches[].school` | Athlete profile school slug (e.g. `BYU`) — use as `school` in `get_athlete_profile`. |
+| `matches[].name` | Athlete name slug (e.g. `Jane_Hedengren`) — use as `name` in `get_athlete_profile`. |
 
 ### Error response
 
@@ -118,41 +118,41 @@ sports-skills xctf get_athlete_profile --athlete_id=<id> --school=<school> --nam
   "status": true,
   "message": "",
   "data": {
-    "athlete_id": "8579610",
-    "url": "https://www.tfrrs.org/athletes/8579610/California_Baptist/Lamiae_Mamouni.html",
-    "name": "Lamiae Mamouni",
-    "school": "CBU",
-    "eligibility": "JR-3",
+    "athlete_id": "9230145",
+    "url": "https://www.tfrrs.org/athletes/9230145/BYU/Jane_Hedengren.html",
+    "name": "Jane Hedengren",
+    "school": "BYU",
+    "eligibility": "FR-1",
     "prs": {
-      "800": "2:10.30",
-      "1500": "4:31.80",
-      "MILE": "4:59.29",
-      "3000": "9:53.69",
-      "5K (XC)": "18:25.5",
-      "6K (XC)": "21:24.6"
+      "1500": "4:10.24",
+      "MILE": "4:22.22",
+      "3000": "8:34.98",
+      "5000": "14:44.79",
+      "10,000": "30:46.80",
+      "6K (XC)": "18:29.6"
     },
     "meets": [
       {
-        "meet": "Aztec Coastal Classic Team",
-        "date": "Mar 13, 2026",
+        "meet": "Big 12 Outdoor Track & Field Championships",
+        "date": "May 14-16, 2026",
         "results": [
-          { "event": "1500", "mark": "4:38.81", "place": "16th (F)" }
+          { "event": "1500", "mark": "4:10.24", "place": "3rd (F)" },
+          { "event": "5000", "mark": "15:26.94", "place": "1st (F)" }
         ]
       },
       {
-        "meet": "2024 WAC Outdoor Conference Championship",
-        "date": "May 9-11, 2024",
+        "meet": "NCAA Division I Indoor Track & Field Championships",
+        "date": "Mar 13-14, 2026",
         "results": [
-          { "event": "800", "mark": "2:13.37 (-0.3)", "place": "4th (F)" },
-          { "event": "800", "mark": "2:11.90", "place": "3rd (P)" },
-          { "event": "1500", "mark": "4:42.37", "place": "10th (F)" }
+          { "event": "3000", "mark": "8:36.61", "place": "1st (F)" },
+          { "event": "5000", "mark": "15:00.12", "place": "1st (F)" }
         ]
       },
       {
         "meet": "NCAA Division I Cross Country Championships",
-        "date": "Nov 18, 2023",
+        "date": "Nov 22, 2025",
         "results": [
-          { "event": "6k", "mark": "21:34.0", "place": "201st" }
+          { "event": "6k", "mark": "18:38.9", "place": "2nd" }
         ]
       }
     ]

@@ -265,9 +265,9 @@ def search_athlete(*, name: str, school: str = "") -> dict:
     profile URL from tfrrs.org and use get_athlete_profile directly.
 
     Args:
-        name: Athlete name to search for (e.g. "Lamiae Mamouni").
+        name: Athlete name to search for (e.g. "Jane Hedengren").
         school: TFRRS team slug from the team page URL
-            (e.g. "CA_college_f_California_Baptist"). Both the women's and
+            (e.g. "UT_college_f_BYU"). Both the women's and
             men's rosters are searched automatically regardless of which
             gender slug you provide.
     """
@@ -312,9 +312,9 @@ def get_athlete_profile(
     """Fetch a TFRRS athlete profile: PRs and full results history.
 
     Args:
-        athlete_id: TFRRS numeric athlete ID (e.g. "8579610").
-        school: School slug as it appears in the TFRRS URL (e.g. "California_Baptist").
-        name: Athlete name slug as it appears in the TFRRS URL (e.g. "Lamiae_Mamouni").
+        athlete_id: TFRRS numeric athlete ID (e.g. "9230145").
+        school: School slug as it appears in the TFRRS URL (e.g. "BYU").
+        name: Athlete name slug as it appears in the TFRRS URL (e.g. "Jane_Hedengren").
     """
     url = f"{_BASE}/athletes/{athlete_id}/{school}/{name}.html"
     result = _fetch(url)

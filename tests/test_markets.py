@@ -5,6 +5,9 @@ from unittest.mock import MagicMock, patch
 from sports_skills.markets._connector import (
     KALSHI_SERIES,
     MATCH_THRESHOLD,
+    META_SPORT_ALIASES,
+    META_SPORTS,
+    POLYMARKET_SPORTS,
     SCOREBOARD_SPORTS,
     _best_matches,
     _extract_games,
@@ -135,6 +138,13 @@ class TestMappingTables:
     def test_kalshi_series_contains_football(self):
         football_sports = {"epl", "ucl", "laliga", "bundesliga", "seriea", "ligue1", "mls"}
         assert football_sports.issubset(set(KALSHI_SERIES.keys()))
+
+    def test_worldcup_on_both_venues(self):
+        # FIFA World Cup 2026 markets live in dedicated Kalshi series and a
+        # dedicated Polymarket sport code (fifwc); neither is reachable via
+        # keyword search alone.
+        assert KALSHI_SERIES["worldcup"] == "KXWCGAME"
+        assert POLYMARKET_SPORTS["worldcup"] == "fifwc"
 
     def test_kalshi_series_values_are_strings(self):
         for series in KALSHI_SERIES.values():
@@ -536,6 +546,78 @@ class TestEvaluateMarketMocked:
         assert result["data"]["market_prob"] == 0.52
         assert result["data"]["evaluation"] is not None
 
+    @patch("sports_skills.kalshi")
+    @patch("sports_skills.markets._connector._load_sport_module")
+    def test_evaluate_kalshi_dollars_only_payload(self, mock_load, mock_kalshi):
+        # Raw get_market payloads post-migration carry only *_dollars fields;
+        # evaluate_market must still derive a usable market probability.
+        mock_mod = MagicMock()
+        mock_mod.get_game_summary.return_value = {
+            "status": True,
+            "data": {
+                "competitors": [
+                    {"team": {"name": "Boston Celtics"}, "home_away": "home"},
+                    {"team": {"name": "Los Angeles Lakers"}, "home_away": "away"},
+                ],
+                "odds": {"home_odds": -150, "away_odds": 130},
+            },
+        }
+        mock_load.return_value = mock_mod
+        mock_kalshi.get_market.return_value = {
+            "status": True,
+            "data": {"yes_bid_dollars": "0.1630", "last_price_dollars": "0.1680"},
+        }
+
+        result = evaluate_market(
+            {"params": {"sport": "nba", "event_id": "123", "kalshi_ticker": "KX-TEST"}}
+        )
+
+        assert result["status"] is True
+        assert result["data"]["market_prob"] == 0.16
+        assert result["data"]["market_source"] == "kalshi"
+        assert result["data"]["evaluation"] is not None
+
+    @patch("sports_skills.markets._connector._search_polymarket")
+    @patch("sports_skills.kalshi")
+    @patch("sports_skills.markets._connector._load_sport_module")
+    def test_evaluate_kalshi_zero_price_falls_through_to_search(
+        self, mock_load, mock_kalshi, mock_poly_search
+    ):
+        # A zero/missing Kalshi price must leave market_prob as None so the
+        # search fallback still runs (previously it was poisoned to 0.0).
+        mock_mod = MagicMock()
+        mock_mod.get_game_summary.return_value = {
+            "status": True,
+            "data": {
+                "competitors": [
+                    {"team": {"name": "Boston Celtics"}, "home_away": "home"},
+                    {"team": {"name": "Los Angeles Lakers"}, "home_away": "away"},
+                ],
+                "odds": {"home_odds": -150, "away_odds": 130},
+            },
+        }
+        mock_load.return_value = mock_mod
+        mock_kalshi.get_market.return_value = {
+            "status": True,
+            "data": {"yes_bid_dollars": "0.0000"},
+        }
+        mock_poly_search.return_value = [
+            {
+                "source": "polymarket",
+                "title": "Celtics Game",
+                "market_id": "M1",
+                "outcomes": [{"token_id": "T1", "outcome": "Yes", "price": 0.52}],
+            }
+        ]
+
+        result = evaluate_market(
+            {"params": {"sport": "nba", "event_id": "123", "kalshi_ticker": "KX-TEST"}}
+        )
+
+        assert result["status"] is True
+        assert result["data"]["market_prob"] == 0.52
+        assert result["data"]["market_source"] == "polymarket"
+
     @patch("sports_skills.markets._connector._load_sport_module")
     def test_evaluate_missing_odds(self, mock_load):
         mock_mod = MagicMock()
@@ -569,3 +651,141 @@ class TestGetSportMarketsMocked:
     def test_missing_sport(self):
         result = get_sport_markets({"params": {}})
         assert result["status"] is False
+
+
+# ============================================================
+# Meta-Sports (football fan-out)
+# ============================================================
+
+
+class TestMetaSports:
+    def test_football_in_meta_sports(self):
+        assert "football" in META_SPORTS
+        spec = META_SPORTS["football"]
+        # Each listed league must already be a real key on at least one venue,
+        # otherwise the fan-out loop silently drops it.
+        for league in spec["leagues"]:
+            assert league in KALSHI_SERIES or league in POLYMARKET_SPORTS, league
+        assert "FIFA" in spec.get("polymarket_keywords", [])
+        # World Cup match markets ride along with the football fan-out.
+        assert "worldcup" in spec["leagues"]
+
+    def test_soccer_aliases_to_football(self):
+        assert META_SPORT_ALIASES.get("soccer") == "football"
+
+
+class TestKalshiWorldCupSeries:
+    def test_kalshi_module_worldcup_series(self):
+        # The kalshi module maps 'worldcup' to the full set of FIFA World Cup
+        # 2026 series. Without these, search_markets falls back to a single
+        # unfiltered /events page scan and never sees World Cup markets.
+        from sports_skills.kalshi._connector import (
+            KALSHI_SERIES as KALSHI_MODULE_SERIES,
+        )
+
+        tickers = KALSHI_MODULE_SERIES["worldcup"]
+        assert "KXMENWORLDCUP" in tickers
+        assert "KXWCGAME" in tickers
+        assert "KXWCGROUPQUAL" in tickers
+        assert all(t.startswith("KX") for t in tickers)
+
+
+class TestGetSportMarketsMeta:
+    """`sport="football"` should fan out across league codes AND surface
+    tournament markets (FIFA World Cup) via a polymarket keyword search.
+    Before this fix, `get_sport_markets --sport=football` returned 0 markets
+    because neither KALSHI_SERIES nor POLYMARKET_SPORTS had a "football" key
+    — the per-league EPL/UCL/etc. entries existed but only one sport key
+    was consulted per call."""
+
+    @patch("sports_skills.polymarket")
+    @patch("sports_skills.kalshi")
+    def test_football_fans_out_across_leagues_and_fifa_keyword(
+        self, mock_kalshi, mock_poly
+    ):
+        # Kalshi returns one market per league lookup.
+        mock_kalshi.get_markets.return_value = {
+            "status": True,
+            "data": {"markets": [{"ticker": "MKT_K", "title": "EPL game"}]},
+        }
+        # Polymarket returns unique markets per call (use kwargs to vary the id
+        # so we exercise the dedupe path). Fixture uses `id` to match the real
+        # Polymarket payload shape — `market_id` is the renamed key applied
+        # downstream in normalize_market, not present on raw search results.
+        poly_call_count = {"n": 0}
+
+        def poly_side_effect(**kwargs):
+            poly_call_count["n"] += 1
+            return {
+                "status": True,
+                "data": {
+                    "markets": [
+                        {"id": f"P{poly_call_count['n']}", "title": "x"}
+                    ]
+                },
+            }
+
+        mock_poly.search_markets.side_effect = poly_side_effect
+
+        result = get_sport_markets({"params": {"sport": "football", "limit": 50}})
+
+        assert result["status"] is True
+        assert result["data"]["sport"] == "football"
+        # 8 leagues in META_SPORTS["football"]["leagues"] (7 club leagues
+        # + worldcup) → 8 kalshi calls.
+        assert mock_kalshi.get_markets.call_count == 8
+        # 8 league calls + 1 FIFA keyword call = 9 polymarket calls.
+        assert mock_poly.search_markets.call_count == 9
+        # All 8 kalshi markets surface (one per league).
+        assert result["data"]["kalshi_count"] == 8
+        # 9 unique polymarket ids (8 leagues + FIFA), all kept by dedupe.
+        assert result["data"]["polymarket_count"] == 9
+
+    @patch("sports_skills.polymarket")
+    @patch("sports_skills.kalshi")
+    def test_soccer_alias_resolves_to_football(self, mock_kalshi, mock_poly):
+        mock_kalshi.get_markets.return_value = {"status": True, "data": {"markets": []}}
+        mock_poly.search_markets.return_value = {"status": True, "data": {"markets": []}}
+
+        soccer_result = get_sport_markets({"params": {"sport": "soccer"}})
+        football_result = get_sport_markets({"params": {"sport": "football"}})
+
+        # Both report the canonical "football" sport in the response.
+        assert soccer_result["data"]["sport"] == "football"
+        assert football_result["data"]["sport"] == "football"
+
+    @patch("sports_skills.polymarket")
+    @patch("sports_skills.kalshi")
+    def test_dedupe_collapses_duplicate_polymarket_ids(self, mock_kalshi, mock_poly):
+        # Kalshi unused for this assertion.
+        mock_kalshi.get_markets.return_value = {"status": True, "data": {"markets": []}}
+        # Every polymarket call returns the SAME market id — dedupe should keep
+        # only the first occurrence even across 8 fan-out calls.
+        mock_poly.search_markets.return_value = {
+            "status": True,
+            "data": {"markets": [{"id": "DUPE", "title": "x"}]},
+        }
+
+        result = get_sport_markets({"params": {"sport": "football"}})
+
+        assert result["data"]["polymarket_count"] == 1
+
+    @patch("sports_skills.polymarket")
+    @patch("sports_skills.kalshi")
+    def test_meta_sport_tolerates_per_venue_errors(self, mock_kalshi, mock_poly):
+        # Kalshi raises on every call; polymarket keeps working.
+        mock_kalshi.get_markets.side_effect = Exception("kalshi down")
+        mock_poly.search_markets.return_value = {
+            "status": True,
+            "data": {"markets": [{"id": "P1", "title": "x"}]},
+        }
+
+        result = get_sport_markets({"params": {"sport": "football"}})
+
+        # Partial success: status still True, kalshi empty, polymarket populated,
+        # warnings list captures the kalshi failures.
+        assert result["status"] is True
+        assert result["data"]["kalshi_count"] == 0
+        assert result["data"]["polymarket_count"] >= 1
+        warnings = result["data"].get("warnings", [])
+        assert any("kalshi" in w.lower() for w in warnings)

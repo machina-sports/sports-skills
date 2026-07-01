@@ -2,10 +2,10 @@
 # Validates polymarket parameters
 COMMAND="${1:-}"
 
-# Trading commands need py_clob_client + wallet
+# Trading commands need py-clob-client-v2 + wallet
 TRADING_COMMANDS="create_order market_order cancel_order cancel_all_orders get_orders get_user_trades"
 if echo "$TRADING_COMMANDS" | grep -qw "$COMMAND"; then
-  echo "WARNING: $COMMAND requires py_clob_client and a wallet. Install with: pip install sports-skills[polymarket]. Set POLYMARKET_PRIVATE_KEY=0x... in .env or call configure(private_key=...)."
+  echo "WARNING: $COMMAND requires py-clob-client-v2 and a wallet. Install with: pip install sports-skills[polymarket]. Set POLYMARKET_PRIVATE_KEY=0x... in .env or call configure(private_key=...)."
 fi
 
 # token_id vs market_id warning

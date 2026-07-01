@@ -18,6 +18,8 @@ import argparse
 import json
 import sys
 
+from sports_skills import _premium
+
 # Registry of modules → commands → functions (lazy-loaded)
 _REGISTRY = {
     "football": {
@@ -137,6 +139,7 @@ _REGISTRY = {
             ]
         },
         "get_market": {"required": ["ticker"]},
+        "get_market_orderbook": {"required": ["ticker"], "optional": ["depth"]},
         "get_trades": {"optional": ["limit", "cursor", "ticker", "min_ts", "max_ts"]},
         "get_market_candlesticks": {
             "required": [
@@ -204,6 +207,15 @@ _REGISTRY = {
         "evaluate_market": {
             "required": ["sport", "event_id"],
             "optional": ["token_id", "kalshi_ticker", "outcome"],
+        },
+        "match_markets": {"required": ["sport"], "optional": ["date"]},
+        "get_market_price": {
+            "required": ["venue"],
+            "optional": ["ticker", "token_id", "at_time"],
+        },
+        "get_price_history": {
+            "required": ["venue"],
+            "optional": ["ticker", "token_id", "interval", "start_time", "end_time"],
         },
     },
     "metadata": {
@@ -374,6 +386,18 @@ _REGISTRY = {
         "get_player_info": {"required": ["player_id"]},
         "get_news": {"required": ["tour"]},
     },
+    "cricket": {
+        "get_series": {},
+        "get_scoreboard": {"required": ["series_id"], "optional": ["date"]},
+        "get_standings": {"required": ["series_id"]},
+        "get_game_summary": {"required": ["series_id", "event_id"]},
+        "get_news": {"required": ["series_id"]},
+        "get_competitions": {},
+        "get_matches": {"required": ["competition"], "optional": ["season"]},
+        "get_match_deliveries": {"required": ["competition", "match_id"], "optional": ["innings"]},
+        "get_player_stats": {"required": ["competition", "player"], "optional": ["season"]},
+        "find_player": {"required": ["name"]},
+    },
     "cfb": {
         "get_scoreboard": {"optional": ["date", "week", "group", "limit"]},
         "get_standings": {"optional": ["season", "group"]},
@@ -471,6 +495,7 @@ _INT_PARAMS = {
     "page",
     "min_seed",
     "max_seed",
+    "innings",
 }
 
 # Params that should be parsed as float
@@ -609,6 +634,10 @@ def _load_module(name):
         from sports_skills import tennis
 
         return tennis
+    elif name == "cricket":
+        from sports_skills import cricket
+
+        return cricket
     elif name == "cfb":
         from sports_skills import cfb
         return cfb
@@ -637,10 +666,63 @@ def _parse_value(key, value):
     if key in _INT_PARAMS:
         return int(value)
     if key in _FLOAT_PARAMS:
+        # Comma-separated multi-outcome values pass through as strings:
+        # `odds` is a single float for convert_odds but a comma-separated
+        # string for devig (e.g. --odds=-230,+330,+750). Commands validate
+        # the shape downstream and fail gracefully either way.
+        if isinstance(value, str) and "," in value:
+            return value
         return float(value)
     if key in _LIST_PARAMS:
         return [v.strip() for v in value.split(",")]
     return value
+
+
+def _parse_cli_kwargs(args):
+    """Parse --key=value, --key value, and --flag CLI args into kwargs.
+
+    Both the equals form (``--query=FIFA``) and the conventional
+    space-separated form (``--query FIFA``) are accepted. A
+    value-expecting flag with no value fails loudly instead of being
+    silently coerced to a boolean, and a wrong-typed value returns a
+    structured error instead of a traceback.
+    """
+    kwargs = {}
+    i = 0
+    while i < len(args):
+        arg = args[i]
+        if not arg.startswith("--"):
+            _cli_error(
+                f"Unexpected argument '{arg}'. "
+                "Pass parameters as --key=value or --key value."
+            )
+        arg = arg[2:]
+        if "=" in arg:
+            key, value = arg.split("=", 1)
+        elif i + 1 < len(args) and not args[i + 1].startswith("--"):
+            # Space-separated form: --query FIFA
+            key, value = arg, args[i + 1]
+            i += 1
+        elif arg in _BOOL_PARAMS:
+            key, value = arg, True
+        else:
+            _cli_error(
+                f"Flag --{arg} expects a value. "
+                f"Use --{arg}=<value> or --{arg} <value>."
+            )
+        try:
+            kwargs[key] = _parse_value(key, value)
+        except (TypeError, ValueError):
+            expected = (
+                "an integer"
+                if key in _INT_PARAMS
+                else "a number"
+                if key in _FLOAT_PARAMS
+                else "a valid value"
+            )
+            _cli_error(f"Invalid value for --{key}: '{value}' (expected {expected}).")
+        i += 1
+    return kwargs
 
 
 def _parse_docstring_args(docstring):
@@ -761,13 +843,105 @@ def _generate_schema(module_name):
     return {"sport": module_name, "version": __version__, "tools": tools}
 
 
+_MACHINA_INSTALL = _premium.MACHINA_INSTALL
+_MACHINA_INSTALL_SH = _premium.MACHINA_INSTALL_SH
+_MACHINA_DOCS = _premium.SITE_URL
+_DEPLOY_NEXT = [
+    "machina login",
+    'machina factory run "<describe your app>" --repo <owner>/<name> --watch',
+]
+
+
+def _deploy_handoff(remaining):
+    """Handle the ``sports-skills deploy`` command."""
+    import shutil
+    import subprocess
+
+    flags = {a.lstrip("-") for a in remaining if a.startswith("-")}
+    as_json = "json" in flags
+    do_install = "install" in flags
+
+    machina = shutil.which("machina")
+
+    if do_install and not machina:
+        try:
+            subprocess.run(
+                [sys.executable, "-m", "pip", "install", "-q", "machina-cli"],
+                check=True,
+            )
+            machina = shutil.which("machina")
+        except Exception as e:  # noqa: BLE001
+            _cli_error(
+                f"Failed to install machina-cli: {e}",
+                hint=_MACHINA_INSTALL,
+                dependency="machina-cli",
+            )
+
+    if as_json:
+        print(
+            json.dumps(
+                {
+                    "status": True,
+                    "message": "Ready to deploy? machina-cli ships this to production via the Machina Factory.",
+                    "data": {
+                        "machina_cli_installed": bool(machina),
+                        "install": _MACHINA_INSTALL,
+                        "install_sh": _MACHINA_INSTALL_SH,
+                        "next": _DEPLOY_NEXT,
+                        "docs": _MACHINA_DOCS,
+                    },
+                },
+                indent=2,
+            )
+        )
+        return
+
+    print("Deploy with Machina " + "─" * 44)
+    print("You've been prototyping with open sports data. When you're ready to")
+    print("ship it for real, machina-cli builds + deploys your app and opens a")
+    print("PR — via the Machina Factory.\n")
+    if machina:
+        print("  ✓ machina-cli detected\n")
+        print("  Next:")
+        for s in _DEPLOY_NEXT:
+            print(f"    $ {s}")
+    else:
+        print("  1. Install machina-cli:")
+        print(f"       {_MACHINA_INSTALL}")
+        print(f"       # or: {_MACHINA_INSTALL_SH}")
+        print("       # or: sports-skills deploy --install")
+        print("\n  2. Then:")
+        for s in _DEPLOY_NEXT:
+            print(f"    $ {s}")
+    print(f"\n  Docs: {_MACHINA_DOCS}")
+
+
+def build_catalog():
+    """Return the ``catalog`` payload.
+
+    ``modules`` is a stable public contract (consumed by downstream tooling); the
+    ``tiers`` block is additive metadata describing the open and premium tiers.
+    """
+    from sports_skills import __version__
+
+    modules = list(_REGISTRY.keys())
+    return {
+        "version": __version__,
+        "modules": modules,
+        "tiers": {
+            "open": {"modules": list(modules), "license": "MIT", "use": "personal, non-commercial"},
+            "premium": _premium.premium_tier(),
+        },
+    }
+
+
 def main():
     parser = argparse.ArgumentParser(
         prog="sports-skills",
-        description="Lightweight CLI for sports data — football, F1, NFL, NBA, WNBA, NHL, MLB, tennis, CFB, CBB, golf, volleyball, prediction markets, betting analysis, metadata, and news.",
+        description="Lightweight CLI for sports data — football, F1, NFL, NBA, WNBA, NHL, MLB, tennis, cricket, CFB, CBB, golf, volleyball, prediction markets, betting analysis, metadata, and news.",
     )
     parser.add_argument(
-        "module", nargs="?", help="Module name: football, f1, nfl, nba, wnba, nhl, mlb, tennis, cfb, cbb, golf, volleyball, xctf, esports, polymarket, kalshi, betting, markets, metadata, news"
+        "module", nargs="?", help="Module name: football, f1, nfl, nba, wnba, nhl, mlb, tennis, cricket, cfb, cbb, golf, volleyball, xctf, esports, polymarket, kalshi, betting, markets, metadata, news"
     )
     parser.add_argument(
         "command", nargs="?", help="Command name (e.g., get_season_standings)"
@@ -788,17 +962,33 @@ def main():
         print("\nAvailable modules:")
         for mod_name, commands in _REGISTRY.items():
             print(f"  {mod_name}: {', '.join(commands.keys())}")
+        print(
+            "\nReady to deploy? Run: sports-skills deploy"
+            "  — ship your prototype to production via the Machina Factory."
+        )
+        print(
+            "Need licensed or real-time data? Run: sports-skills premium"
+            "  — connect to premium feeds via machina-cli."
+        )
         return
 
     # Reserved "catalog" command: return all available modules
     if args.module == "catalog":
-        from sports_skills import __version__
+        print(json.dumps(build_catalog(), indent=2))
+        return
 
-        catalog = {
-            "version": __version__,
-            "modules": list(_REGISTRY.keys()),
-        }
-        print(json.dumps(catalog, indent=2))
+    # Reserved "deploy" command: hand off to machina-cli (Machina Factory).
+    # sports-skills is the open-data prototyping surface; when you're ready to
+    # ship, machina-cli builds + deploys your project via the Factory. Kept
+    # import-free of machina_cli to avoid a dependency cycle (machina-cli
+    # already depends on sports-skills).
+    if args.module == "deploy":
+        _deploy_handoff(remaining)
+        return
+
+    # Reserved "premium" command.
+    if args.module == "premium":
+        _premium.premium_handoff(remaining)
         return
 
     if not args.command:
@@ -850,17 +1040,8 @@ def main():
             f"Available: {', '.join(_REGISTRY[module_name].keys())}"
         )
 
-    # Parse --key=value and --flag params
-    kwargs = {}
-    for arg in remaining:
-        if arg.startswith("--"):
-            arg = arg[2:]
-            if "=" in arg:
-                key, value = arg.split("=", 1)
-                kwargs[key] = _parse_value(key, value)
-            else:
-                # Boolean flag (e.g., --google_news)
-                kwargs[arg] = _parse_value(arg, True)
+    # Parse --key=value, --key value, and --flag params
+    kwargs = _parse_cli_kwargs(remaining)
 
     # Check required params
     cmd_info = _REGISTRY[module_name][command_name]
@@ -891,6 +1072,7 @@ def main():
 
     try:
         result = func(**kwargs)
+        result = _premium.attach(result)
         print(json.dumps(result, indent=2, default=str, ensure_ascii=False))
     except TypeError as e:
         _cli_error(

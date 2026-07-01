@@ -507,8 +507,14 @@ def get_event_details(request_data):
         if not event_id and not slug:
             return _error("Either event_id or slug is required")
 
-        endpoint = f"/events/{slug}" if slug else f"/events/{event_id}"
-        response = _gamma_request(endpoint, ttl=60)
+        if slug:
+            # Gamma resolves slugs via query param, not path (the path
+            # segment must be a numeric id).
+            response = _gamma_request("/events", params={"slug": slug}, ttl=60)
+            if isinstance(response, list):
+                response = response[0] if response else {}
+        else:
+            response = _gamma_request(f"/events/{event_id}", ttl=60)
         err = _check_error(response)
         if err:
             return err
@@ -609,27 +615,33 @@ def get_order_book(request_data):
         bids = response.get("bids", [])
         asks = response.get("asks", [])
 
-        # Calculate spread
-        best_bid = _safe_float(bids[0].get("price")) if bids else 0
-        best_ask = _safe_float(asks[0].get("price")) if asks else 0
+        # The CLOB returns price levels with the BEST price at the END of
+        # each array (bids ascending, asks descending). Never assume order:
+        # best bid is the highest bid, best ask is the lowest ask. Returned
+        # arrays are sorted best-first so consumers reading [0] get the touch.
+        norm_bids = sorted(
+            (
+                {"price": _safe_float(b.get("price")), "size": _safe_float(b.get("size"))}
+                for b in bids
+            ),
+            key=lambda level: level["price"],
+            reverse=True,
+        )
+        norm_asks = sorted(
+            (
+                {"price": _safe_float(a.get("price")), "size": _safe_float(a.get("size"))}
+                for a in asks
+            ),
+            key=lambda level: level["price"],
+        )
+        best_bid = norm_bids[0]["price"] if norm_bids else 0
+        best_ask = norm_asks[0]["price"] if norm_asks else 0
         spread = round(best_ask - best_bid, 4) if best_bid and best_ask else None
 
         book = {
             "token_id": token_id,
-            "bids": [
-                {
-                    "price": _safe_float(b.get("price")),
-                    "size": _safe_float(b.get("size")),
-                }
-                for b in bids
-            ],
-            "asks": [
-                {
-                    "price": _safe_float(a.get("price")),
-                    "size": _safe_float(a.get("size")),
-                }
-                for a in asks
-            ],
+            "bids": norm_bids,
+            "asks": norm_asks,
             "best_bid": best_bid,
             "best_ask": best_ask,
             "spread": spread,
@@ -692,14 +704,19 @@ def search_markets(request_data):
 
         all_markets = []
 
-        # Strategy 1: If we have a series_id (from sport param), query events for that league
+        # Strategy 1: If we have a series_id (from sport param), query events for that league.
+        # Order by VOLUME, not startDate: many Polymarket events carry placeholder
+        # start dates (e.g. World Cup moneyline events show an April date for a June
+        # game), so startDate-desc sorting buries the liquid 1X2 winner markets past
+        # the 100-event limit, leaving only props. Volume-desc surfaces the tradeable
+        # markets first.
         if series_id:
             event_params = {
                 "series_id": series_id,
                 "limit": 100,
                 "active": "true",
                 "closed": "false",
-                "order": "startDate",
+                "order": "volume",
                 "ascending": "false",
             }
             response = _gamma_request("/events", params=event_params, ttl=60)
@@ -739,15 +756,16 @@ def search_markets(request_data):
                             continue
                         all_markets.append(_normalize_market(m))
 
-        # Strategy 3: If query provided but no sport, also search /events sorted by
-        # start date (descending) to find recent single-game events by name
+        # Strategy 3: If query provided but no sport, also search /events by volume
+        # to find single-game events by name (volume-desc, not startDate — placeholder
+        # start dates otherwise bury liquid winner markets; see Strategy 1).
         if query and not series_id and len(all_markets) < limit:
             event_params = {
                 "tag_id": params.get("tag_id", SPORTS_TAG_ID),
                 "limit": 100,
                 "active": "true",
                 "closed": "false",
-                "order": "startDate",
+                "order": "volume",
                 "ascending": "false",
             }
             response = _gamma_request("/events", params=event_params, ttl=60)
@@ -857,7 +875,7 @@ def _get_sports_config():
 def get_todays_events(request_data):
     """Get today's events (single-game markets) for a specific sport.
 
-    Returns events sorted by start date (most recent first) for the given
+    Returns events sorted by volume (most liquid first) for the given
     sport/league. Each event includes its nested markets with prices.
 
     Params:
@@ -885,12 +903,16 @@ def get_todays_events(request_data):
                 f"Unknown sport '{sport}'. Available: {available}"
             )
 
+        # Order by VOLUME, not startDate: Polymarket events often carry placeholder
+        # start dates (a World Cup 1X2 event for a June game shows an April date), so
+        # startDate-desc sorting buries the liquid winner markets past the limit and
+        # returns only prop events. Volume-desc surfaces the real tradeable games.
         event_params = {
             "series_id": series_id,
             "limit": limit,
             "active": "true",
             "closed": "false",
-            "order": "startDate",
+            "order": "volume",
             "ascending": "false",
         }
 
@@ -920,7 +942,7 @@ def get_price_history(request_data):
     Params:
         token_id (str): CLOB token ID (required)
         interval (str): Time range - "1d", "1w", "1m", "max" (default: "max")
-        fidelity (int): Seconds between data points (default: 120)
+        fidelity (int): Resolution of data points in minutes (default: 120)
     """
     try:
         params = request_data.get("params", {})

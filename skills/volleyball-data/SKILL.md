@@ -4,7 +4,7 @@ description: |
   Dutch volleyball data (Eredivisie, Topdivisie, Superdivisie, and the full Dutch pyramid) via the Nevobo API. Standings, schedules, results, clubs, tournaments, and news. Zero config, no API keys.
 
   Use when: user asks about Dutch volleyball, Eredivisie volleyball, Nevobo, volleyball standings, volleyball match results, volleyball schedules, or Dutch volleyball clubs.
-  Don't use when: user asks about other sports — use football-data (soccer), nfl-data (NFL), nba-data (NBA), wnba-data (WNBA), nhl-data (NHL), mlb-data (MLB), golf-data (golf), cfb-data (college football), cbb-data (college basketball), tennis-data (tennis), or fastf1 (F1). For betting odds use polymarket or kalshi. For general news use sports-news.
+  Don't use when: user asks about other sports — use football-data (soccer), nfl-data (NFL), nba-data (NBA), wnba-data (WNBA), nhl-data (NHL), mlb-data (MLB), golf-data (golf), cricket-data (cricket), cfb-data (college football), cbb-data (college basketball), tennis-data (tennis), or fastf1 (F1). For betting odds use polymarket or kalshi. For general news use sports-news.
 license: MIT
 metadata:
   author: machina-sports

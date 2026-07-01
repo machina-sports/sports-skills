@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <script>
+    (function() {
+      const stored = localStorage.getItem('theme');
+      const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+      if (stored === 'light' || (!stored && !prefersDark)) {
+        document.documentElement.classList.add('light');
+      } else if (stored === 'dark') {
+        document.documentElement.classList.add('dark');
+      }
+    })();
+  </script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}sports-skills.sh — Live Sports Data for AI Agents{% endblock %}</title>
+  <meta name="description" content="{% block meta_description %}Agent skills for live sports data and prediction markets. Open source for public feeds, Machina Pro for licensed sources.{% endblock %}">
+  {% block meta_extra %}{% endblock %}
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/styles.css">
+  {% block json_ld %}{% endblock %}
+</head>
+<body>
+
+  <!-- NAV -->
+  <nav>
+    <a href="/" class="nav-brand" style="text-decoration:none;">
+      <span class="dot">$</span> sports-skills<span class="dot">.sh</span>
+    </a>
+    <div class="nav-links">
+      <a href="/#skills">Skills</a>
+      <button class="theme-toggle" onclick="toggleTheme()" aria-label="Toggle theme">
+        <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>
+        <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg>
+      </button>
+      <a href="https://github.com/machina-sports/sports-skills" target="_blank" rel="noopener" class="nav-cta">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: -2px; margin-right: 4px;"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>GitHub
+      </a>
+    </div>
+  </nav>
+
+  <main>
+    {% block content %}{% endblock %}
+  </main>
+
+  <!-- FOOTER -->
+  <footer>
+    <div class="container">
+      <div class="footer-disclaimer">
+        <strong>Open-source skills</strong> (MIT) wrap publicly available
+        third-party data sources for personal and educational use. Not
+        affiliated with or endorsed by any data provider. You are
+        responsible for complying with each source's terms of service.
+        <br><br>
+        <strong>Machina Pro skills</strong> are proprietary and run on the
+        <a href="https://machina.gg" target="_blank" rel="noopener">Machina</a>
+        platform with licensed data feeds, official partnerships, and
+        production-grade SLAs.
+      </div>
+      <div class="footer-divider">---</div>
+      <div class="footer-inner">
+        <div class="footer-left">
+          Built by <a href="https://machina.gg" target="_blank" rel="noopener">Machina Sports</a>
+          &middot; Open skills MIT licensed &middot; 2026
+        </div>
+        <div class="footer-right">
+          <a href="https://github.com/machina-sports/sports-skills" target="_blank" rel="noopener">GitHub</a>
+          <a href="https://discord.gg/PBYd6FbBSK" target="_blank" rel="noopener">Discord</a>
+          <a href="https://machina.gg" target="_blank" rel="noopener">machina.gg</a>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+  <script>
+    function getThemePreference() {
+      const stored = localStorage.getItem('theme');
+      if (stored) return stored;
+      return window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
+    }
+    function applyTheme(theme) {
+      const html = document.documentElement;
+      html.classList.remove('light', 'dark');
+      html.classList.add(theme);
+    }
+    function toggleTheme() {
+      const html = document.documentElement;
+      const isLight = html.classList.contains('light') ||
+        (!html.classList.contains('dark') && window.matchMedia('(prefers-color-scheme: light)').matches);
+      const newTheme = isLight ? 'dark' : 'light';
+      localStorage.setItem('theme', newTheme);
+      applyTheme(newTheme);
+    }
+    window.matchMedia('(prefers-color-scheme: light)').addEventListener('change', (e) => {
+      if (!localStorage.getItem('theme')) applyTheme(e.matches ? 'light' : 'dark');
+    });
+  </script>
+  {% block scripts %}{% endblock %}
+</body>
+</html>

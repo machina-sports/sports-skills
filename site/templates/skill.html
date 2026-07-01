@@ -1,0 +1,187 @@
+{% extends "base.html" %}
+
+{% block title %}{{ skill.name }} — sports-skills.sh{% endblock %}
+
+{% block meta_description %}{{ skill.description }}{% endblock %}
+
+{% block meta_extra %}
+<meta name="keywords" content="{{ skill.name }}, {{ skill.category }}, {{ skill.commands|map(attribute='name')|join(', ') }}, sports data, AI agents">
+<meta property="og:title" content="{{ skill.name }} — sports-skills.sh">
+<meta property="og:description" content="{{ skill.description }}">
+<meta property="og:url" content="{{ skill.url }}">
+<meta property="og:type" content="website">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="{{ skill.name }} — sports-skills.sh">
+<meta name="twitter:description" content="{{ skill.description }}">
+{% endblock %}
+
+{% block json_ld %}
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "SoftwareApplication",
+  "name": "{{ skill.name }}",
+  "description": "{{ skill.description }}",
+  "applicationCategory": "{{ skill.category }}",
+  "operatingSystem": "Any",
+  "offers": {"@type": "Offer", "price": "0", "priceCurrency": "USD"},
+  "url": "{{ skill.url }}",
+  {% if skill.source_url %}
+  "codeRepository": "{{ skill.source_url }}"
+  {% else %}
+  "codeRepository": "https://github.com/machina-sports/sports-skills"
+  {% endif %}
+}
+</script>
+{% endblock %}
+
+{% block content %}
+<!-- BREADCRUMB -->
+<div class="breadcrumb">
+  <div class="container">
+    <a href="/">sports-skills.sh</a> &rarr; {{ skill.name }}
+  </div>
+</div>
+
+<!-- SKILL HEADER -->
+<section class="skill-header">
+  <div class="container">
+    <h1>
+      {{ skill.name }}
+      <span class="skill-tag tag-{{ skill.category_color }}">{{ skill.category }}</span>
+      {% if skill.tier == 'pro' %}
+      <span class="skill-tag tag-cyan">Pro</span>
+      {% endif %}
+    </h1>
+
+    <div class="skill-actions">
+      {% if skill.tier == 'open' %}
+      <button class="btn-primary" onclick="copySkillInstall()">
+        Install
+      </button>
+      <div class="btn-disabled">
+        Run on Machina
+        <span class="tooltip">Coming soon</span>
+      </div>
+      {% else %}
+      <a href="https://machina.gg" target="_blank" rel="noopener" class="btn-primary" style="background: var(--cyan); color: #000;">
+        Run on Machina
+      </a>
+      {% endif %}
+    </div>
+
+    <div class="metadata-row">
+      <span>{% if skill.command_count %}{{ skill.command_count }} commands{% else %}prompt-only{% endif %}</span>
+      <span>{{ skill.data_source }}</span>
+      {% if skill.version %}
+      <span>v{{ skill.version }}</span>
+      {% endif %}
+      <span>{{ skill.license }}</span>
+    </div>
+  </div>
+</section>
+
+<!-- DESCRIPTION -->
+<section class="description-section">
+  <div class="container">
+    <p class="skill-description">{{ skill.description_human }}</p>
+  </div>
+</section>
+
+{% if skill.commands %}
+<!-- COMMANDS -->
+<section class="commands-section">
+  <div class="container">
+    <h2>Commands</h2>
+    <table class="commands-table">
+      <thead>
+        <tr>
+          <th>Command</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for cmd in skill.commands %}
+        <tr>
+          <td><code>{{ cmd.name }}</code></td>
+          <td>{{ cmd.description }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+{% endif %}
+
+{% if skill.examples %}
+<!-- EXAMPLES -->
+<section class="examples-section">
+  <div class="container">
+    <h2>Example Prompts</h2>
+    <ul class="examples-list">
+      {% for ex in skill.examples %}
+      <li>{{ ex }}</li>
+      {% endfor %}
+    </ul>
+  </div>
+</section>
+{% endif %}
+
+{% if skill.tier == 'open' %}
+<!-- QUICK START -->
+<section class="quickstart-section">
+  <div class="container">
+    <h2>Quick Start</h2>
+    <div class="quickstart-code">
+      <div class="comment"># CLI</div>
+      <div>sports-skills {{ skill.slug }} {{ skill.commands[0].name if skill.commands else 'get_data' }}</div>
+    </div>
+    <div class="quickstart-code">
+      <div class="comment"># Python</div>
+      <div>from sports_skills import {{ skill.slug | replace('-', '_') }}</div>
+      <div>{{ skill.slug | replace('-', '_') }}.{{ skill.commands[0].name if skill.commands else 'get_data' }}()</div>
+    </div>
+  </div>
+</section>
+{% endif %}
+
+{% if related %}
+<!-- RELATED SKILLS -->
+<section class="related-section">
+  <div class="container">
+    <h2>Related Skills</h2>
+    <div class="skills-grid">
+      {% for s in related %}
+      <a href="/{{ s.slug }}/" class="skill-card {% if s.tier == 'pro' %}pro-tier{% endif %}">
+        <div class="skill-name">
+          {{ s.name }}
+          <span class="skill-tag tag-{{ s.category_color }}">{{ s.category }}</span>
+        </div>
+        <div class="skill-desc">{{ s.description }}</div>
+        <div class="skill-meta">
+          <span>{% if s.command_count %}{{ s.command_count }} commands{% else %}prompt-only{% endif %}</span>
+          <span>{{ s.data_source }}</span>
+        </div>
+      </a>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+{% endif %}
+{% endblock %}
+
+{% block scripts %}
+<script>
+  {% if skill.tier == 'open' %}
+  function copySkillInstall() {
+    const text = '{{ skill.install_command }}';
+    navigator.clipboard.writeText(text).then(() => {
+      const btn = document.querySelector('.btn-primary');
+      const orig = btn.textContent;
+      btn.textContent = 'Copied!';
+      setTimeout(() => { btn.textContent = orig; }, 2000);
+    });
+  }
+  {% endif %}
+</script>
+{% endblock %}

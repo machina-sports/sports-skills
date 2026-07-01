@@ -4,7 +4,7 @@ description: |
   NCAA cross country and track & field athlete data via TFRRS (tfrrs.org) and news via The Stride Report. Fetch athlete profiles including all personal records (PRs), eligibility year, school, full season-by-season results history, and XC/TF news. Zero config, no API keys.
 
   Use when: user asks about NCAA cross country, NCAA track and field, college running, TFRRS athlete profiles, personal records, PRs, XC or TF season results, individual athlete performance history, or XC/TF news.
-  Don't use when: user asks about professional track, Diamond League, or other sports — use nfl-data, nba-data, wnba-data, nhl-data, mlb-data, golf-data, cfb-data, cbb-data, tennis-data, fastf1, or volleyball-data. For betting use polymarket or kalshi.
+  Don't use when: user asks about professional track, Diamond League, or other sports — use nfl-data, nba-data, wnba-data, nhl-data, mlb-data, golf-data, cricket-data, cfb-data, cbb-data, tennis-data, fastf1, or volleyball-data. For betting use polymarket or kalshi.
 license: MIT
 compatibility: Requires Python 3.10+ and internet access to tfrrs.org and thestridereport.com. No API keys required.
 metadata:
@@ -32,7 +32,7 @@ Requires Python 3.10+. No API keys required. All data comes from TFRRS public pa
 
 CLI (preferred):
 ```bash
-sports-skills xctf get_athlete_profile --athlete_id=8579610 --school=California_Baptist --name=Lamiae_Mamouni
+sports-skills xctf get_athlete_profile --athlete_id=9230145 --school=BYU --name=Jane_Hedengren
 sports-skills xctf get_news --limit=5
 ```
 
@@ -41,9 +41,9 @@ Python SDK:
 from sports_skills import xctf
 
 profile = xctf.get_athlete_profile(
-    athlete_id="8579610",
-    school="California_Baptist",
-    name="Lamiae_Mamouni",
+    athlete_id="9230145",
+    school="BYU",
+    name="Jane_Hedengren",
 )
 ```
 
@@ -55,9 +55,9 @@ All three parameters are required and must match the athlete's TFRRS URL exactly
 https://www.tfrrs.org/athletes/{athlete_id}/{school}/{name}.html
 ```
 
-- `athlete_id` — numeric ID (e.g. `8579610`)
-- `school` — school slug with underscores, not spaces (e.g. `California_Baptist`)
-- `name` — athlete name slug (e.g. `Lamiae_Mamouni`)
+- `athlete_id` — numeric ID (e.g. `9230145`)
+- `school` — school slug with underscores, not spaces (e.g. `BYU`)
+- `name` — athlete name slug (e.g. `Jane_Hedengren`)
 
 Do NOT guess slugs. Find them by navigating to the athlete on tfrrs.org and copying the URL.
 
@@ -76,17 +76,17 @@ See `references/api-reference.md` for full parameter details and return shapes.
 ## Examples
 
 Example 1: Look up a current athlete's PRs
-User says: "What are Lamiae Mamouni's PRs?"
+User says: "What are Jane Hedengren's PRs?"
 Actions:
-1. Call `search_athlete(name="Lamiae Mamouni", school="CA_college_f_California_Baptist")`
+1. Call `search_athlete(name="Jane Hedengren", school="UT_college_f_BYU")`
    Result: `data.matches` contains entries with `athlete_id`, `school`, `name` slugs
-2. Call `get_athlete_profile(athlete_id="8579610", school="California_Baptist", name="Lamiae_Mamouni")`
-Result: `data.prs` contains all personal records by event (e.g. `{"1500": "4:31.80", "5K (XC)": "18:25.5", ...}`)
+2. Call `get_athlete_profile(athlete_id="9230145", school="BYU", name="Jane_Hedengren")`
+Result: `data.prs` contains all personal records by event (e.g. `{"1500": "4:10.24", "5000": "14:44.79", "6K (XC)": "18:29.6", ...}`)
 
 Example 2: Get a runner's cross country season
-User says: "Show me Lamiae Mamouni's 2025 XC season results"
+User says: "Show me Jane Hedengren's 2025 XC season results"
 Actions:
-1. Call `search_athlete(name="Lamiae Mamouni", school="CA_college_f_California_Baptist")`
+1. Call `search_athlete(name="Jane Hedengren", school="UT_college_f_BYU")`
 2. Call `get_athlete_profile` with the matched athlete params
 3. Filter `data.meets` for entries whose `date` falls in the fall of 2025 (Sep–Nov 2025)
 Result: List of meets with dates, events, marks, and places

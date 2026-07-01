@@ -20,6 +20,7 @@
 | `get_event` | event_ticker | with_nested_markets | Event details |
 | `get_markets` | | limit, cursor, event_ticker, series_ticker, status, tickers | Market listing |
 | `get_market` | ticker | | Market details |
+| `get_market_orderbook` | ticker | depth | Order book — yes/no bid depth (dollar-string levels) |
 | `get_trades` | | limit, cursor, ticker, min_ts, max_ts | Recent trades |
 | `get_market_candlesticks` | series_ticker, ticker, start_ts, end_ts, period_interval | | OHLC data |
 | `get_sports_filters` | | | Filter categories |
@@ -49,6 +50,7 @@
 | Serie A | `seriea` | KXSERIEA |
 | Ligue 1 | `ligue1` | KXLIGUE1 |
 | MLS | `mls` | KXMLSGAME |
+| FIFA World Cup 2026 | `worldcup` | KXMENWORLDCUP, KXWCGAME, KXWCGROUPQUAL, KXWCGROUPORDER, KXWCSTAGE, KXWCHOSTSTAGE, KXWCBESTHOST, KXWCNOEURSA, KXWCREGIONKO, KXWCEVERYTEAMGOAL |
 
 See `references/series-tickers.md` for the full series ticker list and `references/api.md` for raw API documentation.
 

@@ -27,6 +27,9 @@ from sports_skills.kalshi._connector import (
     get_market_candlesticks as _get_market_candlesticks,
 )
 from sports_skills.kalshi._connector import (
+    get_market_orderbook as _get_market_orderbook,
+)
+from sports_skills.kalshi._connector import (
     get_markets as _get_markets,
 )
 from sports_skills.kalshi._connector import (
@@ -68,12 +71,21 @@ def get_exchange_schedule() -> dict:
 
 
 def get_series_list(*, category: str | None = None, tags: str | None = None) -> dict:
-    """Low-level series listing. For sport-specific markets, prefer get_todays_events(sport=...) or search_markets(sport=...) instead."""
+    """Low-level series listing. For sport-specific markets, prefer get_todays_events(sport=...) or search_markets(sport=...) instead.
+
+    Args:
+        category: Filter by Kalshi category (e.g. "Sports", "Politics").
+        tags: Comma-separated tags to filter series by (e.g. "NBA").
+    """
     return _get_series_list(_req(category=category, tags=tags))
 
 
 def get_series(*, series_ticker: str) -> dict:
-    """Get details for a specific series."""
+    """Get details for a specific series.
+
+    Args:
+        series_ticker: Series ticker (e.g. "KXNBA", "KXWCGAME"). Use get_sports_config() to discover sport series tickers.
+    """
     return _get_series(_req(series_ticker=series_ticker))
 
 
@@ -85,7 +97,15 @@ def get_events(
     series_ticker: str | None = None,
     with_nested_markets: bool = False,
 ) -> dict:
-    """Low-level event listing. For sport-specific game markets, prefer get_todays_events(sport=...) which auto-filters by series ticker and includes nested markets."""
+    """Low-level event listing. For sport-specific game markets, prefer get_todays_events(sport=...) which auto-filters by series ticker and includes nested markets.
+
+    Args:
+        limit: Max events to return (default: 100, max: 200).
+        cursor: Pagination cursor from a previous response.
+        status: Filter by event status — "open", "closed", or "settled".
+        series_ticker: Filter to one series (e.g. "KXNBA").
+        with_nested_markets: Include each event's markets inline (default: False).
+    """
     return _get_events(
         _req(
             limit=limit,
@@ -98,7 +118,12 @@ def get_events(
 
 
 def get_event(*, event_ticker: str, with_nested_markets: bool = False) -> dict:
-    """Get details for a specific event."""
+    """Get details for a specific event.
+
+    Args:
+        event_ticker: Event ticker (e.g. "KXNBA-26", "KXMLBGAME-26JUN062210NYMSD").
+        with_nested_markets: Include the event's markets inline (default: False).
+    """
     return _get_event(
         _req(event_ticker=event_ticker, with_nested_markets=with_nested_markets)
     )
@@ -113,7 +138,16 @@ def get_markets(
     status: str | None = None,
     tickers: str | None = None,
 ) -> dict:
-    """Low-level market listing. For sport-specific market search, prefer search_markets(sport=..., query=...) which auto-resolves series tickers and finds game-level markets."""
+    """Low-level market listing. For sport-specific market search, prefer search_markets(sport=..., query=...) which auto-resolves series tickers and finds game-level markets.
+
+    Args:
+        limit: Max markets to return (default: 100, max: 200).
+        cursor: Pagination cursor from a previous response.
+        event_ticker: Filter to one event's markets.
+        series_ticker: Filter to one series (e.g. "KXNBA").
+        status: Filter by market status — "unopened", "open", "closed", or "settled".
+        tickers: Comma-separated market tickers to fetch directly.
+    """
     return _get_markets(
         _req(
             limit=limit,
@@ -127,8 +161,22 @@ def get_markets(
 
 
 def get_market(*, ticker: str) -> dict:
-    """Get details for a specific market."""
+    """Get details for a specific market.
+
+    Args:
+        ticker: Market ticker (e.g. "KXMENWORLDCUP-26-FR"). Note: prices come as dollar-string fields (last_price_dollars).
+    """
     return _get_market(_req(ticker=ticker))
+
+
+def get_market_orderbook(*, ticker: str, depth: int | None = None) -> dict:
+    """Get the order book (yes/no bid depth) for a specific market.
+
+    Args:
+        ticker: Market ticker (e.g. "KXMENWORLDCUP-26-FR").
+        depth: Max price levels per side; omit for the full book.
+    """
+    return _get_market_orderbook(_req(ticker=ticker, depth=depth))
 
 
 def get_trades(
@@ -139,7 +187,15 @@ def get_trades(
     min_ts: int | None = None,
     max_ts: int | None = None,
 ) -> dict:
-    """Get recent trades with optional filtering."""
+    """Get recent trades with optional filtering.
+
+    Args:
+        limit: Max trades to return (default: 100, max: 1000).
+        cursor: Pagination cursor from a previous response.
+        ticker: Filter to one market ticker.
+        min_ts: Only trades after this Unix timestamp (seconds).
+        max_ts: Only trades before this Unix timestamp (seconds).
+    """
     return _get_trades(
         _req(limit=limit, cursor=cursor, ticker=ticker, min_ts=min_ts, max_ts=max_ts)
     )
@@ -156,6 +212,10 @@ def get_market_candlesticks(
     """Get candlestick (OHLC) data for a market.
 
     Args:
+        series_ticker: Series the market belongs to — the market ticker's prefix (e.g. "KXMENWORLDCUP" for "KXMENWORLDCUP-26-FR").
+        ticker: Market ticker (e.g. "KXMENWORLDCUP-26-FR").
+        start_ts: Range start as Unix timestamp (seconds).
+        end_ts: Range end as Unix timestamp (seconds).
         period_interval: Candlestick interval in minutes (1, 60, or 1440).
     """
     return _get_market_candlesticks(
@@ -181,7 +241,7 @@ def get_sports_config() -> dict:
     get_todays_events(sport=...).
 
     US sports: 'nba', 'nfl', 'nhl', 'mlb', 'wnba', 'cfb', 'cbb'.
-    Football: 'epl', 'ucl', 'laliga', 'bundesliga', 'seriea', 'ligue1', 'mls'.
+    Football: 'epl', 'ucl', 'laliga', 'bundesliga', 'seriea', 'ligue1', 'mls', 'worldcup'.
     """
     return _get_sports_config(_req())
 
@@ -195,7 +255,7 @@ def get_todays_events(*, sport: str, limit: int = 50) -> dict:
     Args:
         sport: Sport code — US sports: 'nba', 'nfl', 'nhl', 'mlb', 'wnba',
             'cfb', 'cbb'. Football: 'epl', 'ucl', 'laliga', 'bundesliga',
-            'seriea', 'ligue1', 'mls'.
+            'seriea', 'ligue1', 'mls', 'worldcup'.
         limit: Max events (default: 50, max: 200).
     """
     return _get_todays_events(_req(sport=sport, limit=limit))
@@ -216,7 +276,7 @@ def search_markets(
     Args:
         sport: Sport code — US sports: 'nba', 'nfl', 'nhl', 'mlb', 'wnba',
             'cfb', 'cbb'. Football: 'epl', 'ucl', 'laliga', 'bundesliga',
-            'seriea', 'ligue1', 'mls'. Resolves to series_ticker(s).
+            'seriea', 'ligue1', 'mls', 'worldcup'. Resolves to series_ticker(s).
         query: Keyword to match in event/market titles.
         status: Market status filter (default: 'open').
         limit: Max results (default: 50, max: 200).

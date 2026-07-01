@@ -4,7 +4,7 @@ description: |
   Polymarket sports prediction markets — live odds, prices, order books, events, series, and market search. No auth required. Covers NFL, NBA, MLB, football (EPL, UCL, La Liga), tennis, cricket, MMA, esports. Supports moneyline, spreads, totals, and player props.
 
   Use when: user asks about sports betting odds, prediction markets, win probabilities, market sentiment, or "who is favored to win" questions.
-  Don't use when: user asks about actual match results, scores, or statistics — use the sport-specific skill: football-data (soccer), nfl-data (NFL), nba-data (NBA), wnba-data (WNBA), nhl-data (NHL), mlb-data (MLB), tennis-data (tennis), golf-data (golf), cfb-data (college football), cbb-data (college basketball), or fastf1 (F1). Don't use for historical match data. Don't use for news — use sports-news instead. Don't confuse with Kalshi — Polymarket focuses on crypto-native prediction markets with deeper sports coverage; Kalshi is a US-regulated exchange with different market structure.
+  Don't use when: user asks about actual match results, scores, or statistics — use the sport-specific skill: football-data (soccer), nfl-data (NFL), nba-data (NBA), wnba-data (WNBA), nhl-data (NHL), mlb-data (MLB), tennis-data (tennis), golf-data (golf), cricket-data (cricket), cfb-data (college football), cbb-data (college basketball), or fastf1 (F1). Don't use for historical match data. Don't use for news — use sports-news instead. Don't confuse with Kalshi — Polymarket focuses on crypto-native prediction markets with deeper sports coverage; Kalshi is a US-regulated exchange with different market structure.
 license: MIT
 metadata:
   author: machina-sports
@@ -53,13 +53,16 @@ RIGHT: search_markets(sport='epl', query='Leeds') → returns all Leeds markets
 **Core commands** (no dependencies, no API keys):
 All read commands work out of the box.
 
-**Trading commands** require `py_clob_client`:
+**Trading commands** require `py-clob-client-v2`:
 ```bash
 pip install sports-skills[polymarket]
 ```
 Additionally requires a configured wallet:
 ```bash
 export POLYMARKET_PRIVATE_KEY=0x...
+# Only for proxy / email (Magic) wallets, where the signer differs from the
+# funds holder. EOA wallets don't need it.
+export POLYMARKET_FUNDER_ADDRESS=0x...
 ```
 
 ## Workflows
@@ -163,5 +166,5 @@ Cause: Low-liquidity market — may have wide spreads and infrequent trades
 Solution: Check `get_last_trade_price(token_id=<id>)` for the most recent actual trade price
 
 Error: Trading commands fail
-Cause: `py_clob_client` is not installed or wallet is not configured
+Cause: `py-clob-client-v2` is not installed or wallet is not configured
 Solution: Run `pip install sports-skills[polymarket]` and set `POLYMARKET_PRIVATE_KEY` environment variable
