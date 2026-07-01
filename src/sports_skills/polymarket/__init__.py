@@ -290,7 +290,13 @@ def get_last_trade_price(*, token_id: str) -> dict:
 def get_esports_events(
     *, query: str | None = None, limit: int = 30, closed: bool = False
 ) -> dict:
-    """Esports prediction markets on Polymarket (CS2, LoL, Dota2, Valorant). Implied probabilities via outcome prices."""
+    """Esports prediction markets on Polymarket (CS2, LoL, Dota2, Valorant). Implied probabilities via outcome prices.
+
+    Args:
+        query: Optional keyword filter matched against event title/slug (e.g. 'LoL', 'CS2', a team name).
+        limit: Max events (default: 30, max: 100).
+        closed: Include closed/resolved events (default: False).
+    """
     return _get_esports_events(_req(query=query, limit=limit, closed=closed))
 
 

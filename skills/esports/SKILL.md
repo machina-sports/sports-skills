@@ -5,8 +5,10 @@ description: |
   Pro matches, tournaments, teams, and structured LoL competitive data.
   Use when: user asks about Dota 2 pro matches/teams/leagues, or LoL esports
   tournaments/rosters/results.
-  For esports betting/odds: use the `kalshi` (get_esports_odds) or `polymarket`
-  (get_esports_events) skills — there is no keyless bookmaker-odds source.
+  Don't use when: user asks about esports betting/odds — use the `kalshi`
+  (get_esports_odds) or `polymarket` (get_esports_events) skills (no keyless
+  bookmaker-odds source exists). Don't use for non-Dota/LoL titles (only Dota 2
+  and LoL are covered).
 license: MIT
 metadata:
   author: machina-sports

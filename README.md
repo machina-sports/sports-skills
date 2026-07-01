@@ -186,6 +186,7 @@ Pick the sports you need. Each skill installs independently.
 | `volleyball-data` | Volleyball (Dutch) | `npx skills add machina-sports/sports-skills@volleyball-data` | [skills.sh](https://skills.sh/machina-sports/sports-skills/volleyball-data) |
 | `xctf-data` | XC & Track & Field | `npx skills add machina-sports/sports-skills@xctf-data` | [skills.sh](https://skills.sh/machina-sports/sports-skills/xctf-data) |
 | `fastf1` | Formula 1 | `npx skills add machina-sports/sports-skills@fastf1` | [skills.sh](https://skills.sh/machina-sports/sports-skills/fastf1) |
+| `esports` | Esports (Dota 2 + LoL) | `npx skills add machina-sports/sports-skills@esports` | [skills.sh](https://skills.sh/machina-sports/sports-skills/esports) |
 | `sports-news` | Multi-sport News | `npx skills add machina-sports/sports-skills@sports-news` | [skills.sh](https://skills.sh/machina-sports/sports-skills/sports-news) |
 | `metadata` | Team logos, player photos | `npx skills add machina-sports/sports-skills@metadata` | [skills.sh](https://skills.sh/machina-sports/sports-skills/metadata) |
 

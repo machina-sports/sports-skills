@@ -14,6 +14,7 @@ the `kalshi` (get_esports_odds) and `polymarket` (get_esports_events) skills.
 """
 
 import json
+import random
 import threading
 import time
 import urllib.error
@@ -49,10 +50,17 @@ def _cache_get(key):
 
 def _cache_set(key, value, ttl=300):
     with _cache_lock:
-        if len(_cache) > 500:
+        if len(_cache) >= 500:
             now = time.monotonic()
+            # Drop expired entries first.
             for k in [k for k, (_, exp) in _cache.items() if now > exp]:
                 del _cache[k]
+            # Still full of live entries -> hard-cap by evicting the
+            # soonest-to-expire so the cache can't grow without bound.
+            if len(_cache) >= 500:
+                stale_first = sorted(_cache.items(), key=lambda kv: kv[1][1])
+                for k, _ in stale_first[: len(_cache) - 499]:
+                    del _cache[k]
         _cache[key] = (value, time.monotonic() + ttl)
 
 
@@ -70,18 +78,23 @@ class _RateLimiter:
         self.lock = threading.Lock()
 
     def acquire(self):
-        with self.lock:
-            now = time.monotonic()
-            self.tokens = min(
-                self.max_tokens,
-                self.tokens + (now - self.last_refill) * self.refill_rate,
-            )
-            self.last_refill = now
-            if self.tokens >= 1:
-                self.tokens -= 1
-                return
-        time.sleep(max(0, (1 - self.tokens) / self.refill_rate))
-        self.acquire()
+        # Loop rather than recurse so sustained contention can't grow the
+        # stack toward RecursionError.
+        while True:
+            with self.lock:
+                now = time.monotonic()
+                self.tokens = min(
+                    self.max_tokens,
+                    self.tokens + (now - self.last_refill) * self.refill_rate,
+                )
+                self.last_refill = now
+                if self.tokens >= 1:
+                    self.tokens -= 1
+                    return
+                deficit = 1 - self.tokens
+            # Sleep outside the lock; add jitter so waiters don't wake in
+            # lockstep and thunder the single-token buckets.
+            time.sleep(max(0, deficit / self.refill_rate) + random.uniform(0, 0.05))
 
 
 # OpenDota free tier ~60/min. Leaguepedia throttles hard — stay well under 1 req/2s.
@@ -218,6 +231,9 @@ def get_leagues(request_data):
     try:
         params = request_data.get("params", {})
         tier = str(params.get("tier") or "").lower()
+        valid_tiers = ("premium", "professional", "excluded")
+        if tier and tier not in valid_tiers:
+            return _error(f"Unknown tier '{tier}'. Available: {', '.join(valid_tiers)}")
         limit = min(int(params.get("limit", 50)), 200)
         resp = _opendota_get("/leagues", ttl=3600)
         err = _http_error(resp)
@@ -288,6 +304,10 @@ def get_match(request_data):
         match_id = str(params.get("match_id") or "").strip()
         if not match_id:
             return _error("match_id is required")
+        # OpenDota match ids are numeric; reject anything else so the value
+        # can't inject extra path/query segments into the request URL.
+        if not match_id.isdigit():
+            return _error(f"Invalid match_id '{match_id}': must be a numeric OpenDota match id")
         resp = _opendota_get(f"/matches/{match_id}", ttl=86400)
         err = _http_error(resp)
         if err:
@@ -393,7 +413,10 @@ def get_lol_tournaments(request_data):
         # Tournaments columns are reachable via lol_cargo_query once confirmed.
         where = None
         if params.get("region"):
-            where = f"Tournaments.Region='{params['region']}'"
+            # Escape single quotes so a region name (or a hostile value) can't
+            # break out of / inject into the Cargo WHERE clause.
+            safe_region = str(params["region"]).replace("'", "''")
+            where = f"Tournaments.Region='{safe_region}'"
         return lol_cargo_query(
             {
                 "params": {

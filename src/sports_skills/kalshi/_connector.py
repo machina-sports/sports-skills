@@ -603,17 +603,8 @@ KALSHI_SERIES = {
 
 # cs2/lol live-verified 2026-07-01; dota2 verified via research. valorant/r6
 # omitted until series tickers are confirmed via /series?category=Sports.
-ESPORTS_SERIES = {"cs2": "KXCS2GAME", "lol": "KXLOLGAME", "dota2": "KXDOTA2GAME"}
-
-
-def _dollars(value):
-    """Parse a Kalshi '*_dollars'/'*_fp' string (e.g. '0.5300') to float, or None."""
-    if value is None or value == "":
-        return None
-    try:
-        return round(float(value), 4)
-    except (ValueError, TypeError):
-        return None
+# Derived from KALSHI_SERIES so the tickers have a single source of truth.
+ESPORTS_SERIES = {g: KALSHI_SERIES[g][0] for g in ("cs2", "lol", "dota2")}
 
 
 def get_sports_config(request_data):
@@ -902,8 +893,12 @@ def search_markets(request_data):
 def get_esports_odds(request_data):
     """Esports match implied probabilities from Kalshi prediction markets.
 
-    Reads live contract prices and derives decimal odds (~1/price). These are
-    PREDICTION-MARKET prices (implied probability 0-1), NOT bookmaker odds.
+    Reads live contract prices and derives decimal odds. Prices (yes_bid,
+    yes_ask, last_price) are on Kalshi's 0-100 cent scale — same as every other
+    kalshi command — read via the migration-tolerant _price_cents/_volume_units
+    helpers so they work whether the API returns legacy cent fields or the newer
+    *_dollars/*_fp string fields. implied_probability is the 0-1 form
+    (last_price / 100). These are PREDICTION-MARKET prices, NOT bookmaker odds.
 
     Params:
         game (str): 'cs2', 'lol', or 'dota2' (default: all).
@@ -917,9 +912,7 @@ def get_esports_odds(request_data):
         limit = min(int(params.get("limit", 50)), 200)
 
         if game and game not in ESPORTS_SERIES:
-            return _error(
-                f"Unknown game '{game}'. Available: {', '.join(ESPORTS_SERIES)}"
-            )
+            return _error(f"Unknown game '{game}'. Available: {', '.join(ESPORTS_SERIES)}")
         series_tickers = [ESPORTS_SERIES[game]] if game else list(ESPORTS_SERIES.values())
 
         out = []
@@ -932,12 +925,16 @@ def get_esports_odds(request_data):
             if _check_error(resp):
                 continue
             for m in resp.get("markets", []):
-                last = _dollars(m.get("last_price_dollars"))
-                yes_bid = _dollars(m.get("yes_bid_dollars"))
-                yes_ask = _dollars(m.get("yes_ask_dollars"))
-                implied = last
-                if not implied and yes_bid is not None and yes_ask is not None:
-                    implied = round((yes_bid + yes_ask) / 2, 4)
+                # Cents (0-100), migration-tolerant — consistent with search_markets.
+                yes_bid = _price_cents(m, "yes_bid")
+                yes_ask = _price_cents(m, "yes_ask")
+                last_price = _price_cents(m, "last_price")
+                # Prefer last trade; fall back to the bid/ask midpoint.
+                implied_cents = last_price
+                if not implied_cents and yes_bid and yes_ask:
+                    implied_cents = round((yes_bid + yes_ask) / 2)
+                # Guard against out-of-range/garbage prices before deriving odds.
+                valid = 0 < implied_cents <= 100
                 out.append(
                     {
                         "ticker": m.get("ticker", ""),
@@ -947,11 +944,11 @@ def get_esports_odds(request_data):
                         "no_side": m.get("no_sub_title", ""),
                         "yes_bid": yes_bid,
                         "yes_ask": yes_ask,
-                        "last_price": last,
-                        "implied_probability": implied,
-                        "decimal_odds": round(1 / implied, 2) if implied else None,
-                        "volume_24h": _dollars(m.get("volume_24h_fp")),
-                        "open_interest": _dollars(m.get("open_interest_fp")),
+                        "last_price": last_price,
+                        "implied_probability": round(implied_cents / 100, 4) if valid else None,
+                        "decimal_odds": round(100 / implied_cents, 2) if valid else None,
+                        "volume": _volume_units(m),
+                        "open_interest": m.get("open_interest"),
                         "status": m.get("status", ""),
                     }
                 )

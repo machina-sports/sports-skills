@@ -7,6 +7,7 @@
 | `get_sports_config` | | | Available sport codes and series tickers |
 | `get_todays_events` | sport | limit | Today's events for a sport with nested markets |
 | `search_markets` | | sport, query, status, limit | Find markets by sport and/or keyword |
+| `get_esports_odds` | | game, status, limit | Esports implied probabilities (game: cs2/lol/dota2). Prices in cents (0-100) like other commands; adds `implied_probability` (0-1) and `decimal_odds` |
 
 ## Raw API Commands
 

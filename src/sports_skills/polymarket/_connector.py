@@ -1037,7 +1037,8 @@ def get_esports_events(request_data):
         )
         if not isinstance(events, list):
             events = []
-        normalized = [_normalize_event(e) for e in events]
+        # Skip non-dict entries so one malformed element can't abort the batch.
+        normalized = [_normalize_event(e) for e in events if isinstance(e, dict)]
         if query:
             normalized = [
                 e
