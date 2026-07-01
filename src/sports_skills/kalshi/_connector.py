@@ -726,10 +726,13 @@ def search_markets(request_data):
                     "title": m.get("title", m.get("subtitle", "")),
                     "subtitle": m.get("subtitle", ""),
                     "event_title": title,
-                    "yes_bid": m.get("yes_bid", 0),
-                    "no_bid": m.get("no_bid", 0),
-                    "last_price": m.get("last_price", 0),
-                    "volume": m.get("volume", 0),
+                    # Kalshi migrated to string *_dollars / *_fp fields; the old
+                    # integer yes_bid/no_bid/last_price/volume keys no longer exist,
+                    # so reading them returned 0 for every market. Read the real ones.
+                    "yes_bid": _dollars(m.get("yes_bid_dollars")),
+                    "no_bid": _dollars(m.get("no_bid_dollars")),
+                    "last_price": _dollars(m.get("last_price_dollars")),
+                    "volume": _dollars(m.get("volume_24h_fp")),
                     "status": m.get("status", ""),
                 })
 
