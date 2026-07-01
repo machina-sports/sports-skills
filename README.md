@@ -31,19 +31,20 @@ npx skills add machina-sports/sports-skills --yes
 A collection of agent skills that wrap **publicly available** sports data sources and APIs. These skills don't provide proprietary data — they give AI agents a structured interface to data that's already freely accessible on the web:
 
 - **Football**: ESPN, Understat, FPL, Transfermarkt — 23 commands across 13 leagues
-- **NFL**: ESPN + nflverse — scores, standings, rosters, schedules, play-by-play, win probability, injuries, transactions, futures, depth charts, team/player stats
-- **NBA**: ESPN + NBA CDN — real-time live scores, play-by-play, win probability, box scores, standings, rosters, injuries, transactions, futures, depth charts
-- **WNBA**: ESPN — scores, standings, rosters, schedules, play-by-play, win probability, injuries, transactions, futures, team/player stats
-- **NHL**: ESPN — scores, standings, rosters, schedules, play-by-play, injuries, transactions, futures, team/player stats
-- **MLB**: ESPN — scores, standings, rosters, schedules, play-by-play, win probability, injuries, transactions, depth charts, team/player stats
+- **NFL**: ESPN + nflverse — scores, standings, rosters, schedules, play-by-play, win probability, injuries, transactions, futures, depth charts, team/player stats, game summaries (box scores + scoring plays)
+- **NBA**: ESPN + NBA CDN — real-time live scores, play-by-play, win probability, box scores, scoring plays, standings, rosters, injuries, transactions, futures, depth charts
+- **WNBA**: ESPN — scores, standings, rosters, schedules, play-by-play, win probability, injuries, transactions, futures, team/player stats, game summaries (box scores + scoring plays)
+- **NHL**: ESPN — scores, standings, rosters, schedules, play-by-play, injuries, transactions, futures, team/player stats, game summaries (box scores + scoring plays)
+- **MLB**: ESPN — scores, standings, rosters, schedules, play-by-play, win probability, injuries, transactions, depth charts, team/player stats, game summaries (box scores + scoring plays)
 - **Tennis**: ESPN — ATP and WTA tournament scores, rankings, calendars, player profiles, news
-- **College Football (CFB)**: ESPN — scores, standings, rosters, schedules, AP/Coaches/CFP rankings, injuries, futures, team/player stats, news
-- **College Basketball (CBB)**: ESPN — scores, standings, rosters, play-by-play, win probability, AP/Coaches rankings, futures, plus BPI-based March Madness tools (power index, tournament projections, upset finder)
+- **College Football (CFB)**: ESPN — scores, standings, rosters, schedules, AP/Coaches/CFP rankings, injuries, futures, team/player stats, news, game summaries (box scores + scoring plays)
+- **College Basketball (CBB)**: ESPN — scores, standings, rosters, play-by-play, win probability, AP/Coaches rankings, futures, game summaries (box scores + scoring plays), plus BPI-based March Madness tools (power index, tournament projections, upset finder)
 - **Golf**: ESPN — PGA Tour, LPGA, DP World Tour leaderboards, schedules, player profiles, scorecards, news
 - **Volleyball**: Nevobo — Dutch volleyball (Eredivisie, Topdivisie, Superdivisie) standings, schedules, results, clubs
 - **XC/TF**: TFRRS and The Stride Report — NCAA cross country and track & field athlete profiles, personal records, team rosters, meet results, news
 - **Formula 1**: FastF1 open-source library — sessions, lap data, race results, pit stops, speed traps, championship standings, tire analysis, driver/team comparisons
-- **Prediction Markets**: Kalshi and Polymarket public APIs — markets, prices, order books, plus Polymarket CLOB trading (orders, cancels, trade history)
+- **Esports**: OpenDota and Leaguepedia (keyless) — Dota 2 pro matches, leagues, teams, and match detail; League of Legends esports tournaments plus raw Leaguepedia Cargo queries
+- **Prediction Markets**: Kalshi and Polymarket public APIs — markets, prices, order books, esports implied-probability odds (CS2, LoL, Dota2), plus Polymarket CLOB trading (orders, cancels, trade history)
 - **Sports News**: RSS feeds and Google News — any public feed
 - **Metadata**: TheSportsDB — team logos, player photos, stadium info (100+ leagues)
 - **Betting Analysis**: Pure-compute odds toolkit — conversion, de-vigging, edge detection, Kelly criterion, arbitrage, parlays, line movement
@@ -85,8 +86,8 @@ Each skill is a SKILL.md file that any compatible AI agent can load and use imme
 
 | Skill | Platform | Commands | Coverage |
 |-------|----------|----------|----------|
-| `kalshi` | Kalshi | 14 | Soccer, Basketball, Baseball, Tennis, NFL, Hockey |
-| `polymarket` | Polymarket | 20 | NFL, NBA, MLB, Soccer, Tennis, Cricket, MMA, Esports — read + CLOB trading |
+| `kalshi` | Kalshi | 16 | Soccer, Basketball, Baseball, Tennis, NFL, Hockey, Esports (CS2/LoL/Dota2) |
+| `polymarket` | Polymarket | 21 | NFL, NBA, MLB, Soccer, Tennis, Cricket, MMA, Esports — read + CLOB trading |
 
 ### Tools & Workflows
 
@@ -487,6 +488,19 @@ Formula 1 data via the [FastF1](https://github.com/theOehrly/Fast-F1) open-sourc
 | `get_driver_comparison` | Driver head-to-head: qualifying H2H, race H2H, pace delta |
 | `get_tire_analysis` | Tire strategy, stint lengths, degradation rates |
 
+### esports
+
+Keyless esports data. Dota 2 via [OpenDota](https://api.opendota.com); League of Legends esports via [Leaguepedia Cargo](https://lol.fandom.com/wiki/Special:CargoTables) (CC-BY-SA — attribute Leaguepedia). No API key, no signup. For esports betting signals use `kalshi get_esports_odds` or `polymarket get_esports_events`.
+
+| Command | Description |
+|---------|-------------|
+| `get_pro_matches` | Recent Dota 2 professional matches |
+| `get_leagues` | Dota 2 leagues/tournaments, filter by tier (premium/professional/excluded) |
+| `get_pro_teams` | Top Dota 2 teams by rating |
+| `get_match` | Detailed Dota 2 match by id |
+| `get_lol_tournaments` | Recent LoL esports tournaments (Leaguepedia) |
+| `lol_cargo_query` | Raw Leaguepedia Cargo query (any table/fields) |
+
 ### kalshi
 
 Kalshi's [official public API](https://trading-api.readme.io/reference/getmarkets). No API key needed for read-only market data.
@@ -497,6 +511,7 @@ Kalshi's [official public API](https://trading-api.readme.io/reference/getmarket
 | `get_series` | Single series details |
 | `get_markets` | Markets with bid/ask/volume/open interest |
 | `get_market` | Single market details |
+| `get_market_orderbook` | Order book — yes/no bid depth |
 | `get_events` | Events with pagination |
 | `get_event` | Single event details |
 | `get_trades` | Trade history |
@@ -505,6 +520,7 @@ Kalshi's [official public API](https://trading-api.readme.io/reference/getmarket
 | `get_sports_config` | Available sport codes and series tickers |
 | `get_todays_events` | Today's events for a sport with nested markets |
 | `search_markets` | Find markets by sport and/or keyword |
+| `get_esports_odds` | Esports implied probabilities (CS2/LoL/Dota2) — prices in cents (0-100) plus implied_probability and decimal_odds |
 | `get_exchange_status` | Exchange active/trading status |
 | `get_exchange_schedule` | Exchange operating schedule |
 
@@ -529,6 +545,7 @@ Polymarket's official public APIs ([Gamma](https://gamma-api.polymarket.com) + [
 | `search_markets` | Full-text search across markets |
 | `get_price_history` | Historical price data (1d, 1w, 1m, max) |
 | `get_last_trade_price` | Most recent trade price |
+| `get_esports_events` | Esports prediction markets (CS2/LoL/Dota2/Valorant) — implied probabilities via outcome prices |
 
 **Trading (CLOB, wallet required):**
 
@@ -649,7 +666,8 @@ sports-skills.sh
 │   ├── volleyball-data/SKILL.md       # Dutch volleyball standings, results, clubs
 │   ├── xctf-data/SKILL.md             # NCAA XC/TF results, PRs, profiles, news
 │   ├── fastf1/SKILL.md                # F1 sessions, laps, results, telemetry
-│   ├── kalshi/SKILL.md                # Prediction markets (CFTC)
+│   ├── esports/SKILL.md               # Dota 2 (OpenDota) + LoL esports (Leaguepedia)
+│   ├── kalshi/SKILL.md                # Prediction markets (CFTC) + esports odds
 │   ├── polymarket/SKILL.md            # Prediction markets + CLOB trading
 │   ├── sports-news/SKILL.md           # RSS + Google News
 │   ├── metadata/SKILL.md              # Team logos + player photos (TheSportsDB)
