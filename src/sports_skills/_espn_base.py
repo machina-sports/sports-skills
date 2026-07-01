@@ -725,6 +725,115 @@ def normalize_depth_chart(data):
     return {"charts": charts, "count": len(charts)}
 
 
+def normalize_boxscore(boxscore):
+    """Normalize an ESPN summary box score into per-team aggregates + player tables.
+
+    ESPN splits the box score into two parallel arrays:
+
+    - ``boxscore["teams"][]``   — flat team-aggregate stats, each entry shaped
+      ``{"name": ..., "label": ..., "displayValue": ...}`` with **no athletes**.
+    - ``boxscore["players"][]`` — the per-player stat tables, each with a
+      ``statistics`` group carrying ``labels`` and an ``athletes`` list.
+
+    Player rows live ONLY under ``players``. Earlier code read ``athletes`` from
+    ``teams`` (which never has them) and always produced an empty box score while
+    silently discarding the team ``displayValue`` totals. This helper reads both
+    sub-trees and matches them by team id.
+
+    Returns a list of per-team dicts: ``team``, ``team_stats`` (label -> value),
+    and ``statistics`` (player stat groups with populated ``athletes``).
+    """
+    teams = boxscore.get("teams", [])
+    players_by_team = {}
+    for pt in boxscore.get("players", []):
+        tid = str(pt.get("team", {}).get("id", ""))
+        if tid:
+            players_by_team[tid] = pt
+
+    result = []
+    for bt in teams:
+        team = bt.get("team", {})
+        tid = str(team.get("id", ""))
+
+        # Team-aggregate stats (flat displayValue list)
+        team_stats = {}
+        for s in bt.get("statistics", []):
+            label = s.get("label") or s.get("name", "")
+            if label:
+                team_stats[label] = s.get("displayValue", "")
+
+        # Per-player stat tables (from the parallel "players" array)
+        statistics = []
+        for stat_group in players_by_team.get(tid, {}).get("statistics", []):
+            labels = stat_group.get("labels", [])
+            athletes_stats = []
+            for ath in stat_group.get("athletes", []):
+                athlete = ath.get("athlete", {})
+                athletes_stats.append({
+                    "name": athlete.get("displayName", ""),
+                    "position": athlete.get("position", {}).get("abbreviation", ""),
+                    "starter": ath.get("starter", False),
+                    "did_not_play": ath.get("didNotPlay", False),
+                    "stats": dict(zip(labels, ath.get("stats", []))),
+                })
+            totals = stat_group.get("totals", [])
+            statistics.append({
+                "category": stat_group.get("name", ""),
+                "labels": labels,
+                "athletes": athletes_stats,
+                "totals": dict(zip(labels, totals)) if totals else {},
+            })
+
+        result.append({
+            "team": {
+                "id": tid,
+                "name": team.get("displayName", ""),
+                "abbreviation": team.get("abbreviation", ""),
+            },
+            "team_stats": team_stats,
+            "statistics": statistics,
+        })
+    return result
+
+
+def normalize_scoring_plays(summary_data, team_lookup=None):
+    """Normalize scoring plays from an ESPN game summary.
+
+    Prefers the curated top-level ``scoringPlays`` array (present for some sports,
+    e.g. football/soccer). When it is absent — as it is for NBA, NHL, and MLB
+    summaries — derives scoring plays from the ``plays`` array by filtering on the
+    ``scoringPlay`` flag. Both code paths emit the same shape, so consumers no
+    longer get a silently-empty list for sports ESPN doesn't curate.
+
+    ``team_lookup`` optionally maps team id -> ``{"name", "abbreviation"}`` to
+    backfill team identity, since entries in ``plays`` carry only ``team.id``.
+    """
+    team_lookup = team_lookup or {}
+    source = summary_data.get("scoringPlays")
+    if not source:
+        source = [p for p in summary_data.get("plays", []) if p.get("scoringPlay")]
+
+    scoring_plays = []
+    for sp in source:
+        team = sp.get("team", {})
+        tid = str(team.get("id", ""))
+        info = team_lookup.get(tid, {})
+        scoring_plays.append({
+            "period": sp.get("period", {}).get("number", ""),
+            "clock": sp.get("clock", {}).get("displayValue", ""),
+            "type": sp.get("type", {}).get("text", ""),
+            "text": sp.get("text", ""),
+            "team": {
+                "id": tid,
+                "name": team.get("displayName") or team.get("name") or info.get("name", ""),
+                "abbreviation": team.get("abbreviation") or info.get("abbreviation", ""),
+            },
+            "home_score": sp.get("homeScore", ""),
+            "away_score": sp.get("awayScore", ""),
+        })
+    return scoring_plays
+
+
 def _resolve_leaders(categories: list) -> list:
     """Normalize a list of ESPN core API leader categories.
 

@@ -19,10 +19,12 @@ from sports_skills._espn_base import (
     espn_request,
     espn_summary,
     espn_web_request,
+    normalize_boxscore,
     normalize_core_stats,
     normalize_depth_chart,
     normalize_injuries,
     normalize_odds,
+    normalize_scoring_plays,
     normalize_transactions,
 )
 
@@ -250,56 +252,16 @@ def _normalize_game_summary(summary_data):
             "linescores": [ls.get("displayValue", "0") for ls in c.get("linescores", [])],
         })
 
-    # Box score
-    boxscore = summary_data.get("boxscore", {})
-    box_teams = []
-    for bt in boxscore.get("teams", []):
-        team = bt.get("team", {})
-        stats_list = []
-        for stat_group in bt.get("statistics", []):
-            stat_name = stat_group.get("name", "")
-            labels = stat_group.get("labels", [])
-            athletes_stats = []
-            for ath in stat_group.get("athletes", []):
-                athlete = ath.get("athlete", {})
-                athletes_stats.append({
-                    "name": athlete.get("displayName", ""),
-                    "position": athlete.get("position", {}).get("abbreviation", ""),
-                    "stats": dict(zip(labels, ath.get("stats", []))),
-                })
-            totals = stat_group.get("totals", [])
-            stats_list.append({
-                "category": stat_name,
-                "labels": labels,
-                "athletes": athletes_stats,
-                "totals": dict(zip(labels, totals)) if totals else {},
-            })
-        box_teams.append({
-            "team": {
-                "id": str(team.get("id", "")),
-                "name": team.get("displayName", ""),
-                "abbreviation": team.get("abbreviation", ""),
-            },
-            "statistics": stats_list,
-        })
+    # Box score — player tables live under boxscore["players"], not ["teams"].
+    box_teams = normalize_boxscore(summary_data.get("boxscore", {}))
 
-    # Scoring plays
-    scoring_plays = []
-    for sp in summary_data.get("scoringPlays", []):
-        team = sp.get("team", {})
-        scoring_plays.append({
-            "period": sp.get("period", {}).get("number", ""),
-            "clock": sp.get("clock", {}).get("displayValue", ""),
-            "type": sp.get("type", {}).get("text", ""),
-            "text": sp.get("text", ""),
-            "team": {
-                "id": str(team.get("id", "")),
-                "name": team.get("displayName", team.get("name", "")),
-                "abbreviation": team.get("abbreviation", ""),
-            },
-            "home_score": sp.get("homeScore", ""),
-            "away_score": sp.get("awayScore", ""),
-        })
+    # Scoring plays — derived from plays[] when ESPN omits top-level scoringPlays
+    # (it does for NBA/NHL/MLB). team_lookup backfills team identity from the header.
+    team_lookup = {
+        c["team"]["id"]: {"name": c["team"]["name"], "abbreviation": c["team"]["abbreviation"]}
+        for c in competitors
+    }
+    scoring_plays = normalize_scoring_plays(summary_data, team_lookup)
 
     # Leaders
     leaders = []
