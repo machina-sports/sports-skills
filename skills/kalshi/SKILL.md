@@ -86,6 +86,7 @@ See `references/api-reference.md` for the full command list with parameters.
 | `get_sports_config` | Available sport codes and series tickers |
 | `get_todays_events` | Today's events for a sport with nested markets |
 | `search_markets` | Find markets by sport and/or keyword |
+| `get_esports_odds` | Esports markets (cs2/lol/dota2): prices in cents (0-100) plus `implied_probability` (0-1) and `decimal_odds` |
 | `get_markets` | Market listing (raw API) |
 | `get_event` | Event details |
 | `get_market` | Market details |

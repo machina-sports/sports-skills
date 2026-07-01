@@ -77,6 +77,7 @@ Each skill is a SKILL.md file that any compatible AI agent can load and use imme
 | `volleyball-data` | Volleyball (Dutch) | 10 | Nevobo |
 | `xctf-data` | Cross Country & Track | 5 | TFRRS, The Stride Report |
 | `fastf1` | Formula 1 | 13 | FastF1 (free library) |
+| `esports` | Esports (Dota 2 + LoL) | 6 | OpenDota, Leaguepedia (Cargo) |
 | `sports-news` | Multi-sport | 2 | Any RSS feed, Google News |
 | `metadata` | Multi-sport | 5 | TheSportsDB (free API) |
 
@@ -185,6 +186,7 @@ Pick the sports you need. Each skill installs independently.
 | `volleyball-data` | Volleyball (Dutch) | `npx skills add machina-sports/sports-skills@volleyball-data` | [skills.sh](https://skills.sh/machina-sports/sports-skills/volleyball-data) |
 | `xctf-data` | XC & Track & Field | `npx skills add machina-sports/sports-skills@xctf-data` | [skills.sh](https://skills.sh/machina-sports/sports-skills/xctf-data) |
 | `fastf1` | Formula 1 | `npx skills add machina-sports/sports-skills@fastf1` | [skills.sh](https://skills.sh/machina-sports/sports-skills/fastf1) |
+| `esports` | Esports (Dota 2 + LoL) | `npx skills add machina-sports/sports-skills@esports` | [skills.sh](https://skills.sh/machina-sports/sports-skills/esports) |
 | `sports-news` | Multi-sport News | `npx skills add machina-sports/sports-skills@sports-news` | [skills.sh](https://skills.sh/machina-sports/sports-skills/sports-news) |
 | `metadata` | Team logos, player photos | `npx skills add machina-sports/sports-skills@metadata` | [skills.sh](https://skills.sh/machina-sports/sports-skills/metadata) |
 

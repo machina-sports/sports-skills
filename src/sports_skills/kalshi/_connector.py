@@ -579,6 +579,10 @@ KALSHI_SERIES = {
     "seriea": ["KXSERIEA"],
     "ligue1": ["KXLIGUE1"],
     "mls": ["KXMLSGAME"],
+    # Esports (prediction markets — implied probabilities, NOT bookmaker odds)
+    "cs2": ["KXCS2GAME"],
+    "lol": ["KXLOLGAME"],
+    "dota2": ["KXDOTA2GAME"],
     # FIFA World Cup 2026 — winner, match, group, and futures series. These
     # markets are NOT reachable via the no-sport /events page scan (that
     # returns one page of all Kalshi events); series tickers are the only path.
@@ -595,6 +599,12 @@ KALSHI_SERIES = {
         "KXWCEVERYTEAMGOAL",  # every team to score a goal
     ],
 }
+
+
+# cs2/lol live-verified 2026-07-01; dota2 verified via research. valorant/r6
+# omitted until series tickers are confirmed via /series?category=Sports.
+# Derived from KALSHI_SERIES so the tickers have a single source of truth.
+ESPORTS_SERIES = {g: KALSHI_SERIES[g][0] for g in ("cs2", "lol", "dota2")}
 
 
 def get_sports_config(request_data):
@@ -878,3 +888,73 @@ def search_markets(request_data):
 
     except Exception as e:
         return _error(f"Error searching markets: {str(e)}")
+
+
+def get_esports_odds(request_data):
+    """Esports match implied probabilities from Kalshi prediction markets.
+
+    Reads live contract prices and derives decimal odds. Prices (yes_bid,
+    yes_ask, last_price) are on Kalshi's 0-100 cent scale — same as every other
+    kalshi command — read via the migration-tolerant _price_cents/_volume_units
+    helpers so they work whether the API returns legacy cent fields or the newer
+    *_dollars/*_fp string fields. implied_probability is the 0-1 form
+    (last_price / 100). These are PREDICTION-MARKET prices, NOT bookmaker odds.
+
+    Params:
+        game (str): 'cs2', 'lol', or 'dota2' (default: all).
+        status (str): Market status (default 'open').
+        limit (int): Max markets per game (default 50, max 200).
+    """
+    try:
+        params = request_data.get("params", {})
+        game = str(params.get("game") or "").lower()
+        status = params.get("status", "open")
+        limit = min(int(params.get("limit", 50)), 200)
+
+        if game and game not in ESPORTS_SERIES:
+            return _error(f"Unknown game '{game}'. Available: {', '.join(ESPORTS_SERIES)}")
+        series_tickers = [ESPORTS_SERIES[game]] if game else list(ESPORTS_SERIES.values())
+
+        out = []
+        for st in series_tickers:
+            resp = _request(
+                "/markets",
+                params={"series_ticker": st, "status": status, "limit": limit},
+                ttl=60,
+            )
+            if _check_error(resp):
+                continue
+            for m in resp.get("markets", []):
+                # Cents (0-100), migration-tolerant — consistent with search_markets.
+                yes_bid = _price_cents(m, "yes_bid")
+                yes_ask = _price_cents(m, "yes_ask")
+                last_price = _price_cents(m, "last_price")
+                # Prefer last trade; fall back to the bid/ask midpoint.
+                implied_cents = last_price
+                if not implied_cents and yes_bid and yes_ask:
+                    implied_cents = round((yes_bid + yes_ask) / 2)
+                # Guard against out-of-range/garbage prices before deriving odds.
+                valid = 0 < implied_cents <= 100
+                out.append(
+                    {
+                        "ticker": m.get("ticker", ""),
+                        "event_ticker": m.get("event_ticker", ""),
+                        "title": m.get("title", ""),
+                        "yes_side": m.get("yes_sub_title", ""),
+                        "no_side": m.get("no_sub_title", ""),
+                        "yes_bid": yes_bid,
+                        "yes_ask": yes_ask,
+                        "last_price": last_price,
+                        "implied_probability": round(implied_cents / 100, 4) if valid else None,
+                        "decimal_odds": round(100 / implied_cents, 2) if valid else None,
+                        "volume": _volume_units(m),
+                        "open_interest": m.get("open_interest"),
+                        "status": m.get("status", ""),
+                    }
+                )
+        return _success(
+            {"markets": out, "count": len(out), "game": game or "all"},
+            f"Retrieved {len(out)} esports markets",
+        )
+    except Exception as e:
+        return _error(f"Error fetching esports odds: {e}")

@@ -6,6 +6,9 @@ Public read-only endpoints. No authentication required. Uses stdlib only.
 from __future__ import annotations
 
 from sports_skills.kalshi._connector import (
+    get_esports_odds as _get_esports_odds,
+)
+from sports_skills.kalshi._connector import (
     get_event as _get_event,
 )
 from sports_skills.kalshi._connector import (
@@ -279,3 +282,20 @@ def search_markets(
         limit: Max results (default: 50, max: 200).
     """
     return _search_markets(_req(sport=sport, query=query, status=status, limit=limit))
+
+
+def get_esports_odds(
+    *, game: str | None = None, status: str = "open", limit: int = 50
+) -> dict:
+    """Esports implied probabilities from Kalshi (cs2, lol, dota2). Prediction-market prices, not bookmaker odds.
+
+    Prices (yes_bid, yes_ask, last_price) are on the 0-100 cent scale like every
+    other kalshi command; the response also adds implied_probability (0-1) and
+    decimal_odds.
+
+    Args:
+        game: Esports title — 'cs2', 'lol', or 'dota2' (default: all).
+        status: Market status filter (default: 'open').
+        limit: Max markets per game (default: 50, max: 200).
+    """
+    return _get_esports_odds(_req(game=game, status=status, limit=limit))

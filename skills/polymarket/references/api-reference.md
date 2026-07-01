@@ -17,6 +17,7 @@
 | `get_sports_market_types` | | | Valid market types |
 | `get_price_history` | token_id | interval, fidelity | Historical prices |
 | `get_last_trade_price` | token_id | | Most recent trade |
+| `get_esports_events` | | query, limit, closed | Esports prediction markets (implied probabilities via outcome prices) |
 
 ## Trading Commands (requires py-clob-client-v2 + wallet)
 

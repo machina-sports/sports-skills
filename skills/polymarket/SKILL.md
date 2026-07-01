@@ -104,6 +104,7 @@ export POLYMARKET_FUNDER_ADDRESS=0x...
 | `get_order_book` | Full order book |
 | `get_price_history` | Historical prices |
 | `get_last_trade_price` | Most recent trade |
+| `get_esports_events` | Esports prediction markets (CS2/LoL/Dota2/Valorant) — implied probabilities via outcome prices |
 
 See `references/api-reference.md` for full parameter lists and return shapes.
 
