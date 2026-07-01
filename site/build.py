@@ -45,6 +45,7 @@ SLUG_TO_CLI_MODULE = {
     "volleyball-data": "volleyball",
     "xctf-data": "xctf",
     "fastf1": "f1",
+    "esports": "esports",
     "sports-news": "news",
     "kalshi": "kalshi",
     "polymarket": "polymarket",
@@ -93,6 +94,7 @@ CATEGORY_MAP = {
     "tennis-data": "Racquet",
     "golf-data": "Golf",
     "fastf1": "Motorsport",
+    "esports": "Esports",
     "volleyball-data": "Other",
     "xctf-data": "Other",
     "sports-news": "Other",
@@ -111,6 +113,7 @@ CATEGORY_ORDER = [
     "Racquet",
     "Golf",
     "Motorsport",
+    "Esports",
     "Other",
 ]
 
@@ -124,6 +127,7 @@ CATEGORY_COLORS = {
     "Racquet": "green",
     "Golf": "green",
     "Motorsport": "green",
+    "Esports": "green",
     "Other": "green",
 }
 
@@ -144,6 +148,7 @@ DATA_SOURCES = {
     "tennis-data": "ESPN",
     "golf-data": "ESPN",
     "fastf1": "FastF1 (open-source)",
+    "esports": "OpenDota, Leaguepedia (Cargo)",
     "volleyball-data": "Nevobo API",
     "xctf-data": "TFRRS, The Stride Report",
     "metadata": "TheSportsDB",

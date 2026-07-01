@@ -1,3 +1,12 @@
+## [0.28.0]
+
+### Added
+- **`esports` skill (keyless, stdlib-only):** Dota 2 via OpenDota (`get_pro_matches`, `get_leagues`, `get_pro_teams`, `get_match`) and League of Legends esports via Leaguepedia Cargo (`get_lol_tournaments` + a generic `lol_cargo_query`). Handles Leaguepedia's in-body `ratelimited` response on HTTP 200 and its CC-BY-SA / custom-User-Agent requirements; token-bucket rate limiting and a TTL cache throughout.
+- **Esports odds on the prediction-market skills:** `kalshi.get_esports_odds` (CS2/LoL/Dota2 — implied probability + derived decimal odds; prices on the same 0-100 cent scale as every other kalshi command via the migration-tolerant `_price_cents`/`_volume_units` helpers) and `polymarket.get_esports_events` (`tag_slug=esports`, prices via the existing `_normalize_event`).
+
+### Fixed
+- **`get_game_summary` returned a hollow box score and empty scoring plays across ESPN sports:** player rows live under `boxscore["players"]` (not `boxscore["teams"]`, which carries only team aggregates), and ESPN omits the top-level `scoringPlays` key for basketball/hockey/baseball — so the box score `athletes` and `scoring_plays` came back empty while the call still reported success. Added shared `normalize_boxscore` / `normalize_scoring_plays` helpers in `_espn_base.py` (box score now reads the `players` sub-tree and preserves team aggregates as `team_stats`; scoring plays fall back to the `plays[]` array, backfilling team identity) and routed **all seven** ESPN game-summary connectors through them — NBA, NHL, MLB, WNBA, and now NFL, CFB, and CBB. The helpers also tolerate `null` `boxscore`/`plays` payloads (not-started games) instead of raising. Thanks @Squidy247-goat for the original NBA/NHL/MLB/WNBA fix.
+
 ## [0.27.1]
 
 ### Added

@@ -48,7 +48,8 @@ pip install "sports-skills[dev]"
 - **College XC/TF**: NCAA cross country and track & field — athlete profiles, personal records, meet results, and news via The Stride Report
 - **Volleyball**: Nevobo — Dutch volleyball (Eredivisie, Topdivisie, Superdivisie) standings, schedules, results, clubs
 - **Racing**: Formula 1 (via FastF1) — lap times, telemetry, and race results
-- **Prediction Markets**: Polymarket & Kalshi live odds and order books
+- **Esports**: Dota 2 (OpenDota) and League of Legends esports (Leaguepedia) — pro matches, leagues, teams, and tournaments
+- **Prediction Markets**: Polymarket & Kalshi live odds and order books, including esports implied-probability odds (CS2/LoL/Dota2)
 - **News**: Multi-sport news aggregators
 
 ---
