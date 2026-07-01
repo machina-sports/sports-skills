@@ -167,7 +167,7 @@ _REGISTRY = {
             "required": ["tables", "fields"],
             "optional": ["where", "order_by", "group_by", "limit"],
         },
-        "get_lol_tournaments": {"optional": ["region", "year", "limit"]},
+        "get_lol_tournaments": {"optional": ["region", "limit"]},
     },
     "betting": {
         "convert_odds": {"required": ["odds", "from_format"]},

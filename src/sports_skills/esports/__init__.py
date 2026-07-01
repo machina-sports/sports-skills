@@ -73,8 +73,6 @@ def lol_cargo_query(
     )
 
 
-def get_lol_tournaments(
-    *, region: str | None = None, year: int | None = None, limit: int = 20
-) -> dict:
+def get_lol_tournaments(*, region: str | None = None, limit: int = 20) -> dict:
     """Recent LoL esports tournaments (Leaguepedia Tournaments table)."""
-    return _get_lol_tournaments(_req(region=region, year=year, limit=limit))
+    return _get_lol_tournaments(_req(region=region, limit=limit))

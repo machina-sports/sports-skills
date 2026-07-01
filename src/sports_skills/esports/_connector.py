@@ -380,25 +380,26 @@ def lol_cargo_query(request_data):
 def get_lol_tournaments(request_data):
     """Recent LoL esports tournaments (Leaguepedia Cargo 'Tournaments' table).
 
+    Returns Name, DateStart, Region. For richer fields (League, Prizepool,
+    DateEnd, ...) query lol_cargo_query directly — see the skill references.
+
     Params:
         region (str): Filter by region (e.g. 'Korea', 'Brazil', 'Europe').
-        year (int): Filter by year.
         limit (int): Max tournaments (default 20, max 100).
     """
     try:
         params = request_data.get("params", {})
-        # Name/DateStart/Region live-verified 2026-07-01; League/DateEnd/Prizepool per Leaguepedia schema.
-        conditions = []
+        # Only live-verified fields (Name/DateStart/Region, 2026-07-01). Other
+        # Tournaments columns are reachable via lol_cargo_query once confirmed.
+        where = None
         if params.get("region"):
-            conditions.append(f"Tournaments.Region='{params['region']}'")
-        if params.get("year"):
-            conditions.append(f"Tournaments.Year='{int(params['year'])}'")
+            where = f"Tournaments.Region='{params['region']}'"
         return lol_cargo_query(
             {
                 "params": {
                     "tables": "Tournaments",
-                    "fields": "Name,DateStart,DateEnd,League,Region,Prizepool",
-                    "where": " AND ".join(conditions) if conditions else None,
+                    "fields": "Name,DateStart,Region",
+                    "where": where,
                     "order_by": "DateStart DESC",
                     "limit": params.get("limit", 20),
                 }
