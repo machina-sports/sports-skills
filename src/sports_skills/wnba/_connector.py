@@ -254,12 +254,8 @@ def _normalize_game_summary(summary_data):
     box_teams = normalize_boxscore(summary_data.get("boxscore", {}))
 
     # Scoring plays — derived from plays[] when ESPN omits top-level scoringPlays
-    # (it does for NBA/NHL/MLB/WNBA). team_lookup backfills team identity from the header.
-    team_lookup = {
-        c["team"]["id"]: {"name": c["team"]["name"], "abbreviation": c["team"]["abbreviation"]}
-        for c in competitors
-    }
-    scoring_plays = normalize_scoring_plays(summary_data, team_lookup)
+    # (it does for WNBA); the helper backfills team identity from competitors.
+    scoring_plays = normalize_scoring_plays(summary_data, competitors)
 
     leaders = []
     for leader_group in summary_data.get("leaders", []):

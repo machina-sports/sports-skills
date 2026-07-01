@@ -743,6 +743,9 @@ def normalize_boxscore(boxscore):
     Returns a list of per-team dicts: ``team``, ``team_stats`` (label -> value),
     and ``statistics`` (player stat groups with populated ``athletes``).
     """
+    # ESPN may send ``"boxscore": null`` (e.g. not-yet-started games); guard so
+    # the normalizer degrades to an empty box score instead of raising.
+    boxscore = boxscore or {}
     teams = boxscore.get("teams", [])
     players_by_team = {}
     for pt in boxscore.get("players", []):
@@ -796,22 +799,35 @@ def normalize_boxscore(boxscore):
     return result
 
 
-def normalize_scoring_plays(summary_data, team_lookup=None):
+def normalize_scoring_plays(summary_data, competitors=None):
     """Normalize scoring plays from an ESPN game summary.
 
     Prefers the curated top-level ``scoringPlays`` array (present for some sports,
-    e.g. football/soccer). When it is absent — as it is for NBA, NHL, and MLB
-    summaries — derives scoring plays from the ``plays`` array by filtering on the
-    ``scoringPlay`` flag. Both code paths emit the same shape, so consumers no
-    longer get a silently-empty list for sports ESPN doesn't curate.
+    e.g. football/soccer). When it is absent — as it is for NBA, NHL, MLB, and
+    college basketball summaries — derives scoring plays from the ``plays`` array
+    by filtering on the ``scoringPlay`` flag. Both code paths emit the same shape,
+    so consumers no longer get a silently-empty list for sports ESPN doesn't curate.
 
-    ``team_lookup`` optionally maps team id -> ``{"name", "abbreviation"}`` to
-    backfill team identity, since entries in ``plays`` carry only ``team.id``.
+    ``competitors`` is the connector's normalized competitors list (each entry
+    shaped ``{"team": {"id", "name", "abbreviation"}, ...}``). It backfills team
+    identity for plays-derived entries, which carry only ``team.id``. Building the
+    lookup here keeps the per-connector call sites free of duplicated glue.
     """
-    team_lookup = team_lookup or {}
+    # Guard against ESPN sending ``null`` for the whole summary or the plays list
+    # (e.g. not-yet-started games) so we degrade to an empty list, never raise.
+    summary_data = summary_data or {}
+    team_lookup = {}
+    for c in competitors or []:
+        team = c.get("team", {})
+        tid = str(team.get("id", ""))
+        if tid:
+            team_lookup[tid] = {
+                "name": team.get("name", ""),
+                "abbreviation": team.get("abbreviation", ""),
+            }
     source = summary_data.get("scoringPlays")
     if not source:
-        source = [p for p in summary_data.get("plays", []) if p.get("scoringPlay")]
+        source = [p for p in (summary_data.get("plays") or []) if p.get("scoringPlay")]
 
     scoring_plays = []
     for sp in source:
