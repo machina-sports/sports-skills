@@ -986,3 +986,46 @@ def get_last_trade_price(request_data):
 
     except Exception as e:
         return _error(f"Error fetching last trade price: {str(e)}")
+
+
+def get_esports_events(request_data):
+    """Esports prediction markets on Polymarket (implied probabilities via outcome prices).
+
+    Params:
+        query (str): Optional keyword filter (e.g. 'LoL', 'CS2', team name).
+        limit (int): Max events (default 30, max 100).
+        closed (bool): Include closed events (default False).
+    """
+    try:
+        params = request_data.get("params", {})
+        query = str(params.get("query") or "").lower()
+        q = {
+            "tag_slug": "esports",
+            "closed": str(params.get("closed", False)).lower(),
+            "limit": min(int(params.get("limit", 30)), 100),
+            "order": "volume",
+            "ascending": "false",
+        }
+        response = _gamma_request("/events", params=q, ttl=60)
+        err = _check_error(response)
+        if err:
+            return err
+        events = (
+            response if isinstance(response, list) else response.get("events", response)
+        )
+        if not isinstance(events, list):
+            events = []
+        normalized = [_normalize_event(e) for e in events]
+        if query:
+            normalized = [
+                e
+                for e in normalized
+                if query in e.get("title", "").lower()
+                or query in e.get("slug", "").lower()
+            ]
+        return _success(
+            {"events": normalized, "count": len(normalized)},
+            f"Retrieved {len(normalized)} esports events",
+        )
+    except Exception as e:
+        return _error(f"Error fetching esports events: {str(e)}")

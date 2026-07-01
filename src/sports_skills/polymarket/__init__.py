@@ -31,6 +31,9 @@ from sports_skills.polymarket._cli import (
     market_order as _cli_market_order,
 )
 from sports_skills.polymarket._connector import (
+    get_esports_events as _get_esports_events,
+)
+from sports_skills.polymarket._connector import (
     get_event_details as _get_event_details,
 )
 from sports_skills.polymarket._connector import (
@@ -227,6 +230,13 @@ def get_price_history(
 def get_last_trade_price(*, token_id: str) -> dict:
     """Get the most recent trade price for a market."""
     return _get_last_trade_price(_req(token_id=token_id))
+
+
+def get_esports_events(
+    *, query: str | None = None, limit: int = 30, closed: bool = False
+) -> dict:
+    """Esports prediction markets on Polymarket (CS2, LoL, Dota2, Valorant). Implied probabilities via outcome prices."""
+    return _get_esports_events(_req(query=query, limit=limit, closed=closed))
 
 
 # ============================================================

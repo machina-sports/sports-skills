@@ -6,6 +6,9 @@ Public read-only endpoints. No authentication required. Uses stdlib only.
 from __future__ import annotations
 
 from sports_skills.kalshi._connector import (
+    get_esports_odds as _get_esports_odds,
+)
+from sports_skills.kalshi._connector import (
     get_event as _get_event,
 )
 from sports_skills.kalshi._connector import (
@@ -219,3 +222,10 @@ def search_markets(
         limit: Max results (default: 50, max: 200).
     """
     return _search_markets(_req(sport=sport, query=query, status=status, limit=limit))
+
+
+def get_esports_odds(
+    *, game: str | None = None, status: str = "open", limit: int = 50
+) -> dict:
+    """Esports implied probabilities from Kalshi (cs2, lol, dota2). Prediction-market prices, not bookmaker odds."""
+    return _get_esports_odds(_req(game=game, status=status, limit=limit))

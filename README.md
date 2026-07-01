@@ -72,6 +72,7 @@ Each skill is a SKILL.md file that any compatible AI agent can load and use imme
 | `volleyball-data` | Volleyball (Dutch) | 10 | Nevobo |
 | `xctf-data` | Cross Country & Track | 5 | TFRRS, The Stride Report |
 | `fastf1` | Formula 1 | 6 | FastF1 (free library) |
+| `esports` | Esports (Dota 2 + LoL) | 6 | OpenDota, Leaguepedia (Cargo) |
 | `sports-news` | Multi-sport | 2 | Any RSS feed, Google News |
 | `metadata` | Multi-sport | 5 | TheSportsDB (free API) |
 
