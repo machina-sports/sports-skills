@@ -20,6 +20,7 @@ from sports_skills._espn_base import normalize_boxscore, normalize_scoring_plays
 from sports_skills.mlb._connector import _normalize_game_summary as mlb_summary
 from sports_skills.nba._connector import _normalize_game_summary as nba_summary
 from sports_skills.nhl._connector import _normalize_game_summary as nhl_summary
+from sports_skills.wnba._connector import _normalize_game_summary as wnba_summary
 
 FIXTURES = Path(__file__).parent / "fixtures"
 
@@ -27,6 +28,7 @@ CASES = [
     ("nba_summary_401859967.json", nba_summary),
     ("nhl_summary_401874176.json", nhl_summary),
     ("mlb_summary_401815943.json", mlb_summary),
+    ("wnba_summary_401857321.json", wnba_summary),
 ]
 
 
