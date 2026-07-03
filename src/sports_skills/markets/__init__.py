@@ -19,6 +19,12 @@ from sports_skills.markets._connector import (
     get_market_price as _get_market_price,
 )
 from sports_skills.markets._connector import (
+    get_mock_tick as _get_mock_tick,
+)
+from sports_skills.markets._connector import (
+    get_plays_near_timestamp as _get_plays_near_timestamp,
+)
+from sports_skills.markets._connector import (
     get_price_history as _get_price_history,
 )
 from sports_skills.markets._connector import (
@@ -167,6 +173,51 @@ def get_price_history(
             interval=interval,
             start_time=start_time,
             end_time=end_time,
+        )
+    )
+
+
+def get_mock_tick(*, mock_file_path: str, interval_seconds: int = 5) -> dict:
+    """Deterministic timeline slice from a static mock game file.
+
+    Returns the current tick chosen by system clock —
+    ``(epoch // interval_seconds) % total_ticks`` — so a poller advances
+    through the timeline as real time passes, with no state files. The
+    returned ``data`` carries game_id, teams, timestamp, game_clock,
+    play_by_play, and polymarket_home_price_cents for the current tick.
+
+    Args:
+        mock_file_path: Path to the mock game JSON (with a ``timeline`` array).
+        interval_seconds: Seconds each tick is held (default: 5).
+    """
+    return _get_mock_tick(_req(mock_file_path=mock_file_path, interval_seconds=interval_seconds))
+
+
+def get_plays_near_timestamp(
+    *,
+    sport: str,
+    game_id: str,
+    timestamp: str,
+    window_seconds: int = 120,
+) -> dict:
+    """Plays in the window ``[timestamp - window_seconds, timestamp]``.
+
+    Fetches raw ESPN play-by-play, parses each play's UTC ``wallclock``, and
+    returns those landing in the window ending at ``timestamp`` — used to find
+    the play(s) behind a market move detected at ``timestamp``.
+
+    Args:
+        sport: Sport key (nfl, nba, mlb, nhl, wnba, cfb, cbb).
+        game_id: ESPN event ID.
+        timestamp: ISO 8601 UTC instant, e.g. '2026-06-30T18:07:00Z'.
+        window_seconds: Look-back window before timestamp (default: 120).
+    """
+    return _get_plays_near_timestamp(
+        _req(
+            sport=sport,
+            game_id=game_id,
+            timestamp=timestamp,
+            window_seconds=window_seconds,
         )
     )
 

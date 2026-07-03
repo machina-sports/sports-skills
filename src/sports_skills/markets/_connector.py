@@ -1604,3 +1604,206 @@ def get_price_history(request_data: dict) -> dict:
         },
         f"Retrieved {len(points)} price point(s) from {venue}.",
     )
+
+
+# ============================================================
+# 2F. Momentum Explainer — mock ticks + timestamp-scoped plays
+# ============================================================
+
+# ESPN sport paths for the raw summary endpoint. Per-play UTC timestamps
+# (`wallclock`) live ONLY in the raw summary payload — every sport module's
+# `_normalize_plays` drops them, and PR #86's box-score fix rides that same
+# shared normalizer. `get_plays_near_timestamp` therefore bypasses the
+# normalized path and reads `espn_summary` directly, leaving _normalize_plays
+# untouched.
+_ESPN_SPORT_PATHS = {
+    "nfl": "football/nfl",
+    "nba": "basketball/nba",
+    "mlb": "baseball/mlb",
+    "nhl": "hockey/nhl",
+    "wnba": "basketball/wnba",
+    "cfb": "football/college-football",
+    "cbb": "basketball/mens-college-basketball",
+}
+
+
+def _parse_iso_utc(value):
+    """Parse an ISO 8601 timestamp (accepting a trailing 'Z') to an aware UTC datetime."""
+    from datetime import datetime, timezone
+
+    s = str(value).strip().replace("Z", "+00:00")
+    dt = datetime.fromisoformat(s)
+    if dt.tzinfo is None:
+        dt = dt.replace(tzinfo=timezone.utc)
+    return dt
+
+
+def get_mock_tick(request_data: dict) -> dict:
+    """Deterministic timeline slice from a static mock game file.
+
+    Reads a mock JSON file with a ``timeline`` array and returns the current
+    tick chosen by system clock: ``(epoch // interval_seconds) % total_ticks``.
+    No state files — the same wall-clock second always maps to the same tick,
+    so a poller advances through the timeline as real time passes and loops.
+
+    Params:
+        mock_file_path (str): Path to the mock game JSON.
+        interval_seconds (int): Seconds each tick is held (default: 5).
+    """
+    import json
+    import time
+
+    params = request_data.get("params", {})
+    mock_file_path = params.get("mock_file_path")
+    try:
+        interval_seconds = int(params.get("interval_seconds") or 5)
+    except (TypeError, ValueError):
+        return _error("interval_seconds must be an integer")
+
+    if not mock_file_path:
+        return _error("mock_file_path is required")
+    if interval_seconds <= 0:
+        return _error("interval_seconds must be positive")
+
+    try:
+        with open(mock_file_path, encoding="utf-8") as fh:
+            game = json.load(fh)
+    except FileNotFoundError:
+        return _error(f"Mock file not found: {mock_file_path}")
+    except (OSError, json.JSONDecodeError) as exc:
+        return _error(f"Could not read mock file {mock_file_path}: {exc}")
+
+    timeline = game.get("timeline") or []
+    total = len(timeline)
+    if total == 0:
+        return _error(f"Mock file {mock_file_path} has an empty timeline")
+
+    idx = (int(time.time()) // interval_seconds) % total
+    tick = timeline[idx]
+
+    data = {
+        "game_id": game.get("game_id", ""),
+        "sport": game.get("sport", ""),
+        "teams": game.get("teams", {}),
+        "timestamp": tick.get("timestamp", ""),
+        "game_clock": tick.get("game_clock", ""),
+        "polymarket_home_price_cents": tick.get("polymarket_home_price_cents"),
+        "play_by_play": tick.get("play_by_play", []),
+        "tick_index": idx,
+        "total_ticks": total,
+    }
+    return _success(
+        data,
+        f"Mock tick {idx + 1}/{total} for {game.get('game_id', 'game')} @ {data['polymarket_home_price_cents']}c home.",
+    )
+
+
+def _extract_play(p: dict) -> dict:
+    """Pull the fields the explainer needs from a raw ESPN play, defensively.
+
+    Raw play shapes differ by sport (NFL/NBA carry rich ``text``; MLB encodes
+    the play in ``type``/``participants``), so every field defaults gracefully.
+    """
+    ptype = p.get("type") if isinstance(p.get("type"), dict) else {}
+    period = p.get("period") if isinstance(p.get("period"), dict) else {}
+    clock = p.get("clock") if isinstance(p.get("clock"), dict) else {}
+    team = p.get("team") if isinstance(p.get("team"), dict) else {}
+    return {
+        "id": str(p.get("id", "")),
+        "sequence": p.get("sequenceNumber", ""),
+        "wallclock": p.get("wallclock", ""),
+        "text": p.get("text", ""),
+        "type": ptype.get("text", ""),
+        "period": period.get("displayValue", ""),
+        "game_clock": clock.get("displayValue", ""),
+        "home_score": p.get("homeScore", ""),
+        "away_score": p.get("awayScore", ""),
+        "scoring_play": p.get("scoringPlay", False),
+        "team_id": str(team.get("id", "")),
+    }
+
+
+def get_plays_near_timestamp(request_data: dict) -> dict:
+    """Plays in the window ``[timestamp - window_seconds, timestamp]``.
+
+    Fetches raw ESPN play-by-play, parses each play's UTC ``wallclock``, and
+    returns those landing in the window ending at ``timestamp``. Used to find
+    the play(s) responsible for a market move detected at ``timestamp``.
+
+    Params:
+        sport (str): Sport key (nfl, nba, mlb, nhl, wnba, cfb, cbb).
+        game_id (str): ESPN event ID.
+        timestamp (str): ISO 8601 UTC instant, e.g. '2026-06-30T18:07:00Z'.
+        window_seconds (int): Look-back window before timestamp (default: 120).
+    """
+    from datetime import timedelta
+
+    params = request_data.get("params", {})
+    sport = str(params.get("sport") or "").lower()
+    game_id = params.get("game_id")
+    timestamp = params.get("timestamp")
+    try:
+        window_seconds = int(params.get("window_seconds") or 120)
+    except (TypeError, ValueError):
+        return _error("window_seconds must be an integer")
+
+    if not sport:
+        return _error("sport is required")
+    if sport not in _ESPN_SPORT_PATHS:
+        return _error(f"Unknown sport '{sport}'. Available: {', '.join(sorted(_ESPN_SPORT_PATHS))}")
+    if not game_id:
+        return _error("game_id is required")
+    if not timestamp:
+        return _error("timestamp is required")
+    if window_seconds <= 0:
+        return _error("window_seconds must be positive")
+
+    try:
+        target = _parse_iso_utc(timestamp)
+    except (ValueError, TypeError):
+        return _error("timestamp must be ISO 8601 UTC, e.g. '2026-06-30T18:07:00Z'")
+
+    window_start = target - timedelta(seconds=window_seconds)
+
+    from sports_skills._espn_base import espn_summary
+
+    try:
+        data = espn_summary(_ESPN_SPORT_PATHS[sport], str(game_id))
+    except Exception as exc:
+        return _error(f"Failed to fetch play-by-play for {sport} game {game_id}: {exc}")
+    if not data:
+        return _error(f"No ESPN summary found for {sport} game {game_id}")
+
+    plays_raw = data.get("plays", []) or []
+    matched = []
+    skipped_no_wallclock = 0
+    for p in plays_raw:
+        wc = p.get("wallclock")
+        if not wc:
+            skipped_no_wallclock += 1
+            continue
+        try:
+            t = _parse_iso_utc(wc)
+        except (ValueError, TypeError):
+            skipped_no_wallclock += 1
+            continue
+        if window_start <= t <= target:
+            matched.append(_extract_play(p))
+
+    matched.sort(key=lambda x: x.get("wallclock", ""))
+
+    return _success(
+        {
+            "sport": sport,
+            "game_id": str(game_id),
+            "timestamp": timestamp,
+            "window_seconds": window_seconds,
+            "window_start": window_start.isoformat().replace("+00:00", "Z"),
+            "window_end": target.isoformat().replace("+00:00", "Z"),
+            "plays": matched,
+            "count": len(matched),
+            "total_plays": len(plays_raw),
+            "plays_without_wallclock": skipped_no_wallclock,
+        },
+        f"Found {len(matched)} play(s) within {window_seconds}s before {timestamp}.",
+    )

@@ -204,6 +204,14 @@ _REGISTRY = {
             "required": ["venue"],
             "optional": ["ticker", "token_id", "interval", "start_time", "end_time"],
         },
+        "get_mock_tick": {
+            "required": ["mock_file_path"],
+            "optional": ["interval_seconds"],
+        },
+        "get_plays_near_timestamp": {
+            "required": ["sport", "game_id", "timestamp"],
+            "optional": ["window_seconds"],
+        },
     },
     "metadata": {
         "get_team_logo": {"required": ["team_name"], "optional": ["sport"]},
@@ -483,6 +491,8 @@ _INT_PARAMS = {
     "min_seed",
     "max_seed",
     "innings",
+    "interval_seconds",
+    "window_seconds",
 }
 
 # Params that should be parsed as float
