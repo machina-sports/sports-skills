@@ -1,3 +1,13 @@
+## [0.28.1]
+
+### Improved
+- **Agent/Hermes safety contract:** added root `AGENTS.md` and `.hermes.md`, plus machine-readable `skills/catalog.json`, so autonomous agents can default to read-only sports data and identify high-risk premium/trading workflows.
+- **Polymarket namespace split:** kept `polymarket` read-only for market discovery/prices/order books, and moved wallet-backed order management to the explicit `polymarket-trading` skill and CLI namespace.
+- **Premium install guidance:** replaced default `curl | bash` instructions with `pipx` / `uv tool` / pip installs and an inspect-before-run fallback.
+
+### Fixed
+- **Agent contract regression tests:** added tests that ensure read-only catalog skills do not expose financial-execution verbs and that read-only Polymarket docs do not include wallet-secret guidance.
+
 ## [0.28.0]
 
 ### Added
