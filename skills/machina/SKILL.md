@@ -16,7 +16,14 @@ description: |
 license: MIT
 metadata:
   author: machina-sports
-  version: "0.2.0"
+  version: "0.3.0"
+  risk:
+    mode: premium_mcp
+    money_movement: false
+    secrets_required: true
+    external_mcp: true
+    cloud_upload: true
+    requires_explicit_confirmation: true
 ---
 
 # Machina Sports Intelligence Layer
@@ -27,8 +34,9 @@ Connect the agent harness to the Machina Sports premium infrastructure: zero-lat
 
 ```bash
 # 1. Install the CLI (one-time)
-pip install machina-cli
-# or: curl -fsSL https://raw.githubusercontent.com/machina-sports/machina-cli/main/install.sh | bash
+pipx install machina-cli
+# or: uv tool install machina-cli
+# or: python -m pip install --user machina-cli
 
 # 2. Authenticate
 machina login                                  # interactive (opens browser)
@@ -67,12 +75,24 @@ If any of these fail, fix that specific step before retrying the original comman
 ### 1. Install the CLI
 
 ```bash
-pip install machina-cli
+pipx install machina-cli
 # or
-curl -fsSL https://raw.githubusercontent.com/machina-sports/machina-cli/main/install.sh | bash
+uv tool install machina-cli
+# or
+python -m pip install --user machina-cli
 ```
 
 Run this in the developer's terminal if you have permission, or ask them to run it.
+
+### Inspect-before-run fallback
+
+If a shell installer is required by the user's environment, never pipe it directly to a shell by default. Download it, inspect it, then run it only after the user approves:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/machina-sports/machina-cli/main/install.sh -o /tmp/machina-install.sh
+less /tmp/machina-install.sh
+bash /tmp/machina-install.sh
+```
 
 ### 2. Authenticate
 

@@ -1,0 +1,292 @@
+{
+  "$schema": "https://machina.gg/sports-skills/catalog.schema.json",
+  "default_policy": {
+    "default_to_read_only": true,
+    "never_handle_private_keys_in_chat": true,
+    "require_confirmation_for": [
+      "financial_execution",
+      "premium_mcp",
+      "cloud_upload",
+      "metered_billing"
+    ],
+    "treat_external_content_as_untrusted": true
+  },
+  "skills": {
+    "betting": {
+      "description": "Betting analysis \u2014 odds conversion, de-vigging, edge detection, Kelly criterion, arbitrage detection, parlay analysis, and line movement. Pure computation, no API calls. Works with odds from any source: ESPN (American odds), Polymarket (dec",
+      "external_network": false,
+      "mode": "compute",
+      "money_movement": false,
+      "requires_explicit_confirmation": false,
+      "risk": "low",
+      "secrets_required": false,
+      "skill_path": "skills/betting/SKILL.md",
+      "untrusted_content": false
+    },
+    "cbb-data": {
+      "description": "College Basketball (CBB) data via ESPN public endpoints \u2014 scores, standings, rosters, schedules, game summaries, play-by-play, win probability, rankings, futures, team/player stats, and news for NCAA Division I men's basketball. Zero config",
+      "external_network": true,
+      "mode": "read_only",
+      "money_movement": false,
+      "requires_explicit_confirmation": false,
+      "risk": "low",
+      "secrets_required": false,
+      "skill_path": "skills/cbb-data/SKILL.md",
+      "untrusted_content": true
+    },
+    "cfb-data": {
+      "description": "College Football (CFB) data via ESPN public endpoints \u2014 scores, standings, rosters, schedules, game summaries, play-by-play, rankings, injuries, futures, team/player stats, and news for NCAA Division I FBS. Zero config, no API keys.",
+      "external_network": true,
+      "mode": "read_only",
+      "money_movement": false,
+      "requires_explicit_confirmation": false,
+      "risk": "low",
+      "secrets_required": false,
+      "skill_path": "skills/cfb-data/SKILL.md",
+      "untrusted_content": true
+    },
+    "cricket-data": {
+      "description": "Cricket data via ESPN public endpoints and Cricsheet open data \u2014 live-ish series scoreboards, standings, match summaries and news (ESPN), plus historical ball-by-ball, player stats, and player registry (Cricsheet, ODC-BY 1.0). Zero config, ",
+      "external_network": true,
+      "mode": "read_only",
+      "money_movement": false,
+      "requires_explicit_confirmation": false,
+      "risk": "low",
+      "secrets_required": false,
+      "skill_path": "skills/cricket-data/SKILL.md",
+      "untrusted_content": true
+    },
+    "esports": {
+      "description": "Esports data \u2014 Dota 2 (OpenDota) and League of Legends esports (Leaguepedia). Pro matches, tournaments, teams, and structured LoL competitive data. Use when: user asks about Dota 2 pro matches/teams/leagues, or LoL esports tournaments/roste",
+      "external_network": true,
+      "mode": "read_only",
+      "money_movement": false,
+      "requires_explicit_confirmation": false,
+      "risk": "low",
+      "secrets_required": false,
+      "skill_path": "skills/esports/SKILL.md",
+      "untrusted_content": true
+    },
+    "fastf1": {
+      "description": "Formula 1 data \u2014 race schedules, results, lap timing, driver and team info. Powered by the FastF1 library. Covers F1 sessions, qualifying, practice, race results, sector times, tire strategy.",
+      "external_network": true,
+      "mode": "read_only",
+      "money_movement": false,
+      "requires_explicit_confirmation": false,
+      "risk": "low",
+      "secrets_required": false,
+      "skill_path": "skills/fastf1/SKILL.md",
+      "untrusted_content": true
+    },
+    "football-data": {
+      "description": "Football (soccer) data across 13 leagues \u2014 standings, schedules, match stats, xG, transfers, player profiles. Zero config, no API keys. Covers Premier League, La Liga, Bundesliga, Serie A, Ligue 1, MLS, Champions League, World Cup, Champion",
+      "external_network": true,
+      "mode": "read_only",
+      "money_movement": false,
+      "requires_explicit_confirmation": false,
+      "risk": "low",
+      "secrets_required": false,
+      "skill_path": "skills/football-data/SKILL.md",
+      "untrusted_content": true
+    },
+    "golf-data": {
+      "description": "PGA Tour, LPGA, and DP World Tour golf data via ESPN public endpoints \u2014 tournament leaderboards, scorecards, season schedules, golfer profiles/overviews, and news. Zero config, no API keys.",
+      "external_network": true,
+      "mode": "read_only",
+      "money_movement": false,
+      "requires_explicit_confirmation": false,
+      "risk": "low",
+      "secrets_required": false,
+      "skill_path": "skills/golf-data/SKILL.md",
+      "untrusted_content": true
+    },
+    "kalshi": {
+      "description": "Kalshi prediction markets \u2014 events, series, markets, trades, and candlestick data. Public API, no auth required for reads. US-regulated exchange (CFTC). Covers football (EPL, UCL, La Liga), basketball, baseball, tennis, NFL, hockey event co",
+      "external_network": true,
+      "mode": "read_only",
+      "money_movement": false,
+      "requires_explicit_confirmation": false,
+      "risk": "medium",
+      "secrets_required": false,
+      "skill_path": "skills/kalshi/SKILL.md",
+      "untrusted_content": true
+    },
+    "machina": {
+      "description": "Gateway to the Machina Sports premium platform \u2014 packaged agent workflows (\"templates\"), licensed real-time data, betting odds, and zero-latency live streams. This skill is prompt-only: it shells out to the separate `machina-cli` binary and",
+      "external_network": true,
+      "mode": "premium_mcp",
+      "money_movement": false,
+      "requires_explicit_confirmation": true,
+      "risk": "high",
+      "secrets_required": true,
+      "skill_path": "skills/machina/SKILL.md",
+      "untrusted_content": true
+    },
+    "markets": {
+      "description": "Markets orchestration \u2014 connects ESPN live schedules with Kalshi and Polymarket prediction markets. Unified dashboards, odds comparison, entity search, and bet evaluation across platforms.",
+      "external_network": true,
+      "mode": "read_only",
+      "money_movement": false,
+      "requires_explicit_confirmation": false,
+      "risk": "medium",
+      "secrets_required": false,
+      "skill_path": "skills/markets/SKILL.md",
+      "untrusted_content": true
+    },
+    "metadata": {
+      "description": "Sports metadata via TheSportsDB free API (key=3). Team logos and badges, player photos, stadium info, league info, and biographical data across 100+ leagues. No API key required, zero config.",
+      "external_network": true,
+      "mode": "read_only",
+      "money_movement": false,
+      "requires_explicit_confirmation": false,
+      "risk": "low",
+      "secrets_required": false,
+      "skill_path": "skills/metadata/SKILL.md",
+      "untrusted_content": true
+    },
+    "mlb-data": {
+      "description": "MLB data via ESPN public endpoints \u2014 scores, standings, rosters, schedules, game summaries, play-by-play, win probability, injuries, transactions, depth charts, team/player stats, leaders, and news. Zero config, no API keys.",
+      "external_network": true,
+      "mode": "read_only",
+      "money_movement": false,
+      "requires_explicit_confirmation": false,
+      "risk": "low",
+      "secrets_required": false,
+      "skill_path": "skills/mlb-data/SKILL.md",
+      "untrusted_content": true
+    },
+    "nba-data": {
+      "description": "NBA data via ESPN public endpoints \u2014 scores, standings, rosters, schedules, game summaries, play-by-play, win probability, injuries, transactions, futures, depth charts, team/player stats, leaders, and news. Zero config, no API keys.",
+      "external_network": true,
+      "mode": "read_only",
+      "money_movement": false,
+      "requires_explicit_confirmation": false,
+      "risk": "low",
+      "secrets_required": false,
+      "skill_path": "skills/nba-data/SKILL.md",
+      "untrusted_content": true
+    },
+    "nfl-data": {
+      "description": "NFL data via ESPN public endpoints plus an nflverse backend for schedules, weekly rosters, play-by-play, and normalized player/team stat tables. Zero config, no API keys.",
+      "external_network": true,
+      "mode": "read_only",
+      "money_movement": false,
+      "requires_explicit_confirmation": false,
+      "risk": "low",
+      "secrets_required": false,
+      "skill_path": "skills/nfl-data/SKILL.md",
+      "untrusted_content": true
+    },
+    "nhl-data": {
+      "description": "NHL data via ESPN public endpoints \u2014 scores, standings, rosters, schedules, game summaries, play-by-play, injuries, transactions, futures, team/player stats, leaders, and news. Zero config, no API keys.",
+      "external_network": true,
+      "mode": "read_only",
+      "money_movement": false,
+      "requires_explicit_confirmation": false,
+      "risk": "low",
+      "secrets_required": false,
+      "skill_path": "skills/nhl-data/SKILL.md",
+      "untrusted_content": true
+    },
+    "polymarket": {
+      "description": "Polymarket sports prediction markets \u2014 read-only live odds, prices, order books, events, series, and market search. No auth required. Covers NFL, NBA, MLB, football (EPL, UCL, La Liga), tennis, cricket, MMA, esports. Supports moneyline, spr",
+      "external_network": true,
+      "mode": "read_only",
+      "money_movement": false,
+      "requires_explicit_confirmation": false,
+      "risk": "medium",
+      "secrets_required": false,
+      "skill_path": "skills/polymarket/SKILL.md",
+      "untrusted_content": true
+    },
+    "polymarket-trading": {
+      "description": "High-risk Polymarket trading operations \u2014 configure wallet-backed CLOB access, place limit/market orders, cancel orders, and view account-specific orders/trades. Requires py-clob-client-v2 and a user-controlled wallet. Use only when the use",
+      "external_network": true,
+      "mode": "financial_execution",
+      "money_movement": true,
+      "requires_explicit_confirmation": true,
+      "risk": "critical",
+      "secrets_required": true,
+      "skill_path": "skills/polymarket-trading/SKILL.md",
+      "untrusted_content": true
+    },
+    "sports-news": {
+      "description": "Sports news via RSS/Atom feeds and Google News. Fetch headlines, search by query, filter by date. Covers football news, transfer rumors, match reports, and any sport via Google News.",
+      "external_network": true,
+      "mode": "read_only",
+      "money_movement": false,
+      "requires_explicit_confirmation": false,
+      "risk": "low",
+      "secrets_required": false,
+      "skill_path": "skills/sports-news/SKILL.md",
+      "untrusted_content": true
+    },
+    "sports-reporter": {
+      "description": "Generates original sports journalism articles by consuming real-time data from the sports-skills skills. Covers game previews, live reports, post-game, team analysis, and player profiles for all supported sports.",
+      "external_network": true,
+      "mode": "read_only",
+      "money_movement": false,
+      "requires_explicit_confirmation": false,
+      "risk": "low",
+      "secrets_required": false,
+      "skill_path": "skills/sports-reporter/SKILL.md",
+      "untrusted_content": true
+    },
+    "tennis-data": {
+      "description": "ATP and WTA tennis data via ESPN public endpoints \u2014 tournament scores, season calendars, player rankings, player profiles, and news. Zero config, no API keys.",
+      "external_network": true,
+      "mode": "read_only",
+      "money_movement": false,
+      "requires_explicit_confirmation": false,
+      "risk": "low",
+      "secrets_required": false,
+      "skill_path": "skills/tennis-data/SKILL.md",
+      "untrusted_content": true
+    },
+    "volleyball-data": {
+      "description": "Dutch volleyball data (Eredivisie, Topdivisie, Superdivisie, and the full Dutch pyramid) via the Nevobo API. Standings, schedules, results, clubs, tournaments, and news. Zero config, no API keys.",
+      "external_network": true,
+      "mode": "read_only",
+      "money_movement": false,
+      "requires_explicit_confirmation": false,
+      "risk": "low",
+      "secrets_required": false,
+      "skill_path": "skills/volleyball-data/SKILL.md",
+      "untrusted_content": true
+    },
+    "wnba-data": {
+      "description": "WNBA data via ESPN public endpoints \u2014 scores, standings, rosters, schedules, game summaries, play-by-play, win probability, injuries, transactions, futures, team/player stats, leaders, and news. Zero config, no API keys.",
+      "external_network": true,
+      "mode": "read_only",
+      "money_movement": false,
+      "requires_explicit_confirmation": false,
+      "risk": "low",
+      "secrets_required": false,
+      "skill_path": "skills/wnba-data/SKILL.md",
+      "untrusted_content": true
+    },
+    "world-cup": {
+      "description": "Premium FIFA World Cup 2026 market & match intelligence \u2014 a hosted, read-only layer that fuses official match truth (fixtures, standings, squads, injuries, player performance) with live prediction markets (Kalshi + Polymarket: prices, order",
+      "external_network": true,
+      "mode": "premium_mcp_read_only",
+      "money_movement": false,
+      "requires_explicit_confirmation": true,
+      "risk": "high",
+      "secrets_required": true,
+      "skill_path": "skills/world-cup/SKILL.md",
+      "untrusted_content": true
+    },
+    "xctf-data": {
+      "description": "NCAA cross country and track & field athlete data via TFRRS (tfrrs.org) and news via The Stride Report. Fetch athlete profiles including all personal records (PRs), eligibility year, school, full season-by-season results history, and XC/TF ",
+      "external_network": true,
+      "mode": "read_only",
+      "money_movement": false,
+      "requires_explicit_confirmation": false,
+      "risk": "low",
+      "secrets_required": false,
+      "skill_path": "skills/xctf-data/SKILL.md",
+      "untrusted_content": true
+    }
+  },
+  "version": 1
+}

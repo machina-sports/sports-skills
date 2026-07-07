@@ -3,7 +3,6 @@
 Uses Gamma API (public, no auth) and CLOB API (public reads) via stdlib only.
 Trading operations use the ``py_clob_client_v2`` Python SDK (no CLI binary needed).
 """
-
 from __future__ import annotations
 
 from sports_skills.polymarket._cli import (
@@ -313,7 +312,7 @@ def create_order(
     size: str,
     order_type: str = "GTC",
 ) -> dict:
-    """Place a limit order. Auth required: set POLYMARKET_PRIVATE_KEY=0x... in .env or call configure(private_key=...) first.
+    """Place a limit order. Auth required: configure wallet credentials outside the agent transcript before use.
 
     Args:
         token_id: Market token ID.
@@ -328,7 +327,7 @@ def create_order(
 
 
 def market_order(*, token_id: str, side: str, amount: str) -> dict:
-    """Place a market order. Auth required: set POLYMARKET_PRIVATE_KEY=0x... in .env or call configure(private_key=...) first.
+    """Place a market order. Auth required: configure wallet credentials outside the agent transcript before use.
 
     Args:
         token_id: Market token ID.
@@ -339,7 +338,7 @@ def market_order(*, token_id: str, side: str, amount: str) -> dict:
 
 
 def cancel_order(*, order_id: str) -> dict:
-    """Cancel a specific order. Auth required: set POLYMARKET_PRIVATE_KEY=0x... in .env or call configure(private_key=...) first.
+    """Cancel a specific order. Auth required: configure wallet credentials outside the agent transcript before use.
 
     Args:
         order_id: ID of the order to cancel (from create_order/get_orders).
@@ -348,12 +347,12 @@ def cancel_order(*, order_id: str) -> dict:
 
 
 def cancel_all_orders() -> dict:
-    """Cancel all open orders. Auth required: set POLYMARKET_PRIVATE_KEY=0x... in .env or call configure(private_key=...) first."""
+    """Cancel all open orders. Auth required: configure wallet credentials outside the agent transcript before use."""
     return _cli_cancel_all_orders()
 
 
 def get_orders(*, market: str | None = None) -> dict:
-    """View open orders. Auth required: set POLYMARKET_PRIVATE_KEY=0x... in .env or call configure(private_key=...) first.
+    """View open orders. Auth required: configure wallet credentials outside the agent transcript before use.
 
     Args:
         market: Optional condition ID to filter orders to one market.
@@ -362,5 +361,5 @@ def get_orders(*, market: str | None = None) -> dict:
 
 
 def get_user_trades() -> dict:
-    """View your recent trades. Auth required: set POLYMARKET_PRIVATE_KEY=0x... in .env or call configure(private_key=...) first."""
+    """View your recent trades. Auth required: configure wallet credentials outside the agent transcript before use."""
     return _cli_get_user_trades()

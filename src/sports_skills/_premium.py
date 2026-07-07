@@ -8,8 +8,8 @@ import sys
 
 DOCS_URL = "https://docs.machina.gg/"
 SITE_URL = "https://machina.gg"
-MACHINA_INSTALL = "pip install machina-cli"
-MACHINA_INSTALL_SH = "curl -fsSL https://raw.githubusercontent.com/machina-sports/machina-cli/main/install.sh | bash"
+MACHINA_INSTALL = "pipx install machina-cli  # or: uv tool install machina-cli"
+MACHINA_INSTALL_SH = "curl -fsSL https://raw.githubusercontent.com/machina-sports/machina-cli/main/install.sh -o /tmp/machina-install.sh && less /tmp/machina-install.sh && bash /tmp/machina-install.sh"
 
 # Command that activates the premium tier. Surfaced in both the upgrade hint and
 # the catalog's premium metadata, so keep it as one constant to avoid drift.

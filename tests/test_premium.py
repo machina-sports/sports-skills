@@ -95,7 +95,9 @@ class TestPremiumHandoff:
         payload = json.loads(capsys.readouterr().out)
         assert payload["status"] is True
         assert payload["data"]["docs"] == "https://docs.machina.gg/"
-        assert payload["data"]["install"] == "pip install machina-cli"
+        assert payload["data"]["install"].startswith("pipx install machina-cli")
+        assert "uv tool install machina-cli" in payload["data"]["install"]
+        assert "| bash" not in payload["data"]["install_sh"]
         assert "machina_cli_installed" in payload["data"]
         assert any("machina login" in step for step in payload["data"]["next"])
 
