@@ -7,17 +7,9 @@ please use the latest clob-client"), so trading must go through v2. Install::
 
     pip install sports-skills[polymarket]
 
-For trading commands, configure a wallet via one of:
-
-    # Option 1 — environment variables
-    export POLYMARKET_PRIVATE_KEY=0x...
-    export POLYMARKET_FUNDER_ADDRESS=0x...   # only for proxy/email wallets
-
-    # Option 2 — Python SDK
-    from sports_skills import polymarket
-    polymarket.configure(private_key="0x...")
+Trading requires local wallet credentials configured outside any agent chat.
+Do not paste private keys or seed phrases into an agent transcript.
 """
-
 from __future__ import annotations
 
 import functools
@@ -47,14 +39,14 @@ def configure(
     signature_type: str | int | None = None,
     funder: str | None = None,
 ) -> dict:
-    """Configure wallet for trading commands.
+    """Configure wallet metadata for trading commands.
 
-    Two ways to authenticate:
-      1. Add POLYMARKET_PRIVATE_KEY=0x... to your .env file (simplest).
-      2. Call this: configure(private_key="0x...").
+    Credentials must be supplied through a secure local environment or secret
+    manager outside the agent transcript. Do not paste private keys into chat.
 
     Args:
-        private_key: Polygon wallet private key (hex string starting with 0x).
+        private_key: Polygon wallet private key, if supplied programmatically by
+            trusted application code rather than an agent prompt.
         signature_type: Signature type — 0 / "eoa" (default), 1 / "gnosis-safe",
             or 2 / "proxy".
         funder: Funding address (the wallet holding collateral). Required for
@@ -172,8 +164,8 @@ def _require_client():
             "pip install sports-skills[polymarket]"
         )
     return None, _error(
-        "No private key configured. Set POLYMARKET_PRIVATE_KEY env var "
-        "or call configure(private_key='0x...')"
+        "No private key configured. Configure Polymarket wallet credentials "
+        "outside the agent transcript via a secure local environment or secret manager."
     )
 
 

@@ -1,11 +1,11 @@
 #!/bin/bash
-# Validates polymarket parameters
+# Validates polymarket read-only parameters
 COMMAND="${1:-}"
 
-# Trading commands need py-clob-client-v2 + wallet
-TRADING_COMMANDS="create_order market_order cancel_order cancel_all_orders get_orders get_user_trades"
+TRADING_COMMANDS="configure create_order market_order cancel_order cancel_all_orders get_orders get_user_trades"
 if echo "$TRADING_COMMANDS" | grep -qw "$COMMAND"; then
-  echo "WARNING: $COMMAND requires py-clob-client-v2 and a wallet. Install with: pip install sports-skills[polymarket]. Set POLYMARKET_PRIVATE_KEY=0x... in .env or call configure(private_key=...)."
+  echo "ERROR: $COMMAND is a financial-execution command and is not part of the read-only polymarket skill. Use polymarket-trading only after explicit user approval."
+  exit 1
 fi
 
 # token_id vs market_id warning
