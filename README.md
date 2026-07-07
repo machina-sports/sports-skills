@@ -578,7 +578,7 @@ Polymarket's official public APIs ([Gamma](https://gamma-api.polymarket.com) + [
 
 **Trading (separate high-risk skill):**
 
-Use `polymarket-trading` only when the user explicitly asks to place/cancel/manage orders. It requires wallet-backed local configuration and explicit confirmation before execution.
+Use `polymarket-trading` only when the user explicitly asks to place/cancel/manage orders. Invoke it through the separate CLI namespace (`sports-skills polymarket-trading ...`). It requires wallet-backed local configuration and explicit confirmation before execution.
 
 | Command | Description |
 |---------|-------------|

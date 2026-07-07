@@ -97,9 +97,10 @@ _REGISTRY = {
         },
         "get_last_trade_price": {"required": ["token_id"]},
         "get_esports_events": {"optional": ["query", "limit", "closed"]},
-        # Wallet configuration
-        "configure": {"optional": ["private_key", "signature_type"]},
-        # Trading (authenticated — requires wallet)
+    },
+    "polymarket-trading": {
+        # Wallet configuration / authenticated trading namespace.
+        "configure": {"optional": ["signature_type", "funder"]},
         "create_order": {
             "required": ["token_id", "side", "price", "size"],
             "optional": ["order_type"],
@@ -557,7 +558,7 @@ def _load_module(name):
         from sports_skills import football
 
         return football
-    elif name == "polymarket":
+    elif name in {"polymarket", "polymarket-trading"}:
         from sports_skills import polymarket
 
         return polymarket
@@ -941,7 +942,7 @@ def main():
         description="Lightweight CLI for sports data — football, F1, NFL, NBA, WNBA, NHL, MLB, tennis, cricket, CFB, CBB, golf, volleyball, prediction markets, betting analysis, metadata, and news.",
     )
     parser.add_argument(
-        "module", nargs="?", help="Module name: football, f1, nfl, nba, wnba, nhl, mlb, tennis, cricket, cfb, cbb, golf, volleyball, xctf, esports, polymarket, kalshi, betting, markets, metadata, news"
+        "module", nargs="?", help="Module name: football, f1, nfl, nba, wnba, nhl, mlb, tennis, cricket, cfb, cbb, golf, volleyball, xctf, esports, polymarket, polymarket-trading, kalshi, betting, markets, metadata, news"
     )
     parser.add_argument(
         "command", nargs="?", help="Command name (e.g., get_season_standings)"

@@ -44,6 +44,13 @@ Credential setup must happen outside the agent transcript using a secure local e
 
 ## Commands
 
+Invoke these through the separate CLI namespace:
+
+```bash
+sports-skills polymarket-trading get_orders
+sports-skills polymarket-trading create_order --token_id=<token_id> --side=buy --price=0.50 --size=1
+```
+
 | Command | Required | Optional | Description |
 |---|---|---|---|
 | `configure` | | `signature_type`, `funder` | Configure wallet metadata for this process; do not pass secrets through chat |

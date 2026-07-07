@@ -55,3 +55,37 @@ def test_default_skill_docs_do_not_pipe_remote_installers_to_shell():
 def test_root_agent_context_files_exist():
     assert (ROOT / "AGENTS.md").exists()
     assert (ROOT / ".hermes.md").exists()
+
+
+def test_read_only_polymarket_cli_namespace_excludes_trading_verbs():
+    from sports_skills.cli import _REGISTRY
+
+    trading_verbs = {
+        "configure",
+        "create_order",
+        "market_order",
+        "cancel_order",
+        "cancel_all_orders",
+        "get_orders",
+        "get_user_trades",
+    }
+    assert trading_verbs.isdisjoint(_REGISTRY["polymarket"])
+    assert trading_verbs <= set(_REGISTRY["polymarket-trading"])
+
+
+def test_catalog_money_movement_matches_cli_namespace():
+    from sports_skills.cli import _REGISTRY
+
+    catalog = json.loads((SKILLS / "catalog.json").read_text())
+    trading_verbs = {
+        "configure",
+        "create_order",
+        "market_order",
+        "cancel_order",
+        "cancel_all_orders",
+        "get_orders",
+        "get_user_trades",
+    }
+    for name, meta in catalog["skills"].items():
+        if name in _REGISTRY and meta["mode"] == "read_only":
+            assert trading_verbs.isdisjoint(_REGISTRY[name])
