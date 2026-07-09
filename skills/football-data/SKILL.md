@@ -1,9 +1,9 @@
 ---
 name: football-data
 description: |
-  Football (soccer) data across 13 leagues — standings, schedules, match stats, xG, transfers, player profiles. Zero config, no API keys. Covers Premier League, La Liga, Bundesliga, Serie A, Ligue 1, MLS, Champions League, World Cup, Championship, Eredivisie, Primeira Liga, Serie A Brazil, European Championship.
+  Football (soccer) data across the world's major leagues — standings, schedules, match stats, xG, transfers, player profiles, head-to-head history, team strength (Elo), and match forecasts. Zero config, no API keys. Covers Premier League, La Liga, Bundesliga, Serie A, Ligue 1, MLS, Champions League, World Cup, Championship, Eredivisie, Primeira Liga, Serie A Brazil, Russian Premier League, Scottish/Belgian/Turkish top flights, European Championship, and more (call get_competitions for the live list).
 
-  Use when: user asks about football/soccer standings, fixtures, match stats, xG, lineups, player values, transfers, injury news, league tables, daily fixtures, or player profiles.
+  Use when: user asks about football/soccer standings, fixtures, match stats, xG, lineups, player values, transfers, injury news, league tables, daily fixtures, player profiles, head-to-head records, team strength/Elo ratings, or match odds/forecasts.
   Don't use when: user asks about American football/NFL (use nfl-data), college football (use cfb-data), NBA (use nba-data), WNBA (use wnba-data), college basketball (use cbb-data), NHL (use nhl-data), MLB (use mlb-data), tennis (use tennis-data), golf (use golf-data), cricket (use cricket-data), Formula 1 (use fastf1), or betting odds (use polymarket or kalshi). Don't use for live/real-time scores — data updates post-match. Don't use get_season_leaders or get_missing_players for non-Premier League leagues (they return empty). Don't use get_event_xg for leagues outside the top 5 (EPL, La Liga, Bundesliga, Serie A, Ligue 1).
 license: MIT
 metadata:
@@ -53,7 +53,8 @@ schedule = football.get_daily_schedule()
 
 CRITICAL: Before calling any data endpoint, verify:
 - Season ID is derived from `get_current_season(competition_id="...")` — never hardcoded.
-- Team ID is verified via `search_team(query="...")` if only a name is provided.
+- Team ID is resolved via `search_team(query="...")` and passed as the numeric `team_id`. For `get_head_to_head`, `get_team_strength`, and `get_match_forecast`, always pass IDs — ambiguous names (e.g. two "Paris" clubs) can resolve to the wrong team.
+- The endpoint actually covers the league in question — see the **Coverage & Source Map** below. Coverage is uneven across sources; an uncovered call returns an empty payload with a `message`, not data.
 - `get_event_xg` and `get_event_players_statistics` (with xG) are only called for top-5 leagues (EPL, La Liga, Bundesliga, Serie A, Ligue 1).
 - `get_season_leaders` and `get_missing_players` are only called for Premier League seasons (season_id must start with `premier-league-`).
 
@@ -65,6 +66,39 @@ Derive the current year from the system prompt's date (e.g., `currentDate: 2026-
 - **If the user says "current", "latest", or doesn't specify**: Call `get_current_season(competition_id="...")` to get the active season_id. Do NOT guess or hardcode the year.
 - **Season format**: Always `{league-slug}-{year}` (e.g., `"premier-league-2025"` for the 2025-26 season). The year is the start year of the season, not the end year.
 - **MLS exception**: MLS runs spring-fall within a single calendar year. Use `get_current_season(competition_id="mls")`.
+
+## Coverage & Source Map
+
+This skill stitches several free sources together. **Coverage is not uniform** — each endpoint works only where its underlying source has data. Check this before promising an answer; when an endpoint isn't covered, it returns an empty payload with an explanatory `message` (never an error) — read that message and fall back.
+
+| Endpoint(s) | Source | Coverage |
+|---|---|---|
+| standings, schedules, teams, event summary/lineups/stats/timeline | ESPN | **All leagues** (broadest — the backbone) |
+| `get_event_xg`, `get_event_players_statistics` (xG fields) | Understat | **Top 5 only** (EPL, La Liga, Bundesliga, Serie A, Ligue 1). *Not RFPL — Understat dropped it.* |
+| `get_season_leaders`, `get_missing_players` | FPL | **Premier League only** |
+| `get_player_profile`, `get_season_transfers` (market value) | Transfermarkt | Any player with a `tm_player_id` |
+| `get_head_to_head` | football-data.co.uk | **11 European domestic leagues** (EPL, Championship, La Liga, Serie A, Bundesliga, Ligue 1, Eredivisie, Primeira Liga, Scottish, Belgian, Turkish). Same-division meetings only. |
+| `get_team_strength`, `get_match_forecast` | ClubElo | **European clubs** (incl. Russia). |
+
+Rule of thumb: **ESPN answers "what happened" everywhere; the enrichment sources ( Understat/FPL/ClubElo/football-data.co.uk ) add depth only in their coverage zone.** ESPN is always the fixture/score authority — never let an enrichment source override an ESPN score.
+
+### Gotchas (from live testing)
+- **Pass IDs, not ambiguous names.** For H2H/strength/forecast, resolve teams with `search_team` first and pass the numeric `team_id`. Names like "Paris Saint-Germain" can collapse onto the wrong club (Paris FC) during name resolution.
+- **ClubElo off-season gaps**: current-date `get_team_strength` can miss clubs in the summer break (a club's weekly Elo period may not span today). If a well-known club returns unresolved, pass an in-season `date` (e.g. `date="2026-03-01"`).
+- **`get_match_forecast` is short-horizon**: ClubElo only forecasts ~a week ahead — empty between matchdays / off-season. That's expected, not a failure.
+- **H2H is same-division only**: two clubs that met in a cup or across tiers won't show; it counts league meetings in the resolved division.
+
+## Combining Endpoints (mix-and-match)
+
+Compose sources for richer answers. Run independent calls in parallel.
+
+- **Match preview** (`X vs Y`): `search_team` ×2 → `get_head_to_head` (recent record) + `get_team_strength(team_id, team_id_2)` (Elo gap / favorite) + `get_match_forecast` (if within ~a week: W/D/L + scoreline). For a top-5 fixture add historical `get_event_xg` context from recent meetings.
+- **Match report** (post-game): `get_event_summary` + `get_event_statistics` + `get_event_timeline`, and for top-5 leagues `get_event_xg` + `get_event_players_statistics`.
+- **Team form + context**: `get_team_schedule` (recent results) + `get_team_strength` (current Elo & rank) + `get_missing_players` (PL only) + per-match `get_event_xg` (top-5).
+- **Rivalry / derby deep dive**: `get_head_to_head` (all-time-ish record + goals) + `get_team_strength` comparison for the current power balance.
+- **Odds sanity-check**: `get_match_forecast` gives a free model baseline (W/D/L) to compare against the `kalshi` / `polymarket` betting skills.
+
+When a piece of the composition isn't covered (e.g. xG outside the top 5, H2H for MLS), skip it silently and deliver the parts that are covered — don't block the whole answer on one missing source.
 
 ## Commands
 
@@ -86,7 +120,9 @@ Derive the current year from the system prompt's date (e.g., `currentDate: 2026-
 | `get_event_statistics` | Match team statistics |
 | `get_event_timeline` | Match timeline (goals, cards, subs) |
 | `get_team_schedule` | Schedule for a specific team |
-| `get_head_to_head` | UNAVAILABLE — returns empty |
+| `get_head_to_head` | Historical H2H results + stats (European domestic leagues) |
+| `get_team_strength` | ClubElo Elo rating / two-team comparison (European clubs) |
+| `get_match_forecast` | ClubElo win/draw/loss + scoreline forecast (~week ahead) |
 | `get_event_xg` | xG data (top 5 leagues only) |
 | `get_event_players_statistics` | Player-level match stats with optional xG |
 | `get_missing_players` | Injured/doubtful players (Premier League only) |
@@ -137,6 +173,16 @@ Actions:
 2. Call `get_team_schedule(team_id="874", competition_id="serie-a-brazil")` for fixtures
 3. Pick a recent match and call `get_event_timeline(event_id="...")` for goals, cards, subs
 Result: Fixtures, timeline events (note: xG, FPL stats, and season leaders NOT available for Brazilian Serie A)
+
+Example 6: Match preview (mix-and-match)
+User says: "Preview Arsenal vs Man City this weekend"
+Actions:
+1. Call `search_team(query="Arsenal")` and `search_team(query="Manchester City")` → team_ids 359, 382
+2. In parallel: `get_head_to_head(team_id="359", team_id_2="382")` (recent record + goals),
+   `get_team_strength(team_id="359", team_id_2="382")` (Elo gap + favorite),
+   `get_match_forecast(team_id="359", team_id_2="382")` (W/D/L + likely scoreline, if within ~a week)
+3. Synthesize: form/record + power balance + model odds. Skip any piece that returns empty (e.g. forecast if the match is >1 week out).
+Result: A preview blending head-to-head history, current strength, and a free model forecast
 
 ## Commands that DO NOT exist — never call these
 

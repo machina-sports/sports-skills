@@ -44,6 +44,8 @@
 | Understat | xG per match, xG per shot, player xG/xA | Top 5 (EPL, La Liga, Bundesliga, Serie A, Ligue 1) |
 | FPL | Top scorers, injuries, player stats, ownership | Premier League only |
 | Transfermarkt | Market values, transfer history | Any player (requires tm_player_id) |
+| football-data.co.uk | Head-to-head history, historical results + match stats | 11 European domestic leagues, 1993+ |
+| ClubElo | Team strength (Elo rating), fixture-difficulty control, match forecasts | European clubs |
 
 ## Commands (Detailed)
 
@@ -158,11 +160,49 @@ Get schedule for a specific team (past results + upcoming fixtures).
 - `competition_id` (str, optional): Filter to a single competition
 
 ### get_head_to_head
-**UNAVAILABLE** — requires licensed data. Do not call; returns empty results.
-- `team_id` (str, required): First team ID
-- `team_id_2` (str, required): Second team ID
+Head-to-head history between two teams via football-data.co.uk (free CSV).
+**European domestic leagues only** (see coverage below). Returns an informative
+message for other leagues (MLS, Brazil, Champions League, Euros, World Cup).
+- `team_id` (str, required): First team ESPN ID
+- `team_id_2` (str, required): Second team ESPN ID
+- `league_slug` (str, optional): League hint; inferred from the teams when omitted
+- `max_seasons` (int, optional): Recent seasons to search (default 10, max 34)
 
-Alternative: Use `get_team_schedule` for both teams and filter overlapping matches manually.
+Returns `data.events[]` (per meeting: `date`, `home_team`/`away_team`, `home_score`/
+`away_score`, `result` H/D/A, and a `stats` block with shots/SoT/corners when the
+source has them) plus `data.summary` (`total_meetings`, per-team `wins`+`goals`,
+`draws`). Only counts meetings played in a shared division; ESPN stays the fixture
+authority for live/recent scores.
+
+Coverage: Premier League, Championship, La Liga, Serie A, Bundesliga, Ligue 1,
+Eredivisie, Primeira Liga, Scottish Premiership, Belgian Pro League, Turkish Super Lig.
+
+### get_team_strength
+Team strength via ClubElo Elo rating (free CSV). **European clubs only** — a
+strength / fixture-difficulty control, not an official result.
+- `team_id` (str, required): First team ESPN ID
+- `team_id_2` (str, optional): Second team ESPN ID → returns an Elo comparison
+- `date` (str, optional): YYYY-MM-DD snapshot for historical Elo (default today)
+- `league_slug` (str, optional): League hint; inferred from the teams when omitted
+
+Returns `data.teams[]` with `elo`, `rank`, `country`, `level`, `as_of`, `matched_as`,
+and a `resolved` flag. With two teams also returns `elo_difference` (team1 − team2)
+and `favorite`. Team names are matched to ClubElo's labels (country-scoped, reserve
+teams excluded); teams that cannot be confidently matched are reported, not guessed.
+Coverage: the same 11 European domestic leagues as `get_head_to_head`.
+
+### get_match_forecast
+ClubElo win/draw/loss + scoreline forecast for a team's upcoming fixtures (free CSV).
+**ClubElo forecasts only ~a week ahead** — empty between matchdays or off-season.
+European clubs only.
+- `team_id` (str, required): Team ESPN ID
+- `team_id_2` (str, optional): Opponent ESPN ID → filters to fixtures against that team
+- `league_slug` (str, optional): League hint; inferred from the team when omitted
+
+Returns `data.fixtures[]` with `date`, `competition`, home/away teams, `team_side`,
+`win_prob`/`draw_prob`/`loss_prob` (team perspective), and `likely_scorelines`.
+Model-free probabilities derived from ClubElo's goal-difference distribution — pairs
+with the betting/odds skills. Empty results carry an explanatory `message`.
 
 ### get_event_xg
 Get expected goals (xG) from Understat. **Top 5 leagues only.**
