@@ -41,6 +41,9 @@ from sports_skills.football._connector import (
     get_head_to_head as _get_head_to_head,
 )
 from sports_skills.football._connector import (
+    get_match_forecast as _get_match_forecast,
+)
+from sports_skills.football._connector import (
     get_missing_players as _get_missing_players,
 )
 from sports_skills.football._connector import (
@@ -69,6 +72,9 @@ from sports_skills.football._connector import (
 )
 from sports_skills.football._connector import (
     get_team_schedule as _get_team_schedule,
+)
+from sports_skills.football._connector import (
+    get_team_strength as _get_team_strength,
 )
 from sports_skills.football._connector import (
     search_player as _search_player,
@@ -245,14 +251,94 @@ def get_team_schedule(
     )
 
 
-def get_head_to_head(*, team_id: str, team_id_2: str) -> dict:
-    """Get head-to-head history between two teams.
+def get_head_to_head(
+    *,
+    team_id: str,
+    team_id_2: str,
+    league_slug: str | None = None,
+    max_seasons: int | None = None,
+) -> dict:
+    """Get head-to-head history between two teams (via football-data.co.uk).
+
+    Covers European domestic leagues only (Premier League, Championship, La Liga,
+    Serie A, Bundesliga, Ligue 1, Eredivisie, Primeira Liga, Scottish Premiership,
+    Belgian Pro League, Turkish Super Lig). Returns per-meeting results plus an
+    aggregated win/draw/goal summary.
 
     Args:
         team_id: ESPN team ID of the first team (numeric string), from search_team().
         team_id_2: ESPN team ID of the second team (numeric string).
+        league_slug: Optional league hint (e.g. "premier-league"); inferred from the
+            teams when omitted.
+        max_seasons: How many recent seasons to search (default 10, max 34).
     """
-    return wrap(_get_head_to_head(_params(team_id=team_id, team_id_2=team_id_2)))
+    return wrap(
+        _get_head_to_head(
+            _params(
+                team_id=team_id,
+                team_id_2=team_id_2,
+                league_slug=league_slug,
+                max_seasons=max_seasons,
+            )
+        )
+    )
+
+
+def get_team_strength(
+    *,
+    team_id: str,
+    team_id_2: str | None = None,
+    date: str | None = None,
+    league_slug: str | None = None,
+) -> dict:
+    """Get a team's ClubElo strength rating, or compare two teams' Elo.
+
+    Free ClubElo data (European clubs only) — a strength / fixture-difficulty
+    control, not an official result. Returns each team's Elo rating, rank,
+    country, and tier; with two teams, also the Elo difference and favorite.
+    Teams that cannot be confidently matched to ClubElo are reported, not guessed.
+
+    Args:
+        team_id: ESPN team ID (numeric string), from search_team().
+        team_id_2: Optional second team ESPN ID — returns an Elo comparison.
+        date: Optional YYYY-MM-DD snapshot date (default today) for historical Elo.
+        league_slug: Optional league hint; inferred from the teams when omitted.
+    """
+    return wrap(
+        _get_team_strength(
+            _params(
+                team_id=team_id,
+                team_id_2=team_id_2,
+                date=date,
+                league_slug=league_slug,
+            )
+        )
+    )
+
+
+def get_match_forecast(
+    *,
+    team_id: str,
+    team_id_2: str | None = None,
+    league_slug: str | None = None,
+) -> dict:
+    """Get ClubElo win/draw/loss + scoreline forecasts for a team's upcoming fixtures.
+
+    Free ClubElo forecast (European clubs only). ClubElo only forecasts about a week
+    ahead, so this is empty between matchdays or in the off-season. Each fixture
+    includes win/draw/loss probabilities (from the team's perspective) and the most
+    likely scorelines.
+
+    Args:
+        team_id: ESPN team ID (numeric string), from search_team().
+        team_id_2: Optional opponent ESPN ID — filters to fixtures against that team.
+        league_slug: Optional league hint; inferred from the team when omitted.
+    """
+    return wrap(
+        _get_match_forecast(
+            _params(team_id=team_id, team_id_2=team_id_2, league_slug=league_slug)
+        )
+    )
 
 
 def get_event_xg(*, event_id: str) -> dict:
