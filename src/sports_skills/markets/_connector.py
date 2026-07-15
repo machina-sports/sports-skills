@@ -1807,3 +1807,116 @@ def get_plays_near_timestamp(request_data: dict) -> dict:
         },
         f"Found {len(matched)} play(s) within {window_seconds}s before {timestamp}.",
     )
+
+
+def get_live_tick(request_data: dict) -> dict:
+    """Live market tick for an in-progress game — Kalshi home price + ESPN frame.
+
+    Pulls teams and the current game clock from the ESPN summary and the home
+    team's win-probability from Kalshi, and returns them in the SAME top-level
+    shape as ``get_mock_tick`` so the watcher and explainer are unchanged — the
+    one difference is the source-neutral price key ``home_price_cents`` (plus
+    ``price_source`` and ``kalshi_ticker``) instead of the mock's
+    ``polymarket_home_price_cents``. ``game_id`` is the ESPN event id so
+    ``get_plays_near_timestamp`` can fetch plays for the same game.
+
+    Params:
+        sport (str): Sport key (nfl, nba, mlb, nhl, wnba, cfb, cbb).
+        event_id (str): ESPN event ID.
+    """
+    from datetime import datetime, timezone
+
+    params = request_data.get("params", {})
+    sport = str(params.get("sport") or "").lower()
+    event_id = params.get("event_id")
+
+    if not sport:
+        return _error("sport is required")
+    if sport not in _ESPN_SPORT_PATHS:
+        return _error(f"Unknown sport '{sport}'. Available: {', '.join(sorted(_ESPN_SPORT_PATHS))}")
+    if not event_id:
+        return _error("event_id is required")
+
+    # Teams + game clock from the raw ESPN summary header (same source
+    # get_plays_near_timestamp reads, so both functions agree on the game).
+    from sports_skills._espn_base import espn_summary
+
+    try:
+        summary = espn_summary(_ESPN_SPORT_PATHS[sport], str(event_id))
+    except Exception as exc:
+        return _error(f"Failed to fetch ESPN summary for {sport} game {event_id}: {exc}")
+    if not summary:
+        return _error(f"No ESPN summary found for {sport} game {event_id}")
+
+    header = summary.get("header", {}) or {}
+    competitions = header.get("competitions", []) or []
+    comp = competitions[0] if competitions else {}
+
+    teams: dict = {}
+    home_name = ""
+    away_name = ""
+    for c in comp.get("competitors", []) or []:
+        team = c.get("team", {})
+        if isinstance(team, list):
+            team = team[0] if team else {}
+        entry = {
+            "abbrev": team.get("abbreviation", ""),
+            "name": team.get("displayName", team.get("name", "")),
+        }
+        if c.get("homeAway") == "home":
+            teams["home"] = entry
+            home_name = entry["name"]
+        elif c.get("homeAway") == "away":
+            teams["away"] = entry
+            away_name = entry["name"]
+
+    if not home_name or not away_name:
+        return _error(f"Could not determine home/away teams from ESPN summary for {sport} game {event_id}")
+
+    game_clock = comp.get("status", {}).get("type", {}).get("shortDetail", "")
+
+    # Home-win 'yes' price from Kalshi, via the same search path compare_odds uses.
+    search_query = f"{away_name} {home_name}"
+    try:
+        kalshi_events = _search_kalshi(search_query, sport)
+    except Exception as exc:
+        return _error(f"Kalshi search failed for {search_query}: {exc}")
+
+    all_markets = [m for ev in kalshi_events for m in (ev.get("markets", []) or [])]
+    if not all_markets:
+        return _error(f"No Kalshi market found for {away_name} @ {home_name}.")
+
+    # The market whose title best matches the HOME team is the one whose 'yes'
+    # side is "home wins" — that yes price is the home win-probability.
+    home_matches = _best_matches(home_name, all_markets, "title", limit=1)
+    if not home_matches:
+        return _error(f"No Kalshi market matched home team '{home_name}' for {away_name} @ {home_name}.")
+    home_market = home_matches[0]
+
+    try:
+        raw_yes = float(home_market.get("yes_price", 0))
+    except (TypeError, ValueError):
+        return _error(f"Kalshi market '{home_market.get('ticker', '')}' has a non-numeric yes price.")
+
+    # Kalshi's 'yes' can arrive as cents (0-100) or a 0-1 probability; normalize
+    # to a probability, then to cents — matching _normalize_price's kalshi branch.
+    prob = raw_yes / 100.0 if raw_yes > 1 else raw_yes
+    home_price_cents = round(prob * 100.0, 1)
+    kalshi_ticker = home_market.get("ticker", "")
+
+    timestamp = datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
+
+    data = {
+        "sport": sport,
+        "game_id": str(event_id),
+        "teams": teams,
+        "timestamp": timestamp,
+        "game_clock": game_clock,
+        "home_price_cents": home_price_cents,
+        "price_source": "kalshi",
+        "kalshi_ticker": kalshi_ticker,
+    }
+    return _success(
+        data,
+        f"Live tick for {away_name} @ {home_name} @ {home_price_cents}c home (kalshi {kalshi_ticker}).",
+    )

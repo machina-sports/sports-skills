@@ -16,6 +16,9 @@ from sports_skills.markets._connector import (
     evaluate_market as _evaluate_market,
 )
 from sports_skills.markets._connector import (
+    get_live_tick as _get_live_tick,
+)
+from sports_skills.markets._connector import (
     get_market_price as _get_market_price,
 )
 from sports_skills.markets._connector import (
@@ -220,6 +223,22 @@ def get_plays_near_timestamp(
             window_seconds=window_seconds,
         )
     )
+
+
+def get_live_tick(*, sport: str, event_id: str) -> dict:
+    """Live market tick for an in-progress game — Kalshi home price + ESPN frame.
+
+    Returns the same top-level shape as ``get_mock_tick`` (game_id, teams,
+    timestamp, game_clock, plus the price) sourced from real data: teams and
+    game clock from the ESPN summary, and the home win-probability from Kalshi.
+    The price is under the source-neutral key ``home_price_cents`` (with
+    ``price_source`` and ``kalshi_ticker``); ``game_id`` is the ESPN event id.
+
+    Args:
+        sport: Sport key (nfl, nba, mlb, nhl, wnba, cfb, cbb).
+        event_id: ESPN event ID.
+    """
+    return _get_live_tick(_req(sport=sport, event_id=event_id))
 
 
 def normalize_price(*, price: float, source: str) -> dict:

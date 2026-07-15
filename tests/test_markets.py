@@ -17,6 +17,7 @@ from sports_skills.markets._connector import (
     _success_partial,
     compare_odds,
     evaluate_market,
+    get_live_tick,
     get_sport_markets,
     get_sport_schedule,
     get_todays_markets,
@@ -789,3 +790,102 @@ class TestGetSportMarketsMeta:
         assert result["data"]["polymarket_count"] >= 1
         warnings = result["data"].get("warnings", [])
         assert any("kalshi" in w.lower() for w in warnings)
+
+
+# ============================================================
+# Mocked: Get Live Tick (Kalshi)
+# ============================================================
+
+
+class TestGetLiveTickMocked:
+    """`get_live_tick` fuses the ESPN summary (teams + clock) with a Kalshi home
+    price, in the same top-level shape as the mock tick but source-neutral."""
+
+    def _summary(self):
+        return {
+            "header": {
+                "competitions": [
+                    {
+                        "status": {"type": {"shortDetail": "7:55 - 2nd"}},
+                        "competitors": [
+                            {
+                                "homeAway": "home",
+                                "team": {"abbreviation": "HOU", "displayName": "Houston Texans"},
+                            },
+                            {
+                                "homeAway": "away",
+                                "team": {"abbreviation": "JAX", "displayName": "Jacksonville Jaguars"},
+                            },
+                        ],
+                    }
+                ]
+            }
+        }
+
+    def _kalshi(self):
+        return [
+            {
+                "source": "kalshi",
+                "event_ticker": "KXNFLGAME-25JAXHOU",
+                "title": "Jaguars vs Texans",
+                "status": "active",
+                "markets": [
+                    {
+                        "ticker": "KXNFLGAME-25JAXHOU-HOU",
+                        "title": "Houston Texans",
+                        "yes_price": 0.63,
+                        "no_price": 0.37,
+                        "volume": 100,
+                    },
+                    {
+                        "ticker": "KXNFLGAME-25JAXHOU-JAX",
+                        "title": "Jacksonville Jaguars",
+                        "yes_price": 0.37,
+                        "no_price": 0.63,
+                        "volume": 100,
+                    },
+                ],
+            }
+        ]
+
+    @patch("sports_skills.markets._connector._search_kalshi")
+    @patch("sports_skills._espn_base.espn_summary")
+    def test_shape_conversion_and_game_id(self, mock_summary, mock_kalshi):
+        mock_summary.return_value = self._summary()
+        mock_kalshi.return_value = self._kalshi()
+
+        result = get_live_tick({"params": {"sport": "nfl", "event_id": "401547439"}})
+        assert result["status"] is True
+        data = result["data"]
+
+        # Same top-level shape as the mock tick, source-neutral price key.
+        assert data["sport"] == "nfl"
+        assert data["teams"]["home"] == {"abbrev": "HOU", "name": "Houston Texans"}
+        assert data["teams"]["away"] == {"abbrev": "JAX", "name": "Jacksonville Jaguars"}
+        assert data["game_clock"] == "7:55 - 2nd"
+        assert data["price_source"] == "kalshi"
+        assert data["kalshi_ticker"] == "KXNFLGAME-25JAXHOU-HOU"
+        assert data["timestamp"].endswith("Z")
+
+        # home_price_cents is the HOME market's yes-price (0.63) * 100.
+        assert data["home_price_cents"] == 63.0
+        # game_id is the ESPN event_id so plays can be fetched for the same game.
+        assert data["game_id"] == "401547439"
+
+    @patch("sports_skills.markets._connector._search_kalshi")
+    @patch("sports_skills._espn_base.espn_summary")
+    def test_no_kalshi_market_errors(self, mock_summary, mock_kalshi):
+        mock_summary.return_value = self._summary()
+        mock_kalshi.return_value = []
+
+        result = get_live_tick({"params": {"sport": "nfl", "event_id": "401547439"}})
+        assert result["status"] is False
+
+    def test_missing_sport(self):
+        assert get_live_tick({"params": {"event_id": "1"}})["status"] is False
+
+    def test_missing_event_id(self):
+        assert get_live_tick({"params": {"sport": "nfl"}})["status"] is False
+
+    def test_unknown_sport(self):
+        assert get_live_tick({"params": {"sport": "cricket", "event_id": "1"}})["status"] is False

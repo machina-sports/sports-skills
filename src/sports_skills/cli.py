@@ -212,6 +212,9 @@ _REGISTRY = {
             "required": ["sport", "game_id", "timestamp"],
             "optional": ["window_seconds"],
         },
+        "get_live_tick": {
+            "required": ["sport", "event_id"],
+        },
     },
     "metadata": {
         "get_team_logo": {"required": ["team_name"], "optional": ["sport"]},
