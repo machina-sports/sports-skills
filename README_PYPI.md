@@ -41,7 +41,7 @@ pip install "sports-skills[dev]"
 
 ## ⚡ What's Included
 
-- **Football (Soccer)**: ESPN, Understat, FPL, Transfermarkt — 21 commands across 30 leagues
+- **Football (Soccer)**: ESPN, Understat, FPL, Transfermarkt, football-data.co.uk, ClubElo — 23 commands across 30 leagues
 - **US Sports**: NFL, NBA, WNBA, NHL, MLB, College Football (CFB), College Basketball (CBB) — live scores, standings, depth charts, injuries, and leaders
 - **Tennis**: ATP and WTA tournament scores, rankings, calendars, and player profiles
 - **Golf**: PGA, LPGA, and DP World tour scorecards and leaderboards

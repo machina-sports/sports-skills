@@ -42,7 +42,7 @@ npx skills add machina-sports/sports-skills --yes
 
 A collection of agent skills that wrap **publicly available** sports data sources and APIs. These skills don't provide proprietary data — they give AI agents a structured interface to data that's already freely accessible on the web:
 
-- **Football**: ESPN, Understat, FPL, Transfermarkt — 23 commands across 13 leagues
+- **Football**: ESPN, Understat, FPL, Transfermarkt, football-data.co.uk, ClubElo — 25 commands across the world's major leagues
 - **NFL**: ESPN + nflverse — scores, standings, rosters, schedules, play-by-play, win probability, injuries, transactions, futures, depth charts, team/player stats, game summaries (box scores + scoring plays)
 - **NBA**: ESPN + NBA CDN — real-time live scores, play-by-play, win probability, box scores, scoring plays, standings, rosters, injuries, transactions, futures, depth charts
 - **WNBA**: ESPN — scores, standings, rosters, schedules, play-by-play, win probability, injuries, transactions, futures, team/player stats, game summaries (box scores + scoring plays)
@@ -77,7 +77,7 @@ Each skill is a SKILL.md file that any compatible AI agent can load and use imme
 
 | Skill | Sport | Commands | Data Sources |
 |-------|-------|----------|-------------|
-| `football-data` | Football | 23 | ESPN, FPL, Understat, Transfermarkt |
+| `football-data` | Football | 25 | ESPN, FPL, Understat, Transfermarkt, football-data.co.uk, ClubElo |
 | `nfl-data` | NFL | 22 | ESPN, nflverse |
 | `nba-data` | NBA | 21 | ESPN, NBA CDN |
 | `wnba-data` | WNBA | 16 | ESPN |
@@ -243,7 +243,7 @@ Pick the sports you need. Each skill installs independently.
 
 ### football-data
 
-Community football data skill. Aggregates publicly accessible web sources (ESPN, Understat, FPL, Transfermarkt). Data is sourced from these third-party sites and is subject to their respective terms of use.
+Community football data skill. Aggregates publicly accessible web sources (ESPN, Understat, FPL, Transfermarkt, football-data.co.uk, ClubElo). Data is sourced from these third-party sites and is subject to their respective terms of use.
 
 **Commands:**
 
@@ -260,7 +260,9 @@ Community football data skill. Aggregates publicly accessible web sources (ESPN,
 | `search_player` | Search for a player by name |
 | `get_team_profile` | Team info, crest, venue |
 | `get_team_schedule` | Upcoming and recent matches for a team |
-| `get_head_to_head` | H2H history between two teams (unavailable) |
+| `get_head_to_head` | H2H history + match stats between two teams (European domestic leagues) |
+| `get_team_strength` | ClubElo Elo rating / two-team comparison (European clubs) |
+| `get_match_forecast` | ClubElo win/draw/loss + scoreline forecast for upcoming fixtures |
 | `get_event_summary` | Match summary with scores |
 | `get_event_lineups` | Starting lineups and formations |
 | `get_event_statistics` | Team-level match stats (possession, shots, passes) |

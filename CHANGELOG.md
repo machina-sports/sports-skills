@@ -1,3 +1,18 @@
+## [0.29.0]
+
+### Added
+- **`football` head-to-head (`get_head_to_head`):** historical H2H results plus match stats (shots, corners, cards) via football-data.co.uk, with an aggregated win/draw/goal summary. Covers 11 European domestic leagues (EPL, Championship, La Liga, Serie A, Bundesliga, Ligue 1, Eredivisie, Primeira Liga, Scottish, Belgian, Turkish); same-division meetings only. Replaces the old "unavailable" stub. ESPN remains the fixture authority.
+- **`football` team strength (`get_team_strength`):** ClubElo Elo rating for one team or a two-team comparison (Elo difference + favorite). European clubs; country-scoped name resolution that drops reserve teams and reports unresolved teams rather than guessing.
+- **`football` match forecast (`get_match_forecast`):** ClubElo win/draw/loss + most-likely-scoreline forecast for a team's upcoming fixtures (~week-ahead horizon); a model-free baseline that pairs with the `kalshi`/`polymarket` skills.
+- **Russian Premier League competition:** ESPN (standings/schedule/teams/match data) + ClubElo strength. Understat has no RFPL data, so xG is intentionally disabled.
+
+### Improved
+- **Coverage-aware skill docs:** `football-data/SKILL.md` gains a Coverage & Source Map (which endpoint has data where), a Combining Endpoints playbook (match preview, report, form, rivalry, odds check), and gotchas (pass IDs not ambiguous names, ClubElo off-season snapshot gaps, forecast horizon, H2H same-division-only).
+- **Name resolution:** consolidated free-source name matching into one documented, per-provider overrides map (exceptions only, not a full team DB), backed by an offline drift-guard test over a committed ClubElo snapshot fixture. `_normalize_name` now strips apostrophes ("Nott'm Forest" → "Nottingham Forest").
+
+### Fixed
+- Uncovered leagues on the new football endpoints degrade gracefully with an informative message instead of returning empty/erroring silently.
+
 ## [0.28.1]
 
 ### Improved
