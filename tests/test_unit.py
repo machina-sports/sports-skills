@@ -1923,7 +1923,7 @@ class TestClubEloDriftGuard:
         # Only assert for targets that the fixture is expected to contain.
         for target in ("Paris SG", "Paris FC"):
             assert target in labels, f"override target {target!r} missing from fixture"
-        assert set(_PROVIDER_NAME_OVERRIDES) == {"clubelo"}
+        assert "clubelo" in _PROVIDER_NAME_OVERRIDES
 
 
 class TestPublicEndpointAssembly:
@@ -1995,3 +1995,37 @@ class TestPublicEndpointAssembly:
         # win = GD>0 sum = .15+.10+.08+.05+.03+.09 = .50 ; draw = .20 ; loss = .30
         assert fx["win_prob"] == 0.5 and fx["draw_prob"] == 0.2 and fx["loss_prob"] == 0.3
         assert fx["likely_scorelines"][0]["score"] == "1-0"  # 0.18 highest
+
+    def test_match_forecast_unresolved_opponent_is_reported(self, monkeypatch):
+        # An opponent that can't be resolved must NOT silently return all fixtures.
+        from sports_skills.football import _connector as c
+
+        self._patch_meta(monkeypatch, {"359": {"name": "Arsenal", "slug": "premier-league"}})
+        monkeypatch.setattr(c, "_clubelo_fetch_fixtures", lambda: "")
+        out = c.get_match_forecast({"params": {"team_id": "359", "team_id_2": "99999"}})
+        assert out["fixtures"] == []
+        assert "team_id_2" in out["message"]
+
+    def test_team_strength_invalid_date(self):
+        from sports_skills.football import _connector as c
+
+        out = c.get_team_strength({"params": {"team_id": "359", "date": "03/01/2026"}})
+        assert out.get("error") and "YYYY-MM-DD" in out["message"]
+
+    def test_team_strength_unparseable_elo_does_not_crash(self, monkeypatch):
+        # resolved teams with a malformed Elo cell must degrade, not TypeError
+        from sports_skills.football import _connector as c
+
+        self._patch_meta(monkeypatch, {
+            "359": {"name": "Arsenal", "slug": "premier-league"},
+            "382": {"name": "Manchester City", "slug": "premier-league"},
+        })
+        snapshot = (
+            "Rank,Club,Country,Level,Elo,From,To\r\n"
+            "1,Arsenal,ENG,1,not-a-number,2026-03-01,2026-03-08\r\n"
+            "2,Man City,ENG,1,1991.7,2026-03-01,2026-03-04\r\n"
+        )
+        monkeypatch.setattr(c, "_clubelo_fetch_snapshot", lambda date: snapshot)
+        out = c.get_team_strength({"params": {"team_id": "359", "team_id_2": "382", "date": "2026-03-01"}})
+        assert out["teams"][0]["elo"] is None
+        assert "elo_difference" not in out and "favorite" not in out

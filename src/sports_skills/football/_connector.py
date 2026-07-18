@@ -2928,6 +2928,10 @@ def _fduk_head_to_head(div, name1, name2, max_seasons, slug=""):
 
 def _resolve_espn_team_meta(tid, league_hint=None):
     """Resolve an ESPN team id to {name, slug} by probing ESPN team endpoints."""
+    cache_key = f"espn_team_meta:{tid}"
+    cached = _cache_get(cache_key)
+    if cached is not None:
+        return cached or None
     leagues_to_try = []
     if league_hint:
         lg, _ = _resolve_competition(league_hint)
@@ -2949,7 +2953,10 @@ def _resolve_espn_team_meta(tid, league_hint=None):
                 or espn_slug
             )
             slug = ESPN_TO_SLUG.get(resolved_espn) or ESPN_TO_SLUG.get(espn_slug)
-            return {"name": team_data.get("displayName", ""), "slug": slug}
+            meta = {"name": team_data.get("displayName", ""), "slug": slug}
+            _cache_set(cache_key, meta, ttl=86400)  # team identity is stable
+            return meta
+    _cache_set(cache_key, "", ttl=300)  # brief negative cache
     return None
 
 
@@ -2964,6 +2971,9 @@ def get_head_to_head(request_data):
     team_id = params.get("team_id") or ca.get("team_id", "")
     team_id_2 = params.get("team_id_2") or ca.get("team_id_2", "")
     league_slug = params.get("league_slug") or ca.get("league_slug", "")
+    if league_slug:
+        # Accept the same aliases as other endpoints (ESPN codes, urn form).
+        _, league_slug = _resolve_competition(league_slug)
     tid1 = _resolve_team_id(team_id, params=params)
     tid2 = _resolve_team_id(
         team_id_2,
@@ -3144,6 +3154,14 @@ def get_team_strength(request_data):
     date_iso = params.get("date") or ca.get("date", "") or datetime.now().strftime(
         "%Y-%m-%d"
     )
+    try:
+        datetime.strptime(date_iso, "%Y-%m-%d")
+    except (ValueError, TypeError):
+        return {
+            "teams": [],
+            "error": True,
+            "message": f"Invalid date '{date_iso}' — use YYYY-MM-DD.",
+        }
     tid1 = _resolve_team_id(team_id, params=params)
     if not tid1:
         return {"teams": [], "error": True, "message": "Missing team_id"}
@@ -3168,7 +3186,13 @@ def get_team_strength(request_data):
         }
     entries = [_clubelo_entry(m, rows) for m in metas]
     result = {"date": date_iso, "teams": entries, "source": "clubelo"}
-    if len(entries) == 2 and entries[0]["resolved"] and entries[1]["resolved"]:
+    if (
+        len(entries) == 2
+        and entries[0]["resolved"]
+        and entries[1]["resolved"]
+        and entries[0]["elo"] is not None
+        and entries[1]["elo"] is not None
+    ):
         diff = round(entries[0]["elo"] - entries[1]["elo"], 1)
         result["elo_difference"] = diff
         result["favorite"] = (
@@ -3256,9 +3280,24 @@ def get_match_forecast(request_data):
     name1 = meta1["name"]
     name2 = None
     tid2 = _resolve_team_id(team_id_2, params={"team_id": team_id_2}) if team_id_2 else None
+    # An opponent that can't be resolved must not silently widen the filter to
+    # every upcoming fixture — the caller asked for one specific matchup.
+    if team_id_2 and not tid2:
+        return {
+            "team": {"id": tid1, "name": name1},
+            "fixtures": [],
+            "error": True,
+            "message": "Could not resolve team_id_2",
+        }
     if tid2:
         meta2 = _resolve_espn_team_meta(tid2, league_slug)
-        name2 = meta2["name"] if meta2 else None
+        if not meta2:
+            return {
+                "team": {"id": tid1, "name": name1},
+                "fixtures": [],
+                "message": "Could not resolve team_id_2",
+            }
+        name2 = meta2["name"]
     rows = list(csv.DictReader(io.StringIO(_clubelo_fetch_fixtures())))
     fixtures = []
     for row in rows:
