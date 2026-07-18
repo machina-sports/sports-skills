@@ -25,6 +25,14 @@ metadata:
   version: "0.1.0"
   premium: true
   billing: metered
+  risk:
+    mode: premium_mcp_read_only
+    money_movement: false
+    secrets_required: true
+    external_mcp: true
+    metered_billing: true
+    untrusted_content: true
+    requires_explicit_confirmation: true
 ---
 
 # World Cup 2026 Intelligence (Premium)
@@ -60,8 +68,9 @@ the user and stop — do not retry-loop.
 
 ```bash
 # 1. Install the Machina CLI (one-time) — shared with the `machina` skill
-pip install machina-cli
-# or: curl -fsSL https://raw.githubusercontent.com/machina-sports/machina-cli/main/install.sh | bash
+pipx install machina-cli
+# or: uv tool install machina-cli
+# or: python -m pip install --user machina-cli
 
 # 2. Authenticate
 machina login                              # interactive (browser)
@@ -75,6 +84,16 @@ machina project use <world-cup-project-id>
 #    `machina project use` (or `machina template install`) returns the MCP URL +
 #    headers. Point your harness's MCP config at it (e.g. .claude/mcp.json for
 #    Claude Code), then reload the harness so it re-reads the config.
+```
+
+### Inspect-before-run fallback
+
+If a shell installer is required by the user's environment, download and inspect it before execution instead of piping remote content directly into a shell:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/machina-sports/machina-cli/main/install.sh -o /tmp/machina-install.sh
+less /tmp/machina-install.sh
+bash /tmp/machina-install.sh
 ```
 
 ## CRITICAL: Before Any Premium Call

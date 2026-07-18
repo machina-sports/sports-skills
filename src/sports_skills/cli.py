@@ -94,9 +94,11 @@ _REGISTRY = {
             "optional": ["interval", "fidelity"],
         },
         "get_last_trade_price": {"required": ["token_id"]},
-        # Wallet configuration
-        "configure": {"optional": ["private_key", "signature_type"]},
-        # Trading (authenticated — requires wallet)
+        "get_esports_events": {"optional": ["query", "limit", "closed"]},
+    },
+    "polymarket-trading": {
+        # Wallet configuration / authenticated trading namespace.
+        "configure": {"optional": ["signature_type", "funder"]},
         "create_order": {
             "required": ["token_id", "side", "price", "size"],
             "optional": ["order_type"],
@@ -156,6 +158,18 @@ _REGISTRY = {
         "search_markets": {
             "optional": ["sport", "query", "status", "limit"],
         },
+        "get_esports_odds": {"optional": ["game", "status", "limit"]},
+    },
+    "esports": {
+        "get_pro_matches": {"optional": ["limit"]},
+        "get_leagues": {"optional": ["tier", "limit"]},
+        "get_pro_teams": {"optional": ["limit"]},
+        "get_match": {"required": ["match_id"]},
+        "lol_cargo_query": {
+            "required": ["tables", "fields"],
+            "optional": ["where", "order_by", "group_by", "limit"],
+        },
+        "get_lol_tournaments": {"optional": ["region", "limit"]},
     },
     "betting": {
         "convert_odds": {"required": ["odds", "from_format"]},
@@ -559,7 +573,7 @@ def _load_module(name):
         from sports_skills import football
 
         return football
-    elif name == "polymarket":
+    elif name in {"polymarket", "polymarket-trading"}:
         from sports_skills import polymarket
 
         return polymarket
@@ -567,6 +581,10 @@ def _load_module(name):
         from sports_skills import kalshi
 
         return kalshi
+    elif name == "esports":
+        from sports_skills import esports
+
+        return esports
     elif name == "betting":
         from sports_skills import betting
 
@@ -928,11 +946,11 @@ def main():
         description="Lightweight CLI for sports data — football, F1, NFL, NBA, WNBA, NHL, MLB, tennis, cricket, CFB, CBB, golf, volleyball, prediction markets, betting analysis, metadata, and news.",
     )
     parser.add_argument(
-        "module",
-        nargs="?",
-        help="Module name: football, f1, nfl, nba, wnba, nhl, mlb, tennis, cricket, cfb, cbb, golf, volleyball, xctf, polymarket, kalshi, betting, markets, metadata, news",
+        "module", nargs="?", help="Module name: football, f1, nfl, nba, wnba, nhl, mlb, tennis, cricket, cfb, cbb, golf, volleyball, xctf, esports, polymarket, polymarket-trading, kalshi, betting, markets, metadata, news"
     )
-    parser.add_argument("command", nargs="?", help="Command name (e.g., get_season_standings)")
+    parser.add_argument(
+        "command", nargs="?", help="Command name (e.g., get_season_standings)"
+    )
     parser.add_argument("--version", action="store_true", help="Show version")
 
     # Parse known args, rest are --key=value params

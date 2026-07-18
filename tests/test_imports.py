@@ -23,6 +23,7 @@ MODULES = [
     "sports_skills.cricket",
     "sports_skills.volleyball",
     "sports_skills.xctf",
+    "sports_skills.esports",
     "sports_skills.football",
     "sports_skills.metadata",
     "sports_skills.polymarket",

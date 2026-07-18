@@ -1,10 +1,10 @@
-# Polymarket — API Reference
+# Polymarket — API Reference (Read-Only)
 
 ## Core Commands (no dependencies needed)
 
 | Command | Required | Optional | Description |
 |---|---|---|---|
-| `get_sports_config` | | | Available sport codes (nba, epl, nfl, bun, fl1, etc.) |
+| `get_sports_config` | | | Available sport codes (nba, epl, nfl, bun, etc.) |
 | `get_todays_events` | sport | limit | Today's events for a league — sorted by start date |
 | `search_markets` | | query, sport, sports_market_types, tag_id, limit | Find markets by sport, keyword, and type |
 | `get_sports_markets` | | limit, offset, sports_market_types, game_id, active, closed, order, ascending | Browse all sports markets |
@@ -17,18 +17,9 @@
 | `get_sports_market_types` | | | Valid market types |
 | `get_price_history` | token_id | interval, fidelity | Historical prices |
 | `get_last_trade_price` | token_id | | Most recent trade |
+| `get_esports_events` | | query, limit, closed | Esports prediction markets (implied probabilities via outcome prices) |
 
-## Trading Commands (requires py-clob-client-v2 + wallet)
-
-| Command | Required | Optional | Description |
-|---|---|---|---|
-| `configure` | | private_key, signature_type | Configure wallet |
-| `create_order` | token_id, side, price, size | order_type | Place limit order |
-| `market_order` | token_id, side, amount | | Place market order |
-| `cancel_order` | order_id | | Cancel order |
-| `cancel_all_orders` | | | Cancel all orders |
-| `get_orders` | | market | Open orders |
-| `get_user_trades` | | | Your trades |
+Financial execution commands are intentionally omitted from this read-only reference. If a user explicitly asks to place/cancel orders, load the separate `polymarket-trading` skill and require explicit confirmation.
 
 ## Sport Codes (Common)
 
@@ -53,4 +44,4 @@ Prices on Polymarket are probabilities on a 0-1 scale:
 - No conversion needed
 - `token_id` (CLOB) is required for price/orderbook endpoints — use `get_market_details` to get `clobTokenIds` from a `market_id`
 
-See `references/api.md` and `references/commands.md` for extended documentation.
+See `references/api.md` and `references/commands.md` for extended read-only documentation.
