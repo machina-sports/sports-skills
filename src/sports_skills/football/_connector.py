@@ -1,6 +1,8 @@
 from __future__ import annotations
 
+import csv
 import gzip
+import io
 import json
 import logging
 import re
@@ -23,6 +25,8 @@ logger = logging.getLogger("sports_skills.football")
 LEAGUES = {
     "premier-league": {
         "espn": "eng.1",
+        "fduk": "E0",
+        "clubelo": "ENG",
         "understat": "EPL",
         "fpl": True,
         "transfermarkt": "premier-league",
@@ -32,6 +36,8 @@ LEAGUES = {
     },
     "la-liga": {
         "espn": "esp.1",
+        "fduk": "SP1",
+        "clubelo": "ESP",
         "understat": "La_Liga",
         "fpl": None,
         "transfermarkt": "laliga",
@@ -41,6 +47,8 @@ LEAGUES = {
     },
     "bundesliga": {
         "espn": "ger.1",
+        "fduk": "D1",
+        "clubelo": "GER",
         "understat": "Bundesliga",
         "fpl": None,
         "transfermarkt": "1-bundesliga",
@@ -50,6 +58,8 @@ LEAGUES = {
     },
     "serie-a": {
         "espn": "ita.1",
+        "fduk": "I1",
+        "clubelo": "ITA",
         "understat": "Serie_A",
         "fpl": None,
         "transfermarkt": "serie-a",
@@ -59,6 +69,8 @@ LEAGUES = {
     },
     "ligue-1": {
         "espn": "fra.1",
+        "fduk": "F1",
+        "clubelo": "FRA",
         "understat": "Ligue_1",
         "fpl": None,
         "transfermarkt": "ligue-1",
@@ -68,6 +80,8 @@ LEAGUES = {
     },
     "championship": {
         "espn": "eng.2",
+        "fduk": "E1",
+        "clubelo": "ENG",
         "understat": None,
         "fpl": None,
         "transfermarkt": "championship",
@@ -77,6 +91,8 @@ LEAGUES = {
     },
     "eredivisie": {
         "espn": "ned.1",
+        "fduk": "N1",
+        "clubelo": "NED",
         "understat": None,
         "fpl": None,
         "transfermarkt": "eredivisie",
@@ -86,6 +102,8 @@ LEAGUES = {
     },
     "primeira-liga": {
         "espn": "por.1",
+        "fduk": "P1",
+        "clubelo": "POR",
         "understat": None,
         "fpl": None,
         "transfermarkt": "primeira-liga",
@@ -132,6 +150,8 @@ LEAGUES = {
     },
     "scottish-premiership": {
         "espn": "sco.1",
+        "fduk": "SC0",
+        "clubelo": "SCO",
         "understat": None,
         "fpl": None,
         "transfermarkt": "scottish-premiership",
@@ -140,6 +160,8 @@ LEAGUES = {
     },
     "belgian-pro-league": {
         "espn": "bel.1",
+        "fduk": "B1",
+        "clubelo": "BEL",
         "understat": None,
         "fpl": None,
         "transfermarkt": "jupiler-pro-league",
@@ -148,11 +170,22 @@ LEAGUES = {
     },
     "super-lig": {
         "espn": "tur.1",
+        "fduk": "T1",
+        "clubelo": "TUR",
         "understat": None,
         "fpl": None,
         "transfermarkt": "super-lig",
         "name": "Turkish Super Lig",
         "country": "Turkey",
+    },
+    "russian-premier-league": {
+        "espn": "rus.1",
+        "understat": None,  # Understat dropped RFPL — no xG data
+        "fpl": None,
+        "transfermarkt": "premier-liga",
+        "clubelo": "RUS",
+        "name": "Russian Premier League",
+        "country": "Russia",
     },
     "j-league": {
         "espn": "jpn.1",
@@ -1058,6 +1091,7 @@ def _normalize_name(name):
     n = name.lower().strip()
     n = n.replace("-", " ")
     n = n.replace(".", "")
+    n = n.replace("'", "").replace("’", "")
     for token in [" fc", " cf", " sc", " ac", "fc ", "sc ", " afc", " ssc"]:
         n = n.replace(token, " ")
     for old, new in [
@@ -1099,6 +1133,27 @@ _ABBREV = {
     "psg": "paris",
     "gladbach": "monchengladbach",
     "atletico": "atletico",
+}
+
+# Per-provider name overrides (the "exceptions only" table).
+#
+# We resolve free-source team labels to ESPN teams by fuzzy matching
+# (`_teams_match` + `_ABBREV` above). That handles the large majority. This table
+# holds ONLY the residue fuzzy matching gets wrong for a given provider — e.g.
+# senior-vs-senior collisions like ClubElo's "Paris SG" vs "Paris FC", where the
+# ESPN name "Paris Saint-Germain" is ambiguous. It maps a normalized ESPN name
+# (via `_normalize_name`) to the provider's EXACT label.
+#
+# This is deliberately NOT a full team database — that would go stale every
+# season (promotions, renames) and break the skill's zero-config promise. Add an
+# entry only when a real, observed miss requires it; add a new provider key when
+# another source needs its own exceptions. The drift-guard test
+# (`TestClubEloDriftGuard`) fails loudly if a known club stops resolving.
+_PROVIDER_NAME_OVERRIDES = {
+    "clubelo": {
+        "paris saint germain": "Paris SG",
+        "paris fc": "Paris FC",
+    },
 }
 
 
@@ -2733,13 +2788,556 @@ def get_team_schedule(request_data):
     return {"team": {}, "events": [], "message": "Team schedule not found"}
 
 
+# ============================================================
+# Head-to-head (football-data.co.uk, free CSV — European domestic leagues)
+# ============================================================
+
+_FDUK_H2H_COVERAGE = (
+    "Premier League, Championship, La Liga, Serie A, Bundesliga, Ligue 1, "
+    "Eredivisie, Primeira Liga, Scottish Premiership, Belgian Pro League, "
+    "Turkish Super Lig"
+)
+
+
+def _fduk_int(x):
+    """Parse a football-data.co.uk numeric cell to int, or None when blank/invalid."""
+    if x is None:
+        return None
+    s = str(x).strip()
+    if not s:
+        return None
+    try:
+        return int(float(s))
+    except (ValueError, TypeError):
+        return None
+
+
+def _fduk_date_iso(s):
+    """Convert a football-data.co.uk date (DD/MM/YYYY or DD/MM/YY) to ISO YYYY-MM-DD."""
+    s = (s or "").strip()
+    for fmt in ("%d/%m/%Y", "%d/%m/%y"):
+        try:
+            return datetime.strptime(s, fmt).strftime("%Y-%m-%d")
+        except ValueError:
+            continue
+    return s
+
+
+def _fduk_season_codes(max_seasons):
+    """Return (season_code, is_current) newest-first, e.g. ('2526', True).
+
+    Season codes are the football-data.co.uk `mmz4281` format: the last two
+    digits of each of the two calendar years. Football starts in August, so
+    before August the current season is the one that began the previous year.
+    """
+    now = datetime.now()
+    base = now.year if now.month >= 8 else now.year - 1
+    codes = []
+    for i in range(max(1, max_seasons)):
+        y = base - i
+        if y < 1993:  # football-data.co.uk coverage does not go earlier
+            break
+        codes.append((f"{y % 100:02d}{(y + 1) % 100:02d}", i == 0))
+    return codes
+
+
+def _fduk_fetch_season(div, code, is_current):
+    """Fetch one football-data.co.uk division-season CSV as text (cached), or ''."""
+    cache_key = f"fduk:{div}:{code}"
+    cached = _cache_get(cache_key)
+    if cached is not None:
+        return cached
+    url = f"https://www.football-data.co.uk/mmz4281/{code}/{div}.csv"
+    raw, err = _http_fetch(
+        url, headers={"User-Agent": "Mozilla/5.0 (sports-skills)"}, max_retries=1
+    )
+    if err or not raw:
+        _cache_set(cache_key, "", ttl=3600)
+        return ""
+    try:
+        text = raw.decode("utf-8-sig")
+    except UnicodeDecodeError:
+        text = raw.decode("latin-1")
+    # Past seasons are static; the current season is still being played.
+    _cache_set(cache_key, text, ttl=3600 if is_current else 604800)
+    return text
+
+
+def _fduk_meetings_from_csv(text, name1, name2, slug=""):
+    """Parse a football-data.co.uk CSV and return meetings between two teams.
+
+    Pure function over CSV text (no network). Matches team names fuzzily via
+    `_teams_match` because football-data.co.uk uses short labels (e.g.
+    "Man City", "Nott'm Forest") that differ from ESPN's full names.
+    """
+    if not text:
+        return []
+    meetings = []
+    league_name = LEAGUES.get(slug, {}).get("name", "")
+    for row in csv.DictReader(io.StringIO(text)):
+        home = (row.get("HomeTeam") or "").strip()
+        away = (row.get("AwayTeam") or "").strip()
+        date = (row.get("Date") or "").strip()
+        if not home or not away or not date:
+            continue
+        direct = _teams_match(home, name1) and _teams_match(away, name2)
+        reverse = _teams_match(home, name2) and _teams_match(away, name1)
+        if not (direct or reverse):
+            continue
+        hg = _fduk_int(row.get("FTHG"))
+        ag = _fduk_int(row.get("FTAG"))
+        if hg is None or ag is None:
+            continue  # fixture not played / void row
+        ftr = (row.get("FTR") or "").strip().upper()
+        meeting = {
+            "date": _fduk_date_iso(date),
+            "competition": {"id": slug, "name": league_name},
+            "home_team": {"name": home},
+            "away_team": {"name": away},
+            "home_score": hg,
+            "away_score": ag,
+            "result": ftr or ("H" if hg > ag else "A" if ag > hg else "D"),
+        }
+        stats = {}
+        for out_key, in_key in [
+            ("home_shots", "HS"),
+            ("away_shots", "AS"),
+            ("home_shots_on_target", "HST"),
+            ("away_shots_on_target", "AST"),
+            ("home_corners", "HC"),
+            ("away_corners", "AC"),
+        ]:
+            v = _fduk_int(row.get(in_key))
+            if v is not None:
+                stats[out_key] = v
+        if stats:
+            meeting["stats"] = stats
+        meetings.append(meeting)
+    return meetings
+
+
+def _fduk_head_to_head(div, name1, name2, max_seasons, slug=""):
+    """Collect meetings between two teams across recent seasons, newest-first."""
+    meetings = []
+    for code, is_current in _fduk_season_codes(max_seasons):
+        text = _fduk_fetch_season(div, code, is_current)
+        meetings.extend(_fduk_meetings_from_csv(text, name1, name2, slug))
+    meetings.sort(key=lambda m: m["date"], reverse=True)
+    return meetings
+
+
+def _resolve_espn_team_meta(tid, league_hint=None):
+    """Resolve an ESPN team id to {name, slug} by probing ESPN team endpoints."""
+    cache_key = f"espn_team_meta:{tid}"
+    cached = _cache_get(cache_key)
+    if cached is not None:
+        return cached or None
+    leagues_to_try = []
+    if league_hint:
+        lg, _ = _resolve_competition(league_hint)
+        if lg and lg.get("espn"):
+            leagues_to_try.append(lg["espn"])
+    if not leagues_to_try:
+        leagues_to_try = [lg["espn"] for lg in LEAGUES.values() if lg.get("espn")]
+    # ESPN returns 500 for a wrong league, so don't burn retries while probing.
+    probe_retries = 0 if len(leagues_to_try) > 1 else _MAX_RETRIES
+    for espn_slug in leagues_to_try:
+        data = _espn_request(espn_slug, f"teams/{tid}", max_retries=probe_retries)
+        if data.get("error"):
+            continue
+        team_data = data.get("team", data)
+        if team_data.get("id") or team_data.get("displayName"):
+            resolved_espn = (
+                team_data.get("leagueAbbrev")
+                or (team_data.get("defaultLeague") or {}).get("slug")
+                or espn_slug
+            )
+            slug = ESPN_TO_SLUG.get(resolved_espn) or ESPN_TO_SLUG.get(espn_slug)
+            meta = {"name": team_data.get("displayName", ""), "slug": slug}
+            _cache_set(cache_key, meta, ttl=86400)  # team identity is stable
+            return meta
+    _cache_set(cache_key, "", ttl=300)  # brief negative cache
+    return None
+
+
 def get_head_to_head(request_data):
-    """Get head-to-head history (unavailable — use get_team_schedule for both teams instead)."""
-    return {
-        "teams": [],
-        "events": [],
-        "message": "Head-to-head history is unavailable. Use get_team_schedule for both teams and compare.",
+    """Head-to-head history between two teams via football-data.co.uk (free CSV).
+
+    Covers European domestic leagues only. ESPN remains the fixture authority;
+    this endpoint fills historical results that ESPN does not expose.
+    """
+    params = request_data.get("params", {})
+    ca = params.get("command_attribute", {}) or {}
+    team_id = params.get("team_id") or ca.get("team_id", "")
+    team_id_2 = params.get("team_id_2") or ca.get("team_id_2", "")
+    league_slug = params.get("league_slug") or ca.get("league_slug", "")
+    if league_slug:
+        # Accept the same aliases as other endpoints (ESPN codes, urn form).
+        _, league_slug = _resolve_competition(league_slug)
+    tid1 = _resolve_team_id(team_id, params=params)
+    tid2 = _resolve_team_id(
+        team_id_2,
+        params={
+            "team_id": team_id_2,
+            **({"league_slug": league_slug} if league_slug else {}),
+        },
+    )
+    if not tid1 or not tid2:
+        return {
+            "teams": [],
+            "events": [],
+            "error": True,
+            "message": "Missing team_id or team_id_2",
+        }
+    meta1 = _resolve_espn_team_meta(tid1, league_slug)
+    meta2 = _resolve_espn_team_meta(tid2, league_slug)
+    if not meta1 or not meta2:
+        return {
+            "teams": [],
+            "events": [],
+            "message": "Could not resolve one or both teams",
+        }
+    name1, name2 = meta1["name"], meta2["name"]
+    teams = [{"id": tid1, "name": name1}, {"id": tid2, "name": name2}]
+    slug = league_slug or meta1.get("slug") or meta2.get("slug")
+    league = LEAGUES.get(slug, {})
+    div = league.get("fduk")
+    if not div:
+        return {
+            "teams": teams,
+            "events": [],
+            "message": (
+                f"Head-to-head history not available for "
+                f"{league.get('name') or slug or 'this league'}. "
+                f"Free H2H covers European domestic leagues: {_FDUK_H2H_COVERAGE}. "
+                "Alternative: use get_team_schedule for both teams and compare."
+            ),
+        }
+    max_seasons = _fduk_int(params.get("max_seasons") or ca.get("max_seasons")) or 10
+    max_seasons = max(1, min(max_seasons, 34))
+    meetings = _fduk_head_to_head(div, name1, name2, max_seasons, slug)
+    t1_wins = t2_wins = draws = t1_goals = t2_goals = 0
+    for m in meetings:
+        hg, ag = m["home_score"], m["away_score"]
+        if _teams_match(m["home_team"]["name"], name1):
+            t1_goals += hg
+            t2_goals += ag
+            t1_here, t2_here = hg, ag
+        else:
+            t1_goals += ag
+            t2_goals += hg
+            t1_here, t2_here = ag, hg
+        if t1_here > t2_here:
+            t1_wins += 1
+        elif t2_here > t1_here:
+            t2_wins += 1
+        else:
+            draws += 1
+    result = {
+        "teams": teams,
+        "competition": {"id": slug, "name": league.get("name", "")},
+        "events": meetings,
+        "summary": {
+            "total_meetings": len(meetings),
+            "team1": {"id": tid1, "name": name1, "wins": t1_wins, "goals": t1_goals},
+            "team2": {"id": tid2, "name": name2, "wins": t2_wins, "goals": t2_goals},
+            "draws": draws,
+        },
+        "source": "football-data.co.uk",
     }
+    if not meetings:
+        result["message"] = (
+            f"No head-to-head meetings found for {name1} vs {name2} in the "
+            f"{league.get('name', slug)} over the last {max_seasons} seasons "
+            "(the two clubs may not have shared a division)."
+        )
+    return result
+
+
+# ============================================================
+# Team strength (ClubElo, free CSV — European clubs)
+# ============================================================
+
+def _clubelo_is_reserve(club):
+    """True for ClubElo reserve/B teams (e.g. 'Sociedad B', 'Bayern II')."""
+    last = _normalize_name(club).split()[-1:] or [""]
+    return last[0] in {"b", "ii"}
+
+
+def _clubelo_fetch_snapshot(date_iso):
+    """Fetch the ClubElo all-clubs snapshot for a date as CSV text (cached), or ''."""
+    cache_key = f"clubelo:{date_iso}"
+    cached = _cache_get(cache_key)
+    if cached is not None:
+        return cached
+    raw, err = _http_fetch(
+        f"http://api.clubelo.com/{date_iso}",
+        headers={"User-Agent": "Mozilla/5.0 (sports-skills)"},
+        max_retries=1,
+    )
+    if err or not raw:
+        _cache_set(cache_key, "", ttl=3600)
+        return ""
+    text = raw.decode("utf-8-sig", errors="replace")
+    # A past date's ratings are fixed; today's are refreshed ~daily.
+    is_today = date_iso >= datetime.now().strftime("%Y-%m-%d")
+    _cache_set(cache_key, text, ttl=21600 if is_today else 2592000)
+    return text
+
+
+def _clubelo_resolve(espn_name, country, rows):
+    """Resolve an ESPN team name to a ClubElo snapshot row.
+
+    Returns (row, method). Country-scoped fuzzy match, dropping reserve teams,
+    with an override map for known collisions. Returns (None, reason) rather
+    than guessing when resolution is not confident.
+    """
+    norm = _normalize_name(espn_name)
+    pool = [r for r in rows if r.get("Country") == country] if country else rows
+    override = _PROVIDER_NAME_OVERRIDES["clubelo"].get(norm)
+    if override:
+        hit = next((r for r in pool if r.get("Club") == override), None)
+        if hit:
+            return hit, "override"
+    cands = [r for r in pool if _teams_match(espn_name, r.get("Club", ""))]
+    if not cands:
+        return None, "not_found"
+    if len(cands) > 1:
+        non_reserve = [r for r in cands if not _clubelo_is_reserve(r.get("Club", ""))]
+        if non_reserve:
+            cands = non_reserve
+    if len(cands) == 1:
+        return cands[0], "fuzzy"
+    exact = [r for r in cands if _normalize_name(r.get("Club", "")) == norm]
+    if len(exact) == 1:
+        return exact[0], "exact"
+    return None, "ambiguous:" + "|".join(r.get("Club", "") for r in cands)
+
+
+def _clubelo_entry(meta, rows):
+    """Build a strength entry for one resolved ESPN team, or an unresolved marker."""
+    slug = meta.get("slug")
+    country = LEAGUES.get(slug, {}).get("clubelo")
+    if not country:
+        return {"name": meta.get("name", ""), "resolved": False, "reason": "league_not_covered"}
+    row, method = _clubelo_resolve(meta.get("name", ""), country, rows)
+    if not row:
+        return {"name": meta.get("name", ""), "resolved": False, "reason": method}
+    try:
+        elo = round(float(row["Elo"]), 1)
+    except (ValueError, TypeError, KeyError):
+        elo = None
+    return {
+        "name": meta.get("name", ""),
+        "resolved": True,
+        "matched_as": row.get("Club", ""),
+        "elo": elo,
+        "rank": _fduk_int(row.get("Rank")),
+        "country": row.get("Country", ""),
+        "level": _fduk_int(row.get("Level")),
+        "as_of": row.get("From", ""),
+    }
+
+
+def get_team_strength(request_data):
+    """Team strength (ClubElo Elo rating) for one team, or an Elo comparison of two.
+
+    Free ClubElo snapshot; European clubs only. A strength/fixture-difficulty
+    control, not an official result. Names are matched against ClubElo's labels;
+    unresolved teams are reported rather than guessed.
+    """
+    params = request_data.get("params", {})
+    ca = params.get("command_attribute", {}) or {}
+    team_id = params.get("team_id") or ca.get("team_id", "")
+    team_id_2 = params.get("team_id_2") or ca.get("team_id_2", "")
+    league_slug = params.get("league_slug") or ca.get("league_slug", "")
+    date_iso = params.get("date") or ca.get("date", "") or datetime.now().strftime(
+        "%Y-%m-%d"
+    )
+    try:
+        datetime.strptime(date_iso, "%Y-%m-%d")
+    except (ValueError, TypeError):
+        return {
+            "teams": [],
+            "error": True,
+            "message": f"Invalid date '{date_iso}' — use YYYY-MM-DD.",
+        }
+    tid1 = _resolve_team_id(team_id, params=params)
+    if not tid1:
+        return {"teams": [], "error": True, "message": "Missing team_id"}
+    meta1 = _resolve_espn_team_meta(tid1, league_slug)
+    if not meta1:
+        return {"teams": [], "message": "Could not resolve team"}
+    metas = [meta1]
+    tid2 = _resolve_team_id(team_id_2, params={"team_id": team_id_2}) if team_id_2 else None
+    if team_id_2 and not tid2:
+        return {"teams": [], "error": True, "message": "Could not resolve team_id_2"}
+    if tid2:
+        meta2 = _resolve_espn_team_meta(tid2, league_slug)
+        if not meta2:
+            return {"teams": [], "message": "Could not resolve team_id_2"}
+        metas.append(meta2)
+    rows = list(csv.DictReader(io.StringIO(_clubelo_fetch_snapshot(date_iso))))
+    if not rows:
+        return {
+            "teams": [],
+            "message": "ClubElo ratings are temporarily unavailable.",
+            "source": "clubelo",
+        }
+    entries = [_clubelo_entry(m, rows) for m in metas]
+    result = {"date": date_iso, "teams": entries, "source": "clubelo"}
+    if (
+        len(entries) == 2
+        and entries[0]["resolved"]
+        and entries[1]["resolved"]
+        and entries[0]["elo"] is not None
+        and entries[1]["elo"] is not None
+    ):
+        diff = round(entries[0]["elo"] - entries[1]["elo"], 1)
+        result["elo_difference"] = diff
+        result["favorite"] = (
+            entries[0]["name"]
+            if diff > 0
+            else entries[1]["name"]
+            if diff < 0
+            else "even"
+        )
+    unresolved = [e for e in entries if not e["resolved"]]
+    if unresolved:
+        names = ", ".join(e["name"] for e in unresolved)
+        if all(e.get("reason") == "league_not_covered" for e in unresolved):
+            result["message"] = (
+                f"ClubElo does not cover {names}'s league — European clubs only."
+            )
+        else:
+            result["message"] = (
+                f"Could not resolve on ClubElo: {names}. Note current-date snapshots "
+                "can be incomplete in the off-season — pass an in-season `date` for "
+                "fuller coverage."
+            )
+    return result
+
+
+def _clubelo_fetch_fixtures():
+    """Fetch the ClubElo upcoming-fixtures forecast CSV as text (cached), or ''."""
+    cache_key = "clubelo:fixtures"
+    cached = _cache_get(cache_key)
+    if cached is not None:
+        return cached
+    raw, err = _http_fetch(
+        "http://api.clubelo.com/Fixtures",
+        headers={"User-Agent": "Mozilla/5.0 (sports-skills)"},
+        max_retries=1,
+    )
+    if err or not raw:
+        _cache_set(cache_key, "", ttl=3600)
+        return ""
+    text = raw.decode("utf-8-sig", errors="replace")
+    _cache_set(cache_key, text, ttl=3600)
+    return text
+
+
+def _clubelo_fixture_probs(row):
+    """Derive (win, draw, loss) home-perspective probs + top scorelines from a
+    ClubElo fixtures row's goal-difference and scoreline columns."""
+
+    def f(col):
+        try:
+            return float(row.get(col) or 0)
+        except (ValueError, TypeError):
+            return 0.0
+
+    p_home = f("GD>5") + sum(f(f"GD={i}") for i in range(1, 6))
+    p_draw = f("GD=0")
+    p_away = f("GD<-5") + sum(f(f"GD=-{i}") for i in range(1, 6))
+    scorelines = [
+        {"score": c[2:], "prob": round(f(c), 4)}
+        for c in row
+        if c.startswith("R:") and f(c) > 0
+    ]
+    scorelines.sort(key=lambda s: s["prob"], reverse=True)
+    return round(p_home, 4), round(p_draw, 4), round(p_away, 4), scorelines[:3]
+
+
+def get_match_forecast(request_data):
+    """ClubElo win/draw/loss + scoreline forecast for a team's upcoming fixtures.
+
+    Free ClubElo `/Fixtures` model output (no key). ClubElo forecasts only about a
+    week ahead, so results are empty between matchdays or in the off-season. Pass
+    `team_id_2` to filter to a specific opponent. European clubs only.
+    """
+    params = request_data.get("params", {})
+    ca = params.get("command_attribute", {}) or {}
+    team_id = params.get("team_id") or ca.get("team_id", "")
+    team_id_2 = params.get("team_id_2") or ca.get("team_id_2", "")
+    league_slug = params.get("league_slug") or ca.get("league_slug", "")
+    tid1 = _resolve_team_id(team_id, params=params)
+    if not tid1:
+        return {"team": {}, "fixtures": [], "error": True, "message": "Missing team_id"}
+    meta1 = _resolve_espn_team_meta(tid1, league_slug)
+    if not meta1:
+        return {"team": {}, "fixtures": [], "message": "Could not resolve team"}
+    name1 = meta1["name"]
+    name2 = None
+    tid2 = _resolve_team_id(team_id_2, params={"team_id": team_id_2}) if team_id_2 else None
+    # An opponent that can't be resolved must not silently widen the filter to
+    # every upcoming fixture — the caller asked for one specific matchup.
+    if team_id_2 and not tid2:
+        return {
+            "team": {"id": tid1, "name": name1},
+            "fixtures": [],
+            "error": True,
+            "message": "Could not resolve team_id_2",
+        }
+    if tid2:
+        meta2 = _resolve_espn_team_meta(tid2, league_slug)
+        if not meta2:
+            return {
+                "team": {"id": tid1, "name": name1},
+                "fixtures": [],
+                "message": "Could not resolve team_id_2",
+            }
+        name2 = meta2["name"]
+    rows = list(csv.DictReader(io.StringIO(_clubelo_fetch_fixtures())))
+    fixtures = []
+    for row in rows:
+        home, away = row.get("Home", ""), row.get("Away", "")
+        t1_home = _teams_match(name1, home)
+        t1_away = _teams_match(name1, away)
+        if not (t1_home or t1_away):
+            continue
+        if name2 and not _teams_match(name2, away if t1_home else home):
+            continue
+        p_home, p_draw, p_away, scls = _clubelo_fixture_probs(row)
+        side = "home" if t1_home else "away"
+        fixtures.append(
+            {
+                "date": row.get("Date", ""),
+                "competition": row.get("Country", ""),
+                "home_team": {"name": home},
+                "away_team": {"name": away},
+                "team_side": side,
+                "win_prob": p_home if side == "home" else p_away,
+                "draw_prob": p_draw,
+                "loss_prob": p_away if side == "home" else p_home,
+                "likely_scorelines": scls,
+            }
+        )
+    fixtures.sort(key=lambda x: x["date"])
+    result = {
+        "team": {"id": tid1, "name": name1},
+        "fixtures": fixtures,
+        "source": "clubelo",
+    }
+    if name2:
+        result["opponent"] = {"id": tid2, "name": name2}
+    if not fixtures:
+        result["message"] = (
+            f"No ClubElo-forecast fixtures for {name1} in the coming days "
+            "(ClubElo forecasts about a week ahead; the league may be between "
+            "matchdays or off-season)."
+        )
+    return result
 
 
 # --- Enrichment (Understat + ESPN) ---

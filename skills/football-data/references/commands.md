@@ -95,9 +95,44 @@ No parameters.
 - `competition_id` (str, optional): Filter to a single competition
 
 ### get_head_to_head
-**UNAVAILABLE** — requires licensed data. Do not call this command.
-- `team_id` (str, required): First team ID
-- `team_id_2` (str, required): Second team ID
+Head-to-head history between two teams via football-data.co.uk (free CSV).
+**European domestic leagues only** (Premier League, Championship, La Liga, Serie A,
+Bundesliga, Ligue 1, Eredivisie, Primeira Liga, Scottish Premiership, Belgian Pro
+League, Turkish Super Lig). Returns an informative message for other leagues.
+- `team_id` (str, required): First team ESPN ID
+- `team_id_2` (str, required): Second team ESPN ID
+- `league_slug` (str, optional): League hint; inferred from the teams when omitted
+- `max_seasons` (int, optional): Recent seasons to search (default 10, max 34)
+
+Returns `data.events[]` (per meeting: date, home/away team+score, result, shots/corners
+when available) and `data.summary` (total meetings, per-team wins + goals, draws).
+Only counts meetings in a shared division. ESPN remains the fixture authority.
+
+### get_team_strength
+Team strength via ClubElo Elo rating (free CSV). **European clubs only** — a
+strength/fixture-difficulty control, not an official result. Teams that cannot be
+confidently matched to ClubElo are reported (`resolved: false`), never guessed.
+- `team_id` (str, required): First team ESPN ID
+- `team_id_2` (str, optional): Second team ESPN ID → returns an Elo comparison
+- `date` (str, optional): YYYY-MM-DD snapshot for historical Elo (default today)
+- `league_slug` (str, optional): League hint; inferred from the teams when omitted
+
+Returns `data.teams[]` (per team: `elo`, `rank`, `country`, `level`, `as_of`,
+`matched_as`). With two teams also returns `elo_difference` (team1 − team2) and
+`favorite`. Covers the same 11 European domestic leagues as `get_head_to_head`.
+
+### get_match_forecast
+ClubElo win/draw/loss + scoreline forecast for a team's upcoming fixtures (free CSV).
+**ClubElo only forecasts ~a week ahead**, so this is empty between matchdays or in the
+off-season. European clubs only.
+- `team_id` (str, required): Team ESPN ID
+- `team_id_2` (str, optional): Opponent ESPN ID → filters to fixtures against that team
+- `league_slug` (str, optional): League hint; inferred from the team when omitted
+
+Returns `data.fixtures[]` (per fixture: `date`, `competition`, home/away teams,
+`team_side`, `win_prob`/`draw_prob`/`loss_prob` from the team's perspective, and
+`likely_scorelines`). Model-free probabilities — useful alongside the betting/odds
+skills. Empty result carries an explanatory `message`.
 
 ### get_event_xg
 - `event_id` (str, required): Match/event ID. Top 5 leagues only.

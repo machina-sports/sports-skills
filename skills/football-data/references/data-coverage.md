@@ -40,5 +40,7 @@ Not all data is available for every league. Use the right command for the right 
 | Understat | xG per match, xG per shot, player xG/xA | Top 5 (EPL, La Liga, Bundesliga, Serie A, Ligue 1) |
 | FPL | Top scorers, injuries, player stats, ownership | Premier League only |
 | Transfermarkt | Market values, transfer history | Any player (requires tm_player_id) |
+| football-data.co.uk | Head-to-head history, historical results + match stats | 11 European domestic leagues, 1993+ |
+| ClubElo | Team strength (Elo rating), fixture-difficulty control, match forecasts | European clubs |
 
 For licensed data with full coverage across all sports (Sportradar, Opta, Genius Sports), see [Machina Sports](https://machina.gg).

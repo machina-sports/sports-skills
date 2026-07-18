@@ -1668,3 +1668,364 @@ class TestPolymarketOrderBook:
         data = result["data"]
         assert data["best_bid"] == 0 and data["best_ask"] == 0
         assert data["spread"] is None
+
+
+# ── Football head-to-head (football-data.co.uk) ──────────────
+
+
+class TestFootballNameNormalization:
+    """Apostrophe handling in the shared football name normalizer."""
+
+    def test_apostrophe_stripped(self):
+        from sports_skills.football._connector import _normalize_name
+
+        assert _normalize_name("Nott'm Forest") == "nottm forest"
+
+    def test_curly_apostrophe_stripped(self):
+        from sports_skills.football._connector import _normalize_name
+
+        assert _normalize_name("Nott’m Forest") == "nottm forest"
+
+    def test_short_label_matches_full_name(self):
+        from sports_skills.football._connector import _teams_match
+
+        # football-data.co.uk short labels vs ESPN full names
+        assert _teams_match("Nott'm Forest", "Nottingham Forest")
+        assert _teams_match("Man City", "Manchester City")
+        assert _teams_match("Wolves", "Wolverhampton Wanderers")
+        # Distinct clubs sharing a token must NOT collide
+        assert not _teams_match("Man City", "Manchester United")
+
+
+class TestFdukSeasonCodes:
+    """Season-code generation for the mmz4281 URL scheme."""
+
+    def test_codes_are_newest_first_and_current_flagged(self):
+        from sports_skills.football._connector import _fduk_season_codes
+
+        codes = _fduk_season_codes(3)
+        assert len(codes) == 3
+        # newest first, first entry flagged current
+        assert codes[0][1] is True
+        assert all(is_cur is False for _, is_cur in codes[1:])
+        # each code is 4 digits like "2526"
+        assert all(len(c) == 4 and c.isdigit() for c, _ in codes)
+
+    def test_min_one_season(self):
+        from sports_skills.football._connector import _fduk_season_codes
+
+        assert len(_fduk_season_codes(0)) == 1
+
+
+class TestFdukMeetingsFromCsv:
+    """Pure CSV parsing/filtering for head-to-head."""
+
+    CSV = (
+        "Div,Date,HomeTeam,AwayTeam,FTHG,FTAG,FTR,HS,AS,HST,AST,HC,AC\r\n"
+        "E0,22/09/2024,Man City,Arsenal,2,2,D,33,5,11,3,9,2\r\n"
+        "E0,02/02/2025,Arsenal,Man City,5,1,H,12,7,7,4,3,6\r\n"
+        "E0,15/03/2025,Chelsea,Everton,1,0,H,14,6,5,2,7,3\r\n"
+        "E0,20/05/2025,Arsenal,Man City,,,,,,,,,\r\n"
+    )
+
+    def test_filters_to_the_pair_both_directions(self):
+        from sports_skills.football._connector import _fduk_meetings_from_csv
+
+        meetings = _fduk_meetings_from_csv(
+            self.CSV, "Manchester City", "Arsenal", "premier-league"
+        )
+        # two played meetings; void row and unrelated match dropped
+        assert len(meetings) == 2
+
+    def test_scores_dates_and_stats(self):
+        from sports_skills.football._connector import _fduk_meetings_from_csv
+
+        meetings = _fduk_meetings_from_csv(self.CSV, "Arsenal", "Manchester City")
+        by_date = {m["date"]: m for m in meetings}
+        g = by_date["2024-09-22"]
+        assert g["home_team"]["name"] == "Man City"
+        assert (g["home_score"], g["away_score"], g["result"]) == (2, 2, "D")
+        assert g["stats"]["home_shots"] == 33 and g["stats"]["away_shots_on_target"] == 3
+
+    def test_empty_text_returns_empty(self):
+        from sports_skills.football._connector import _fduk_meetings_from_csv
+
+        assert _fduk_meetings_from_csv("", "Arsenal", "Man City") == []
+
+
+# ── Football team strength (ClubElo) ─────────────────────────
+
+
+class TestClubEloResolve:
+    """Country-scoped, reserve-aware ClubElo name resolution."""
+
+    ROWS = [
+        {"Rank": "1", "Club": "Arsenal", "Country": "ENG", "Level": "1", "Elo": "2063.7", "From": "2026-02-27"},
+        {"Rank": "2", "Club": "Man City", "Country": "ENG", "Level": "1", "Elo": "1991.7", "From": "2026-03-01"},
+        {"Rank": "30", "Club": "Forest", "Country": "ENG", "Level": "1", "Elo": "1788.2", "From": "2026-03-01"},
+        {"Rank": "5", "Club": "Sociedad", "Country": "ESP", "Level": "1", "Elo": "1850.0", "From": "2026-03-01"},
+        {"Rank": "180", "Club": "Sociedad B", "Country": "ESP", "Level": "2", "Elo": "1400.0", "From": "2026-03-01"},
+        {"Rank": "8", "Club": "Paris SG", "Country": "FRA", "Level": "1", "Elo": "1980.0", "From": "2026-03-01"},
+        {"Rank": "60", "Club": "Paris FC", "Country": "FRA", "Level": "1", "Elo": "1650.0", "From": "2026-03-01"},
+    ]
+
+    def test_fuzzy_short_label(self):
+        from sports_skills.football._connector import _clubelo_resolve
+
+        row, method = _clubelo_resolve("Manchester City", "ENG", self.ROWS)
+        assert row["Club"] == "Man City" and method == "fuzzy"
+
+    def test_country_filter_and_substring(self):
+        from sports_skills.football._connector import _clubelo_resolve
+
+        row, _ = _clubelo_resolve("Nottingham Forest", "ENG", self.ROWS)
+        assert row["Club"] == "Forest"
+
+    def test_reserve_team_dropped(self):
+        from sports_skills.football._connector import _clubelo_resolve
+
+        row, _ = _clubelo_resolve("Real Sociedad", "ESP", self.ROWS)
+        assert row["Club"] == "Sociedad"
+
+    def test_override_breaks_senior_collision(self):
+        from sports_skills.football._connector import _clubelo_resolve
+
+        row, method = _clubelo_resolve("Paris Saint-Germain", "FRA", self.ROWS)
+        assert row["Club"] == "Paris SG" and method == "override"
+        row2, _ = _clubelo_resolve("Paris FC", "FRA", self.ROWS)
+        assert row2["Club"] == "Paris FC"
+
+    def test_not_found(self):
+        from sports_skills.football._connector import _clubelo_resolve
+
+        row, method = _clubelo_resolve("Athletic Club", "ESP", self.ROWS)
+        assert row is None and method == "not_found"
+
+
+class TestClubEloEntry:
+    """Strength entry mapping incl. uncovered leagues."""
+
+    def test_uncovered_league(self):
+        from sports_skills.football._connector import _clubelo_entry
+
+        entry = _clubelo_entry({"name": "LA Galaxy", "slug": "mls"}, [])
+        assert entry["resolved"] is False and entry["reason"] == "league_not_covered"
+
+    def test_resolved_entry_fields(self):
+        from sports_skills.football._connector import _clubelo_entry
+
+        rows = TestClubEloResolve.ROWS
+        entry = _clubelo_entry({"name": "Arsenal", "slug": "premier-league"}, rows)
+        assert entry["resolved"] is True
+        assert entry["matched_as"] == "Arsenal"
+        assert entry["elo"] == 2063.7 and entry["rank"] == 1 and entry["level"] == 1
+
+
+class TestClubEloFixtureProbs:
+    """W/D/L + scoreline derivation from a ClubElo fixtures row."""
+
+    ROW = {
+        "GD>5": "0.05", "GD=5": "0.05", "GD=4": "0.05", "GD=3": "0.05",
+        "GD=2": "0.05", "GD=1": "0.10", "GD=0": "0.20",
+        "GD=-1": "0.10", "GD=-2": "0.05", "GD=-3": "0.05", "GD=-4": "0.05",
+        "GD=-5": "0.05", "GD<-5": "0.10",
+        "R:1-0": "0.15", "R:2-1": "0.10", "R:0-0": "0.20", "R:1-1": "0.12",
+    }
+
+    def test_probabilities(self):
+        from sports_skills.football._connector import _clubelo_fixture_probs
+
+        p_home, p_draw, p_away, scls = _clubelo_fixture_probs(self.ROW)
+        assert p_home == 0.35 and p_draw == 0.20 and p_away == 0.40
+
+    def test_top_scorelines_sorted(self):
+        from sports_skills.football._connector import _clubelo_fixture_probs
+
+        _, _, _, scls = _clubelo_fixture_probs(self.ROW)
+        assert scls[0]["score"] == "0-0" and scls[0]["prob"] == 0.20
+        assert len(scls) == 3  # top 3 only
+        assert [s["prob"] for s in scls] == sorted(
+            (s["prob"] for s in scls), reverse=True
+        )
+
+
+class TestRussianLeagueConfig:
+    """Guards the Russian Premier League registration (ESPN + ClubElo, no Understat)."""
+
+    def test_registered_with_expected_sources(self):
+        from sports_skills.football._connector import LEAGUES
+
+        rpl = LEAGUES["russian-premier-league"]
+        assert rpl["espn"] == "rus.1"
+        assert rpl["clubelo"] == "RUS"
+        # Understat dropped RFPL — xG is unavailable, so this must stay None
+        assert rpl["understat"] is None
+        # football-data.co.uk has no Russia coverage → no H2H
+        assert "fduk" not in rpl
+
+
+class TestClubEloDriftGuard:
+    """Offline drift guard: known clubs across covered leagues must keep resolving
+    to their exact ClubElo label via _clubelo_resolve, using a committed real
+    snapshot fixture. Fails loudly if _normalize_name/_ABBREV/_teams_match, the
+    reserve-drop rule, or the override map regresses. (Live source drift — e.g.
+    ClubElo renaming a club — is covered by the SKILL gotchas + manual battery.)"""
+
+    @staticmethod
+    def _rows():
+        import csv
+        from pathlib import Path
+
+        path = Path(__file__).parent / "fixtures" / "clubelo_snapshot_sample.csv"
+        with open(path) as f:
+            return list(csv.DictReader(f))
+
+    # (ESPN team name, ClubElo country, expected ClubElo label)
+    CASES = [
+        ("Manchester City", "ENG", "Man City"),      # abbrev man->manchester
+        ("Nottingham Forest", "ENG", "Forest"),      # substring + nottm abbrev
+        ("Wolverhampton Wanderers", "ENG", "Wolves"),  # abbrev
+        ("Tottenham Hotspur", "ENG", "Tottenham"),   # substring
+        ("Real Madrid", "ESP", "Real Madrid"),
+        ("Atletico Madrid", "ESP", "Atletico"),
+        ("Real Sociedad", "ESP", "Sociedad"),        # reserve "Sociedad B" dropped
+        ("Internazionale", "ITA", "Inter"),          # not "Milan"
+        ("AC Milan", "ITA", "Milan"),                # not "Inter"
+        ("Bayern Munich", "GER", "Bayern"),          # substring
+        ("Paris Saint-Germain", "FRA", "Paris SG"),  # override, not "Paris FC"
+        ("Paris FC", "FRA", "Paris FC"),             # override, not "Paris SG"
+        ("Ajax", "NED", "Ajax"),
+        ("Benfica", "POR", "Benfica"),
+        ("Celtic", "SCO", "Celtic"),
+        ("Club Brugge", "BEL", "Brugge"),            # not "Cercle Brugge"
+        ("Galatasaray", "TUR", "Galatasaray"),
+        ("Zenit St Petersburg", "RUS", "Zenit"),     # Russian league
+    ]
+
+    def test_known_clubs_resolve(self):
+        from sports_skills.football._connector import _clubelo_resolve
+
+        rows = self._rows()
+        failures = []
+        for espn_name, country, expected in self.CASES:
+            row, method = _clubelo_resolve(espn_name, country, rows)
+            got = row.get("Club") if row else f"UNRESOLVED({method})"
+            if got != expected:
+                failures.append(f"{espn_name} [{country}] -> {got!r}, expected {expected!r}")
+        assert not failures, "ClubElo resolution drift:\n  " + "\n  ".join(failures)
+
+    def test_override_map_has_no_dead_entries(self):
+        # Every override target must be a real label present in the fixture's country,
+        # so stale overrides (e.g. after a ClubElo rename) surface here.
+        from sports_skills.football._connector import _PROVIDER_NAME_OVERRIDES
+
+        labels = {r["Club"] for r in self._rows()}
+        # Only assert for targets that the fixture is expected to contain.
+        for target in ("Paris SG", "Paris FC"):
+            assert target in labels, f"override target {target!r} missing from fixture"
+        assert "clubelo" in _PROVIDER_NAME_OVERRIDES
+
+
+class TestPublicEndpointAssembly:
+    """Hermetic tests of the three new public functions' assembly, mocking the
+    network boundary (_resolve_espn_team_meta + the source fetch). Covers the
+    wiring the live battery exercises, but in CI. Complements the pure-function
+    tests above."""
+
+    def _patch_meta(self, monkeypatch, mapping):
+        # mapping: espn_id -> {"name":..., "slug":...}
+        from sports_skills.football import _connector as c
+
+        monkeypatch.setattr(c, "_resolve_espn_team_meta", lambda tid, hint=None: mapping.get(str(tid)))
+
+    def test_head_to_head_assembly(self, monkeypatch):
+        from sports_skills.football import _connector as c
+
+        self._patch_meta(monkeypatch, {
+            "359": {"name": "Arsenal", "slug": "premier-league"},
+            "382": {"name": "Manchester City", "slug": "premier-league"},
+        })
+        csv_text = (
+            "Div,Date,HomeTeam,AwayTeam,FTHG,FTAG,FTR,HS,AS\r\n"
+            "E0,22/09/2024,Man City,Arsenal,2,2,D,33,5\r\n"
+            "E0,02/02/2025,Arsenal,Man City,5,1,H,12,7\r\n"
+        )
+        monkeypatch.setattr(c, "_fduk_fetch_season", lambda div, code, cur: csv_text)
+        out = c.get_head_to_head({"params": {"team_id": "359", "team_id_2": "382", "max_seasons": 1}})
+        s = out["summary"]
+        assert out["source"] == "football-data.co.uk"
+        assert s["total_meetings"] == 2
+        assert s["team1"]["wins"] + s["team2"]["wins"] + s["draws"] == 2
+        # Arsenal won 5-1, drew 2-2 → 1 win, 0 losses, 1 draw
+        assert s["team1"]["name"] == "Arsenal" and s["team1"]["wins"] == 1 and s["draws"] == 1
+
+    def test_team_strength_assembly(self, monkeypatch):
+        from pathlib import Path
+
+        from sports_skills.football import _connector as c
+
+        self._patch_meta(monkeypatch, {
+            "359": {"name": "Arsenal", "slug": "premier-league"},
+            "382": {"name": "Manchester City", "slug": "premier-league"},
+        })
+        fixture = (Path(__file__).parent / "fixtures" / "clubelo_snapshot_sample.csv").read_text()
+        monkeypatch.setattr(c, "_clubelo_fetch_snapshot", lambda date: fixture)
+        out = c.get_team_strength({"params": {"team_id": "359", "team_id_2": "382", "date": "2026-03-01"}})
+        a, b = out["teams"]
+        assert a["resolved"] and a["matched_as"] == "Arsenal" and isinstance(a["elo"], float)
+        assert b["resolved"] and b["matched_as"] == "Man City"
+        assert out["favorite"] == "Arsenal"  # Arsenal Elo > Man City in the fixture
+        assert out["elo_difference"] == round(a["elo"] - b["elo"], 1)
+
+    def test_match_forecast_assembly(self, monkeypatch):
+        from sports_skills.football import _connector as c
+
+        self._patch_meta(monkeypatch, {"359": {"name": "Arsenal", "slug": "premier-league"}})
+        feed = (
+            "Date,Country,Home,Away,GD<-5,GD=-5,GD=-4,GD=-3,GD=-2,GD=-1,GD=0,"
+            "GD=1,GD=2,GD=3,GD=4,GD=5,GD>5,R:1-0,R:0-0,R:2-1\r\n"
+            "2026-08-16,ENG,Arsenal,Chelsea,0.02,0.02,0.03,0.05,0.08,0.10,0.20,"
+            "0.15,0.10,0.08,0.05,0.03,0.09,0.18,0.16,0.10\r\n"
+        )
+        monkeypatch.setattr(c, "_clubelo_fetch_fixtures", lambda: feed)
+        out = c.get_match_forecast({"params": {"team_id": "359"}})
+        assert len(out["fixtures"]) == 1
+        fx = out["fixtures"][0]
+        assert fx["team_side"] == "home" and fx["home_team"]["name"] == "Arsenal"
+        # win = GD>0 sum = .15+.10+.08+.05+.03+.09 = .50 ; draw = .20 ; loss = .30
+        assert fx["win_prob"] == 0.5 and fx["draw_prob"] == 0.2 and fx["loss_prob"] == 0.3
+        assert fx["likely_scorelines"][0]["score"] == "1-0"  # 0.18 highest
+
+    def test_match_forecast_unresolved_opponent_is_reported(self, monkeypatch):
+        # An opponent that can't be resolved must NOT silently return all fixtures.
+        from sports_skills.football import _connector as c
+
+        self._patch_meta(monkeypatch, {"359": {"name": "Arsenal", "slug": "premier-league"}})
+        monkeypatch.setattr(c, "_clubelo_fetch_fixtures", lambda: "")
+        out = c.get_match_forecast({"params": {"team_id": "359", "team_id_2": "99999"}})
+        assert out["fixtures"] == []
+        assert "team_id_2" in out["message"]
+
+    def test_team_strength_invalid_date(self):
+        from sports_skills.football import _connector as c
+
+        out = c.get_team_strength({"params": {"team_id": "359", "date": "03/01/2026"}})
+        assert out.get("error") and "YYYY-MM-DD" in out["message"]
+
+    def test_team_strength_unparseable_elo_does_not_crash(self, monkeypatch):
+        # resolved teams with a malformed Elo cell must degrade, not TypeError
+        from sports_skills.football import _connector as c
+
+        self._patch_meta(monkeypatch, {
+            "359": {"name": "Arsenal", "slug": "premier-league"},
+            "382": {"name": "Manchester City", "slug": "premier-league"},
+        })
+        snapshot = (
+            "Rank,Club,Country,Level,Elo,From,To\r\n"
+            "1,Arsenal,ENG,1,not-a-number,2026-03-01,2026-03-08\r\n"
+            "2,Man City,ENG,1,1991.7,2026-03-01,2026-03-04\r\n"
+        )
+        monkeypatch.setattr(c, "_clubelo_fetch_snapshot", lambda date: snapshot)
+        out = c.get_team_strength({"params": {"team_id": "359", "team_id_2": "382", "date": "2026-03-01"}})
+        assert out["teams"][0]["elo"] is None
+        assert "elo_difference" not in out and "favorite" not in out

@@ -42,7 +42,18 @@ _REGISTRY = {
             "required": ["team_id"],
             "optional": ["league_slug", "season_year", "competition_id"],
         },
-        "get_head_to_head": {"required": ["team_id", "team_id_2"]},
+        "get_head_to_head": {
+            "required": ["team_id", "team_id_2"],
+            "optional": ["league_slug", "max_seasons"],
+        },
+        "get_team_strength": {
+            "required": ["team_id"],
+            "optional": ["team_id_2", "date", "league_slug"],
+        },
+        "get_match_forecast": {
+            "required": ["team_id"],
+            "optional": ["team_id_2", "league_slug"],
+        },
         "get_event_xg": {"required": ["event_id"]},
         "get_event_players_statistics": {"required": ["event_id"]},
         "get_missing_players": {"required": ["season_id"]},
