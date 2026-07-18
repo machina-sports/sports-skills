@@ -88,9 +88,7 @@ _REGISTRY = {
             "required": ["sport"],
             "optional": ["limit"],
         },
-        "search_markets": {
-            "optional": ["query", "sport", "sports_market_types", "tag_id", "limit"]
-        },
+        "search_markets": {"optional": ["query", "sport", "sports_market_types", "tag_id", "limit"]},
         "get_price_history": {
             "required": ["token_id"],
             "optional": ["interval", "fidelity"],
@@ -209,11 +207,15 @@ _REGISTRY = {
             "optional": ["interval_seconds"],
         },
         "get_plays_near_timestamp": {
-            "required": ["sport", "game_id", "timestamp"],
-            "optional": ["window_seconds"],
+            "required": ["sport", "timestamp"],
+            "optional": ["game_id", "window_seconds", "mock_file_path"],
         },
         "get_live_tick": {
             "required": ["sport", "event_id"],
+        },
+        "resolve_game_market": {
+            "required": ["sport", "event_id"],
+            "optional": ["status"],
         },
     },
     "metadata": {
@@ -582,9 +584,7 @@ def _load_module(name):
 
         return news
     elif name == "f1":
-        err_msg = (
-            "F1 module dependencies are unavailable in this environment."
-        )
+        err_msg = "F1 module dependencies are unavailable in this environment."
         hint = "python3 -m pip install --upgrade sports-skills"
         try:
             from sports_skills import f1
@@ -636,18 +636,23 @@ def _load_module(name):
         return cricket
     elif name == "cfb":
         from sports_skills import cfb
+
         return cfb
     elif name == "cbb":
         from sports_skills import cbb
+
         return cbb
     elif name == "golf":
         from sports_skills import golf
+
         return golf
     elif name == "volleyball":
         from sports_skills import volleyball
+
         return volleyball
     elif name == "xctf":
         from sports_skills import xctf
+
         return xctf
     else:
         raise ValueError(f"Unknown module '{name}'. Available: {', '.join(_REGISTRY.keys())}")
@@ -688,10 +693,7 @@ def _parse_cli_kwargs(args):
     while i < len(args):
         arg = args[i]
         if not arg.startswith("--"):
-            _cli_error(
-                f"Unexpected argument '{arg}'. "
-                "Pass parameters as --key=value or --key value."
-            )
+            _cli_error(f"Unexpected argument '{arg}'. Pass parameters as --key=value or --key value.")
         arg = arg[2:]
         if "=" in arg:
             key, value = arg.split("=", 1)
@@ -702,20 +704,11 @@ def _parse_cli_kwargs(args):
         elif arg in _BOOL_PARAMS:
             key, value = arg, True
         else:
-            _cli_error(
-                f"Flag --{arg} expects a value. "
-                f"Use --{arg}=<value> or --{arg} <value>."
-            )
+            _cli_error(f"Flag --{arg} expects a value. Use --{arg}=<value> or --{arg} <value>.")
         try:
             kwargs[key] = _parse_value(key, value)
         except (TypeError, ValueError):
-            expected = (
-                "an integer"
-                if key in _INT_PARAMS
-                else "a number"
-                if key in _FLOAT_PARAMS
-                else "a valid value"
-            )
+            expected = "an integer" if key in _INT_PARAMS else "a number" if key in _FLOAT_PARAMS else "a valid value"
             _cli_error(f"Invalid value for --{key}: '{value}' (expected {expected}).")
         i += 1
     return kwargs
@@ -823,9 +816,7 @@ def _generate_schema(module_name):
         tool = {
             "name": f"{module_name}_{cmd_name}",
             "command": cmd_name,
-            "description": func_docs.get(
-                cmd_name, f"{cmd_name} command for {module_name}"
-            ),
+            "description": func_docs.get(cmd_name, f"{cmd_name} command for {module_name}"),
             "parameters": {
                 "type": "object",
                 "properties": properties,
@@ -937,11 +928,11 @@ def main():
         description="Lightweight CLI for sports data — football, F1, NFL, NBA, WNBA, NHL, MLB, tennis, cricket, CFB, CBB, golf, volleyball, prediction markets, betting analysis, metadata, and news.",
     )
     parser.add_argument(
-        "module", nargs="?", help="Module name: football, f1, nfl, nba, wnba, nhl, mlb, tennis, cricket, cfb, cbb, golf, volleyball, xctf, polymarket, kalshi, betting, markets, metadata, news"
+        "module",
+        nargs="?",
+        help="Module name: football, f1, nfl, nba, wnba, nhl, mlb, tennis, cricket, cfb, cbb, golf, volleyball, xctf, polymarket, kalshi, betting, markets, metadata, news",
     )
-    parser.add_argument(
-        "command", nargs="?", help="Command name (e.g., get_season_standings)"
-    )
+    parser.add_argument("command", nargs="?", help="Command name (e.g., get_season_standings)")
     parser.add_argument("--version", action="store_true", help="Show version")
 
     # Parse known args, rest are --key=value params
@@ -959,12 +950,10 @@ def main():
         for mod_name, commands in _REGISTRY.items():
             print(f"  {mod_name}: {', '.join(commands.keys())}")
         print(
-            "\nReady to deploy? Run: sports-skills deploy"
-            "  — ship your prototype to production via the Machina Factory."
+            "\nReady to deploy? Run: sports-skills deploy  — ship your prototype to production via the Machina Factory."
         )
         print(
-            "Need licensed or real-time data? Run: sports-skills premium"
-            "  — connect to premium feeds via machina-cli."
+            "Need licensed or real-time data? Run: sports-skills premium  — connect to premium feeds via machina-cli."
         )
         return
 
@@ -990,9 +979,7 @@ def main():
     if not args.command:
         # Show commands for this module
         if args.module not in _REGISTRY:
-            _cli_error(
-                f"Unknown module '{args.module}'. Available: {', '.join(_REGISTRY.keys())}"
-            )
+            _cli_error(f"Unknown module '{args.module}'. Available: {', '.join(_REGISTRY.keys())}")
         commands = _REGISTRY[args.module]
         print(f"Commands for '{args.module}':")
         for cmd_name, cmd_info in commands.items():
@@ -1006,9 +993,7 @@ def main():
     # Reserved "schema" command: generate JSON Schema tool definitions
     if args.command == "schema":
         if args.module not in _REGISTRY:
-            _cli_error(
-                f"Unknown module '{args.module}'. Available: {', '.join(_REGISTRY.keys())}"
-            )
+            _cli_error(f"Unknown module '{args.module}'. Available: {', '.join(_REGISTRY.keys())}")
         schema = _generate_schema(args.module)
         print(json.dumps(schema, indent=2))
         return
@@ -1026,9 +1011,7 @@ def main():
             command_name = "get_leaderboard"
 
     if module_name not in _REGISTRY:
-        _cli_error(
-            f"Unknown module '{module_name}'. Available: {', '.join(_REGISTRY.keys())}"
-        )
+        _cli_error(f"Unknown module '{module_name}'. Available: {', '.join(_REGISTRY.keys())}")
 
     if command_name not in _REGISTRY[module_name]:
         _cli_error(
@@ -1071,9 +1054,7 @@ def main():
         result = _premium.attach(result)
         print(json.dumps(result, indent=2, default=str, ensure_ascii=False))
     except TypeError as e:
-        _cli_error(
-            f"{e}. Hint: check parameter names. Run 'sports-skills {module_name}' to see usage."
-        )
+        _cli_error(f"{e}. Hint: check parameter names. Run 'sports-skills {module_name}' to see usage.")
     except Exception as e:
         print(json.dumps({"status": False, "data": None, "message": str(e)}, indent=2))
         sys.exit(1)

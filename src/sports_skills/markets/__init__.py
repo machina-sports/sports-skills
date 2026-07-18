@@ -46,6 +46,9 @@ from sports_skills.markets._connector import (
     normalize_price as _normalize_price,
 )
 from sports_skills.markets._connector import (
+    resolve_game_market as _resolve_game_market,
+)
+from sports_skills.markets._connector import (
     search_entity as _search_entity,
 )
 
@@ -142,9 +145,7 @@ def get_market_price(
         at_time: Unix timestamp or ISO 8601 datetime for a historical
             price. Omit for the live price.
     """
-    return _get_market_price(
-        _req(venue=venue, ticker=ticker, token_id=token_id, at_time=at_time)
-    )
+    return _get_market_price(_req(venue=venue, ticker=ticker, token_id=token_id, at_time=at_time))
 
 
 def get_price_history(
@@ -199,21 +200,25 @@ def get_mock_tick(*, mock_file_path: str, interval_seconds: int = 5) -> dict:
 def get_plays_near_timestamp(
     *,
     sport: str,
-    game_id: str,
     timestamp: str,
+    game_id: str | None = None,
     window_seconds: int = 120,
+    mock_file_path: str | None = None,
 ) -> dict:
     """Plays in the window ``[timestamp - window_seconds, timestamp]``.
 
-    Fetches raw ESPN play-by-play, parses each play's UTC ``wallclock``, and
-    returns those landing in the window ending at ``timestamp`` — used to find
-    the play(s) behind a market move detected at ``timestamp``.
+    Parses each play's UTC ``wallclock`` and returns those landing in the
+    window ending at ``timestamp`` — used to find the play(s) behind a market
+    move detected at ``timestamp``. Passing ``mock_file_path`` reads the plays
+    embedded in a mock game file (no network); otherwise ``game_id`` selects a
+    live fetch of the raw ESPN summary.
 
     Args:
         sport: Sport key (nfl, nba, mlb, nhl, wnba, cfb, cbb).
-        game_id: ESPN event ID.
         timestamp: ISO 8601 UTC instant, e.g. '2026-06-30T18:07:00Z'.
+        game_id: ESPN event ID (required unless mock_file_path is given).
         window_seconds: Look-back window before timestamp (default: 120).
+        mock_file_path: Optional mock game JSON; selects the mock branch.
     """
     return _get_plays_near_timestamp(
         _req(
@@ -221,6 +226,7 @@ def get_plays_near_timestamp(
             game_id=game_id,
             timestamp=timestamp,
             window_seconds=window_seconds,
+            mock_file_path=mock_file_path,
         )
     )
 
@@ -239,6 +245,22 @@ def get_live_tick(*, sport: str, event_id: str) -> dict:
         event_id: ESPN event ID.
     """
     return _get_live_tick(_req(sport=sport, event_id=event_id))
+
+
+def resolve_game_market(*, sport: str, event_id: str, status: str = "any") -> dict:
+    """Resolve one ESPN game to its Kalshi game-winner market (home side).
+
+    Returns the home market's ticker plus the teams and game frame — the
+    replay runner uses this to pull candlesticks for a finished game, and the
+    live tick uses the same resolution for open markets.
+
+    Args:
+        sport: Sport key (nfl, nba, mlb, nhl, wnba, cfb, cbb).
+        event_id: ESPN event ID.
+        status: 'open', 'settled', 'closed', or 'any' (default) — 'any'
+            tries open → settled → closed until one resolves.
+    """
+    return _resolve_game_market(_req(sport=sport, event_id=event_id, status=status))
 
 
 def normalize_price(*, price: float, source: str) -> dict:

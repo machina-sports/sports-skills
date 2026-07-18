@@ -186,24 +186,31 @@ def _load_sport_module(sport: str):
     try:
         if sport == "nfl":
             from sports_skills import nfl
+
             return nfl
         elif sport == "nba":
             from sports_skills import nba
+
             return nba
         elif sport == "mlb":
             from sports_skills import mlb
+
             return mlb
         elif sport == "nhl":
             from sports_skills import nhl
+
             return nhl
         elif sport == "wnba":
             from sports_skills import wnba
+
             return wnba
         elif sport == "cfb":
             from sports_skills import cfb
+
             return cfb
         elif sport == "cbb":
             from sports_skills import cbb
+
             return cbb
     except ImportError:
         return None
@@ -237,18 +244,20 @@ def _extract_games(sport: str, scoreboard_data: dict) -> list[dict]:
 
         espn_odds = event.get("odds", {})
 
-        games.append({
-            "sport": sport,
-            "event_id": event.get("id", ""),
-            "name": event.get("name", ""),
-            "short_name": event.get("short_name", ""),
-            "start_time": event.get("start_time", ""),
-            "status": event.get("status", ""),
-            "status_detail": event.get("status_detail", ""),
-            "home": home,
-            "away": away,
-            "espn_odds": espn_odds,
-        })
+        games.append(
+            {
+                "sport": sport,
+                "event_id": event.get("id", ""),
+                "name": event.get("name", ""),
+                "short_name": event.get("short_name", ""),
+                "start_time": event.get("start_time", ""),
+                "status": event.get("status", ""),
+                "status_detail": event.get("status_detail", ""),
+                "home": home,
+                "away": away,
+                "espn_odds": espn_odds,
+            }
+        )
 
     return games
 
@@ -329,13 +338,15 @@ def _search_kalshi(entity: str, sport: str | None) -> list[dict]:
                 "status": m.get("status", ""),
                 "markets": [],
             }
-        events_map[event_ticker]["markets"].append({
-            "ticker": m.get("ticker", ""),
-            "title": m.get("title", ""),
-            "yes_price": m.get("yes_bid", m.get("last_price", 0)),
-            "no_price": m.get("no_bid", 0),
-            "volume": m.get("volume", 0),
-        })
+        events_map[event_ticker]["markets"].append(
+            {
+                "ticker": m.get("ticker", ""),
+                "title": m.get("title", ""),
+                "yes_price": m.get("yes_bid", m.get("last_price", 0)),
+                "no_price": m.get("no_bid", 0),
+                "volume": m.get("volume", 0),
+            }
+        )
 
     return list(events_map.values())
 
@@ -371,21 +382,25 @@ def _search_polymarket(entity: str, sport: str | None = None) -> list[dict]:
         # Outcomes come from the normalized market structure
         outcomes = []
         for o in market.get("outcomes", []):
-            outcomes.append({
-                "token_id": o.get("clob_token_id", ""),
-                "outcome": o.get("name", ""),
-                "price": o.get("price", 0),
-            })
+            outcomes.append(
+                {
+                    "token_id": o.get("clob_token_id", ""),
+                    "outcome": o.get("name", ""),
+                    "price": o.get("price", 0),
+                }
+            )
 
-        results.append({
-            "source": "polymarket",
-            "market_id": market.get("id", ""),
-            "title": market.get("question", ""),
-            "slug": market.get("slug", ""),
-            "volume": market.get("volume", 0),
-            "sports_market_type": market.get("sports_market_type", ""),
-            "outcomes": outcomes,
-        })
+        results.append(
+            {
+                "source": "polymarket",
+                "market_id": market.get("id", ""),
+                "title": market.get("question", ""),
+                "slug": market.get("slug", ""),
+                "volume": market.get("volume", 0),
+                "sports_market_type": market.get("sports_market_type", ""),
+                "outcomes": outcomes,
+            }
+        )
 
     return results
 
@@ -647,12 +662,15 @@ def compare_odds(request_data: dict) -> dict:
     if len(all_probs) >= 2:
         try:
             from sports_skills.betting._calcs import find_arbitrage
-            arb_result = find_arbitrage({
-                "params": {
-                    "market_probs": all_probs,
-                    "labels": all_labels,
+
+            arb_result = find_arbitrage(
+                {
+                    "params": {
+                        "market_probs": all_probs,
+                        "labels": all_labels,
+                    }
                 }
-            })
+            )
             if arb_result.get("status"):
                 arb_check = arb_result["data"]
         except Exception as exc:
@@ -701,6 +719,7 @@ def _get_meta_sport_markets(sport: str, status: str, limit: int) -> dict:
         if league in KALSHI_SERIES:
             try:
                 from sports_skills import kalshi
+
                 result = kalshi.get_markets(
                     series_ticker=KALSHI_SERIES[league],
                     status=status,
@@ -716,6 +735,7 @@ def _get_meta_sport_markets(sport: str, status: str, limit: int) -> dict:
         if league in POLYMARKET_SPORTS:
             try:
                 from sports_skills import polymarket
+
                 result = polymarket.search_markets(
                     sport=POLYMARKET_SPORTS[league],
                     limit=limit,
@@ -734,6 +754,7 @@ def _get_meta_sport_markets(sport: str, status: str, limit: int) -> dict:
     for keyword in spec.get("polymarket_keywords", []):
         try:
             from sports_skills import polymarket
+
             result = polymarket.search_markets(query=keyword, limit=limit)
             if result.get("status"):
                 items = result.get("data", {}).get("markets", []) or []
@@ -795,6 +816,7 @@ def get_sport_markets(request_data: dict) -> dict:
     if sport in KALSHI_SERIES:
         try:
             from sports_skills import kalshi
+
             result = kalshi.get_markets(
                 series_ticker=KALSHI_SERIES[sport],
                 status=status,
@@ -811,6 +833,7 @@ def get_sport_markets(request_data: dict) -> dict:
     if sport in POLYMARKET_SPORTS:
         try:
             from sports_skills import polymarket
+
             result = polymarket.search_markets(sport=POLYMARKET_SPORTS[sport], limit=limit)
             if result.get("status"):
                 poly_markets = result.get("data", {}).get("markets", [])
@@ -945,6 +968,7 @@ def evaluate_market(request_data: dict) -> dict:
     if token_id:
         try:
             from sports_skills import polymarket
+
             price_result = polymarket.get_market_prices(token_id=token_id)
             if price_result.get("status"):
                 price_data = price_result.get("data", {})
@@ -957,6 +981,7 @@ def evaluate_market(request_data: dict) -> dict:
         try:
             from sports_skills import kalshi
             from sports_skills.kalshi._connector import _price_cents
+
             market_result = kalshi.get_market(ticker=kalshi_ticker)
             if market_result.get("status"):
                 market_data = market_result.get("data", {})
@@ -964,9 +989,7 @@ def evaluate_market(request_data: dict) -> dict:
                 # _price_cents reads either form and returns 0-100 cents.
                 # Leave market_prob as None on a zero/missing price so the
                 # search fallback below still runs.
-                yes_price = _price_cents(market_data, "yes_bid") or _price_cents(
-                    market_data, "last_price"
-                )
+                yes_price = _price_cents(market_data, "yes_bid") or _price_cents(market_data, "last_price")
                 if yes_price:
                     market_prob = float(yes_price) / 100.0
                     market_source = "kalshi"
@@ -1017,14 +1040,16 @@ def evaluate_market(request_data: dict) -> dict:
     # Use betting.evaluate_bet for the computation
     from sports_skills.betting._calcs import evaluate_bet
 
-    eval_result = evaluate_bet({
-        "params": {
-            "book_odds": book_odds_str,
-            "market_prob": market_prob,
-            "book_format": "american",
-            "outcome": outcome,
+    eval_result = evaluate_bet(
+        {
+            "params": {
+                "book_odds": book_odds_str,
+                "market_prob": market_prob,
+                "book_format": "american",
+                "outcome": outcome,
+            }
         }
-    })
+    )
 
     return _success_partial(
         {
@@ -1037,6 +1062,7 @@ def evaluate_market(request_data: dict) -> dict:
         eval_result.get("message", ""),
     )
 
+
 # ============================================================
 # 2E. Cross-Venue Game Matching & Unified Prices
 # ============================================================
@@ -1047,18 +1073,24 @@ def evaluate_market(request_data: dict) -> dict:
 # The trailing letters are both team codes concatenated; they are compared
 # as one blob against the Polymarket slug's joined team parts, so no
 # per-league team table is needed.
-_KALSHI_GAME_RE = re.compile(
-    r"^KX[A-Z0-9]*GAME-(\d{2})([A-Z]{3})(\d{2})(?:\d{4})?([A-Z]+)$"
-)
+_KALSHI_GAME_RE = re.compile(r"^KX[A-Z0-9]*GAME-(\d{2})([A-Z]{3})(\d{2})(?:\d{4})?([A-Z]+)$")
 
 # Polymarket single-game slugs: {league}-{away}-{home}-{YYYY-MM-DD}[-suffix]
-_POLY_GAME_RE = re.compile(
-    r"^[a-z0-9]+-([a-z0-9]+)-([a-z0-9]+)-(\d{4}-\d{2}-\d{2})(?:-|$)"
-)
+_POLY_GAME_RE = re.compile(r"^[a-z0-9]+-([a-z0-9]+)-([a-z0-9]+)-(\d{4}-\d{2}-\d{2})(?:-|$)")
 
 _TICKER_MONTHS = {
-    "JAN": 1, "FEB": 2, "MAR": 3, "APR": 4, "MAY": 5, "JUN": 6,
-    "JUL": 7, "AUG": 8, "SEP": 9, "OCT": 10, "NOV": 11, "DEC": 12,
+    "JAN": 1,
+    "FEB": 2,
+    "MAR": 3,
+    "APR": 4,
+    "MAY": 5,
+    "JUN": 6,
+    "JUL": 7,
+    "AUG": 8,
+    "SEP": 9,
+    "OCT": 10,
+    "NOV": 11,
+    "DEC": 12,
 }
 
 _VS_RE = re.compile(r"\s+vs\.?\s+", re.IGNORECASE)
@@ -1119,11 +1151,7 @@ def _poly_moneyline_markets(event: dict) -> list[dict]:
     soccer games carry several binary ones (home win / away win / draw).
     Returns an empty list when the event has no moneyline markets.
     """
-    return [
-        m
-        for m in (event.get("markets") or [])
-        if m.get("sports_market_type") == "moneyline"
-    ]
+    return [m for m in (event.get("markets") or []) if m.get("sports_market_type") == "moneyline"]
 
 
 def match_markets(request_data: dict) -> dict:
@@ -1148,10 +1176,7 @@ def match_markets(request_data: dict) -> dict:
         return _error("sport is required")
     if sport not in KALSHI_SERIES or sport not in POLYMARKET_SPORTS:
         both = sorted(set(KALSHI_SERIES) & set(POLYMARKET_SPORTS))
-        return _error(
-            f"Sport '{sport}' is not available on both venues. "
-            f"Available: {', '.join(both)}"
-        )
+        return _error(f"Sport '{sport}' is not available on both venues. Available: {', '.join(both)}")
 
     warnings: list[str] = []
 
@@ -1159,6 +1184,7 @@ def match_markets(request_data: dict) -> dict:
     kalshi_events = []
     try:
         from sports_skills import kalshi
+
         result = kalshi.get_todays_events(sport=sport, limit=200)
         if result.get("status"):
             kalshi_events = result.get("data", {}).get("events", []) or []
@@ -1181,9 +1207,8 @@ def match_markets(request_data: dict) -> dict:
     poly_events = []
     try:
         from sports_skills import polymarket
-        result = polymarket.get_todays_events(
-            sport=POLYMARKET_SPORTS[sport], limit=100
-        )
+
+        result = polymarket.get_todays_events(sport=POLYMARKET_SPORTS[sport], limit=100)
         if result.get("status"):
             poly_events = result.get("data", {}).get("events", []) or []
         else:
@@ -1203,9 +1228,7 @@ def match_markets(request_data: dict) -> dict:
         # Slug variants ("-more-markets", props) parse to the same key;
         # prefer the event that carries moneyline markets.
         current = poly_games.get(key)
-        if current is None or (
-            _poly_moneyline_markets(ev) and not _poly_moneyline_markets(current)
-        ):
+        if current is None or (_poly_moneyline_markets(ev) and not _poly_moneyline_markets(current)):
             poly_games[key] = ev
 
     matches = []
@@ -1254,10 +1277,7 @@ def match_markets(request_data: dict) -> dict:
                         if candidate_mls:
                             poly_ev, moneylines = candidate, candidate_mls
                 except Exception as exc:
-                    warnings.append(
-                        f"Canonical event lookup failed for "
-                        f"{canonical.group(1)}: {exc}"
-                    )
+                    warnings.append(f"Canonical event lookup failed for {canonical.group(1)}: {exc}")
 
         matches.append(
             {
@@ -1267,10 +1287,7 @@ def match_markets(request_data: dict) -> dict:
                 "kalshi": {
                     "event_ticker": ev.get("event_ticker", ""),
                     "title": ev.get("title", ""),
-                    "market_tickers": [
-                        m.get("ticker", "")
-                        for m in (ev.get("markets") or [])
-                    ],
+                    "market_tickers": [m.get("ticker", "") for m in (ev.get("markets") or [])],
                 },
                 "polymarket": {
                     "slug": poly_ev.get("slug", ""),
@@ -1288,11 +1305,7 @@ def match_markets(request_data: dict) -> dict:
             }
         )
 
-    unmatched_poly = [
-        ev.get("slug", "")
-        for key, ev in poly_games.items()
-        if key not in matched_poly_keys
-    ]
+    unmatched_poly = [ev.get("slug", "") for key, ev in poly_games.items() if key not in matched_poly_keys]
 
     return _success_partial(
         {
@@ -1409,8 +1422,7 @@ def get_market_price(request_data: dict) -> dict:
         at_time = _parse_at_time(params.get("at_time"))
     except ValueError:
         return _error(
-            "at_time must be a Unix timestamp or ISO 8601 datetime "
-            "(e.g. 1780500000 or '2026-06-01T12:00:00+00:00')"
+            "at_time must be a Unix timestamp or ISO 8601 datetime (e.g. 1780500000 or '2026-06-01T12:00:00+00:00')"
         )
 
     if venue == "kalshi":
@@ -1421,10 +1433,7 @@ def get_market_price(request_data: dict) -> dict:
         if at_time is not None:
             found = _kalshi_price_at(ticker, at_time)
             if found is None:
-                return _error(
-                    f"No Kalshi price found for {ticker} at or before "
-                    f"{at_time} (searched 31 days back)"
-                )
+                return _error(f"No Kalshi price found for {ticker} at or before {at_time} (searched 31 days back)")
             yes_price, ts = found
             source = "candlestick"
         else:
@@ -1435,9 +1444,7 @@ def get_market_price(request_data: dict) -> dict:
             if not result.get("status"):
                 return _error(f"Kalshi market fetch failed: {result.get('message', '')}")
             market = result.get("data", {})
-            cents = _price_cents(market, "last_price") or _price_cents(
-                market, "yes_bid"
-            )
+            cents = _price_cents(market, "last_price") or _price_cents(market, "yes_bid")
             if not cents:
                 return _error(f"No price available for Kalshi market {ticker}")
             yes_price, ts = cents / 100.0, int(_time.time())
@@ -1453,27 +1460,18 @@ def get_market_price(request_data: dict) -> dict:
         if at_time is not None:
             result = polymarket.get_price_history(token_id=token_id, interval="max")
             if not result.get("status"):
-                return _error(
-                    f"Polymarket history fetch failed: {result.get('message', '')}"
-                )
+                return _error(f"Polymarket history fetch failed: {result.get('message', '')}")
             history = result.get("data", {}).get("history", []) or []
-            points = [
-                p for p in history
-                if p.get("t") is not None and int(p["t"]) <= at_time
-            ]
+            points = [p for p in history if p.get("t") is not None and int(p["t"]) <= at_time]
             if not points:
-                return _error(
-                    f"No Polymarket price found for token at or before {at_time}"
-                )
+                return _error(f"No Polymarket price found for token at or before {at_time}")
             last = max(points, key=lambda p: int(p["t"]))
             yes_price, ts = float(last.get("p", 0)), int(last["t"])
             source = "history"
         else:
             result = polymarket.get_market_prices(token_id=token_id)
             if not result.get("status"):
-                return _error(
-                    f"Polymarket price fetch failed: {result.get('message', '')}"
-                )
+                return _error(f"Polymarket price fetch failed: {result.get('message', '')}")
             mid = result.get("data", {}).get("midpoint")
             if mid is None:
                 return _error(f"No midpoint available for token {token_id}")
@@ -1489,8 +1487,7 @@ def get_market_price(request_data: dict) -> dict:
     data.update(_price_pair(yes_price, ts))
     return _success(
         data,
-        f"{venue} yes price {data['yes']['price']:.2f}"
-        + (f" as of {ts}" if at_time is not None else ""),
+        f"{venue} yes price {data['yes']['price']:.2f}" + (f" as of {ts}" if at_time is not None else ""),
     )
 
 
@@ -1526,13 +1523,9 @@ def get_price_history(request_data: dict) -> dict:
     try:
         end_time = _parse_at_time(params.get("end_time")) or int(_time.time())
         default_span = {"1m": 86400, "1h": 7 * 86400, "1d": 31 * 86400}[interval]
-        start_time = _parse_at_time(params.get("start_time")) or (
-            end_time - default_span
-        )
+        start_time = _parse_at_time(params.get("start_time")) or (end_time - default_span)
     except ValueError:
-        return _error(
-            "start_time/end_time must be Unix timestamps or ISO 8601 datetimes"
-        )
+        return _error("start_time/end_time must be Unix timestamps or ISO 8601 datetimes")
     if start_time >= end_time:
         return _error("start_time must be before end_time")
 
@@ -1568,28 +1561,19 @@ def get_price_history(request_data: dict) -> dict:
         from sports_skills import polymarket
 
         span = end_time - start_time
-        clob_interval = (
-            "1d" if span <= 86400
-            else "1w" if span <= 7 * 86400
-            else "1m" if span <= 31 * 86400
-            else "max"
-        )
+        clob_interval = "1d" if span <= 86400 else "1w" if span <= 7 * 86400 else "1m" if span <= 31 * 86400 else "max"
         result = polymarket.get_price_history(
             token_id=token_id,
             interval=clob_interval,
             fidelity=_HISTORY_INTERVALS[interval],
         )
         if not result.get("status"):
-            return _error(
-                f"Polymarket history fetch failed: {result.get('message', '')}"
-            )
+            return _error(f"Polymarket history fetch failed: {result.get('message', '')}")
         for p in result.get("data", {}).get("history", []) or []:
             ts = p.get("t")
             if ts is None or not (start_time <= int(ts) <= end_time):
                 continue
-            points.append(
-                {"timestamp": int(ts), "price": round(float(p.get("p", 0)), 4)}
-            )
+            points.append({"timestamp": int(ts), "price": round(float(p.get("p", 0)), 4)})
 
     points.sort(key=lambda p: p["timestamp"])
     return _success(
@@ -1730,11 +1714,16 @@ def get_plays_near_timestamp(request_data: dict) -> dict:
     returns those landing in the window ending at ``timestamp``. Used to find
     the play(s) responsible for a market move detected at ``timestamp``.
 
+    Source selection: passing ``mock_file_path`` reads the plays embedded in
+    the mock game file's timeline (no network); otherwise ``game_id`` selects
+    a live fetch of the raw ESPN summary.
+
     Params:
         sport (str): Sport key (nfl, nba, mlb, nhl, wnba, cfb, cbb).
-        game_id (str): ESPN event ID.
+        game_id (str): ESPN event ID (live branch; ignored with mock_file_path).
         timestamp (str): ISO 8601 UTC instant, e.g. '2026-06-30T18:07:00Z'.
         window_seconds (int): Look-back window before timestamp (default: 120).
+        mock_file_path (str): Optional mock game JSON; selects the mock branch.
     """
     from datetime import timedelta
 
@@ -1742,6 +1731,7 @@ def get_plays_near_timestamp(request_data: dict) -> dict:
     sport = str(params.get("sport") or "").lower()
     game_id = params.get("game_id")
     timestamp = params.get("timestamp")
+    mock_file_path = params.get("mock_file_path")
     try:
         window_seconds = int(params.get("window_seconds") or 120)
     except (TypeError, ValueError):
@@ -1751,8 +1741,8 @@ def get_plays_near_timestamp(request_data: dict) -> dict:
         return _error("sport is required")
     if sport not in _ESPN_SPORT_PATHS:
         return _error(f"Unknown sport '{sport}'. Available: {', '.join(sorted(_ESPN_SPORT_PATHS))}")
-    if not game_id:
-        return _error("game_id is required")
+    if not game_id and not mock_file_path:
+        return _error("game_id is required (or pass mock_file_path for the mock branch)")
     if not timestamp:
         return _error("timestamp is required")
     if window_seconds <= 0:
@@ -1765,16 +1755,42 @@ def get_plays_near_timestamp(request_data: dict) -> dict:
 
     window_start = target - timedelta(seconds=window_seconds)
 
-    from sports_skills._espn_base import espn_summary
+    if mock_file_path:
+        # Mock branch: the plays live inside the mock file's timeline ticks
+        # (same raw-ESPN play shape the fixtures embed). No network.
+        import json
 
-    try:
-        data = espn_summary(_ESPN_SPORT_PATHS[sport], str(game_id))
-    except Exception as exc:
-        return _error(f"Failed to fetch play-by-play for {sport} game {game_id}: {exc}")
-    if not data:
-        return _error(f"No ESPN summary found for {sport} game {game_id}")
+        try:
+            with open(mock_file_path, encoding="utf-8") as fh:
+                game = json.load(fh)
+        except FileNotFoundError:
+            return _error(f"Mock file not found: {mock_file_path}")
+        except (OSError, json.JSONDecodeError) as exc:
+            return _error(f"Could not read mock file {mock_file_path}: {exc}")
 
-    plays_raw = data.get("plays", []) or []
+        plays_raw = []
+        seen_ids = set()
+        for tick in game.get("timeline") or []:
+            for p in tick.get("play_by_play") or []:
+                pid = str(p.get("id", ""))
+                if pid and pid in seen_ids:
+                    continue
+                seen_ids.add(pid)
+                plays_raw.append(p)
+        source = "mock-file"
+        game_id = game_id or game.get("game_id", "")
+    else:
+        from sports_skills._espn_base import espn_summary
+
+        try:
+            data = espn_summary(_ESPN_SPORT_PATHS[sport], str(game_id))
+        except Exception as exc:
+            return _error(f"Failed to fetch play-by-play for {sport} game {game_id}: {exc}")
+        if not data:
+            return _error(f"No ESPN summary found for {sport} game {game_id}")
+
+        plays_raw = data.get("plays", []) or []
+        source = "espn-live"
     matched = []
     skipped_no_wallclock = 0
     for p in plays_raw:
@@ -1796,6 +1812,7 @@ def get_plays_near_timestamp(request_data: dict) -> dict:
         {
             "sport": sport,
             "game_id": str(game_id),
+            "source": source,
             "timestamp": timestamp,
             "window_seconds": window_seconds,
             "window_start": window_start.isoformat().replace("+00:00", "Z"),
@@ -1806,6 +1823,311 @@ def get_plays_near_timestamp(request_data: dict) -> dict:
             "plays_without_wallclock": skipped_no_wallclock,
         },
         f"Found {len(matched)} play(s) within {window_seconds}s before {timestamp}.",
+    )
+
+
+# ------------------------------------------------------------
+# Kalshi game-winner market resolution (shared by get_live_tick
+# and resolve_game_market)
+# ------------------------------------------------------------
+
+# Kalshi encodes the matchup in the event ticker's tail, e.g.
+# "KXMLBGAME-26JUL171335TBBOSG1": date+time in US/Eastern, then
+# AWAYHOME team codes, then an optional Gn doubleheader suffix.
+_KALSHI_EVENT_TAIL_RE = re.compile(r"^(\d{2})([A-Z]{3})(\d{2})(\d{4})([A-Z]+?)(?:G(\d))?$")
+_KALSHI_MONTHS = {
+    "JAN": 1,
+    "FEB": 2,
+    "MAR": 3,
+    "APR": 4,
+    "MAY": 5,
+    "JUN": 6,
+    "JUL": 7,
+    "AUG": 8,
+    "SEP": 9,
+    "OCT": 10,
+    "NOV": 11,
+    "DEC": 12,
+}
+
+
+def _parse_kalshi_event_tail(event_ticker: str):
+    """Parse a game event ticker's tail into (start_utc, team_pair, game_num).
+
+    Returns (None, None, None) when the tail doesn't match the dated game
+    format. The embedded time is US/Eastern (Kalshi's convention); it is
+    converted to an aware UTC datetime.
+    """
+    from datetime import datetime
+    from zoneinfo import ZoneInfo
+
+    tail = event_ticker.rsplit("-", 1)[-1] if "-" in event_ticker else event_ticker
+    m = _KALSHI_EVENT_TAIL_RE.match(tail)
+    if not m:
+        return None, None, None
+    yy, mon, dd, hhmm, pair, game_num = m.groups()
+    month = _KALSHI_MONTHS.get(mon)
+    if month is None:
+        return None, pair, game_num
+    try:
+        start_et = datetime(
+            2000 + int(yy),
+            month,
+            int(dd),
+            int(hhmm[:2]),
+            int(hhmm[2:]),
+            tzinfo=ZoneInfo("America/New_York"),
+        )
+    except ValueError:
+        return None, pair, game_num
+    from datetime import timezone
+
+    return start_et.astimezone(timezone.utc), pair, game_num
+
+
+def _kalshi_game_search(series_ticker: str, query: str, status: str, limit: int = 200) -> list[dict]:
+    """Search one Kalshi series for game markets. Thin seam for tests."""
+    from sports_skills.kalshi._connector import search_markets as _kalshi_search
+
+    result = _kalshi_search(
+        {
+            "params": {
+                "series_ticker": series_ticker,
+                "query": query,
+                "status": status,
+                "limit": limit,
+            }
+        }
+    )
+    if not result.get("status"):
+        return []
+    markets = (result.get("data") or {}).get("markets", [])
+    return markets if isinstance(markets, list) else []
+
+
+def _resolve_kalshi_game_market(
+    sport: str,
+    home: dict,
+    away: dict,
+    start_utc,
+    statuses: tuple = ("open",),
+) -> dict | None:
+    """Find the Kalshi game-winner market for the HOME team of one ESPN game.
+
+    Resolution is structural, not fuzzy, because the real Kalshi payload
+    defeats title matching twice over: (1) event titles are location-based
+    ("Tampa Bay vs Boston"), so a query built from ESPN display names
+    ("Tampa Bay Rays Boston Red Sox") never substring-matches; and (2) BOTH
+    sides of a winner market share one title ("Tampa Bay vs Boston Winner?"),
+    so the home side is only identifiable from the ticker suffix.
+
+    Steps:
+      1. Search the sport's KX<SPORT>GAME series with the home team's
+         *location* as the keyword (matches Kalshi's location-based titles).
+      2. Keep events whose ticker team-pair equals AWAY+HOME (ESPN abbrevs)
+         or whose title contains both team locations (covers abbreviation
+         divergences like ESPN CHW vs Kalshi CWS).
+      3. If several remain (doubleheaders), pick the event whose embedded
+         US/Eastern start time is closest to the ESPN start.
+      4. The home side is the market whose ticker suffix ends the team pair
+         (pair "TBBOS" ends with "BOS" → -BOS is the home market).
+
+    Returns {ticker, event_ticker, title, status, yes_cents, market_start}
+    for the home market, or None when no market resolves.
+    """
+    series = KALSHI_SERIES.get(sport)
+    if not series:
+        return None
+    game_series = f"{series}GAME"
+
+    home_abbr = str(home.get("abbrev", "")).upper()
+    away_abbr = str(away.get("abbrev", "")).upper()
+    home_loc = str(home.get("location", "")).lower()
+    away_loc = str(away.get("location", "")).lower()
+    espn_pair = f"{away_abbr}{home_abbr}"
+
+    # Collect matching events across ALL requested statuses before choosing —
+    # a doubleheader can split across statuses (game 1 settled, game 2 open),
+    # and stopping at the first status that returns anything would pin every
+    # lookup to the open game regardless of start time.
+    events: dict[str, dict] = {}
+    for status in statuses:
+        for m in _kalshi_game_search(game_series, home_loc, status):
+            et = m.get("event_ticker", "")
+            ev = events.setdefault(et, {"event_ticker": et, "title": m.get("event_title", ""), "markets": []})
+            ev["markets"].append(m)
+    if not events:
+        return None
+
+    candidates = []
+    for ev in events.values():
+        start, pair, _game_num = _parse_kalshi_event_tail(ev["event_ticker"])
+        title = str(ev["title"]).lower()
+        pair_match = pair == espn_pair if pair else False
+        title_match = bool(home_loc) and bool(away_loc) and home_loc in title and away_loc in title
+        if not (pair_match or title_match):
+            continue
+        candidates.append((ev, start, pair))
+
+    if not candidates:
+        return None
+
+    # Doubleheaders: two events share a team pair; the embedded start time
+    # disambiguates. Events without a parseable start sort last.
+    if len(candidates) > 1 and start_utc is not None:
+        candidates.sort(key=lambda c: abs((c[1] - start_utc).total_seconds()) if c[1] else float("inf"))
+    event, market_start, pair = candidates[0]
+
+    # Home side by ticker-suffix structure (never by title — titles are
+    # identical for both sides of a winner market).
+    best = None
+    best_score = 0
+    for m in event["markets"]:
+        ticker = str(m.get("ticker", ""))
+        suffix = ticker.rsplit("-", 1)[-1].upper()
+        score = 0
+        if suffix == home_abbr:
+            score += 2
+        if pair and pair.endswith(suffix):
+            score += 1
+        if score > best_score:
+            best, best_score = m, score
+    if best is None:
+        return None
+
+    # Prefer the live bid; fall back to last trade for thin or settled books.
+    raw_yes = best.get("yes_bid")
+    if raw_yes in (None, "", 0, "0"):
+        raw_yes = best.get("last_price", 0)
+    try:
+        yes_cents = float(raw_yes)
+    except (TypeError, ValueError):
+        yes_cents = 0.0
+    if yes_cents <= 1:  # tolerate 0-1 probabilities from older shims
+        yes_cents *= 100.0
+
+    return {
+        "ticker": best.get("ticker", ""),
+        "event_ticker": event["event_ticker"],
+        "title": best.get("title", ""),
+        "status": best.get("status", ""),
+        "yes_cents": round(yes_cents, 1),
+        "market_start": market_start.isoformat().replace("+00:00", "Z") if market_start else None,
+    }
+
+
+def _espn_game_frame(sport: str, event_id: str) -> tuple[dict | None, str]:
+    """Read teams, clock, state, and start time from the raw ESPN summary header.
+
+    Returns (frame, error_message); exactly one is set. The frame's team
+    entries carry abbrev/name/location — location is what Kalshi titles use.
+    """
+    from sports_skills._espn_base import espn_summary
+
+    try:
+        summary = espn_summary(_ESPN_SPORT_PATHS[sport], str(event_id))
+    except Exception as exc:
+        return None, f"Failed to fetch ESPN summary for {sport} game {event_id}: {exc}"
+    if not summary:
+        return None, f"No ESPN summary found for {sport} game {event_id}"
+
+    header = summary.get("header", {}) or {}
+    competitions = header.get("competitions", []) or []
+    comp = competitions[0] if competitions else {}
+
+    teams: dict = {}
+    for c in comp.get("competitors", []) or []:
+        team = c.get("team", {})
+        if isinstance(team, list):
+            team = team[0] if team else {}
+        entry = {
+            "abbrev": team.get("abbreviation", ""),
+            "name": team.get("displayName", team.get("name", "")),
+            "location": team.get("location", ""),
+        }
+        if c.get("homeAway") in ("home", "away"):
+            teams[c["homeAway"]] = entry
+
+    if "home" not in teams or "away" not in teams:
+        return None, f"Could not determine home/away teams from ESPN summary for {sport} game {event_id}"
+
+    status_type = comp.get("status", {}).get("type", {})
+    start_utc = None
+    if comp.get("date"):
+        try:
+            start_utc = _parse_iso_utc(comp["date"])
+        except (ValueError, TypeError):
+            start_utc = None
+
+    return (
+        {
+            "teams": teams,
+            "game_clock": status_type.get("shortDetail", ""),
+            "game_state": status_type.get("state", ""),
+            "start_utc": start_utc,
+        },
+        "",
+    )
+
+
+def resolve_game_market(request_data: dict) -> dict:
+    """Resolve one ESPN game to its Kalshi game-winner market (home side).
+
+    Used by the live tick (open markets) and by the finished-game replay
+    runner, which needs the settled market's ticker to pull candlesticks.
+
+    Params:
+        sport (str): Sport key (nfl, nba, mlb, nhl, wnba, cfb, cbb).
+        event_id (str): ESPN event ID.
+        status (str): 'open', 'settled', 'closed', or 'any' (default) —
+            'any' tries open → settled → closed until one resolves.
+    """
+    params = request_data.get("params", {})
+    sport = str(params.get("sport") or "").lower()
+    event_id = params.get("event_id")
+    status = str(params.get("status") or "any").lower()
+
+    if not sport:
+        return _error("sport is required")
+    if sport not in _ESPN_SPORT_PATHS:
+        return _error(f"Unknown sport '{sport}'. Available: {', '.join(sorted(_ESPN_SPORT_PATHS))}")
+    if not event_id:
+        return _error("event_id is required")
+    if status not in ("open", "settled", "closed", "any"):
+        return _error("status must be 'open', 'settled', 'closed', or 'any'")
+
+    frame, err = _espn_game_frame(sport, str(event_id))
+    if frame is None:
+        return _error(err)
+
+    statuses = ("open", "settled", "closed") if status == "any" else (status,)
+    market = _resolve_kalshi_game_market(
+        sport, frame["teams"]["home"], frame["teams"]["away"], frame["start_utc"], statuses
+    )
+    if market is None:
+        home = frame["teams"]["home"]
+        away = frame["teams"]["away"]
+        return _error(
+            f"No Kalshi game-winner market resolved for {away['name']} @ {home['name']} "
+            f"(searched {KALSHI_SERIES.get(sport, '?')}GAME, statuses {', '.join(statuses)})."
+        )
+
+    return _success(
+        {
+            "sport": sport,
+            "game_id": str(event_id),
+            "teams": frame["teams"],
+            "game_state": frame["game_state"],
+            "game_clock": frame["game_clock"],
+            "espn_start": frame["start_utc"].isoformat().replace("+00:00", "Z") if frame["start_utc"] else None,
+            "kalshi_ticker": market["ticker"],
+            "kalshi_event_ticker": market["event_ticker"],
+            "market_status": market["status"],
+            "market_start": market["market_start"],
+            "home_yes_cents": market["yes_cents"],
+        },
+        f"Resolved {sport} game {event_id} to Kalshi market {market['ticker']} "
+        f"({market['status']}, home yes {market['yes_cents']}c).",
     )
 
 
@@ -1839,84 +2161,36 @@ def get_live_tick(request_data: dict) -> dict:
 
     # Teams + game clock from the raw ESPN summary header (same source
     # get_plays_near_timestamp reads, so both functions agree on the game).
-    from sports_skills._espn_base import espn_summary
+    frame, err = _espn_game_frame(sport, str(event_id))
+    if frame is None:
+        return _error(err)
 
-    try:
-        summary = espn_summary(_ESPN_SPORT_PATHS[sport], str(event_id))
-    except Exception as exc:
-        return _error(f"Failed to fetch ESPN summary for {sport} game {event_id}: {exc}")
-    if not summary:
-        return _error(f"No ESPN summary found for {sport} game {event_id}")
+    home = frame["teams"]["home"]
+    away = frame["teams"]["away"]
 
-    header = summary.get("header", {}) or {}
-    competitions = header.get("competitions", []) or []
-    comp = competitions[0] if competitions else {}
-
-    teams: dict = {}
-    home_name = ""
-    away_name = ""
-    for c in comp.get("competitors", []) or []:
-        team = c.get("team", {})
-        if isinstance(team, list):
-            team = team[0] if team else {}
-        entry = {
-            "abbrev": team.get("abbreviation", ""),
-            "name": team.get("displayName", team.get("name", "")),
-        }
-        if c.get("homeAway") == "home":
-            teams["home"] = entry
-            home_name = entry["name"]
-        elif c.get("homeAway") == "away":
-            teams["away"] = entry
-            away_name = entry["name"]
-
-    if not home_name or not away_name:
-        return _error(f"Could not determine home/away teams from ESPN summary for {sport} game {event_id}")
-
-    game_clock = comp.get("status", {}).get("type", {}).get("shortDetail", "")
-
-    # Home-win 'yes' price from Kalshi, via the same search path compare_odds uses.
-    search_query = f"{away_name} {home_name}"
-    try:
-        kalshi_events = _search_kalshi(search_query, sport)
-    except Exception as exc:
-        return _error(f"Kalshi search failed for {search_query}: {exc}")
-
-    all_markets = [m for ev in kalshi_events for m in (ev.get("markets", []) or [])]
-    if not all_markets:
-        return _error(f"No Kalshi market found for {away_name} @ {home_name}.")
-
-    # The market whose title best matches the HOME team is the one whose 'yes'
-    # side is "home wins" — that yes price is the home win-probability.
-    home_matches = _best_matches(home_name, all_markets, "title", limit=1)
-    if not home_matches:
-        return _error(f"No Kalshi market matched home team '{home_name}' for {away_name} @ {home_name}.")
-    home_market = home_matches[0]
-
-    try:
-        raw_yes = float(home_market.get("yes_price", 0))
-    except (TypeError, ValueError):
-        return _error(f"Kalshi market '{home_market.get('ticker', '')}' has a non-numeric yes price.")
-
-    # Kalshi's 'yes' can arrive as cents (0-100) or a 0-1 probability; normalize
-    # to a probability, then to cents — matching _normalize_price's kalshi branch.
-    prob = raw_yes / 100.0 if raw_yes > 1 else raw_yes
-    home_price_cents = round(prob * 100.0, 1)
-    kalshi_ticker = home_market.get("ticker", "")
+    market = _resolve_kalshi_game_market(sport, home, away, frame["start_utc"], ("open",))
+    if market is None:
+        return _error(
+            f"No Kalshi game-winner market resolved for {away['name']} @ {home['name']} "
+            f"(searched {KALSHI_SERIES.get(sport, '?')}GAME, status open)."
+        )
 
     timestamp = datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
+
+    # The returned teams keep the mock tick's {abbrev, name} entries.
+    teams = {side: {"abbrev": t["abbrev"], "name": t["name"]} for side, t in frame["teams"].items()}
 
     data = {
         "sport": sport,
         "game_id": str(event_id),
         "teams": teams,
         "timestamp": timestamp,
-        "game_clock": game_clock,
-        "home_price_cents": home_price_cents,
+        "game_clock": frame["game_clock"],
+        "home_price_cents": market["yes_cents"],
         "price_source": "kalshi",
-        "kalshi_ticker": kalshi_ticker,
+        "kalshi_ticker": market["ticker"],
     }
     return _success(
         data,
-        f"Live tick for {away_name} @ {home_name} @ {home_price_cents}c home (kalshi {kalshi_ticker}).",
+        f"Live tick for {away['name']} @ {home['name']} @ {market['yes_cents']}c home (kalshi {market['ticker']}).",
     )
