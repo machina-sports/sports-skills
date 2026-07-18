@@ -2,6 +2,8 @@
 
 from unittest.mock import MagicMock, patch
 
+import pytest
+
 from sports_skills.markets._connector import (
     KALSHI_SERIES,
     MATCH_THRESHOLD,
@@ -817,13 +819,13 @@ def _mlb_summary(event_date="2026-07-17T17:35Z"):
     }
 
 
-def _winner_market(event_tail, suffix, yes_bid, status="active", last_price=0):
+def _winner_market(event_tail, suffix, yes_bid, status="active", last_price=0, series="KXMLBGAME"):
     """One side of a Kalshi game-winner market, in the REAL search shape:
     both sides share one location-based title; only the ticker suffix
     identifies the side."""
     return {
-        "ticker": f"KXMLBGAME-{event_tail}-{suffix}",
-        "event_ticker": f"KXMLBGAME-{event_tail}",
+        "ticker": f"{series}-{event_tail}-{suffix}",
+        "event_ticker": f"{series}-{event_tail}",
         "title": "Tampa Bay vs Boston Winner?",
         "subtitle": "",
         "event_title": "Tampa Bay vs Boston",
@@ -832,6 +834,39 @@ def _winner_market(event_tail, suffix, yes_bid, status="active", last_price=0):
         "last_price": last_price,
         "volume": 1000,
         "status": status,
+    }
+
+
+def _game_summary(home_abbr, home_name, home_loc, away_abbr, away_name, away_loc,
+                   event_date="2026-07-17T17:35Z", short_detail="Mid 6th"):
+    """Raw ESPN summary header, parametrized over sport/teams for cross-sport tests."""
+    return {
+        "header": {
+            "competitions": [
+                {
+                    "date": event_date,
+                    "status": {"type": {"shortDetail": short_detail, "state": "in"}},
+                    "competitors": [
+                        {
+                            "homeAway": "home",
+                            "team": {
+                                "abbreviation": home_abbr,
+                                "displayName": home_name,
+                                "location": home_loc,
+                            },
+                        },
+                        {
+                            "homeAway": "away",
+                            "team": {
+                                "abbreviation": away_abbr,
+                                "displayName": away_name,
+                                "location": away_loc,
+                            },
+                        },
+                    ],
+                }
+            ]
+        }
     }
 
 
@@ -986,6 +1021,128 @@ class TestResolveGameMarketMocked:
     def test_bad_status_param(self):
         result = resolve_game_market({"params": {"sport": "mlb", "event_id": "1", "status": "weird"}})
         assert result["status"] is False
+
+
+# ============================================================
+# Cross-sport coverage: get_live_tick / resolve_game_market beyond MLB.
+#
+# Success-path tests previously only exercised sport="mlb"; these extend the
+# same fixtures to the other KALSHI_SERIES/_ESPN_SPORT_PATHS entries the
+# markets module already registers (nfl covered via the momentum mock demo).
+# Team pairs mirror real ticker shapes we've seen live where possible (WNBA
+# SEA@IND matches the actual KXWNBAGAME-26JUL17SEAIND-IND ticker observed
+# 2026-07-18).
+# ============================================================
+
+CROSS_SPORT_GAMES = [
+    pytest.param(
+        "nba", "KXNBAGAME",
+        "BOS", "Boston Celtics", "Boston",
+        "MIA", "Miami Heat", "Miami",
+        "MIABOS",
+        id="nba",
+    ),
+    pytest.param(
+        "nhl", "KXNHLGAME",
+        "TOR", "Toronto Maple Leafs", "Toronto",
+        "BOS", "Boston Bruins", "Boston",
+        "BOSTOR",
+        id="nhl",
+    ),
+    pytest.param(
+        "wnba", "KXWNBAGAME",
+        "IND", "Indiana Fever", "Indiana",
+        "SEA", "Seattle Storm", "Seattle",
+        "SEAIND",
+        id="wnba",
+    ),
+    pytest.param(
+        "cfb", "KXCFBGAME",
+        "OSU", "Ohio State Buckeyes", "Ohio State",
+        "MICH", "Michigan Wolverines", "Michigan",
+        "MICHOSU",
+        id="cfb",
+    ),
+    pytest.param(
+        "cbb", "KXCBBGAME",
+        "DUKE", "Duke Blue Devils", "Duke",
+        "UNC", "North Carolina Tar Heels", "North Carolina",
+        "UNCDUKE",
+        id="cbb",
+    ),
+]
+
+
+class TestGetLiveTickCrossSport:
+    @pytest.mark.parametrize(
+        "sport,series,home_abbr,home_name,home_loc,away_abbr,away_name,away_loc,pair",
+        CROSS_SPORT_GAMES,
+    )
+    @patch("sports_skills.markets._connector._kalshi_game_search")
+    @patch("sports_skills._espn_base.espn_summary")
+    def test_shape_conversion_per_sport(
+        self, mock_summary, mock_kalshi,
+        sport, series, home_abbr, home_name, home_loc, away_abbr, away_name, away_loc, pair,
+    ):
+        mock_summary.return_value = _game_summary(
+            home_abbr, home_name, home_loc, away_abbr, away_name, away_loc
+        )
+        event_tail = f"26JUL171335{pair}"
+        mock_kalshi.return_value = [
+            _winner_market(event_tail, away_abbr, 37, series=series),
+            _winner_market(event_tail, home_abbr, 63, series=series),
+        ]
+
+        result = get_live_tick({"params": {"sport": sport, "event_id": "999"}})
+        assert result["status"] is True
+        data = result["data"]
+        assert data["sport"] == sport
+        assert data["teams"]["home"]["abbrev"] == home_abbr
+        assert data["teams"]["away"]["abbrev"] == away_abbr
+        assert data["home_price_cents"] == 63.0
+        assert data["kalshi_ticker"] == f"{series}-{event_tail}-{home_abbr}"
+
+        # The sport's own game-market series was searched (KALSHI_SERIES[sport] + "GAME").
+        searched_series, query, status = mock_kalshi.call_args[0][:3]
+        assert searched_series == series
+        assert query == home_loc.lower()
+        assert status == "open"
+
+
+class TestResolveGameMarketCrossSport:
+    @pytest.mark.parametrize(
+        "sport,series,home_abbr,home_name,home_loc,away_abbr,away_name,away_loc,pair",
+        CROSS_SPORT_GAMES,
+    )
+    @patch("sports_skills.markets._connector._kalshi_game_search")
+    @patch("sports_skills._espn_base.espn_summary")
+    def test_settled_market_resolves_per_sport(
+        self, mock_summary, mock_kalshi,
+        sport, series, home_abbr, home_name, home_loc, away_abbr, away_name, away_loc, pair,
+    ):
+        mock_summary.return_value = _game_summary(
+            home_abbr, home_name, home_loc, away_abbr, away_name, away_loc,
+            short_detail="Final",
+        )
+        event_tail = f"26JUL171335{pair}"
+
+        def by_status(series_arg, query, status, limit=200):
+            if status == "settled":
+                return [
+                    _winner_market(event_tail, away_abbr, 0, "finalized", last_price=1, series=series),
+                    _winner_market(event_tail, home_abbr, 0, "finalized", last_price=99, series=series),
+                ]
+            return []
+
+        mock_kalshi.side_effect = by_status
+
+        result = resolve_game_market({"params": {"sport": sport, "event_id": "999"}})
+        assert result["status"] is True
+        data = result["data"]
+        assert data["kalshi_ticker"] == f"{series}-{event_tail}-{home_abbr}"
+        assert data["market_status"] == "finalized"
+        assert data["home_yes_cents"] == 99.0
+        assert data["teams"]["home"]["location"] == home_loc
 
 
 # ============================================================
