@@ -977,6 +977,14 @@ class TestParseKalshiEventTail:
     def test_unparseable_tail(self):
         assert _parse_kalshi_event_tail("KXMLB-26-BOS") == (None, None, None)
 
+    def test_time_less_tail(self):
+        # Real WNBA tickers omit the HHMM segment (observed live 2026-07-18):
+        # the pair must still parse for matching; only start time is lost.
+        start, pair, game_num = _parse_kalshi_event_tail("KXWNBAGAME-26JUL17SEAIND")
+        assert pair == "SEAIND"
+        assert start is None
+        assert game_num is None
+
 
 class TestResolveGameMarketMocked:
     @patch("sports_skills.markets._connector._kalshi_game_search")
@@ -1021,6 +1029,24 @@ class TestResolveGameMarketMocked:
     def test_bad_status_param(self):
         result = resolve_game_market({"params": {"sport": "mlb", "event_id": "1", "status": "weird"}})
         assert result["status"] is False
+
+    @patch("sports_skills.markets._connector._kalshi_game_search")
+    @patch("sports_skills._espn_base.espn_summary")
+    def test_one_cent_price_not_rescaled(self, mock_summary, mock_kalshi):
+        # A genuine 1c (1% win-prob) home price must stay 1c, not be mistaken
+        # for a 0-1 probability and rescaled to 100c. yes_bid is integer cents.
+        mock_summary.return_value = _mlb_summary("2026-07-17T17:35Z")
+        mock_kalshi.side_effect = lambda series, query, status, limit=200: (
+            [
+                _winner_market("26JUL171335TBBOS", "TB", 99),
+                _winner_market("26JUL171335TBBOS", "BOS", 1),
+            ]
+            if status == "open"
+            else []
+        )
+        result = resolve_game_market({"params": {"sport": "mlb", "event_id": "401872178"}})
+        assert result["status"] is True
+        assert result["data"]["home_yes_cents"] == 1.0
 
 
 # ============================================================
