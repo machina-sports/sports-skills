@@ -1832,31 +1832,22 @@ def get_plays_near_timestamp(request_data: dict) -> dict:
 # ------------------------------------------------------------
 
 # Kalshi encodes the matchup in the event ticker's tail, e.g.
-# "KXMLBGAME-26JUL171335TBBOSG1": date+time in US/Eastern, then
-# AWAYHOME team codes, then an optional Gn doubleheader suffix.
-_KALSHI_EVENT_TAIL_RE = re.compile(r"^(\d{2})([A-Z]{3})(\d{2})(\d{4})([A-Z]+?)(?:G(\d))?$")
-_KALSHI_MONTHS = {
-    "JAN": 1,
-    "FEB": 2,
-    "MAR": 3,
-    "APR": 4,
-    "MAY": 5,
-    "JUN": 6,
-    "JUL": 7,
-    "AUG": 8,
-    "SEP": 9,
-    "OCT": 10,
-    "NOV": 11,
-    "DEC": 12,
-}
+# "KXMLBGAME-26JUL171335TBBOSG1": date, an OPTIONAL US/Eastern HHMM time, then
+# AWAYHOME team codes, then an optional Gn doubleheader suffix. Some series
+# omit the time entirely (e.g. WNBA "KXWNBAGAME-26JUL17SEAIND"), so the HHMM
+# group is optional; a time-less tail still yields the team pair for matching
+# but no start time to disambiguate doubleheaders.
+_KALSHI_EVENT_TAIL_RE = re.compile(r"^(\d{2})([A-Z]{3})(\d{2})(\d{4})?([A-Z]+?)(?:G(\d))?$")
 
 
 def _parse_kalshi_event_tail(event_ticker: str):
     """Parse a game event ticker's tail into (start_utc, team_pair, game_num).
 
     Returns (None, None, None) when the tail doesn't match the dated game
-    format. The embedded time is US/Eastern (Kalshi's convention); it is
-    converted to an aware UTC datetime.
+    format, and (None, team_pair, game_num) for a time-less tail (the pair is
+    still usable for matching, only start-time disambiguation is lost). The
+    embedded time is US/Eastern (Kalshi's convention); it is converted to an
+    aware UTC datetime.
     """
     from datetime import datetime
     from zoneinfo import ZoneInfo
@@ -1866,8 +1857,11 @@ def _parse_kalshi_event_tail(event_ticker: str):
     if not m:
         return None, None, None
     yy, mon, dd, hhmm, pair, game_num = m.groups()
-    month = _KALSHI_MONTHS.get(mon)
+    month = _TICKER_MONTHS.get(mon)
     if month is None:
+        return None, pair, game_num
+    if hhmm is None:
+        # Time-less ticker: keep the pair for matching, skip start-time parse.
         return None, pair, game_num
     try:
         start_et = datetime(
@@ -1996,15 +1990,13 @@ def _resolve_kalshi_game_market(
         return None
 
     # Prefer the live bid; fall back to last trade for thin or settled books.
-    raw_yes = best.get("yes_bid")
-    if raw_yes in (None, "", 0, "0"):
-        raw_yes = best.get("last_price", 0)
-    try:
-        yes_cents = float(raw_yes)
-    except (TypeError, ValueError):
-        yes_cents = 0.0
-    if yes_cents <= 1:  # tolerate 0-1 probabilities from older shims
-        yes_cents *= 100.0
+    # _price_cents reads either the legacy integer-cent field or the newer
+    # *_dollars string form and returns 0-100 cents — the same helper used by
+    # get_market_price / get_live_tick — so the winner market keeps one unit
+    # and a genuine 1c price is never mistaken for a 0-1 probability.
+    from sports_skills.kalshi._connector import _price_cents
+
+    yes_cents = float(_price_cents(best, "yes_bid") or _price_cents(best, "last_price") or 0.0)
 
     return {
         "ticker": best.get("ticker", ""),
