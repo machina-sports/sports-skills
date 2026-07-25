@@ -2,6 +2,8 @@
 
 from unittest.mock import MagicMock, patch
 
+import pytest
+
 from sports_skills.markets._connector import (
     KALSHI_SERIES,
     MATCH_THRESHOLD,
@@ -14,13 +16,18 @@ from sports_skills.markets._connector import (
     _match_score,
     _normalize_name,
     _normalize_price,
+    _parse_kalshi_event_tail,
     _success_partial,
     compare_odds,
     evaluate_market,
+    get_live_tick,
+    get_mock_tick,
+    get_plays_near_timestamp,
     get_sport_markets,
     get_sport_schedule,
     get_todays_markets,
     normalize_price,
+    resolve_game_market,
     search_entity,
 )
 
@@ -113,9 +120,7 @@ class TestBestMatches:
         assert results[0]["name"] == "Knicks"
 
     def test_respects_limit(self):
-        candidates = [
-            {"name": f"Team {i}"} for i in range(20)
-        ]
+        candidates = [{"name": f"Team {i}"} for i in range(20)]
         # With substring matching on "Team"
         results = _best_matches("Team", candidates, "name", limit=3)
         assert len(results) <= 3
@@ -335,6 +340,7 @@ class TestFetchScheduleMocked:
         mock_load.return_value = mock_mod
 
         from sports_skills.markets._connector import _fetch_schedule
+
         games = _fetch_schedule("nba", None)
         assert len(games) == 1
         assert games[0]["home"]["name"] == "Team A"
@@ -345,6 +351,7 @@ class TestFetchScheduleMocked:
         mock_load.return_value = None
 
         from sports_skills.markets._connector import _fetch_schedule
+
         games = _fetch_schedule("nba", None)
         assert games == []
 
@@ -361,9 +368,7 @@ class TestSearchEntityMocked:
         mock_kalshi.return_value = [
             {"source": "kalshi", "title": "Lakers vs Celtics", "event_ticker": "EVT1", "markets": []}
         ]
-        mock_poly.return_value = [
-            {"source": "polymarket", "title": "Lakers Game", "market_id": "MKT1", "outcomes": []}
-        ]
+        mock_poly.return_value = [{"source": "polymarket", "title": "Lakers Game", "market_id": "MKT1", "outcomes": []}]
 
         result = search_entity({"params": {"query": "Lakers"}})
         assert result["status"] is True
@@ -375,9 +380,7 @@ class TestSearchEntityMocked:
     @patch("sports_skills.markets._connector._search_kalshi")
     def test_search_entity_partial_failure(self, mock_kalshi, mock_poly):
         mock_kalshi.side_effect = Exception("Kalshi down")
-        mock_poly.return_value = [
-            {"source": "polymarket", "title": "Lakers Game", "market_id": "MKT1", "outcomes": []}
-        ]
+        mock_poly.return_value = [{"source": "polymarket", "title": "Lakers Game", "market_id": "MKT1", "outcomes": []}]
 
         result = search_entity({"params": {"query": "Lakers"}})
         assert result["status"] is True
@@ -568,9 +571,7 @@ class TestEvaluateMarketMocked:
             "data": {"yes_bid_dollars": "0.1630", "last_price_dollars": "0.1680"},
         }
 
-        result = evaluate_market(
-            {"params": {"sport": "nba", "event_id": "123", "kalshi_ticker": "KX-TEST"}}
-        )
+        result = evaluate_market({"params": {"sport": "nba", "event_id": "123", "kalshi_ticker": "KX-TEST"}})
 
         assert result["status"] is True
         assert result["data"]["market_prob"] == 0.16
@@ -580,9 +581,7 @@ class TestEvaluateMarketMocked:
     @patch("sports_skills.markets._connector._search_polymarket")
     @patch("sports_skills.kalshi")
     @patch("sports_skills.markets._connector._load_sport_module")
-    def test_evaluate_kalshi_zero_price_falls_through_to_search(
-        self, mock_load, mock_kalshi, mock_poly_search
-    ):
+    def test_evaluate_kalshi_zero_price_falls_through_to_search(self, mock_load, mock_kalshi, mock_poly_search):
         # A zero/missing Kalshi price must leave market_prob as None so the
         # search fallback still runs (previously it was poisoned to 0.0).
         mock_mod = MagicMock()
@@ -610,9 +609,7 @@ class TestEvaluateMarketMocked:
             }
         ]
 
-        result = evaluate_market(
-            {"params": {"sport": "nba", "event_id": "123", "kalshi_ticker": "KX-TEST"}}
-        )
+        result = evaluate_market({"params": {"sport": "nba", "event_id": "123", "kalshi_ticker": "KX-TEST"}})
 
         assert result["status"] is True
         assert result["data"]["market_prob"] == 0.52
@@ -700,9 +697,7 @@ class TestGetSportMarketsMeta:
 
     @patch("sports_skills.polymarket")
     @patch("sports_skills.kalshi")
-    def test_football_fans_out_across_leagues_and_fifa_keyword(
-        self, mock_kalshi, mock_poly
-    ):
+    def test_football_fans_out_across_leagues_and_fifa_keyword(self, mock_kalshi, mock_poly):
         # Kalshi returns one market per league lookup.
         mock_kalshi.get_markets.return_value = {
             "status": True,
@@ -718,11 +713,7 @@ class TestGetSportMarketsMeta:
             poly_call_count["n"] += 1
             return {
                 "status": True,
-                "data": {
-                    "markets": [
-                        {"id": f"P{poly_call_count['n']}", "title": "x"}
-                    ]
-                },
+                "data": {"markets": [{"id": f"P{poly_call_count['n']}", "title": "x"}]},
             }
 
         mock_poly.search_markets.side_effect = poly_side_effect
@@ -789,3 +780,585 @@ class TestGetSportMarketsMeta:
         assert result["data"]["polymarket_count"] >= 1
         warnings = result["data"].get("warnings", [])
         assert any("kalshi" in w.lower() for w in warnings)
+
+
+# ============================================================
+# Mocked: Get Live Tick (Kalshi)
+# ============================================================
+
+
+def _mlb_summary(event_date="2026-07-17T17:35Z"):
+    """Raw ESPN summary header in the REAL MLB shape (locations + date)."""
+    return {
+        "header": {
+            "competitions": [
+                {
+                    "date": event_date,
+                    "status": {"type": {"shortDetail": "Mid 6th", "state": "in"}},
+                    "competitors": [
+                        {
+                            "homeAway": "home",
+                            "team": {
+                                "abbreviation": "BOS",
+                                "displayName": "Boston Red Sox",
+                                "location": "Boston",
+                            },
+                        },
+                        {
+                            "homeAway": "away",
+                            "team": {
+                                "abbreviation": "TB",
+                                "displayName": "Tampa Bay Rays",
+                                "location": "Tampa Bay",
+                            },
+                        },
+                    ],
+                }
+            ]
+        }
+    }
+
+
+def _winner_market(event_tail, suffix, yes_bid, status="active", last_price=0, series="KXMLBGAME"):
+    """One side of a Kalshi game-winner market, in the REAL search shape:
+    both sides share one location-based title; only the ticker suffix
+    identifies the side."""
+    return {
+        "ticker": f"{series}-{event_tail}-{suffix}",
+        "event_ticker": f"{series}-{event_tail}",
+        "title": "Tampa Bay vs Boston Winner?",
+        "subtitle": "",
+        "event_title": "Tampa Bay vs Boston",
+        "yes_bid": yes_bid,
+        "no_bid": 100 - yes_bid if yes_bid else 0,
+        "last_price": last_price,
+        "volume": 1000,
+        "status": status,
+    }
+
+
+def _game_summary(home_abbr, home_name, home_loc, away_abbr, away_name, away_loc,
+                   event_date="2026-07-17T17:35Z", short_detail="Mid 6th"):
+    """Raw ESPN summary header, parametrized over sport/teams for cross-sport tests."""
+    return {
+        "header": {
+            "competitions": [
+                {
+                    "date": event_date,
+                    "status": {"type": {"shortDetail": short_detail, "state": "in"}},
+                    "competitors": [
+                        {
+                            "homeAway": "home",
+                            "team": {
+                                "abbreviation": home_abbr,
+                                "displayName": home_name,
+                                "location": home_loc,
+                            },
+                        },
+                        {
+                            "homeAway": "away",
+                            "team": {
+                                "abbreviation": away_abbr,
+                                "displayName": away_name,
+                                "location": away_loc,
+                            },
+                        },
+                    ],
+                }
+            ]
+        }
+    }
+
+
+class TestGetLiveTickMocked:
+    """`get_live_tick` fuses the ESPN summary (teams + clock) with a Kalshi home
+    price, in the same top-level shape as the mock tick but source-neutral.
+
+    The Kalshi fixtures mirror the venue's REAL payload: location-based event
+    titles ("Tampa Bay vs Boston"), an identical title on both sides of the
+    winner market, and the matchup encoded only in the ticker
+    (date+time ET, AWAYHOME pair, optional Gn doubleheader suffix)."""
+
+    @patch("sports_skills.markets._connector._kalshi_game_search")
+    @patch("sports_skills._espn_base.espn_summary")
+    def test_shape_conversion_and_game_id(self, mock_summary, mock_kalshi):
+        mock_summary.return_value = _mlb_summary()
+        mock_kalshi.return_value = [
+            _winner_market("26JUL171335TBBOSG1", "TB", 37),
+            _winner_market("26JUL171335TBBOSG1", "BOS", 63),
+        ]
+
+        result = get_live_tick({"params": {"sport": "mlb", "event_id": "401872178"}})
+        assert result["status"] is True
+        data = result["data"]
+
+        # Same top-level shape as the mock tick, source-neutral price key.
+        assert data["sport"] == "mlb"
+        assert data["teams"]["home"] == {"abbrev": "BOS", "name": "Boston Red Sox"}
+        assert data["teams"]["away"] == {"abbrev": "TB", "name": "Tampa Bay Rays"}
+        assert data["game_clock"] == "Mid 6th"
+        assert data["price_source"] == "kalshi"
+        # HOME side selected by ticker suffix — titles are identical.
+        assert data["kalshi_ticker"] == "KXMLBGAME-26JUL171335TBBOSG1-BOS"
+        assert data["timestamp"].endswith("Z")
+        assert data["home_price_cents"] == 63.0
+        # game_id is the ESPN event_id so plays can be fetched for the same game.
+        assert data["game_id"] == "401872178"
+
+        # The winner series (KXMLBGAME) was searched, keyed on the home location.
+        series, query, status = mock_kalshi.call_args[0][:3]
+        assert series == "KXMLBGAME"
+        assert query == "boston"
+        assert status == "open"
+
+    @patch("sports_skills.markets._connector._kalshi_game_search")
+    @patch("sports_skills._espn_base.espn_summary")
+    def test_doubleheader_picks_game_by_start_time(self, mock_summary, mock_kalshi):
+        # ESPN event is game 1 (17:35Z == 13:35 ET); Kalshi lists both games.
+        mock_summary.return_value = _mlb_summary("2026-07-17T17:35Z")
+        mock_kalshi.return_value = [
+            _winner_market("26JUL171910TBBOSG2", "TB", 16),
+            _winner_market("26JUL171910TBBOSG2", "BOS", 83),
+            _winner_market("26JUL171335TBBOSG1", "TB", 4),
+            _winner_market("26JUL171335TBBOSG1", "BOS", 96),
+        ]
+
+        result = get_live_tick({"params": {"sport": "mlb", "event_id": "401872178"}})
+        assert result["status"] is True
+        assert result["data"]["kalshi_ticker"] == "KXMLBGAME-26JUL171335TBBOSG1-BOS"
+        assert result["data"]["home_price_cents"] == 96.0
+
+    @patch("sports_skills.markets._connector._kalshi_game_search")
+    @patch("sports_skills._espn_base.espn_summary")
+    def test_zero_bid_falls_back_to_last_price(self, mock_summary, mock_kalshi):
+        mock_summary.return_value = _mlb_summary()
+        mock_kalshi.return_value = [
+            _winner_market("26JUL171335TBBOSG1", "TB", 0, last_price=1),
+            _winner_market("26JUL171335TBBOSG1", "BOS", 0, last_price=99),
+        ]
+
+        result = get_live_tick({"params": {"sport": "mlb", "event_id": "401872178"}})
+        assert result["status"] is True
+        assert result["data"]["home_price_cents"] == 99.0
+
+    @patch("sports_skills.markets._connector._kalshi_game_search")
+    @patch("sports_skills._espn_base.espn_summary")
+    def test_no_kalshi_market_errors(self, mock_summary, mock_kalshi):
+        mock_summary.return_value = _mlb_summary()
+        mock_kalshi.return_value = []
+
+        result = get_live_tick({"params": {"sport": "mlb", "event_id": "401872178"}})
+        assert result["status"] is False
+
+    def test_missing_sport(self):
+        assert get_live_tick({"params": {"event_id": "1"}})["status"] is False
+
+    def test_missing_event_id(self):
+        assert get_live_tick({"params": {"sport": "nfl"}})["status"] is False
+
+    def test_unknown_sport(self):
+        assert get_live_tick({"params": {"sport": "cricket", "event_id": "1"}})["status"] is False
+
+
+class TestParseKalshiEventTail:
+    def test_doubleheader_tail(self):
+        start, pair, game_num = _parse_kalshi_event_tail("KXMLBGAME-26JUL171335TBBOSG1")
+        assert pair == "TBBOS"
+        assert game_num == "1"
+        # 13:35 ET on 2026-07-17 is 17:35 UTC.
+        assert start.isoformat() == "2026-07-17T17:35:00+00:00"
+
+    def test_plain_tail(self):
+        start, pair, game_num = _parse_kalshi_event_tail("KXMLBGAME-26JUL181610TBBOS")
+        assert pair == "TBBOS"
+        assert game_num is None
+        assert start.isoformat() == "2026-07-18T20:10:00+00:00"
+
+    def test_unparseable_tail(self):
+        assert _parse_kalshi_event_tail("KXMLB-26-BOS") == (None, None, None)
+
+
+class TestResolveGameMarketMocked:
+    @patch("sports_skills.markets._connector._kalshi_game_search")
+    @patch("sports_skills._espn_base.espn_summary")
+    def test_settled_market_resolves_for_finished_game(self, mock_summary, mock_kalshi):
+        mock_summary.return_value = _mlb_summary("2026-07-17T17:35Z")
+
+        # 'any' searches open, settled, closed; game 1 only exists settled.
+        def by_status(series, query, status, limit=200):
+            if status == "open":
+                return [
+                    _winner_market("26JUL171910TBBOSG2", "TB", 16),
+                    _winner_market("26JUL171910TBBOSG2", "BOS", 83),
+                ]
+            if status == "settled":
+                return [
+                    _winner_market("26JUL171335TBBOSG1", "TB", 0, "finalized", last_price=1),
+                    _winner_market("26JUL171335TBBOSG1", "BOS", 0, "finalized", last_price=99),
+                ]
+            return []
+
+        mock_kalshi.side_effect = by_status
+
+        result = resolve_game_market({"params": {"sport": "mlb", "event_id": "401872178"}})
+        assert result["status"] is True
+        data = result["data"]
+        # Game 1's settled market wins on start time, not game 2's open one.
+        assert data["kalshi_ticker"] == "KXMLBGAME-26JUL171335TBBOSG1-BOS"
+        assert data["market_status"] == "finalized"
+        assert data["home_yes_cents"] == 99.0
+        assert data["market_start"] == "2026-07-17T17:35:00Z"
+        assert data["teams"]["home"]["location"] == "Boston"
+
+    @patch("sports_skills.markets._connector._kalshi_game_search")
+    @patch("sports_skills._espn_base.espn_summary")
+    def test_no_match_errors(self, mock_summary, mock_kalshi):
+        mock_summary.return_value = _mlb_summary()
+        mock_kalshi.return_value = []
+        result = resolve_game_market({"params": {"sport": "mlb", "event_id": "401872178"}})
+        assert result["status"] is False
+
+    def test_bad_status_param(self):
+        result = resolve_game_market({"params": {"sport": "mlb", "event_id": "1", "status": "weird"}})
+        assert result["status"] is False
+
+
+# ============================================================
+# Cross-sport coverage: get_live_tick / resolve_game_market beyond MLB.
+#
+# Success-path tests previously only exercised sport="mlb"; these extend the
+# same fixtures to the other KALSHI_SERIES/_ESPN_SPORT_PATHS entries the
+# markets module already registers (nfl covered via the momentum mock demo).
+# Team pairs mirror real ticker shapes we've seen live where possible (WNBA
+# SEA@IND matches the actual KXWNBAGAME-26JUL17SEAIND-IND ticker observed
+# 2026-07-18).
+# ============================================================
+
+CROSS_SPORT_GAMES = [
+    pytest.param(
+        "nba", "KXNBAGAME",
+        "BOS", "Boston Celtics", "Boston",
+        "MIA", "Miami Heat", "Miami",
+        "MIABOS",
+        id="nba",
+    ),
+    pytest.param(
+        "nhl", "KXNHLGAME",
+        "TOR", "Toronto Maple Leafs", "Toronto",
+        "BOS", "Boston Bruins", "Boston",
+        "BOSTOR",
+        id="nhl",
+    ),
+    pytest.param(
+        "wnba", "KXWNBAGAME",
+        "IND", "Indiana Fever", "Indiana",
+        "SEA", "Seattle Storm", "Seattle",
+        "SEAIND",
+        id="wnba",
+    ),
+    pytest.param(
+        "cfb", "KXCFBGAME",
+        "OSU", "Ohio State Buckeyes", "Ohio State",
+        "MICH", "Michigan Wolverines", "Michigan",
+        "MICHOSU",
+        id="cfb",
+    ),
+    pytest.param(
+        "cbb", "KXCBBGAME",
+        "DUKE", "Duke Blue Devils", "Duke",
+        "UNC", "North Carolina Tar Heels", "North Carolina",
+        "UNCDUKE",
+        id="cbb",
+    ),
+]
+
+
+class TestGetLiveTickCrossSport:
+    @pytest.mark.parametrize(
+        "sport,series,home_abbr,home_name,home_loc,away_abbr,away_name,away_loc,pair",
+        CROSS_SPORT_GAMES,
+    )
+    @patch("sports_skills.markets._connector._kalshi_game_search")
+    @patch("sports_skills._espn_base.espn_summary")
+    def test_shape_conversion_per_sport(
+        self, mock_summary, mock_kalshi,
+        sport, series, home_abbr, home_name, home_loc, away_abbr, away_name, away_loc, pair,
+    ):
+        mock_summary.return_value = _game_summary(
+            home_abbr, home_name, home_loc, away_abbr, away_name, away_loc
+        )
+        event_tail = f"26JUL171335{pair}"
+        mock_kalshi.return_value = [
+            _winner_market(event_tail, away_abbr, 37, series=series),
+            _winner_market(event_tail, home_abbr, 63, series=series),
+        ]
+
+        result = get_live_tick({"params": {"sport": sport, "event_id": "999"}})
+        assert result["status"] is True
+        data = result["data"]
+        assert data["sport"] == sport
+        assert data["teams"]["home"]["abbrev"] == home_abbr
+        assert data["teams"]["away"]["abbrev"] == away_abbr
+        assert data["home_price_cents"] == 63.0
+        assert data["kalshi_ticker"] == f"{series}-{event_tail}-{home_abbr}"
+
+        # The sport's own game-market series was searched (KALSHI_SERIES[sport] + "GAME").
+        searched_series, query, status = mock_kalshi.call_args[0][:3]
+        assert searched_series == series
+        assert query == home_loc.lower()
+        assert status == "open"
+
+
+class TestResolveGameMarketCrossSport:
+    @pytest.mark.parametrize(
+        "sport,series,home_abbr,home_name,home_loc,away_abbr,away_name,away_loc,pair",
+        CROSS_SPORT_GAMES,
+    )
+    @patch("sports_skills.markets._connector._kalshi_game_search")
+    @patch("sports_skills._espn_base.espn_summary")
+    def test_settled_market_resolves_per_sport(
+        self, mock_summary, mock_kalshi,
+        sport, series, home_abbr, home_name, home_loc, away_abbr, away_name, away_loc, pair,
+    ):
+        mock_summary.return_value = _game_summary(
+            home_abbr, home_name, home_loc, away_abbr, away_name, away_loc,
+            short_detail="Final",
+        )
+        event_tail = f"26JUL171335{pair}"
+
+        def by_status(series_arg, query, status, limit=200):
+            if status == "settled":
+                return [
+                    _winner_market(event_tail, away_abbr, 0, "finalized", last_price=1, series=series),
+                    _winner_market(event_tail, home_abbr, 0, "finalized", last_price=99, series=series),
+                ]
+            return []
+
+        mock_kalshi.side_effect = by_status
+
+        result = resolve_game_market({"params": {"sport": sport, "event_id": "999"}})
+        assert result["status"] is True
+        data = result["data"]
+        assert data["kalshi_ticker"] == f"{series}-{event_tail}-{home_abbr}"
+        assert data["market_status"] == "finalized"
+        assert data["home_yes_cents"] == 99.0
+        assert data["teams"]["home"]["location"] == home_loc
+
+
+# ============================================================
+# Momentum primitives: mock tick + timestamp-scoped plays
+# ============================================================
+
+
+def _mock_game_file(tmp_path):
+    """A minimal mock game JSON matching the demo fixture's shape."""
+    import json
+
+    game = {
+        "game_id": "mock-mlb-tb-bos-2026",
+        "sport": "mlb",
+        "teams": {
+            "home": {"abbrev": "BOS", "name": "Boston Red Sox"},
+            "away": {"abbrev": "TB", "name": "Tampa Bay Rays"},
+        },
+        "timeline": [
+            {
+                "timestamp": "2026-07-17T18:00:00Z",
+                "game_clock": "Bot 1st",
+                "polymarket_home_price_cents": 55,
+                "play_by_play": [
+                    {
+                        "id": "p1",
+                        "sequenceNumber": "1",
+                        "wallclock": "2026-07-17T17:59:10Z",
+                        "text": "Durbin walked.",
+                        "type": {"text": "Walk"},
+                        "period": {"displayValue": "1st Inning"},
+                        "clock": {"displayValue": ""},
+                        "homeScore": 0,
+                        "awayScore": 0,
+                        "scoringPlay": False,
+                        "team": {"id": "2"},
+                    }
+                ],
+            },
+            {
+                "timestamp": "2026-07-17T18:03:00Z",
+                "game_clock": "Bot 1st",
+                "polymarket_home_price_cents": 71,
+                "play_by_play": [
+                    {
+                        "id": "p1",
+                        "sequenceNumber": "1",
+                        "wallclock": "2026-07-17T17:59:10Z",
+                        "text": "Durbin walked.",
+                        "type": {"text": "Walk"},
+                        "period": {"displayValue": "1st Inning"},
+                        "clock": {"displayValue": ""},
+                        "homeScore": 0,
+                        "awayScore": 0,
+                        "scoringPlay": False,
+                        "team": {"id": "2"},
+                    },
+                    {
+                        "id": "p2",
+                        "sequenceNumber": "2",
+                        "wallclock": "2026-07-17T18:02:43Z",
+                        "text": "Narváez singled to center, Yoshida scored.",
+                        "type": {"text": "Single"},
+                        "period": {"displayValue": "1st Inning"},
+                        "clock": {"displayValue": ""},
+                        "homeScore": 2,
+                        "awayScore": 0,
+                        "scoringPlay": True,
+                        "team": {"id": "2"},
+                    },
+                ],
+            },
+        ],
+    }
+    path = tmp_path / "mock_game.json"
+    path.write_text(json.dumps(game), encoding="utf-8")
+    return str(path)
+
+
+class TestGetMockTick:
+    def test_returns_a_timeline_tick(self, tmp_path):
+        path = _mock_game_file(tmp_path)
+        result = get_mock_tick({"params": {"mock_file_path": path, "interval_seconds": 5}})
+        assert result["status"] is True
+        data = result["data"]
+        assert data["game_id"] == "mock-mlb-tb-bos-2026"
+        assert data["total_ticks"] == 2
+        assert data["tick_index"] in (0, 1)
+        assert data["polymarket_home_price_cents"] in (55, 71)
+
+    def test_missing_file_errors(self):
+        result = get_mock_tick({"params": {"mock_file_path": "/nope/missing.json"}})
+        assert result["status"] is False
+
+
+class TestGetPlaysNearTimestampMock:
+    """The mock branch: `mock_file_path` selects the plays embedded in the mock
+    file's timeline — no network, and the same output shape as the live branch."""
+
+    def test_window_filters_embedded_plays(self, tmp_path):
+        path = _mock_game_file(tmp_path)
+        result = get_plays_near_timestamp(
+            {
+                "params": {
+                    "sport": "mlb",
+                    "mock_file_path": path,
+                    "timestamp": "2026-07-17T18:03:00Z",
+                    "window_seconds": 60,
+                }
+            }
+        )
+        assert result["status"] is True
+        data = result["data"]
+        assert data["source"] == "mock-file"
+        # Only the RBI single is inside [18:02:00, 18:03:00]; the walk
+        # (17:59:10) is outside, and the duplicated play is deduped by id.
+        assert data["count"] == 1
+        assert data["plays"][0]["id"] == "p2"
+        assert data["plays"][0]["scoring_play"] is True
+        # game_id falls back to the mock file's own id.
+        assert data["game_id"] == "mock-mlb-tb-bos-2026"
+
+    def test_wider_window_includes_both_plays_sorted(self, tmp_path):
+        path = _mock_game_file(tmp_path)
+        result = get_plays_near_timestamp(
+            {
+                "params": {
+                    "sport": "mlb",
+                    "mock_file_path": path,
+                    "timestamp": "2026-07-17T18:03:00Z",
+                    "window_seconds": 600,
+                }
+            }
+        )
+        assert result["status"] is True
+        plays = result["data"]["plays"]
+        assert [p["id"] for p in plays] == ["p1", "p2"]
+
+    def test_missing_mock_file_errors(self):
+        result = get_plays_near_timestamp(
+            {
+                "params": {
+                    "sport": "mlb",
+                    "mock_file_path": "/nope/missing.json",
+                    "timestamp": "2026-07-17T18:03:00Z",
+                }
+            }
+        )
+        assert result["status"] is False
+
+
+class TestGetPlaysNearTimestampLive:
+    """The live branch: `game_id` fetches the RAW ESPN summary (wallclocks are
+    only present there — the shared normalizer strips them)."""
+
+    def _raw_summary(self):
+        return {
+            "plays": [
+                {
+                    "id": "401872178001",
+                    "sequenceNumber": "1",
+                    "wallclock": "2026-07-17T18:00:21Z",
+                    "text": "Duran hit sacrifice fly to center, Durbin scored.",
+                    "type": {"text": "Sac Fly"},
+                    "period": {"displayValue": "1st Inning"},
+                    "clock": {"displayValue": ""},
+                    "homeScore": 1,
+                    "awayScore": 0,
+                    "scoringPlay": True,
+                    "team": {"id": "2"},
+                },
+                {
+                    "id": "401872178002",
+                    "sequenceNumber": "2",
+                    "wallclock": "2026-07-17T18:30:00Z",
+                    "text": "Later play, outside the window.",
+                    "type": {"text": "Groundout"},
+                    "period": {"displayValue": "2nd Inning"},
+                    "clock": {"displayValue": ""},
+                    "homeScore": 3,
+                    "awayScore": 0,
+                    "scoringPlay": False,
+                    "team": {"id": "2"},
+                },
+                {
+                    "id": "401872178003",
+                    "sequenceNumber": "3",
+                    # No wallclock — must be skipped, not crash.
+                    "text": "Broadcast note.",
+                },
+            ]
+        }
+
+    @patch("sports_skills._espn_base.espn_summary")
+    def test_window_filters_raw_espn_plays(self, mock_summary):
+        mock_summary.return_value = self._raw_summary()
+        result = get_plays_near_timestamp(
+            {
+                "params": {
+                    "sport": "mlb",
+                    "game_id": "401872178",
+                    "timestamp": "2026-07-17T18:01:00Z",
+                    "window_seconds": 120,
+                }
+            }
+        )
+        assert result["status"] is True
+        data = result["data"]
+        assert data["source"] == "espn-live"
+        assert data["count"] == 1
+        assert data["plays"][0]["id"] == "401872178001"
+        assert data["plays"][0]["scoring_play"] is True
+        assert data["plays_without_wallclock"] == 1
+        # The raw summary path was used (sport path + event id).
+        mock_summary.assert_called_once_with("baseball/mlb", "401872178")
+
+    def test_live_branch_requires_game_id(self):
+        result = get_plays_near_timestamp({"params": {"sport": "mlb", "timestamp": "2026-07-17T18:01:00Z"}})
+        assert result["status"] is False
