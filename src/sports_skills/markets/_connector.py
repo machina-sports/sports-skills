@@ -1839,6 +1839,12 @@ def get_plays_near_timestamp(request_data: dict) -> dict:
 # but no start time to disambiguate doubleheaders.
 _KALSHI_EVENT_TAIL_RE = re.compile(r"^(\d{2})([A-Z]{3})(\d{2})(\d{4})?([A-Z]+?)(?:G(\d))?$")
 
+# How far a Kalshi market's embedded start may sit from the ESPN game's start
+# and still be considered the same game. Wide enough to absorb any same-day
+# scheduling difference (including a doubleheader's second game, which is a
+# separate candidate anyway), narrow enough to reject a different date.
+_MAX_MARKET_START_SKEW = 12 * 3600  # seconds
+
 
 def _parse_kalshi_event_tail(event_ticker: str):
     """Parse a game event ticker's tail into (start_utc, team_pair, game_num).
@@ -1965,6 +1971,24 @@ def _resolve_kalshi_game_market(
 
     if not candidates:
         return None
+
+    # Drop candidates whose embedded start is a different day from the ESPN
+    # game. The sort below only disambiguates when several candidates survive,
+    # so a LONE candidate was previously accepted no matter how far off its
+    # date was: asking for a finished game returned the same teams' NEXT game
+    # (still the only open market), fusing that price with this game's ESPN
+    # frame. Returning nothing is correct here — a clean "no market resolved"
+    # beats a plausible tick built from two different games.
+    # Time-less tails (start is None) can't be checked and are left in place,
+    # so series without an embedded time still resolve.
+    if start_utc is not None:
+        candidates = [
+            c
+            for c in candidates
+            if c[1] is None or abs((c[1] - start_utc).total_seconds()) <= _MAX_MARKET_START_SKEW
+        ]
+        if not candidates:
+            return None
 
     # Doubleheaders: two events share a team pair; the embedded start time
     # disambiguates. Events without a parseable start sort last.
