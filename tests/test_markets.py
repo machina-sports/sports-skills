@@ -977,6 +977,14 @@ class TestParseKalshiEventTail:
     def test_unparseable_tail(self):
         assert _parse_kalshi_event_tail("KXMLB-26-BOS") == (None, None, None)
 
+    def test_time_less_tail(self):
+        # Real WNBA tickers omit the HHMM segment (observed live 2026-07-18):
+        # the pair must still parse for matching; only start time is lost.
+        start, pair, game_num = _parse_kalshi_event_tail("KXWNBAGAME-26JUL17SEAIND")
+        assert pair == "SEAIND"
+        assert start is None
+        assert game_num is None
+
 
 class TestResolveGameMarketMocked:
     @patch("sports_skills.markets._connector._kalshi_game_search")
@@ -1021,6 +1029,80 @@ class TestResolveGameMarketMocked:
     def test_bad_status_param(self):
         result = resolve_game_market({"params": {"sport": "mlb", "event_id": "1", "status": "weird"}})
         assert result["status"] is False
+
+    @patch("sports_skills.markets._connector._kalshi_game_search")
+    @patch("sports_skills._espn_base.espn_summary")
+    def test_rejects_market_from_a_different_date(self, mock_summary, mock_kalshi):
+        # Observed live: asking for a FINISHED game returned the same teams'
+        # NEXT game (the only market still open), fusing that price with this
+        # game's ESPN frame. A lone far-off candidate must be rejected, not
+        # accepted for lack of competition.
+        mock_summary.return_value = _mlb_summary("2026-07-24T23:15Z")
+        mock_kalshi.side_effect = lambda series, query, status, limit=200: (
+            [
+                _winner_market("26JUL251610TORBOS", "TOR", 50),
+                _winner_market("26JUL251610TORBOS", "BOS", 50),
+            ]
+            if status == "open"
+            else []
+        )
+        result = resolve_game_market({"params": {"sport": "mlb", "event_id": "401872178"}})
+        assert result["status"] is False, "next day's market must not resolve for this game"
+
+    @patch("sports_skills.markets._connector._kalshi_game_search")
+    @patch("sports_skills._espn_base.espn_summary")
+    def test_accepts_same_day_market_despite_start_drift(self, mock_summary, mock_kalshi):
+        # A few hours of same-day drift (delay, ESPN/Kalshi disagreeing on the
+        # scheduled time) must still resolve.
+        mock_summary.return_value = _mlb_summary("2026-07-17T17:35Z")
+        mock_kalshi.side_effect = lambda series, query, status, limit=200: (
+            [
+                _winner_market("26JUL171910TBBOS", "TB", 37),
+                _winner_market("26JUL171910TBBOS", "BOS", 63),
+            ]
+            if status == "open"
+            else []
+        )
+        result = resolve_game_market({"params": {"sport": "mlb", "event_id": "401872178"}})
+        assert result["status"] is True
+        assert result["data"]["home_yes_cents"] == 63.0
+
+    @patch("sports_skills.markets._connector._kalshi_game_search")
+    @patch("sports_skills._espn_base.espn_summary")
+    def test_time_less_ticker_survives_the_date_guard(self, mock_summary, mock_kalshi):
+        # A tail with no embedded time can't be date-checked; it must NOT be
+        # dropped by the guard, or time-less series (real WNBA tickers) would
+        # stop resolving entirely.
+        mock_summary.return_value = _mlb_summary("2026-07-17T17:35Z")
+        mock_kalshi.side_effect = lambda series, query, status, limit=200: (
+            [
+                _winner_market("26JUL17TBBOS", "TB", 37),
+                _winner_market("26JUL17TBBOS", "BOS", 63),
+            ]
+            if status == "open"
+            else []
+        )
+        result = resolve_game_market({"params": {"sport": "mlb", "event_id": "401872178"}})
+        assert result["status"] is True
+        assert result["data"]["home_yes_cents"] == 63.0
+
+    @patch("sports_skills.markets._connector._kalshi_game_search")
+    @patch("sports_skills._espn_base.espn_summary")
+    def test_one_cent_price_not_rescaled(self, mock_summary, mock_kalshi):
+        # A genuine 1c (1% win-prob) home price must stay 1c, not be mistaken
+        # for a 0-1 probability and rescaled to 100c. yes_bid is integer cents.
+        mock_summary.return_value = _mlb_summary("2026-07-17T17:35Z")
+        mock_kalshi.side_effect = lambda series, query, status, limit=200: (
+            [
+                _winner_market("26JUL171335TBBOS", "TB", 99),
+                _winner_market("26JUL171335TBBOS", "BOS", 1),
+            ]
+            if status == "open"
+            else []
+        )
+        result = resolve_game_market({"params": {"sport": "mlb", "event_id": "401872178"}})
+        assert result["status"] is True
+        assert result["data"]["home_yes_cents"] == 1.0
 
 
 # ============================================================
