@@ -1429,7 +1429,10 @@ def _normalize_espn_summary_statistics(summary):
     """Extract team statistics from ESPN summary boxscore."""
     ha_map = _espn_home_away_map(summary)
     teams = []
-    for team_data in summary.get("boxscore", {}).get("teams", []):
+    # ESPN sends a stub ``boxscore: {"teams": [...]}`` for soccer even pre-game,
+    # but coerce a possible null defensively so ``.get`` can't raise on None.
+    boxscore = summary.get("boxscore") or {}
+    for team_data in boxscore.get("teams", []):
         team = team_data.get("team", {})
         team_id = team.get("id", "")
         stats_raw = team_data.get("statistics", [])
@@ -1530,7 +1533,9 @@ def _normalize_espn_summary_lineups(summary):
     """Extract lineup/formation data from ESPN summary."""
     ha_map = _espn_home_away_map(summary)
     formations = {}
-    for f in summary.get("boxscore", {}).get("form", []):
+    # Coerce a possible null boxscore defensively (see _normalize_espn_summary_statistics).
+    boxscore = summary.get("boxscore") or {}
+    for f in boxscore.get("form", []):
         tid = f.get("team", {}).get("id", "")
         formations[tid] = f.get("formationSummary", "")
     lineups = []
