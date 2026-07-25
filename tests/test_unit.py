@@ -1697,6 +1697,36 @@ class TestFootballNameNormalization:
         assert not _teams_match("Man City", "Manchester United")
 
 
+class TestFootballSummaryNullBoxscore:
+    """Defensive guard: a null ``boxscore`` must degrade to empty, not raise.
+
+    Live-verified (2026-07, 22 scheduled games across 10 leagues) that ESPN's
+    soccer summary ships a stub ``boxscore: {"teams": [...]}`` pre-game and does
+    NOT send ``boxscore: null`` the way the American-sports endpoints do. This
+    is therefore a theoretical/defensive guard, not a fix for observed ESPN
+    behavior — ``summary.get("boxscore", {})`` would return ``None`` and raise
+    on ``.get`` only if ESPN ever sent an explicit null. On the pre-guard code
+    both normalizers raised ``AttributeError`` on this payload.
+    """
+
+    def test_statistics_tolerates_null_boxscore(self):
+        from sports_skills.football._connector import (
+            _normalize_espn_summary_statistics,
+        )
+
+        summary = {"boxscore": None, "header": {"competitions": [{"competitors": []}]}}
+        assert _normalize_espn_summary_statistics(summary) == []
+
+    def test_lineups_tolerates_null_boxscore(self):
+        from sports_skills.football._connector import (
+            _normalize_espn_summary_lineups,
+        )
+
+        # Null boxscore (form lives under it) with no rosters → empty lineups.
+        summary = {"boxscore": None, "rosters": []}
+        assert _normalize_espn_summary_lineups(summary) == []
+
+
 class TestFdukSeasonCodes:
     """Season-code generation for the mmz4281 URL scheme."""
 
