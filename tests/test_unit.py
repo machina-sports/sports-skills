@@ -1396,6 +1396,59 @@ class TestNFLverseOptionalDependency:
             _load_provider()
 
 
+class TestNFLverseFrameCoercion:
+    """``_coerce_frame`` converts nflreadpy's polars frames to pandas.
+
+    nflreadpy returns polars DataFrames; ``_coerce_frame`` calls ``.to_pandas()``,
+    which needs pyarrow. pyarrow was undeclared, so every ``get_nflverse_*`` call
+    raised ``ModuleNotFoundError: No module named 'pyarrow'`` on Python >=3.10 —
+    while 3.9 worked, because the nfl_data_py fallback returns pandas natively.
+
+    No test caught it: the suite only exercised the pure row normalizers, never
+    ``_coerce_frame`` with a real polars frame, and CI's ``dev`` extra installs
+    neither polars nor nflreadpy. The declaration test below is therefore the
+    load-bearing one — it runs everywhere and fails if the pairing ever drifts.
+    """
+
+    def test_pyarrow_declared_wherever_nflreadpy_is(self):
+        # nflreadpy without pyarrow is a broken install: the frames it returns
+        # cannot be converted. Any extra shipping one must ship the other, under
+        # the same marker.
+        import pathlib
+        import re
+
+        text = (pathlib.Path(__file__).resolve().parents[1] / "pyproject.toml").read_text()
+        for extra in re.findall(r"^(nfl|all) = \[(.*?)\]$", text, re.M | re.S):
+            name, body = extra
+            if "nflreadpy" in body:
+                assert "pyarrow" in body, f"extra '{name}' ships nflreadpy without pyarrow"
+
+    def test_coerce_frame_converts_a_polars_frame(self):
+        # Real round-trip when the nfl extra is actually installed; skipped in
+        # the dev-only environment CI uses.
+        import pytest
+
+        pl = pytest.importorskip("polars", reason="polars only present with the nfl extra")
+        pytest.importorskip("pyarrow", reason="pyarrow only present with the nfl extra")
+
+        from sports_skills.nfl._nflverse import _coerce_frame
+
+        out = _coerce_frame(pl.DataFrame({"game_id": ["2024_01_ARI_BUF"], "week": [1]}))
+        assert list(out.columns) == ["game_id", "week"]
+        assert out.to_dict(orient="records") == [{"game_id": "2024_01_ARI_BUF", "week": 1}]
+
+    def test_coerce_frame_passes_through_a_pandas_frame(self):
+        # The nfl_data_py path (3.9) has no to_pandas(); the frame is returned as-is.
+        import pytest
+
+        pd = pytest.importorskip("pandas")
+
+        from sports_skills.nfl._nflverse import _coerce_frame
+
+        df = pd.DataFrame({"week": [1]})
+        assert _coerce_frame(df) is df
+
+
 class TestParamsContract:
     """Verify _params() returns a wrapped dict in all modules.
 
