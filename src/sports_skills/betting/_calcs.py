@@ -39,11 +39,10 @@ def _american_to_prob(odds: float) -> float:
     """Convert American odds to implied probability (0-1)."""
     if odds < 0:
         return -odds / (-odds + 100)
-    elif odds > 0:
+    if odds > 0:
         return 100 / (odds + 100)
-    else:
-        # odds == 0 is invalid in American format, treat as even
-        return 0.5
+    # odds == 0 is invalid in American format, treat as even
+    return 0.5
 
 
 def _prob_to_american(prob: float) -> float:
@@ -52,8 +51,7 @@ def _prob_to_american(prob: float) -> float:
         return 0.0
     if prob >= 0.5:
         return -(prob / (1 - prob)) * 100
-    else:
-        return ((1 - prob) / prob) * 100
+    return ((1 - prob) / prob) * 100
 
 
 def _decimal_to_prob(odds: float) -> float:

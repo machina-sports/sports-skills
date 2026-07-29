@@ -14,9 +14,8 @@ import gzip
 import json
 import subprocess
 import sys
-import urllib.error
 import urllib.request
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
 # ── Constants ──────────────────────────────────────────────────────────────────
@@ -29,7 +28,7 @@ REPORTS_DIR = REPO_ROOT / "reports"
 DRIFT_DIR = REPORTS_DIR / "drift"
 BASELINE_PATH = SCRIPTS_DIR / "schema_baseline.json"
 
-TODAY = datetime.now(tz=timezone.utc).strftime("%Y-%m-%d")
+TODAY = datetime.now(tz=UTC).strftime("%Y-%m-%d")
 USER_AGENT = "sports-skills-nightly-improve/1.0"
 
 TIMEOUT = 10
@@ -378,7 +377,7 @@ def print_summary(hygiene: dict, freshness: dict, drift: dict) -> None:
 # ── Main ───────────────────────────────────────────────────────────────────────
 
 def main() -> int:
-    print(f"Running nightly_improve.py at {datetime.now(tz=timezone.utc).isoformat(timespec='seconds')} …")
+    print(f"Running nightly_improve.py at {datetime.now(tz=UTC).isoformat(timespec='seconds')} …")
     hygiene = run_hygiene()
     freshness = refresh_skill_examples()
     drift = check_schema_drift()

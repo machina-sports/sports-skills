@@ -183,7 +183,7 @@ def get_exchange_status(request_data):
             return err
         return _success(response, "Exchange status retrieved")
     except Exception as e:
-        return _error(f"Error fetching exchange status: {str(e)}")
+        return _error(f"Error fetching exchange status: {e!s}")
 
 
 def get_exchange_schedule(request_data):
@@ -198,7 +198,7 @@ def get_exchange_schedule(request_data):
             return err
         return _success(response, "Exchange schedule retrieved")
     except Exception as e:
-        return _error(f"Error fetching exchange schedule: {str(e)}")
+        return _error(f"Error fetching exchange schedule: {e!s}")
 
 
 def get_series_list(request_data):
@@ -224,7 +224,7 @@ def get_series_list(request_data):
         series = response.get("series") or []
         return _success({"series": series, "count": len(series)}, f"Retrieved {len(series)} series")
     except Exception as e:
-        return _error(f"Error fetching series list: {str(e)}")
+        return _error(f"Error fetching series list: {e!s}")
 
 
 def get_series(request_data):
@@ -246,7 +246,7 @@ def get_series(request_data):
 
         return _success(response.get("series", response), f"Retrieved series: {ticker}")
     except Exception as e:
-        return _error(f"Error fetching series: {str(e)}")
+        return _error(f"Error fetching series: {e!s}")
 
 
 def get_events(request_data):
@@ -288,7 +288,7 @@ def get_events(request_data):
             f"Retrieved {len(events)} events",
         )
     except Exception as e:
-        return _error(f"Error fetching events: {str(e)}")
+        return _error(f"Error fetching events: {e!s}")
 
 
 def get_event(request_data):
@@ -321,7 +321,7 @@ def get_event(request_data):
             f"Retrieved event: {ticker}",
         )
     except Exception as e:
-        return _error(f"Error fetching event: {str(e)}")
+        return _error(f"Error fetching event: {e!s}")
 
 
 def get_markets(request_data):
@@ -366,7 +366,7 @@ def get_markets(request_data):
             f"Retrieved {len(markets)} markets",
         )
     except Exception as e:
-        return _error(f"Error fetching markets: {str(e)}")
+        return _error(f"Error fetching markets: {e!s}")
 
 
 def get_market(request_data):
@@ -388,7 +388,7 @@ def get_market(request_data):
 
         return _success(response.get("market", response), f"Retrieved market: {ticker}")
     except Exception as e:
-        return _error(f"Error fetching market: {str(e)}")
+        return _error(f"Error fetching market: {e!s}")
 
 
 def get_market_orderbook(request_data):
@@ -424,7 +424,7 @@ def get_market_orderbook(request_data):
             f"Retrieved order book: {ticker}",
         )
     except Exception as e:
-        return _error(f"Error fetching order book: {str(e)}")
+        return _error(f"Error fetching order book: {e!s}")
 
 
 def get_trades(request_data):
@@ -466,7 +466,7 @@ def get_trades(request_data):
             f"Retrieved {len(trades)} trades",
         )
     except Exception as e:
-        return _error(f"Error fetching trades: {str(e)}")
+        return _error(f"Error fetching trades: {e!s}")
 
 
 def get_market_candlesticks(request_data):
@@ -517,7 +517,7 @@ def get_market_candlesticks(request_data):
             f"Retrieved {len(candlesticks)} candlesticks",
         )
     except Exception as e:
-        return _error(f"Error fetching candlesticks: {str(e)}")
+        return _error(f"Error fetching candlesticks: {e!s}")
 
 
 def get_sports_filters(request_data):
@@ -532,7 +532,7 @@ def get_sports_filters(request_data):
             return err
         return _success(response, "Sports filters retrieved")
     except Exception as e:
-        return _error(f"Error fetching sports filters: {str(e)}")
+        return _error(f"Error fetching sports filters: {e!s}")
 
 
 # ============================================================
@@ -689,7 +689,7 @@ def get_todays_events(request_data):
         )
 
     except Exception as e:
-        return _error(f"Error fetching today's events: {str(e)}")
+        return _error(f"Error fetching today's events: {e!s}")
 
 
 def _price_cents(market, key):
@@ -887,7 +887,7 @@ def search_markets(request_data):
         )
 
     except Exception as e:
-        return _error(f"Error searching markets: {str(e)}")
+        return _error(f"Error searching markets: {e!s}")
 
 
 def get_esports_odds(request_data):

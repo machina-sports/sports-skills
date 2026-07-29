@@ -3,6 +3,7 @@
 import io
 import json
 import os
+import pathlib
 import time
 import zipfile
 
@@ -40,14 +41,14 @@ class TestFetchFile:
 
         def fake_download(url, dest):
             calls.append(url)
-            with open(dest, "wb") as f:
+            with pathlib.Path(dest).open("wb") as f:
                 f.write(b"payload")
 
         monkeypatch.setattr(_cricsheet, "_download", fake_download)
         path, stale, err = _cricsheet._fetch_file("http://x/file.zip", "file.zip", ttl=60)
         assert err is None
         assert stale is False
-        with open(path, "rb") as f:
+        with pathlib.Path(path).open("rb") as f:
             assert f.read() == b"payload"
         assert calls == ["http://x/file.zip"]
 
@@ -62,7 +63,7 @@ class TestFetchFile:
         path, stale, err = _cricsheet._fetch_file("http://x/file.zip", "file.zip", ttl=3600)
         assert err is None
         assert stale is False
-        with open(path, "rb") as f:
+        with pathlib.Path(path).open("rb") as f:
             assert f.read() == b"cached"
 
     def test_serves_stale_on_download_failure(self, tmp_path, monkeypatch):
@@ -79,7 +80,7 @@ class TestFetchFile:
         path, stale, err = _cricsheet._fetch_file("http://x/file.zip", "file.zip", ttl=60)
         assert err is None
         assert stale is True
-        with open(path, "rb") as f:
+        with pathlib.Path(path).open("rb") as f:
             assert f.read() == b"old"
 
     def test_error_when_no_cache_and_download_fails(self, tmp_path, monkeypatch):

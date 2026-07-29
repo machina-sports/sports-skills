@@ -36,7 +36,7 @@ CASES = [
 
 
 def _load(name):
-    with open(FIXTURES / name) as f:
+    with Path(FIXTURES / name).open() as f:
         return json.load(f)
 
 

@@ -109,18 +109,17 @@ def _normalize_competitor(comp):
                 for a in athletes
             ],
         }
-    else:
-        # Singles — competitor has a single athlete
-        athlete = comp.get("athlete", {})
-        return {
-            "type": "singles",
-            "name": athlete.get("displayName", ""),
-            "country": athlete.get("flag", {}).get("alt", ""),
-            "seed": seed,
-            "winner": comp.get("winner", False),
-            "set_scores": _build_set_scores(linescores),
-            "serving": comp.get("possession", False),
-        }
+    # Singles — competitor has a single athlete
+    athlete = comp.get("athlete", {})
+    return {
+        "type": "singles",
+        "name": athlete.get("displayName", ""),
+        "country": athlete.get("flag", {}).get("alt", ""),
+        "seed": seed,
+        "winner": comp.get("winner", False),
+        "set_scores": _build_set_scores(linescores),
+        "serving": comp.get("possession", False),
+    }
 
 
 def _normalize_match(competition):
@@ -332,7 +331,7 @@ def get_rankings(request_data):
 
     # Try current week, then fall back to previous weeks if no data
     rankings_data = None
-    for week_offset in range(0, 4):
+    for week_offset in range(4):
         try_week = week - week_offset
         if try_week < 1:
             break

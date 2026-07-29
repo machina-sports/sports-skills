@@ -208,7 +208,7 @@ def extract_commands(body: str) -> list[dict]:
         if in_table and stripped.startswith("|"):
             cells = [c.strip() for c in stripped.split("|")[1:-1]]
             if len(cells) >= 2:
-                name = re.sub(r"`", "", cells[0]).strip()
+                name = cells[0].replace(r"`", "").strip()
                 desc = cells[-1].strip()
                 if name and not name.startswith("---") and name not in seen:
                     commands.append({"name": name, "description": desc})

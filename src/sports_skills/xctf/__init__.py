@@ -74,5 +74,3 @@ def get_news(*, limit: int | None = None) -> dict:
     """
     result = _connector.get_news(limit=limit)
     return wrap(result)
-
-

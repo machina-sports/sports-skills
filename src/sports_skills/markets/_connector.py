@@ -12,7 +12,9 @@ from __future__ import annotations
 
 import difflib
 import logging
+import pathlib
 import re
+from datetime import UTC
 
 logger = logging.getLogger("sports_skills.markets")
 
@@ -188,27 +190,27 @@ def _load_sport_module(sport: str):
             from sports_skills import nfl
 
             return nfl
-        elif sport == "nba":
+        if sport == "nba":
             from sports_skills import nba
 
             return nba
-        elif sport == "mlb":
+        if sport == "mlb":
             from sports_skills import mlb
 
             return mlb
-        elif sport == "nhl":
+        if sport == "nhl":
             from sports_skills import nhl
 
             return nhl
-        elif sport == "wnba":
+        if sport == "wnba":
             from sports_skills import wnba
 
             return wnba
-        elif sport == "cfb":
+        if sport == "cfb":
             from sports_skills import cfb
 
             return cfb
-        elif sport == "cbb":
+        if sport == "cbb":
             from sports_skills import cbb
 
             return cbb
@@ -1332,11 +1334,11 @@ def _parse_at_time(value) -> int | None:
     s = str(value).strip()
     if s.isdigit():
         return int(s)
-    from datetime import datetime, timezone
+    from datetime import datetime
 
     dt = datetime.fromisoformat(s)
     if dt.tzinfo is None:
-        dt = dt.replace(tzinfo=timezone.utc)
+        dt = dt.replace(tzinfo=UTC)
     return int(dt.timestamp())
 
 
@@ -1613,12 +1615,12 @@ _ESPN_SPORT_PATHS = {
 
 def _parse_iso_utc(value):
     """Parse an ISO 8601 timestamp (accepting a trailing 'Z') to an aware UTC datetime."""
-    from datetime import datetime, timezone
+    from datetime import datetime
 
     s = str(value).strip().replace("Z", "+00:00")
     dt = datetime.fromisoformat(s)
     if dt.tzinfo is None:
-        dt = dt.replace(tzinfo=timezone.utc)
+        dt = dt.replace(tzinfo=UTC)
     return dt
 
 
@@ -1650,7 +1652,7 @@ def get_mock_tick(request_data: dict) -> dict:
         return _error("interval_seconds must be positive")
 
     try:
-        with open(mock_file_path, encoding="utf-8") as fh:
+        with pathlib.Path(mock_file_path).open(encoding="utf-8") as fh:
             game = json.load(fh)
     except FileNotFoundError:
         return _error(f"Mock file not found: {mock_file_path}")
@@ -1761,7 +1763,7 @@ def get_plays_near_timestamp(request_data: dict) -> dict:
         import json
 
         try:
-            with open(mock_file_path, encoding="utf-8") as fh:
+            with pathlib.Path(mock_file_path).open(encoding="utf-8") as fh:
                 game = json.load(fh)
         except FileNotFoundError:
             return _error(f"Mock file not found: {mock_file_path}")
@@ -1880,9 +1882,8 @@ def _parse_kalshi_event_tail(event_ticker: str):
         )
     except ValueError:
         return None, pair, game_num
-    from datetime import timezone
 
-    return start_et.astimezone(timezone.utc), pair, game_num
+    return start_et.astimezone(UTC), pair, game_num
 
 
 def _kalshi_game_search(series_ticker: str, query: str, status: str, limit: int = 200) -> list[dict]:
@@ -2162,7 +2163,7 @@ def get_live_tick(request_data: dict) -> dict:
         sport (str): Sport key (nfl, nba, mlb, nhl, wnba, cfb, cbb).
         event_id (str): ESPN event ID.
     """
-    from datetime import datetime, timezone
+    from datetime import datetime
 
     params = request_data.get("params", {})
     sport = str(params.get("sport") or "").lower()
@@ -2191,7 +2192,7 @@ def get_live_tick(request_data: dict) -> dict:
             f"(searched {KALSHI_SERIES.get(sport, '?')}GAME, status open)."
         )
 
-    timestamp = datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
+    timestamp = datetime.now(UTC).isoformat().replace("+00:00", "Z")
 
     # The returned teams keep the mock tick's {abbrev, name} entries.
     teams = {side: {"abbrev": t["abbrev"], "name": t["name"]} for side, t in frame["teams"].items()}

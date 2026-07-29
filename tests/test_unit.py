@@ -1960,7 +1960,7 @@ class TestClubEloDriftGuard:
         from pathlib import Path
 
         path = Path(__file__).parent / "fixtures" / "clubelo_snapshot_sample.csv"
-        with open(path) as f:
+        with Path(path).open() as f:
             return list(csv.DictReader(f))
 
     # (ESPN team name, ClubElo country, expected ClubElo label)

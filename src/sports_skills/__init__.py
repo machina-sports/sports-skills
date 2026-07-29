@@ -28,4 +28,4 @@ try:
 except ImportError:
     f1 = None
 
-__all__ = ["football", "f1", "polymarket", "kalshi", "betting", "markets", "metadata", "news", "nfl", "nba", "wnba", "nhl", "mlb", "tennis", "cfb", "cbb", "golf", "volleyball"]
+__all__ = ["betting", "cbb", "cfb", "f1", "football", "golf", "kalshi", "markets", "metadata", "mlb", "nba", "news", "nfl", "nhl", "polymarket", "tennis", "volleyball", "wnba"]

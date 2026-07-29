@@ -24,10 +24,9 @@ def _format_timedelta(td):
     seconds = total_seconds % 60
     if hours > 0:
         return f"{hours}:{minutes:02d}:{seconds:06.3f}"
-    elif minutes > 0:
+    if minutes > 0:
         return f"{minutes}:{seconds:06.3f}"
-    else:
-        return f"{seconds:.3f}"
+    return f"{seconds:.3f}"
 
 
 def _safe_int(val, default=""):
@@ -125,7 +124,7 @@ def get_session_data(request_data):
     except Exception as e:
         return {
             "status": False,
-            "data": f"Error: {str(e)}",
+            "data": f"Error: {e!s}",
             "message": "Error getting session data",
         }
 
@@ -180,34 +179,33 @@ def get_driver_info(request_data):
                 "data": [driver_data],
                 "message": f"Driver information for {driver} in {year} retrieved successfully",
             }
-        else:
-            drivers_list = []
-            for _, row in results.iterrows():
-                drivers_list.append(
-                    {
-                        "driver_number": str(row.get("DriverNumber", "")),
-                        "driver_id": row.get("DriverId", ""),
-                        "driver_code": row.get("Abbreviation", ""),
-                        "first_name": row.get("FirstName", ""),
-                        "last_name": row.get("LastName", ""),
-                        "full_name": row.get("FullName", ""),
-                        "team_name": row.get("TeamName", ""),
-                        "team_color": row.get("TeamColor", ""),
-                        "headshot_url": row.get("HeadshotUrl", ""),
-                        "country_code": row.get("CountryCode", ""),
-                    }
-                )
+        drivers_list = []
+        for _, row in results.iterrows():
+            drivers_list.append(
+                {
+                    "driver_number": str(row.get("DriverNumber", "")),
+                    "driver_id": row.get("DriverId", ""),
+                    "driver_code": row.get("Abbreviation", ""),
+                    "first_name": row.get("FirstName", ""),
+                    "last_name": row.get("LastName", ""),
+                    "full_name": row.get("FullName", ""),
+                    "team_name": row.get("TeamName", ""),
+                    "team_color": row.get("TeamColor", ""),
+                    "headshot_url": row.get("HeadshotUrl", ""),
+                    "country_code": row.get("CountryCode", ""),
+                }
+            )
 
-            return {
-                "status": True,
-                "data": drivers_list,
-                "message": f"Driver information for {year} retrieved successfully",
-            }
+        return {
+            "status": True,
+            "data": drivers_list,
+            "message": f"Driver information for {year} retrieved successfully",
+        }
 
     except Exception as e:
         return {
             "status": False,
-            "data": f"Error: {str(e)}",
+            "data": f"Error: {e!s}",
             "message": "Error getting driver information",
         }
 
@@ -288,7 +286,7 @@ def get_team_info(request_data):
     except Exception as e:
         return {
             "status": False,
-            "data": f"Error: {str(e)}",
+            "data": f"Error: {e!s}",
             "message": "Error getting team information",
         }
 
@@ -323,7 +321,7 @@ def get_race_schedule(request_data):
     except Exception as e:
         return {
             "status": False,
-            "data": f"Error: {str(e)}",
+            "data": f"Error: {e!s}",
             "message": "Error getting race schedule",
         }
 
@@ -395,7 +393,7 @@ def get_lap_data(request_data):
     except Exception as e:
         return {
             "status": False,
-            "data": f"Error: {str(e)}",
+            "data": f"Error: {e!s}",
             "message": "Error getting lap data",
         }
 
@@ -523,7 +521,7 @@ def get_pit_stops(request_data):
     except Exception as e:
         return {
             "status": False,
-            "data": f"Error: {str(e)}",
+            "data": f"Error: {e!s}",
             "message": "Error getting pit stop data",
         }
 
@@ -615,7 +613,7 @@ def get_speed_data(request_data):
     except Exception as e:
         return {
             "status": False,
-            "data": f"Error: {str(e)}",
+            "data": f"Error: {e!s}",
             "message": "Error getting speed data",
         }
 
@@ -711,7 +709,7 @@ def get_championship_standings(request_data):
     except Exception as e:
         return {
             "status": False,
-            "data": f"Error: {str(e)}",
+            "data": f"Error: {e!s}",
             "message": "Error getting championship standings",
         }
 
@@ -807,13 +805,12 @@ def get_season_stats(request_data):
                     for drv in valid_laps["Driver"].unique():
                         drv_laps = valid_laps[valid_laps["Driver"] == drv]
                         best_lap = drv_laps["LapTime"].min()
-                        if drv in driver_stats:
-                            if (
-                                driver_stats[drv]["fastest_lap_time"] is None
-                                or best_lap < driver_stats[drv]["fastest_lap_time"]
-                            ):
-                                driver_stats[drv]["fastest_lap_time"] = best_lap
-                                driver_stats[drv]["fastest_lap_race"] = race_name
+                        if drv in driver_stats and (
+                            driver_stats[drv]["fastest_lap_time"] is None
+                            or best_lap < driver_stats[drv]["fastest_lap_time"]
+                        ):
+                            driver_stats[drv]["fastest_lap_time"] = best_lap
+                            driver_stats[drv]["fastest_lap_race"] = race_name
 
                 # Speed trap data
                 if "SpeedST" in laps.columns:
@@ -869,7 +866,7 @@ def get_season_stats(request_data):
     except Exception as e:
         return {
             "status": False,
-            "data": f"Error: {str(e)}",
+            "data": f"Error: {e!s}",
             "message": "Error getting season stats",
         }
 
@@ -1078,7 +1075,7 @@ def get_team_comparison(request_data):
     except Exception as e:
         return {
             "status": False,
-            "data": f"Error: {str(e)}",
+            "data": f"Error: {e!s}",
             "message": "Error comparing teams",
         }
 
@@ -1330,7 +1327,7 @@ def get_driver_comparison(request_data):
     except Exception as e:
         return {
             "status": False,
-            "data": f"Error: {str(e)}",
+            "data": f"Error: {e!s}",
             "message": "Error comparing drivers",
         }
 
@@ -1512,7 +1509,7 @@ def get_tire_analysis(request_data):
     except Exception as e:
         return {
             "status": False,
-            "data": f"Error: {str(e)}",
+            "data": f"Error: {e!s}",
             "message": "Error getting tire analysis",
         }
 
@@ -1568,6 +1565,6 @@ def get_race_results(request_data):
     except Exception as e:
         return {
             "status": False,
-            "data": f"Error: {str(e)}",
+            "data": f"Error: {e!s}",
             "message": "Error getting race results",
         }

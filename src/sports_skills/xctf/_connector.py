@@ -614,5 +614,3 @@ def get_news(*, limit: int | None = None) -> dict:
         items = items[:limit]
 
     return {"source": "The Stride Report", "count": len(items), "articles": items}
-
-

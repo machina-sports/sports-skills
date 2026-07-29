@@ -584,35 +584,35 @@ def _load_module(name):
         from sports_skills import football
 
         return football
-    elif name in {"polymarket", "polymarket-trading"}:
+    if name in {"polymarket", "polymarket-trading"}:
         from sports_skills import polymarket
 
         return polymarket
-    elif name == "kalshi":
+    if name == "kalshi":
         from sports_skills import kalshi
 
         return kalshi
-    elif name == "esports":
+    if name == "esports":
         from sports_skills import esports
 
         return esports
-    elif name == "betting":
+    if name == "betting":
         from sports_skills import betting
 
         return betting
-    elif name == "markets":
+    if name == "markets":
         from sports_skills import markets
 
         return markets
-    elif name == "metadata":
+    if name == "metadata":
         from sports_skills import metadata
 
         return metadata
-    elif name == "news":
+    if name == "news":
         from sports_skills import news
 
         return news
-    elif name == "f1":
+    if name == "f1":
         err_msg = "F1 module dependencies are unavailable in this environment."
         hint = "python3 -m pip install --upgrade sports-skills"
         try:
@@ -886,7 +886,7 @@ def _deploy_handoff(remaining):
                 check=True,
             )
             machina = shutil.which("machina")
-        except Exception as e:  # noqa: BLE001
+        except Exception as e:  # ruff:ignore[blind-except]
             _cli_error(
                 f"Failed to install machina-cli: {e}",
                 hint=_MACHINA_INSTALL,

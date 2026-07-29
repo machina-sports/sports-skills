@@ -881,9 +881,8 @@ def _openfootball_season_path(league, year):
         return (
             f"{_OPENFOOTBALL_BASE}/{year}-{(int(year) + 1) % 100:02d}/{file_name}.json"
         )
-    else:
-        # Calendar-year leagues (MLS, Brazil): {year}/xx.json
-        return f"{_OPENFOOTBALL_BASE}/{year}/{file_name}.json"
+    # Calendar-year leagues (MLS, Brazil): {year}/xx.json
+    return f"{_OPENFOOTBALL_BASE}/{year}/{file_name}.json"
 
 
 def _openfootball_fetch(slug, year):
@@ -1344,7 +1343,7 @@ def _resolve_team_id(team_id, *, params=None):
             )
             if comp:
                 search_params["competition_id"] = comp
-        results = search_team({"params": search_params})  # noqa: F821
+        results = search_team({"params": search_params})
         if isinstance(results, dict):
             matches = results.get("results") or []
             if matches:
@@ -1352,7 +1351,7 @@ def _resolve_team_id(team_id, *, params=None):
                 resolved = team_obj.get("id") or team_obj.get("team_id")
                 if resolved:
                     return str(resolved)
-    except Exception:  # noqa: BLE001
+    except Exception:  # ruff:ignore[blind-except]
         # Search itself failed — fall through and return the raw
         # name. Caller's ESPN request will fail and return a
         # consistent "no events" payload, which is still better

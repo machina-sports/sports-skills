@@ -11,6 +11,7 @@ import csv
 import json
 import logging
 import os
+import pathlib
 import time
 import urllib.request
 import zipfile
@@ -65,7 +66,7 @@ def _cache_dir():
         "XDG_CACHE_HOME", os.path.join(os.path.expanduser("~"), ".cache")
     )
     path = os.path.join(base, "sports-skills", "cricsheet")
-    os.makedirs(path, exist_ok=True)
+    pathlib.Path(path).mkdir(exist_ok=True, parents=True)
     return path
 
 
@@ -75,9 +76,9 @@ def _download(url, dest):
     with urllib.request.urlopen(req, timeout=120) as resp:
         data = resp.read()
     tmp = dest + ".tmp"
-    with open(tmp, "wb") as f:
+    with pathlib.Path(tmp).open("wb") as f:
         f.write(data)
-    os.replace(tmp, dest)
+    pathlib.Path(tmp).replace(dest)
 
 
 def _fetch_file(url, filename, ttl):
@@ -87,13 +88,13 @@ def _fetch_file(url, filename, ttl):
     present, serves the stale copy with stale=True instead of erroring.
     """
     path = os.path.join(_cache_dir(), filename)
-    if os.path.exists(path) and (time.time() - os.path.getmtime(path)) < ttl:
+    if pathlib.Path(path).exists() and (time.time() - pathlib.Path(path).stat().st_mtime) < ttl:
         return path, False, None
     try:
         _download(url, path)
         return path, False, None
-    except Exception as e:  # noqa: BLE001 — any failure falls back to stale/error
-        if os.path.exists(path):
+    except Exception as e:  # ruff:ignore[blind-except] — any failure falls back to stale/error
+        if pathlib.Path(path).exists():
             logger.warning("cricsheet download failed, serving stale %s: %s", filename, e)
             return path, True, None
         return None, False, {"error": True, "message": f"Cricsheet download failed: {e}"}
@@ -357,7 +358,7 @@ def find_player(request_data):
         return err
     needle = str(name).lower().strip()
     players = []
-    with open(path, newline="", encoding="utf-8") as f:
+    with pathlib.Path(path).open(newline="", encoding="utf-8") as f:
         for row in csv.DictReader(f):
             haystack = f"{row.get('name', '')} {row.get('unique_name', '')}".lower()
             if needle in haystack:

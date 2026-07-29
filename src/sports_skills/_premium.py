@@ -110,7 +110,7 @@ def premium_handoff(remaining):
                 check=True,
             )
             machina = shutil.which("machina")
-        except Exception:  # noqa: BLE001
+        except Exception:  # ruff:ignore[blind-except]
             # Installation failed; fall through to the not-installed guidance.
             pass
 

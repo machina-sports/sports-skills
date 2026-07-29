@@ -356,7 +356,7 @@ def get_sports_markets(request_data):
         )
 
     except Exception as e:
-        return _error(f"Error fetching sports markets: {str(e)}")
+        return _error(f"Error fetching sports markets: {e!s}")
 
 
 def get_sports_events(request_data):
@@ -406,7 +406,7 @@ def get_sports_events(request_data):
         )
 
     except Exception as e:
-        return _error(f"Error fetching sports events: {str(e)}")
+        return _error(f"Error fetching sports events: {e!s}")
 
 
 def get_series(request_data):
@@ -455,7 +455,7 @@ def get_series(request_data):
         )
 
     except Exception as e:
-        return _error(f"Error fetching series: {str(e)}")
+        return _error(f"Error fetching series: {e!s}")
 
 
 def get_market_details(request_data):
@@ -489,7 +489,7 @@ def get_market_details(request_data):
         )
 
     except Exception as e:
-        return _error(f"Error fetching market details: {str(e)}")
+        return _error(f"Error fetching market details: {e!s}")
 
 
 def get_event_details(request_data):
@@ -527,7 +527,7 @@ def get_event_details(request_data):
         return _success(normalized, f"Retrieved event: {normalized.get('title', '')}")
 
     except Exception as e:
-        return _error(f"Error fetching event details: {str(e)}")
+        return _error(f"Error fetching event details: {e!s}")
 
 
 def get_market_prices(request_data):
@@ -572,26 +572,25 @@ def get_market_prices(request_data):
 
             return _success(price_data, "Price data retrieved")
 
-        else:
-            # Batch price lookup
-            prices = []
-            for tid in token_ids[:20]:  # Cap at 20 to avoid rate limits
-                midpoint = _clob_request("/midpoint", params={"token_id": tid})
-                if not _check_error(midpoint):
-                    prices.append(
-                        {
-                            "token_id": tid,
-                            "midpoint": _safe_float(midpoint.get("mid")),
-                        }
-                    )
+        # Batch price lookup
+        prices = []
+        for tid in token_ids[:20]:  # Cap at 20 to avoid rate limits
+            midpoint = _clob_request("/midpoint", params={"token_id": tid})
+            if not _check_error(midpoint):
+                prices.append(
+                    {
+                        "token_id": tid,
+                        "midpoint": _safe_float(midpoint.get("mid")),
+                    }
+                )
 
-            return _success(
-                {"prices": prices, "count": len(prices)},
-                f"Retrieved prices for {len(prices)} tokens",
-            )
+        return _success(
+            {"prices": prices, "count": len(prices)},
+            f"Retrieved prices for {len(prices)} tokens",
+        )
 
     except Exception as e:
-        return _error(f"Error fetching market prices: {str(e)}")
+        return _error(f"Error fetching market prices: {e!s}")
 
 
 def get_order_book(request_data):
@@ -654,7 +653,7 @@ def get_order_book(request_data):
         )
 
     except Exception as e:
-        return _error(f"Error fetching order book: {str(e)}")
+        return _error(f"Error fetching order book: {e!s}")
 
 
 def get_sports_market_types(request_data):
@@ -671,7 +670,7 @@ def get_sports_market_types(request_data):
         return _success(response, "Sports market types retrieved")
 
     except Exception as e:
-        return _error(f"Error fetching sports market types: {str(e)}")
+        return _error(f"Error fetching sports market types: {e!s}")
 
 
 def search_markets(request_data):
@@ -795,7 +794,7 @@ def search_markets(request_data):
         )
 
     except Exception as e:
-        return _error(f"Error searching markets: {str(e)}")
+        return _error(f"Error searching markets: {e!s}")
 
 
 def _text_match(query, event):
@@ -846,7 +845,7 @@ def get_sports_config(request_data):
         )
 
     except Exception as e:
-        return _error(f"Error fetching sports config: {str(e)}")
+        return _error(f"Error fetching sports config: {e!s}")
 
 
 def _get_sports_config():
@@ -933,7 +932,7 @@ def get_todays_events(request_data):
         )
 
     except Exception as e:
-        return _error(f"Error fetching today's events: {str(e)}")
+        return _error(f"Error fetching today's events: {e!s}")
 
 
 def get_price_history(request_data):
@@ -974,7 +973,7 @@ def get_price_history(request_data):
         )
 
     except Exception as e:
-        return _error(f"Error fetching price history: {str(e)}")
+        return _error(f"Error fetching price history: {e!s}")
 
 
 def get_last_trade_price(request_data):
@@ -1007,7 +1006,7 @@ def get_last_trade_price(request_data):
         )
 
     except Exception as e:
-        return _error(f"Error fetching last trade price: {str(e)}")
+        return _error(f"Error fetching last trade price: {e!s}")
 
 
 def get_esports_events(request_data):
@@ -1051,4 +1050,4 @@ def get_esports_events(request_data):
             f"Retrieved {len(normalized)} esports events",
         )
     except Exception as e:
-        return _error(f"Error fetching esports events: {str(e)}")
+        return _error(f"Error fetching esports events: {e!s}")
