@@ -27,7 +27,7 @@ def test_catalog_has_agent_safety_policy():
 
 def test_high_risk_skills_require_confirmation():
     catalog = json.loads((SKILLS / "catalog.json").read_text())
-    for name in ["machina", "world-cup", "polymarket-trading"]:
+    for name in ["machina", "world-cup", "lumify", "polymarket-trading"]:
         meta = catalog["skills"][name]
         assert meta["requires_explicit_confirmation"] is True
         assert meta["risk"] in {"high", "critical"}

@@ -1,3 +1,8 @@
+## [Unreleased]
+
+### Added
+- **`lumify` skill (prompt-only, hosted MCP):** routes agents to Lumify's read-only sports intelligence MCP at `https://lumify.ai/mcp` (schedules, live scores, sportsbook odds/history, public betting splits, soccer stats, explainable confidence). Metered credits with a free instant trial key; no local code or order execution. Catalog risk metadata matches other premium MCP skills (`premium_mcp_read_only`, confirmation required).
+
 ## [0.29.0]
 
 ### Added

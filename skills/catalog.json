@@ -111,6 +111,17 @@
       "skill_path": "skills/kalshi/SKILL.md",
       "untrusted_content": true
     },
+    "lumify": {
+      "description": "Hosted, read-only sports intelligence via Lumify's MCP + REST API \u2014 schedules, live scores, sportsbook odds, line history, public betting splits, soccer match stats, and explainable bet intelligence (confidence, signals, rationale). This skill is prompt-only and metered: it routes the agent to Lumify's hosted MCP server at https://lumify.ai/mcp (or the stdio bridge `@lumifyai/mcp`).",
+      "external_network": true,
+      "mode": "premium_mcp_read_only",
+      "money_movement": false,
+      "requires_explicit_confirmation": true,
+      "risk": "high",
+      "secrets_required": true,
+      "skill_path": "skills/lumify/SKILL.md",
+      "untrusted_content": true
+    },
     "machina": {
       "description": "Gateway to the Machina Sports premium platform \u2014 packaged agent workflows (\"templates\"), licensed real-time data, betting odds, and zero-latency live streams. This skill is prompt-only: it shells out to the separate `machina-cli` binary and",
       "external_network": true,
