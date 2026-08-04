@@ -479,6 +479,12 @@ _REGISTRY = {
         "get_tournaments": {"optional": ["limit"]},
         "get_news": {"optional": ["limit"]},
     },
+    "prospects": {
+        "list_cohorts": {},
+        "get_methodology": {},
+        "get_cohort_index": {"optional": ["cohort_id", "position", "country", "limit"]},
+        "get_player_index": {"required": ["query"], "optional": ["cohort_id"]},
+    },
     "xctf": {
         "search_athlete": {"required": ["name", "school"]},
         "get_athlete_profile": {"required": ["athlete_id", "school", "name"]},
@@ -679,6 +685,10 @@ def _load_module(name):
         from sports_skills import volleyball
 
         return volleyball
+    elif name == "prospects":
+        from sports_skills import prospects
+
+        return prospects
     elif name == "xctf":
         from sports_skills import xctf
 

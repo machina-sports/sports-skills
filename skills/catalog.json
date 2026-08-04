@@ -210,6 +210,17 @@
       "skill_path": "skills/polymarket-trading/SKILL.md",
       "untrusted_content": true
     },
+    "prospect-index": {
+      "description": "MPI (Machina Prospect Index) — continuous, decomposable score for young football players who don't have a market price yet. Base 7,500 + fact component (published weights) + projection component (backtest-calibrated probability). v0 ships one",
+      "external_network": false,
+      "mode": "compute",
+      "money_movement": false,
+      "requires_explicit_confirmation": false,
+      "risk": "low",
+      "secrets_required": false,
+      "skill_path": "skills/prospect-index/SKILL.md",
+      "untrusted_content": false
+    },
     "sports-news": {
       "description": "Sports news via RSS/Atom feeds and Google News. Fetch headlines, search by query, filter by date. Covers football news, transfer rumors, match reports, and any sport via Google News.",
       "external_network": true,
