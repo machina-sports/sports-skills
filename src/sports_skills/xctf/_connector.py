@@ -252,9 +252,25 @@ def _parse_team_roster(html: str) -> list[dict]:
             continue
         seen.add(key)
         athletes.append(
-            {"athlete_id": athlete_id, "school": school_slug, "name": name_slug}
+            {
+                "athlete_id": athlete_id,
+                "school": school_slug,
+                # `name` is the URL slug ("Amaya_Bharadwaj"); `display_name` is
+                # the readable form, and the only one search_athlete matches.
+                "name": name_slug,
+                "display_name": _readable_name(name_slug),
+            }
         )
     return athletes
+
+
+def _readable_name(name_slug: str) -> str:
+    """Turn a TFRRS name slug into a readable name.
+
+    Slugs join words with underscores and sometimes double them up
+    ("Silan__Ayyildiz"), so collapse runs before splitting.
+    """
+    return re.sub(r"_+", " ", name_slug).strip()
 
 
 def search_athlete(*, name: str, school: str = "") -> dict:
@@ -358,12 +374,16 @@ def get_team_roster(*, school: str, sport: str = "both") -> dict:
     sports = ["xc", "tf"] if sport == "both" else [sport]
     athletes: list[dict] = []
     seen: set[tuple] = set()
+    attempted = 0
+    failures: list[str] = []
 
     for sp in sports:
         for slug, gender in _gender_slugs(school):
             url = f"{_BASE}/teams/{sp}/{slug}.html"
+            attempted += 1
             result = _fetch(url)
             if isinstance(result, dict):
+                failures.append(f"{sp}/{slug}: {result.get('message', 'fetch failed')}")
                 continue
             for athlete in _parse_team_roster(result):
                 key = (athlete["athlete_id"], sp)
@@ -382,7 +402,27 @@ def get_team_roster(*, school: str, sport: str = "both") -> dict:
                     }
                 )
 
-    return {"school": school, "sport": sport, "count": len(athletes), "athletes": athletes}
+    if not athletes and len(failures) == attempted:
+        # Every page missed — almost always a bad slug. Returning an empty roster
+        # here is indistinguishable from a team that exists but has no athletes.
+        return {
+            "error": True,
+            "message": (
+                f"No TFRRS team page found for school={school!r}. Expected a team slug "
+                "from the team page URL (e.g. 'CA_college_m_Stanford'), not a plain "
+                f"school name. Upstream: {failures[0]}"
+            ),
+        }
+
+    result = {
+        "school": school,
+        "sport": sport,
+        "count": len(athletes),
+        "athletes": athletes,
+    }
+    if failures:
+        result["warnings"] = [f"{len(failures)} of {attempted} roster pages unavailable"]
+    return result
 
 
 # ---------------------------------------------------------------------------
