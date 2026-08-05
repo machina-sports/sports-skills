@@ -352,6 +352,17 @@ _REGISTRY = {
         "get_live_boxscore": {"required": ["game_id"]},
         "get_live_playbyplay": {"required": ["game_id"], "optional": ["limit", "scoring_only"]},
         "get_player_live_stats": {"required": ["player_name"]},
+        "find_nba_player": {"required": ["name"]},
+        "get_nbastats_game_log": {"optional": ["season", "team", "season_type"]},
+        "get_nbastats_player_career": {"optional": ["player_id", "player", "per_mode"]},
+        "get_nbastats_team_stats": {
+            "optional": ["season", "team", "measure", "per_mode", "season_type"]
+        },
+        "get_nbastats_shot_chart": {
+            "optional": ["player_id", "player", "season", "season_type", "limit"]
+        },
+        "get_nbastats_play_by_play": {"required": ["game_id"], "optional": ["limit"]},
+        "get_nbastats_advanced_boxscore": {"required": ["game_id"]},
     },
     "wnba": {
         "get_scoreboard": {"optional": ["date"]},
@@ -414,6 +425,18 @@ _REGISTRY = {
         "get_depth_chart": {"required": ["team_id"]},
         "get_team_stats": {"required": ["team_id"], "optional": ["season_year", "season_type"]},
         "get_player_stats": {"required": ["player_id"], "optional": ["season_year", "season_type"]},
+        "find_mlb_player": {"required": ["name"]},
+        "get_mlbstats_schedule": {"optional": ["date", "season", "team", "game_type"]},
+        "get_mlbstats_player_stats": {
+            "optional": ["player_id", "player", "stat_type", "stat_group", "season"]
+        },
+        "get_mlbstats_play_by_play": {"required": ["game_pk"], "optional": ["limit"]},
+        "get_mlbstats_boxscore": {"required": ["game_pk"]},
+        "get_mlbstats_standings": {"optional": ["season"]},
+        "get_mlbstats_leaders": {
+            "required": ["category"],
+            "optional": ["season", "stat_group", "limit"],
+        },
     },
     "tennis": {
         "get_scoreboard": {"optional": ["tour", "date"]},

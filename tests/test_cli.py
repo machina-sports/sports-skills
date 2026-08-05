@@ -84,3 +84,33 @@ class TestParseCliKwargs:
 
     def test_empty(self):
         assert _parse_cli_kwargs([]) == {}
+
+
+class TestDualFormIntParams:
+    """`season` and `season_type` are ints for the ESPN-backed commands but
+    documented string forms for the NBA Stats backend ("2024-25", "playoffs").
+    Plain digits must still coerce; the string forms must pass through."""
+
+    def test_plain_digits_still_coerce(self):
+        from sports_skills.cli import _parse_value
+
+        assert _parse_value("season", "2024") == 2024
+        assert _parse_value("season_type", "2") == 2
+
+    def test_nba_season_form_passes_through(self):
+        from sports_skills.cli import _parse_value
+
+        assert _parse_value("season", "2024-25") == "2024-25"
+
+    def test_named_season_type_passes_through(self):
+        from sports_skills.cli import _parse_value
+
+        assert _parse_value("season_type", "playoffs") == "playoffs"
+
+    def test_ordinary_int_params_still_strict(self):
+        import pytest
+
+        from sports_skills.cli import _parse_value
+
+        with pytest.raises(ValueError):
+            _parse_value("limit", "many")
