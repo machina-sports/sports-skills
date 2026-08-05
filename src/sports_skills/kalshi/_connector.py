@@ -12,6 +12,8 @@ import urllib.error
 import urllib.parse
 import urllib.request
 
+from sports_skills._espn_base import _summarize_http_error
+
 # ============================================================
 # Configuration
 # ============================================================
@@ -109,7 +111,11 @@ def _request(endpoint, params=None, ttl=120):
             return data
     except urllib.error.HTTPError as e:
         body = e.read().decode() if e.fp else ""
-        return {"error": True, "status_code": e.code, "message": body}
+        return {
+            "error": True,
+            "status_code": e.code,
+            "message": _summarize_http_error(e.code, url, body),
+        }
     except Exception as e:
         return {"error": True, "message": str(e)}
 
@@ -129,9 +135,13 @@ def _error(message, data=None):
 
 def _check_error(response):
     if isinstance(response, dict) and response.get("error"):
-        code = response.get("status_code", "unknown")
         msg = response.get("message", "Unknown error")
-        return _error(f"API error ({code}): {msg}")
+        # Transport-level messages already name the status and host; only
+        # annotate the ones that don't.
+        if not msg.startswith("HTTP "):
+            code = response.get("status_code", "unknown")
+            msg = f"API error ({code}): {msg}"
+        return _error(msg)
     return None
 
 
