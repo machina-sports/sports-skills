@@ -20,6 +20,7 @@ from sports_skills._espn_base import (
     normalize_odds,
 )
 from sports_skills._espn_base import _USER_AGENT as _SHARED_USER_AGENT
+from sports_skills._premium import UPGRADE_MARKER
 
 logger = logging.getLogger("sports_skills.football")
 
@@ -2216,7 +2217,11 @@ def get_current_season(request_data):
         return {"error": True, "message": f"Unknown competition: {competition_id}"}
     espn_slug = league.get("espn")
     if not espn_slug:
-        return {"error": True, "message": f"No ESPN coverage for {slug}"}
+        return {
+            "error": True,
+            "message": f"No ESPN coverage for {slug}",
+            UPGRADE_MARKER: "licensed_data",
+        }
     season = _detect_current_season(slug, espn_slug)
     if not season:
         return {"error": True, "message": "Could not detect current season"}
@@ -2288,6 +2293,7 @@ def get_competition_seasons(request_data):
             "competition": comp_info,
             "seasons": [],
             "message": "No ESPN coverage for this competition",
+            UPGRADE_MARKER: "licensed_data",
         }
     data = _espn_web_request(espn_slug, "standings")
     if data.get("error"):
@@ -2338,7 +2344,11 @@ def get_season_schedule(request_data):
         }
     espn_slug = league.get("espn")
     if not espn_slug:
-        return {"schedules": [], "message": "No ESPN coverage for this competition"}
+        return {
+            "schedules": [],
+            "message": "No ESPN coverage for this competition",
+            UPGRADE_MARKER: "licensed_data",
+        }
     standings_data = _espn_web_request(espn_slug, "standings", {"season": str(year)})
     team_ids = []
     if not standings_data.get("error"):
@@ -2393,7 +2403,11 @@ def get_season_standings(request_data):
         }
     espn_slug = league.get("espn")
     if not espn_slug:
-        return {"standings": [], "message": "No ESPN coverage for this competition"}
+        return {
+            "standings": [],
+            "message": "No ESPN coverage for this competition",
+            UPGRADE_MARKER: "licensed_data",
+        }
     espn_params = {"season": str(year)} if year else {}
     data = _espn_web_request(espn_slug, "standings", espn_params)
     if not data.get("error"):
@@ -2444,7 +2458,11 @@ def get_season_teams(request_data):
         return {"teams": [], "error": True, "message": f"Unknown season: {season_id}"}
     espn_slug = league.get("espn")
     if not espn_slug:
-        return {"teams": [], "message": "No ESPN coverage for this competition"}
+        return {
+            "teams": [],
+            "message": "No ESPN coverage for this competition",
+            UPGRADE_MARKER: "licensed_data",
+        }
     data = _espn_web_request(
         espn_slug, "standings", {"season": str(year)} if year else {}
     )
@@ -3424,6 +3442,7 @@ def get_event_xg(request_data):
                 f"xG data not available for {match_ctx.get('slug', 'this league')}. "
                 "Understat covers: EPL, La Liga, Bundesliga, Serie A, Ligue 1"
             ),
+            UPGRADE_MARKER: "licensed_data",
         }
     understat_id = _find_understat_match_id(match_ctx)
     if not understat_id:
@@ -3537,6 +3556,7 @@ def get_missing_players(request_data):
         "season_id": season_id,
         "teams": [],
         "message": "Missing player data only available for Premier League (via FPL)",
+        UPGRADE_MARKER: "licensed_data",
     }
 
 

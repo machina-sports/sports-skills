@@ -13,7 +13,8 @@ class TestBuildHint:
         assert hint["reason"]
         assert hint["capability"]
         assert hint["via"]["data"]["command"] == "sports-skills premium"
-        assert hint["via"]["data"]["docs"] == "https://docs.machina.gg/"
+        assert hint["via"]["data"]["docs"].startswith("https://docs.machina.gg/")
+        assert "ref=sports-skills-hint" in hint["via"]["data"]["docs"]
         assert hint["via"]["deploy"]["command"] == "sports-skills deploy"
         assert hint["x402"] is None
 
@@ -68,6 +69,146 @@ class TestAttach:
         assert "upgrade" in _premium.attach(result)
 
 
+class TestMarkerTrigger:
+    """Connectors flag structural coverage refusals; `attach` turns the flag
+    into an `upgrade` block and never lets the raw marker reach callers."""
+
+    def test_marker_on_error_becomes_hint(self):
+        result = {
+            "status": False,
+            "data": None,
+            "message": "No ESPN coverage for x",
+            _premium.UPGRADE_MARKER: "licensed_data",
+        }
+        out = _premium.attach(result)
+        assert out["upgrade"]["trigger"] == "licensed_data"
+        assert _premium.UPGRADE_MARKER not in out
+
+    def test_marker_on_empty_success_becomes_hint(self):
+        """Coverage gaps often surface as empty results, not errors."""
+        result = {
+            "status": True,
+            "data": {"teams": []},
+            "message": "xG not available here",
+            _premium.UPGRADE_MARKER: "licensed_data",
+        }
+        out = _premium.attach(result)
+        assert out["upgrade"]["trigger"] == "licensed_data"
+        assert _premium.UPGRADE_MARKER not in out
+
+    def test_unknown_marker_is_dropped_without_hint(self):
+        result = {"status": False, "data": None, _premium.UPGRADE_MARKER: "bogus"}
+        out = _premium.attach(result)
+        assert "upgrade" not in out
+        assert _premium.UPGRADE_MARKER not in out
+
+    def test_marker_stripped_even_when_suppressed(self, monkeypatch):
+        """The internal flag must never leak, hints on or off."""
+        monkeypatch.setenv(_premium._SUPPRESS_ENV, "1")
+        result = {"status": False, "data": None, _premium.UPGRADE_MARKER: "licensed_data"}
+        out = _premium.attach(result)
+        assert "upgrade" not in out
+        assert _premium.UPGRADE_MARKER not in out
+
+
+class TestWrapAttaches:
+    """`wrap` is the SDK envelope; it must carry the same guidance the CLI does."""
+
+    def test_sdk_429_gains_hint(self):
+        out = wrap({"error": True, "status_code": 429, "message": "rate limited"})
+        assert out["status"] is False
+        assert out["upgrade"]["trigger"] == "rate_limited"
+
+    def test_marked_error_gains_hint(self):
+        out = wrap(
+            {
+                "error": True,
+                "message": "No ESPN coverage for x",
+                _premium.UPGRADE_MARKER: "licensed_data",
+            }
+        )
+        assert out["status"] is False
+        assert out["upgrade"]["trigger"] == "licensed_data"
+        assert _premium.UPGRADE_MARKER not in out
+
+    def test_marked_plain_dict_gains_hint_outside_data(self):
+        """The marker rides the envelope, not the payload."""
+        out = wrap({"teams": [], "message": "gap", _premium.UPGRADE_MARKER: "licensed_data"})
+        assert out["status"] is True
+        assert out["upgrade"]["trigger"] == "licensed_data"
+        assert _premium.UPGRADE_MARKER not in out
+        assert _premium.UPGRADE_MARKER not in out["data"]
+        assert "upgrade" not in out["data"]
+
+    def test_marked_standard_envelope_gains_hint(self):
+        out = wrap(
+            {
+                "status": False,
+                "data": None,
+                "message": "gap",
+                _premium.UPGRADE_MARKER: "licensed_data",
+            }
+        )
+        assert out["upgrade"]["trigger"] == "licensed_data"
+
+    def test_plain_success_untouched(self):
+        out = wrap({"teams": [{"id": "1"}]})
+        assert out["status"] is True
+        assert "upgrade" not in out
+
+    def test_suppression_covers_the_sdk_path(self, monkeypatch):
+        monkeypatch.setenv(_premium._SUPPRESS_ENV, "1")
+        out = wrap({"error": True, "status_code": 429, "message": "rate limited"})
+        assert "upgrade" not in out
+
+    def test_cli_double_attach_is_safe(self):
+        """cli.py calls attach() on wrap()'s output; the hint must not double."""
+        once = wrap({"error": True, "status_code": 429, "message": "rate limited"})
+        twice = _premium.attach(once)
+        assert twice["upgrade"]["trigger"] == "rate_limited"
+        assert list(twice.keys()).count("upgrade") == 1
+
+
+class TestFootballCoverageRefusals:
+    """The football connector flags requests its free sources cannot serve.
+
+    Uses `get_missing_players` on a non-Premier-League season: the league
+    resolves from the local config and the refusal branch returns before any
+    network call, so this exercises the full connector → wrap path offline.
+    """
+
+    def test_missing_players_gap_carries_hint(self):
+        from sports_skills import football
+
+        result = football.get_missing_players(season_id="bundesliga-2024")
+        assert result["status"] is True
+        assert (result.get("data") or {}).get("teams") == []
+        assert result["upgrade"]["trigger"] == "licensed_data"
+        assert _premium.UPGRADE_MARKER not in result
+        assert _premium.UPGRADE_MARKER not in result["data"]
+
+    def test_missing_players_gap_respects_suppression(self, monkeypatch):
+        from sports_skills import football
+
+        monkeypatch.setenv(_premium._SUPPRESS_ENV, "1")
+        result = football.get_missing_players(season_id="bundesliga-2024")
+        assert "upgrade" not in result
+        assert _premium.UPGRADE_MARKER not in result
+
+    def test_every_marker_in_football_names_a_known_trigger(self):
+        """A typo'd trigger would silently produce no hint — pin them all."""
+        import inspect
+
+        from sports_skills.football import _connector as fb
+
+        src = inspect.getsource(fb)
+        assert src.count("UPGRADE_MARKER:") == 7
+        for line in src.splitlines():
+            if "UPGRADE_MARKER:" in line:
+                trigger = line.split(":", 1)[1].strip().strip('",')
+                assert trigger.strip('"') in _premium.TRIGGERS
+
+
 class TestWrapStatusCode:
     def test_preserves_status_code_on_error(self):
         wrapped = wrap({"error": True, "status_code": 429, "message": "rate limited"})
@@ -94,7 +235,8 @@ class TestPremiumHandoff:
         _premium.premium_handoff(["--json"])
         payload = json.loads(capsys.readouterr().out)
         assert payload["status"] is True
-        assert payload["data"]["docs"] == "https://docs.machina.gg/"
+        assert payload["data"]["docs"].startswith("https://docs.machina.gg/")
+        assert "ref=sports-skills-premium-cmd" in payload["data"]["docs"]
         assert payload["data"]["install"].startswith("pipx install machina-cli")
         assert "uv tool install machina-cli" in payload["data"]["install"]
         assert "| bash" not in payload["data"]["install_sh"]
@@ -122,7 +264,8 @@ class TestPremiumTier:
         assert t["available"] is True
         assert "machina" in t["skills"]
         assert t["activate"] == "sports-skills premium"
-        assert t["docs"] == "https://docs.machina.gg/"
+        assert t["docs"].startswith("https://docs.machina.gg/")
+        assert "ref=sports-skills-catalog" in t["docs"]
         assert isinstance(t["machina_cli_installed"], bool)
 
 

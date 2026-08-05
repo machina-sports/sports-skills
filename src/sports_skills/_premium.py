@@ -28,6 +28,13 @@ _PREMIUM_NEXT = [
 
 _SUPPRESS_ENV = "SPORTS_SKILLS_NO_UPGRADE_HINTS"
 
+# Internal marker key. A connector that refuses a request because the free
+# sources structurally cannot serve it (not a transient miss) sets
+# ``result[UPGRADE_MARKER] = "licensed_data"``; ``attach`` consumes the marker
+# and replaces it with a full ``upgrade`` block. The marker is always stripped
+# from the response, including when hints are suppressed.
+UPGRADE_MARKER = "upgrade_trigger"
+
 TRIGGERS = {
     "rate_limited": {
         "reason": "The public API rate-limited this request.",
@@ -44,7 +51,18 @@ def _hints_suppressed():
     return os.environ.get(_SUPPRESS_ENV, "").strip().lower() in ("1", "true", "yes", "on")
 
 
-def build_hint(trigger):
+def _tagged(url, surface):
+    """Append a ``ref`` parameter naming the surface a link was shown on.
+
+    Lets the docs site attribute visits per surface without this package
+    sending anything anywhere itself — the URL only carries the tag if the
+    user (or agent) chooses to open it.
+    """
+    sep = "&" if "?" in url else "?"
+    return f"{url}{sep}ref=sports-skills-{surface}"
+
+
+def build_hint(trigger, surface="hint"):
     """Build an additive ``upgrade`` block for a known trigger."""
     info = TRIGGERS.get(trigger)
     if info is None:
@@ -57,7 +75,7 @@ def build_hint(trigger):
             "data": {
                 "skill": "machina",
                 "command": _PREMIUM_COMMAND,
-                "docs": DOCS_URL,
+                "docs": _tagged(DOCS_URL, surface),
             },
             "deploy": {"command": "sports-skills deploy"},
         },
@@ -78,18 +96,34 @@ def premium_tier():
         "activate": _PREMIUM_COMMAND,
         "requires": "machina-cli",
         "machina_cli_installed": shutil.which("machina") is not None,
-        "docs": DOCS_URL,
+        "docs": _tagged(DOCS_URL, "catalog"),
     }
 
 
 def attach(result):
-    """Attach an upgrade hint to rate-limited responses."""
-    if _hints_suppressed():
+    """Attach an upgrade hint where the free tier could not serve the request.
+
+    Two ways in:
+    - a connector marked the response via ``UPGRADE_MARKER`` (deliberate,
+      set only at structural coverage refusals), or
+    - the response is a rate-limited error (``status_code == 429``).
+
+    The marker is consumed unconditionally so it never reaches callers, and
+    ``attach`` is idempotent — a response that already carries ``upgrade``
+    passes through untouched.
+    """
+    if not isinstance(result, dict):
         return result
-    if not isinstance(result, dict) or "upgrade" in result:
+    marker = result.pop(UPGRADE_MARKER, None)
+    if _hints_suppressed() or "upgrade" in result:
         return result
-    if result.get("status") is False and result.get("status_code") == 429:
-        hint = build_hint("rate_limited")
+    trigger = None
+    if marker in TRIGGERS:
+        trigger = marker
+    elif result.get("status") is False and result.get("status_code") == 429:
+        trigger = "rate_limited"
+    if trigger:
+        hint = build_hint(trigger)
         if hint is not None:
             result["upgrade"] = hint
     return result
@@ -128,7 +162,7 @@ def premium_handoff(remaining):
                         "install": MACHINA_INSTALL,
                         "install_sh": MACHINA_INSTALL_SH,
                         "next": _PREMIUM_NEXT,
-                        "docs": DOCS_URL,
+                        "docs": _tagged(DOCS_URL, "premium-cmd"),
                     },
                 },
                 indent=2,
@@ -153,4 +187,4 @@ def premium_handoff(remaining):
         print("\n  2. Then:")
         for s in _PREMIUM_NEXT:
             print(f"    $ {s}")
-    print(f"\n  Docs: {DOCS_URL}")
+    print(f"\n  Docs: {_tagged(DOCS_URL, 'premium-cmd')}")
