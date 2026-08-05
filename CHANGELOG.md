@@ -1,3 +1,11 @@
+## [Unreleased]
+
+### Fixed
+- **The entire `volleyball` skill was dead:** `get_standings`, `get_schedule`, and `get_results` returned HTTP 404 for **all 8 configured leagues** — 0 of 24 combinations worked. Nevobo embeds a season counter in both halves of a poule path (`competitie-eredivisie-1/…-eh-11` became `competitie-eredivisie/…-eh-12`), so the hardcoded paths expired when the season turned over and would expire again every year. Paths are now resolved from the Nevobo API by the parts that stay put — the competition family and the poule's letter code — and cached for 6 hours, with the configured path kept only as a fallback for when the API is unreachable. All 8 leagues serve standings (8–10 teams) and schedules (56–90 fixtures) again; `results` is legitimately empty until the 2026/27 season plays its first match.
+
+### Added
+- **`tests/test_volleyball.py`:** offline coverage for poule resolution — the current-suffix lookup, distinguishing poule codes, tolerating a counter on the competition slug itself, ignoring same-named regional competitions, falling back on an unknown code or an unreachable API, and caching. Also guards that every configured league carries the keys resolution needs and that no two leagues resolve to the same poule.
+
 ## [0.29.0]
 
 ### Added
