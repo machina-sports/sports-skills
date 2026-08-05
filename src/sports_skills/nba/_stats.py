@@ -147,6 +147,33 @@ def _season_str(season: Any) -> str:
     )
 
 
+def _require_nba_game_id(game_id: Any) -> str:
+    """Validate the 10-digit NBA game id, catching ESPN event ids early.
+
+    Passing an ESPN event id here is the natural mistake given both id systems
+    live in this module — upstream answers it with a bare HTTP 400, so catch it
+    before the request and say which id system is expected.
+    """
+    if not game_id:
+        raise _NbaStatsError(
+            "game_id is required — the 10-digit NBA game id from get_nbastats_game_log "
+            "(e.g. '0022400061'), not an ESPN event id."
+        )
+    text = str(game_id).strip()
+    if not re.fullmatch(r"\d{10}", text):
+        hint = (
+            " That looks like an ESPN event id — join via get_nbastats_game_log "
+            "(game date + team abbreviations) to find the NBA game id."
+            if re.fullmatch(r"4\d{8}", text)
+            else ""
+        )
+        raise _NbaStatsError(
+            f"Invalid NBA game id {game_id!r}. Expected the 10-digit id from "
+            f"get_nbastats_game_log (e.g. '0022400061').{hint}"
+        )
+    return text
+
+
 def _normalize_team(team: Any) -> str | None:
     """Translate a team abbreviation to NBA.com's spelling (accepts ESPN's)."""
     if team is None:
@@ -591,12 +618,7 @@ def get_nbastats_shot_chart(request_data: dict[str, Any]) -> dict[str, Any]:
 @_guard
 def get_nbastats_play_by_play(request_data: dict[str, Any]) -> dict[str, Any]:
     params = request_data.get("params", {})
-    game_id = params.get("game_id")
-    if not game_id:
-        raise _NbaStatsError(
-            "game_id is required — the 10-digit NBA game id from get_nbastats_game_log "
-            "(e.g. '0022400061'), not an ESPN event id."
-        )
+    game_id = _require_nba_game_id(params.get("game_id"))
     limit = params.get("limit")
 
     data = _request(
@@ -663,12 +685,7 @@ def _normalize_box_team(side: dict[str, Any]) -> dict[str, Any]:
 @_guard
 def get_nbastats_advanced_boxscore(request_data: dict[str, Any]) -> dict[str, Any]:
     params = request_data.get("params", {})
-    game_id = params.get("game_id")
-    if not game_id:
-        raise _NbaStatsError(
-            "game_id is required — the 10-digit NBA game id from get_nbastats_game_log "
-            "(e.g. '0022400061'), not an ESPN event id."
-        )
+    game_id = _require_nba_game_id(params.get("game_id"))
 
     data = _request(
         "boxscoreadvancedv3",

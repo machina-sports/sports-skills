@@ -256,6 +256,23 @@ class TestPlayByPlay:
         assert out["error"] is True
         assert "ESPN event id" in out["message"]
 
+    def test_espn_event_id_is_caught_with_join_guidance(self, offline):
+        """The natural mistake: both id systems live in this module."""
+        out = _stats.get_nbastats_play_by_play({"params": {"game_id": "401704627"}})
+        assert out["error"] is True
+        assert "looks like an ESPN event id" in out["message"]
+        assert "get_nbastats_game_log" in out["message"]
+
+    def test_other_malformed_ids_get_the_format(self, offline):
+        out = _stats.get_nbastats_advanced_boxscore({"params": {"game_id": "abc"}})
+        assert out["error"] is True
+        assert "10-digit" in out["message"]
+        assert "looks like an ESPN event id" not in out["message"]
+
+    def test_valid_id_passes_validation(self, offline):
+        out = _stats.get_nbastats_advanced_boxscore({"params": {"game_id": "0022400072"}})
+        assert "error" not in out
+
 
 class TestAdvancedBoxscore:
     def test_both_sides_normalized(self, offline):
