@@ -2646,7 +2646,7 @@ def get_daily_schedule(request_data):
         # caller needs to know this answer is narrower than a normal one.
         result["partial"] = True
         result["warnings"] = [
-            f"All {attempted} ESPN competitions unavailable ({last_message}); "
+            f"{len(failed)} of {attempted} ESPN competitions unavailable ({last_message}); "
             "served from the openfootball fallback, which covers fewer competitions"
         ]
     return result
