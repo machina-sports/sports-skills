@@ -1,3 +1,12 @@
+## [Unreleased]
+
+### Fixed
+- **Invalid American odds produced confident, wrong numbers (`betting`):** the conversion accepted values strictly between -100 and +100, which are not American prices, and the formula degrades inside that band — it even inverts the sign convention, reporting `-50` as a 33% chance when negative odds must mean a favourite (>50%). `0` returned an even-money 50%. Decimal odds passed as American (`1.91` → 98%) hit the same path, which is the most common way to trigger it. All four entry points (`convert_odds`, `devig`, `parlay_analysis`, `line_movement`) now reject the band with a message pointing at `from_format='decimal'` / `'probability'`.
+- **`sports-skills betting convert_odds --odds=-110` was rejected outright:** the CLI registry marked `from_format` as required though it defaults to `"american"`, so the documented invocation failed on the interface the skill docs recommend using.
+
+### Added
+- **`tests/test_betting_validation.py`:** the American odds domain check at every entry point, including that even money (±100) still works, that the decimal and probability formats are unaffected, and that negative odds still mean a favourite. Adds a drift guard comparing every CLI registry entry against its function signature — that registry bug was the only mismatch across all 272 commands, and the guard keeps it that way.
+
 ## [0.29.0]
 
 ### Added

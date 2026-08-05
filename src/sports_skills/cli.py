@@ -183,7 +183,7 @@ _REGISTRY = {
         "get_lol_tournaments": {"optional": ["region", "limit"]},
     },
     "betting": {
-        "convert_odds": {"required": ["odds", "from_format"]},
+        "convert_odds": {"required": ["odds"], "optional": ["from_format"]},
         "devig": {"required": ["odds"], "optional": ["format"]},
         "find_edge": {"required": ["fair_prob", "market_prob"]},
         "kelly_criterion": {"required": ["fair_prob", "market_prob"]},

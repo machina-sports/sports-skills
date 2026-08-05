@@ -35,14 +35,42 @@ def _error(message, data=None):
 # ============================================================
 
 
+_MIN_AMERICAN = 100
+
+
+def _invalid_american(*values: float) -> str | None:
+    """Return an error message if any value is not a valid American price.
+
+    The American scale runs from +100 (even money) upward for underdogs and from
+    -100 downward for favorites; nothing lies between. The conversion formula
+    degrades silently inside that band and even inverts the sign convention —
+    -50 comes out as a 33% chance when negative odds must mean a favorite — so a
+    value there is rejected rather than answered with a confident number. Decimal
+    odds passed as American land here too, which is the common way to hit it.
+    """
+    bad = [v for v in values if -_MIN_AMERICAN < v < _MIN_AMERICAN]
+    if not bad:
+        return None
+    shown = ", ".join(f"{v:g}" for v in bad)
+    return (
+        f"Invalid American odds: {shown}. American prices must be <= -100 or >= +100 "
+        "(nothing lies between). If these are decimal odds or probabilities, pass "
+        "them with from_format='decimal' or from_format='probability'."
+    )
+
+
 def _american_to_prob(odds: float) -> float:
-    """Convert American odds to implied probability (0-1)."""
+    """Convert American odds to implied probability (0-1).
+
+    Callers must validate with :func:`_invalid_american` first; this assumes a
+    price already on the scale.
+    """
     if odds < 0:
         return -odds / (-odds + 100)
     elif odds > 0:
         return 100 / (odds + 100)
     else:
-        # odds == 0 is invalid in American format, treat as even
+        # Unreachable for validated input; even money rather than a ZeroDivision.
         return 0.5
 
 
@@ -91,6 +119,9 @@ def convert_odds(request_data: dict) -> dict:
     from_format = str(params.get("from_format", "american")).lower()
 
     if from_format == "american":
+        bad = _invalid_american(odds)
+        if bad:
+            return _error(bad)
         prob = _american_to_prob(odds)
         decimal_odds = _prob_to_decimal(prob)
         american = odds
@@ -161,6 +192,9 @@ def devig(request_data: dict) -> dict:
 
     # Convert all to implied probabilities
     if fmt == "american":
+        bad = _invalid_american(*odds_list)
+        if bad:
+            return _error(bad)
         raw_probs = [_american_to_prob(o) for o in odds_list]
     elif fmt == "decimal":
         raw_probs = [_decimal_to_prob(o) for o in odds_list]
@@ -522,6 +556,9 @@ def parlay_analysis(request_data: dict) -> dict:
 
     odds_format = str(params.get("odds_format", "american")).lower()
     if odds_format == "american":
+        bad = _invalid_american(parlay_odds)
+        if bad:
+            return _error(bad)
         implied_prob = _american_to_prob(parlay_odds)
         offered_american = parlay_odds
         offered_decimal = _prob_to_decimal(implied_prob)
@@ -656,6 +693,9 @@ def line_movement(request_data: dict) -> dict:
         except (TypeError, ValueError) as e:
             return _error(f"Invalid odds values: {e}")
 
+        bad = _invalid_american(open_odds, close_odds)
+        if bad:
+            return _error(bad)
         open_prob = _american_to_prob(open_odds)
         close_prob = _american_to_prob(close_odds)
         prob_shift = close_prob - open_prob
