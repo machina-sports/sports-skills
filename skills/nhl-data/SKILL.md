@@ -71,8 +71,39 @@ Derive the current year from the system prompt's date (e.g., `currentDate: 2026-
 | `get_futures` | Futures/odds markets |
 | `get_team_stats` | Team statistical profile |
 | `get_player_stats` | Player statistical profile |
+| `find_nhl_player` | Search the NHL's player registry by name |
+| `get_nhlstats_schedule` | Games via the NHL API — team seasons to the Original Six era, NHL game ids |
+| `get_nhlstats_player_stats` | Career season-by-season across leagues via NHL API |
+| `get_nhlstats_play_by_play` | Play-by-play with on-ice x/y coordinates, zone, shot type |
+| `get_nhlstats_boxscore` | Full box score (skaters + goalies) via NHL API |
+| `get_nhlstats_standings` | Standings, current or any historical date (back to 1917) |
+| `get_nhlstats_leaders` | Skater and goalie leaders by category |
 
 See `references/api-reference.md` for full parameter lists and return shapes.
+
+## Using ESPN and the NHL API Together
+
+The `get_nhlstats_*` commands read api-web.nhle.com — the NHL's current API.
+(The retired `statsapi.web.nhl.com`, which most community docs still describe,
+no longer resolves.) It carries the analytics layer ESPN does not: on-ice shot
+coordinates, cross-league career rows, goalie leaders, and history to the
+Original Six era. The two sources use unrelated id systems:
+
+- **Game ids.** NHL ids are 10 digits encoding season/type/game
+  (`2023030417`); ESPN uses 9-digit event ids (`401559593`). No shared column —
+  join on the game date plus teams.
+- **Team abbreviations.** Five teams differ: ESPN `LA`/`NJ`/`SJ`/`TB`/`UTAH`
+  vs NHL `LAK`/`NJD`/`SJS`/`TBL`/`UTA`. Every `get_nhlstats_*` team filter
+  accepts either spelling, and rows carry both (`team_abbreviation`,
+  `team_abbreviation_espn`).
+- **Player ids.** NHL player ids (`8478402`) and ESPN athlete ids are
+  unrelated. Resolve names with `find_nhl_player`; ASCII spellings match
+  accented names ("stutzle" finds "Tim Stützle").
+- **Career rows span leagues.** `get_nhlstats_player_stats` returns every
+  league a player appeared in, each row labelled with `league` — filter to
+  `NHL` before summing career numbers.
+- **Seasons.** Pass the starting year (`season=2024` means 2024-25). The NHL
+  form (`"20242025"`) is also accepted.
 
 ## Examples
 
