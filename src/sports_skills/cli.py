@@ -398,6 +398,15 @@ _REGISTRY = {
         "get_futures": {"optional": ["limit", "season_year"]},
         "get_team_stats": {"required": ["team_id"], "optional": ["season_year", "season_type"]},
         "get_player_stats": {"required": ["player_id"], "optional": ["season_year", "season_type"]},
+        "find_nhl_player": {"required": ["name"]},
+        "get_nhlstats_schedule": {"optional": ["date", "season", "team"]},
+        "get_nhlstats_player_stats": {"optional": ["player_id", "player"]},
+        "get_nhlstats_play_by_play": {"required": ["game_id"], "optional": ["limit"]},
+        "get_nhlstats_boxscore": {"required": ["game_id"]},
+        "get_nhlstats_standings": {"optional": ["date"]},
+        "get_nhlstats_leaders": {
+            "optional": ["category", "position", "season", "season_type", "limit"]
+        },
     },
     "mlb": {
         "get_scoreboard": {"optional": ["date"]},

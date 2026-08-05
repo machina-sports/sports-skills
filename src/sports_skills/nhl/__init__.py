@@ -51,6 +51,27 @@ from sports_skills.nhl._connector import (
 from sports_skills.nhl._connector import (
     get_transactions as _get_transactions,
 )
+from sports_skills.nhl._stats import (
+    find_nhl_player as _find_nhl_player,
+)
+from sports_skills.nhl._stats import (
+    get_nhlstats_boxscore as _get_nhlstats_boxscore,
+)
+from sports_skills.nhl._stats import (
+    get_nhlstats_leaders as _get_nhlstats_leaders,
+)
+from sports_skills.nhl._stats import (
+    get_nhlstats_play_by_play as _get_nhlstats_play_by_play,
+)
+from sports_skills.nhl._stats import (
+    get_nhlstats_player_stats as _get_nhlstats_player_stats,
+)
+from sports_skills.nhl._stats import (
+    get_nhlstats_schedule as _get_nhlstats_schedule,
+)
+from sports_skills.nhl._stats import (
+    get_nhlstats_standings as _get_nhlstats_standings,
+)
 
 
 def _params(**kwargs):
@@ -201,6 +222,131 @@ def get_player_stats(
         _get_player_stats(
             _params(
                 player_id=player_id, season_year=season_year, season_type=season_type
+            )
+        )
+    )
+
+
+# ============================================================
+# NHL API backend (api-web.nhle.com) — analytics layer
+# ============================================================
+
+
+def find_nhl_player(*, name: str) -> dict:
+    """Search the NHL's player registry by name.
+
+    Returns NHL player ids, which the other get_nhlstats_* functions take as
+    ``player_id``. These are NHL ids, unrelated to ESPN athlete ids. ASCII
+    queries match accented names ("stutzle" finds "Tim Stützle").
+
+    Args:
+        name: Full or partial player name (e.g. "McDavid", "Auston Matthews").
+    """
+    return wrap(_find_nhl_player(_params(name=name)))
+
+
+def get_nhlstats_schedule(
+    *,
+    date: str | None = None,
+    season: int | str | None = None,
+    team: str | None = None,
+) -> dict:
+    """Get NHL games via the NHL API, keyed by NHL game ids.
+
+    The 10-digit game id each row carries is what the other get_nhlstats_*
+    functions take. Team season schedules reach back to the Original Six era.
+    Rows carry both NHL and ESPN team abbreviations; join to the ESPN functions
+    on (game_date, teams) — the two id systems are unrelated.
+
+    Args:
+        date: A single day, YYYY-MM-DD. Defaults to today when no team is given.
+        season: Season starting year (e.g. 2024) or NHL form ("20242025").
+            Used with team.
+        team: Team abbreviation for a full season schedule. ESPN spellings
+            ("LA", "NJ", "SJ", "TB", "UTAH") are translated to the NHL's.
+    """
+    return wrap(_get_nhlstats_schedule(_params(date=date, season=season, team=team)))
+
+
+def get_nhlstats_player_stats(
+    *, player_id: str | None = None, player: str | None = None
+) -> dict:
+    """Get a player's career, season by season, via the NHL API.
+
+    Rows cover every league the player appeared in (each labelled with
+    ``league``), plus NHL career regular-season totals.
+
+    Args:
+        player_id: NHL player id (e.g. "8478402"). Find it with find_nhl_player.
+        player: Player name to resolve instead of player_id. Must match exactly
+            one player; ambiguous names return the candidates.
+    """
+    return wrap(_get_nhlstats_player_stats(_params(player_id=player_id, player=player)))
+
+
+def get_nhlstats_play_by_play(*, game_id: str, limit: int | None = None) -> dict:
+    """Get play-by-play with on-ice coordinates via the NHL API.
+
+    Every event carries x/y rink coordinates, zone, and shot type — data the
+    ESPN-backed get_play_by_play does not carry. Covers completed games from
+    past seasons.
+
+    Args:
+        game_id: 10-digit NHL game id from get_nhlstats_schedule
+            (e.g. "2023030417"). Not an ESPN event id.
+        limit: Maximum plays to return; truncation is flagged in the response.
+    """
+    return wrap(_get_nhlstats_play_by_play(_params(game_id=game_id, limit=limit)))
+
+
+def get_nhlstats_boxscore(*, game_id: str) -> dict:
+    """Get the full box score (skaters + goalies per team) via the NHL API.
+
+    Args:
+        game_id: 10-digit NHL game id from get_nhlstats_schedule
+            (e.g. "2023030417"). Not an ESPN event id.
+    """
+    return wrap(_get_nhlstats_boxscore(_params(game_id=game_id)))
+
+
+def get_nhlstats_standings(*, date: str | None = None) -> dict:
+    """Get NHL standings via the NHL API, current or for any historical date.
+
+    Args:
+        date: Standings as of this day, YYYY-MM-DD (reaches back to 1917).
+            Defaults to now.
+    """
+    return wrap(_get_nhlstats_standings(_params(date=date)))
+
+
+def get_nhlstats_leaders(
+    *,
+    category: str | None = None,
+    position: str | None = None,
+    season: int | str | None = None,
+    season_type: str | None = None,
+    limit: int | None = None,
+) -> dict:
+    """Get skater or goalie leaders via the NHL API.
+
+    Args:
+        category: Skater: "goals", "assists", "points" (default), "plusMinus",
+            "penaltyMins", "toi", "faceoffLeaders". Goalie: "wins" (default),
+            "shutouts", "savePctg", "goalsAgainstAverage".
+        position: "skater" (default) or "goalie".
+        season: Season starting year (e.g. 2024) or NHL form ("20242025").
+            Defaults to the current leaders.
+        season_type: "regular" (default) or "playoffs". Used with season.
+        limit: Max leaders to return (default 10).
+    """
+    return wrap(
+        _get_nhlstats_leaders(
+            _params(
+                category=category,
+                position=position,
+                season=season,
+                season_type=season_type,
+                limit=limit,
             )
         )
     )
