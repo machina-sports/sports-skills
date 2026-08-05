@@ -272,18 +272,32 @@ def get_scoreboard(request_data):
 
     # No tour specified — fetch both and combine
     all_tournaments = []
+    failures = []
     for t in sorted(_VALID_TOURS):
         tournaments, err = _fetch_scoreboard_for_tour(t, espn_params)
         if err:
             logger.warning("Failed to fetch %s scoreboard: %s", t.upper(), err.get("message", ""))
+            failures.append(f"{t.upper()}: {err.get('message', 'unknown error')}")
             continue
         all_tournaments.extend(tournaments)
 
-    return {
+    # Every tour failed — report it rather than returning an empty success, which
+    # a caller cannot distinguish from "no tournaments today".
+    if len(failures) == len(_VALID_TOURS):
+        return {
+            "error": True,
+            "message": "Failed to fetch any tour scoreboard — " + "; ".join(failures),
+        }
+
+    result = {
         "tour": "all",
         "tournaments": all_tournaments,
         "count": len(all_tournaments),
     }
+    if failures:
+        result["partial"] = True
+        result["warnings"] = failures
+    return result
 
 
 def get_calendar(request_data):
