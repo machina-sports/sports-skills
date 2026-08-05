@@ -380,8 +380,10 @@ def get_scoreboard(request_data):
     espn_params = {}
     if date:
         espn_params["dates"] = date.replace("-", "")
-    if group:
-        espn_params["groups"] = group
+    # ESPN's un-grouped scoreboard is Top-25 games only — 1 game on an ordinary
+    # Friday instead of ~24. Default to group 50 (all of Division I) so the
+    # skill returns what its name says; callers can still pass group explicitly.
+    espn_params["groups"] = group if group else 50
     if limit:
         espn_params["limit"] = limit
 
@@ -581,8 +583,10 @@ def get_schedule(request_data):
         espn_params["dates"] = date.replace("-", "")
     elif season:
         espn_params["dates"] = str(season)
-    if group:
-        espn_params["groups"] = group
+    # ESPN's un-grouped scoreboard is Top-25 games only — 1 game on an ordinary
+    # Friday instead of ~24. Default to group 50 (all of Division I) so the
+    # skill returns what its name says; callers can still pass group explicitly.
+    espn_params["groups"] = group if group else 50
 
     data = espn_request(SPORT_PATH, "scoreboard", espn_params or None)
     if data.get("error"):

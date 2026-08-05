@@ -284,3 +284,37 @@ class TestWrappers:
         out = cbb.get_ncaa_play_by_play(game_id="401628455")
         assert out["status"] is False
         assert "ESPN event id" in out["message"]
+
+
+class TestEspnDefaultGrouping:
+    """The ESPN-backed cbb scoreboard/schedule un-grouped default is Top-25
+    games only (1 vs ~24 on an ordinary day) — the connector now defaults to
+    group 50, all of Division I."""
+
+    @staticmethod
+    def _capture(monkeypatch):
+        from sports_skills.cbb import _connector as cc
+
+        calls = []
+
+        def fake(sport_path, resource="scoreboard", params=None, max_retries=2):
+            calls.append(params or {})
+            return {"events": [], "season": {}, "day": {}, "leagues": []}
+
+        monkeypatch.setattr(cc, "espn_request", fake)
+        return cc, calls
+
+    def test_scoreboard_defaults_to_full_d1(self, monkeypatch):
+        cc, calls = self._capture(monkeypatch)
+        cc.get_scoreboard({"params": {"date": "2025-02-28"}})
+        assert calls[-1].get("groups") == 50
+
+    def test_schedule_defaults_to_full_d1(self, monkeypatch):
+        cc, calls = self._capture(monkeypatch)
+        cc.get_schedule({"params": {"date": "2025-02-28"}})
+        assert calls[-1].get("groups") == 50
+
+    def test_explicit_group_still_wins(self, monkeypatch):
+        cc, calls = self._capture(monkeypatch)
+        cc.get_scoreboard({"params": {"date": "2025-02-28", "group": 100}})
+        assert calls[-1].get("groups") == 100
