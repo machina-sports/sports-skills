@@ -64,11 +64,26 @@ class TestRateLimiter:
         assert rl.tokens < 1
 
     def test_sleeps_and_returns_when_exhausted(self):
-        # One token, slow refill: the 2nd acquire must wait, not recurse forever.
+        # One token: the 2nd acquire must wait, not recurse forever. The clock is
+        # frozen so the bucket cannot refill between the two acquires — with a
+        # real clock, any ≥1ms hiccup (refill_rate=1000/s) refilled the bucket
+        # and the second acquire sailed through without sleeping, which made this
+        # test flake on loaded CI runners. Only the mocked sleep advances time.
         rl = _RateLimiter(max_tokens=1, refill_rate=1000.0)
-        rl.acquire()
-        with patch("sports_skills.esports._connector.time.sleep") as slept:
-            rl.acquire()  # refill_rate is high so one short sleep suffices
+        fake_now = [rl.last_refill]
+
+        def advance(seconds):
+            fake_now[0] += max(seconds, 0.001)
+
+        with patch(
+            "sports_skills.esports._connector.time.monotonic",
+            side_effect=lambda: fake_now[0],
+        ):
+            rl.acquire()  # consumes the only token; no time passes
+            with patch(
+                "sports_skills.esports._connector.time.sleep", side_effect=advance
+            ) as slept:
+                rl.acquire()  # must sleep — sleeping is what refills the bucket
         assert slept.called
 
 
