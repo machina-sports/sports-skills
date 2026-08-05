@@ -81,6 +81,27 @@ from sports_skills.nba._connector import (
 from sports_skills.nba._connector import (
     get_win_probability as _get_win_probability,
 )
+from sports_skills.nba._stats import (
+    find_nba_player as _find_nba_player,
+)
+from sports_skills.nba._stats import (
+    get_nbastats_advanced_boxscore as _get_nbastats_advanced_boxscore,
+)
+from sports_skills.nba._stats import (
+    get_nbastats_game_log as _get_nbastats_game_log,
+)
+from sports_skills.nba._stats import (
+    get_nbastats_play_by_play as _get_nbastats_play_by_play,
+)
+from sports_skills.nba._stats import (
+    get_nbastats_player_career as _get_nbastats_player_career,
+)
+from sports_skills.nba._stats import (
+    get_nbastats_shot_chart as _get_nbastats_shot_chart,
+)
+from sports_skills.nba._stats import (
+    get_nbastats_team_stats as _get_nbastats_team_stats,
+)
 
 
 def _params(**kwargs):
@@ -314,3 +335,159 @@ def get_player_live_stats(*, player_name: str) -> dict:
                      Partial matches supported.
     """
     return wrap(_get_player_live_stats(_params(player_name=player_name)))
+
+
+# ============================================================
+# NBA Stats backend (stats.nba.com) — analytics layer
+# ============================================================
+
+
+def find_nba_player(*, name: str) -> dict:
+    """Search the NBA Stats player registry (all eras) by name.
+
+    Returns NBA person ids, which the other get_nbastats_* functions take as
+    ``player_id``. These are NBA.com ids, unrelated to ESPN athlete ids.
+
+    Args:
+        name: Full or partial player name (e.g. "Jokic", "LeBron James").
+    """
+    return wrap(_find_nba_player(_params(name=name)))
+
+
+def get_nbastats_game_log(
+    *,
+    season: int | str | None = None,
+    team: str | None = None,
+    season_type: str | None = None,
+) -> dict:
+    """Get the league-wide game log via the NBA Stats backend.
+
+    One row per team per game, with the 10-digit NBA game ids the other
+    get_nbastats_* functions take. History reaches back to the 1946-47 season.
+    Rows carry both NBA.com and ESPN team abbreviations; join to the ESPN
+    functions on (game_date, team abbreviations) — the two id systems are
+    unrelated.
+
+    Args:
+        season: Season starting year (e.g. 2024) or NBA form ("2024-25").
+            Defaults to the current season.
+        team: Optional team abbreviation filter. ESPN spellings ("GS", "NY",
+            "NO", "SA", "UTAH", "WSH") are translated to NBA.com's.
+        season_type: "regular" (default), "playoffs", "preseason", or "playin".
+    """
+    return wrap(
+        _get_nbastats_game_log(_params(season=season, team=team, season_type=season_type))
+    )
+
+
+def get_nbastats_player_career(
+    *,
+    player_id: str | None = None,
+    player: str | None = None,
+    per_mode: str | None = None,
+) -> dict:
+    """Get a player's career, season by season, via the NBA Stats backend.
+
+    Args:
+        player_id: NBA person id (e.g. "2544"). Find it with find_nba_player.
+        player: Player name to resolve instead of player_id. Must match exactly
+            one player; ambiguous names return the candidates.
+        per_mode: "totals" (default), "per_game", or "per_36".
+    """
+    return wrap(
+        _get_nbastats_player_career(
+            _params(player_id=player_id, player=player, per_mode=per_mode)
+        )
+    )
+
+
+def get_nbastats_team_stats(
+    *,
+    season: int | str | None = None,
+    team: str | None = None,
+    measure: str | None = None,
+    per_mode: str | None = None,
+    season_type: str | None = None,
+) -> dict:
+    """Get league-wide team stats via the NBA Stats backend.
+
+    The "advanced" measure adds ratings, pace, and true-shooting — data the
+    ESPN-backed get_team_stats does not provide.
+
+    Args:
+        season: Season starting year (e.g. 2024) or NBA form ("2024-25").
+            Defaults to the current season.
+        team: Optional team abbreviation filter. ESPN spellings are translated.
+        measure: "base" (default), "advanced", "four_factors", "misc",
+            "scoring", "opponent", or "defense".
+        per_mode: "totals" (default), "per_game", or "per_36".
+        season_type: "regular" (default), "playoffs", "preseason", or "playin".
+    """
+    return wrap(
+        _get_nbastats_team_stats(
+            _params(
+                season=season,
+                team=team,
+                measure=measure,
+                per_mode=per_mode,
+                season_type=season_type,
+            )
+        )
+    )
+
+
+def get_nbastats_shot_chart(
+    *,
+    player_id: str | None = None,
+    player: str | None = None,
+    season: int | str | None = None,
+    season_type: str | None = None,
+    limit: int | None = None,
+) -> dict:
+    """Get a player's shot chart (court x/y per attempt) via the NBA Stats backend.
+
+    Coordinates are in tenths of feet from the basket (loc_x lateral,
+    loc_y toward half court).
+
+    Args:
+        player_id: NBA person id. Find it with find_nba_player.
+        player: Player name to resolve instead of player_id.
+        season: Season starting year (e.g. 2024) or NBA form ("2024-25").
+            Defaults to the current season.
+        season_type: "regular" (default), "playoffs", "preseason", or "playin".
+        limit: Maximum shots to return; truncation is flagged in the response.
+    """
+    return wrap(
+        _get_nbastats_shot_chart(
+            _params(
+                player_id=player_id,
+                player=player,
+                season=season,
+                season_type=season_type,
+                limit=limit,
+            )
+        )
+    )
+
+
+def get_nbastats_play_by_play(*, game_id: str, limit: int | None = None) -> dict:
+    """Get play-by-play with court coordinates via the NBA Stats backend.
+
+    Unlike the live CDN feed, this covers completed games from past seasons.
+
+    Args:
+        game_id: 10-digit NBA game id from get_nbastats_game_log
+            (e.g. "0022400061"). Not an ESPN event id.
+        limit: Maximum actions to return; truncation is flagged in the response.
+    """
+    return wrap(_get_nbastats_play_by_play(_params(game_id=game_id, limit=limit)))
+
+
+def get_nbastats_advanced_boxscore(*, game_id: str) -> dict:
+    """Get the advanced box score (ratings, pace, usage) via the NBA Stats backend.
+
+    Args:
+        game_id: 10-digit NBA game id from get_nbastats_game_log
+            (e.g. "0022400061"). Not an ESPN event id.
+    """
+    return wrap(_get_nbastats_advanced_boxscore(_params(game_id=game_id)))

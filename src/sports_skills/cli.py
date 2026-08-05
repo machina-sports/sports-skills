@@ -352,6 +352,17 @@ _REGISTRY = {
         "get_live_boxscore": {"required": ["game_id"]},
         "get_live_playbyplay": {"required": ["game_id"], "optional": ["limit", "scoring_only"]},
         "get_player_live_stats": {"required": ["player_name"]},
+        "find_nba_player": {"required": ["name"]},
+        "get_nbastats_game_log": {"optional": ["season", "team", "season_type"]},
+        "get_nbastats_player_career": {"optional": ["player_id", "player", "per_mode"]},
+        "get_nbastats_team_stats": {
+            "optional": ["season", "team", "measure", "per_mode", "season_type"]
+        },
+        "get_nbastats_shot_chart": {
+            "optional": ["player_id", "player", "season", "season_type", "limit"]
+        },
+        "get_nbastats_play_by_play": {"required": ["game_id"], "optional": ["limit"]},
+        "get_nbastats_advanced_boxscore": {"required": ["game_id"]},
     },
     "wnba": {
         "get_scoreboard": {"optional": ["date"]},
@@ -539,6 +550,9 @@ _INT_PARAMS = {
     "window_seconds",
 }
 
+# Int params that also accept documented string forms (see _parse_value).
+_DUAL_FORM_INT_PARAMS = {"season", "season_type"}
+
 # Params that should be parsed as float
 _FLOAT_PARAMS = {
     "odds",
@@ -708,6 +722,15 @@ def _parse_value(key, value):
             return value
         return value.lower() in ("true", "1", "yes", "")
     if key in _INT_PARAMS:
+        # `season` and `season_type` are integers for the ESPN-backed commands
+        # but string forms for the NBA Stats backend ("2024-25", "playoffs").
+        # Plain digits still coerce; other shapes pass through for the command
+        # to validate, which is the same contract multi-shape `odds` uses below.
+        if key in _DUAL_FORM_INT_PARAMS:
+            try:
+                return int(value)
+            except (TypeError, ValueError):
+                return value
         return int(value)
     if key in _FLOAT_PARAMS:
         # Comma-separated multi-outcome values pass through as strings:
