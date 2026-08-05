@@ -215,6 +215,7 @@ def _http_fetch(
     timeout=30,
     max_retries=_MAX_RETRIES,
     decode_gzip=False,
+    ssl_context=None,
 ):
     """Core HTTP fetch with retry + exponential backoff.
 
@@ -230,7 +231,7 @@ def _http_fetch(
         for key, value in (headers or {}).items():
             req.add_header(key, value)
         try:
-            with urllib.request.urlopen(req, timeout=timeout) as resp:
+            with urllib.request.urlopen(req, timeout=timeout, context=ssl_context) as resp:
                 raw = resp.read()
                 if decode_gzip and resp.headers.get("Content-Encoding") == "gzip":
                     raw = gzip.decompress(raw)

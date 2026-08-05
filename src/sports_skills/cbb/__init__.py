@@ -5,6 +5,30 @@ Wraps ESPN public endpoints for NCAA Division I men's basketball. No API keys re
 
 from __future__ import annotations
 
+from sports_skills._ncaa import (
+    fetch_boxscore as _fetch_ncaa_boxscore,
+)
+from sports_skills._ncaa import (
+    fetch_bracket as _fetch_ncaa_bracket,
+)
+from sports_skills._ncaa import (
+    fetch_game_info as _fetch_ncaa_game_info,
+)
+from sports_skills._ncaa import (
+    fetch_play_by_play as _fetch_ncaa_play_by_play,
+)
+from sports_skills._ncaa import (
+    fetch_schedule as _fetch_ncaa_schedule,
+)
+from sports_skills._ncaa import (
+    fetch_schools as _fetch_ncaa_schools,
+)
+from sports_skills._ncaa import (
+    fetch_scoreboard as _fetch_ncaa_scoreboard,
+)
+from sports_skills._ncaa import (
+    guard as _ncaa_guard,
+)
 from sports_skills._response import wrap
 from sports_skills.cbb._connector import (
     compare_teams as _compare_teams,
@@ -257,3 +281,116 @@ def find_upset_candidates(
         max_seed: Maximum seed to consider. Defaults to 16.
     """
     return wrap(_find_upset_candidates(_params(min_seed=min_seed, max_seed=max_seed)))
+
+
+# ============================================================
+# Official NCAA backend (data.ncaa.com + sdataprod.ncaa.com)
+# ============================================================
+
+def _ncaa_call(fetch, *args, **kwargs):
+    """Run one shared-NCAA fetcher through the agent-safe error guard."""
+    return _ncaa_guard(lambda _rd: fetch(*args, **kwargs))({})
+
+
+def _ncaa_scoreboard(sport, division, **kw):
+    return _ncaa_call(_fetch_ncaa_scoreboard, sport, division, **kw)
+
+
+def _ncaa_schedule(sport, division, **kw):
+    return _ncaa_call(_fetch_ncaa_schedule, sport, division, **kw)
+
+
+def _ncaa_game_info(game_id):
+    return _ncaa_call(_fetch_ncaa_game_info, game_id)
+
+
+def _ncaa_boxscore(sport, game_id):
+    return _ncaa_call(_fetch_ncaa_boxscore, sport, game_id)
+
+
+def _ncaa_play_by_play(sport, game_id, limit):
+    return _ncaa_call(_fetch_ncaa_play_by_play, sport, game_id, limit)
+
+
+def _ncaa_bracket(sport, division, year):
+    return _ncaa_call(_fetch_ncaa_bracket, sport, division, year)
+
+
+def _ncaa_schools(query):
+    return _ncaa_call(_fetch_ncaa_schools, query)
+
+
+
+def get_ncaa_scoreboard(*, date: str, division: str | None = None) -> dict:
+    """Get the official NCAA scoreboard — including D2 and D3, which ESPN barely covers.
+
+    Rows carry NCAA game ids, which the other get_ncaa_* functions take. NCAA
+    ids and ESPN event ids share nothing; join on game date plus team names.
+
+    Args:
+        date: A single day, YYYY-MM-DD.
+        division: "d1" (default), "d2", or "d3".
+    """
+    return wrap(_ncaa_scoreboard("basketball-men", division, date=date))
+
+
+def get_ncaa_schedule(*, month: int, division: str | None = None, season: int | None = None) -> dict:
+    """Get which dates have games, from the official NCAA schedule index.
+
+    Args:
+        month: Month number (1-12).
+        division: "d1" (default), "d2", or "d3".
+        season: Season starting year (e.g. 2024). Defaults to the current season.
+    """
+    return wrap(_ncaa_schedule("basketball-men", division, year=season, month=month))
+
+
+def get_ncaa_game(*, game_id: str) -> dict:
+    """Get official NCAA game information for one game.
+
+    Args:
+        game_id: NCAA game id from get_ncaa_scoreboard (e.g. "6398604").
+            Not an ESPN event id.
+    """
+    return wrap(_ncaa_game_info(game_id))
+
+
+def get_ncaa_boxscore(*, game_id: str) -> dict:
+    """Get the official NCAA box score for one game.
+
+    Args:
+        game_id: NCAA game id from get_ncaa_scoreboard (e.g. "6398604").
+            Not an ESPN event id.
+    """
+    return wrap(_ncaa_boxscore("basketball-men", game_id))
+
+
+def get_ncaa_play_by_play(*, game_id: str, limit: int | None = None) -> dict:
+    """Get official NCAA play-by-play for one game.
+
+    Args:
+        game_id: NCAA game id from get_ncaa_scoreboard (e.g. "6398604").
+            Not an ESPN event id.
+        limit: Maximum plays to return; truncation is flagged in the response.
+    """
+    return wrap(_ncaa_play_by_play("basketball-men", game_id, limit))
+
+
+def get_ncaa_bracket(*, year: int | None = None, division: str | None = None) -> dict:
+    """Get the NCAA tournament bracket (March Madness), with live scores in season.
+
+    Args:
+        year: Tournament year (e.g. 2025 for the 2024-25 bracket). Defaults to
+            the current season's tournament.
+        division: "d1" (default), "d2", or "d3".
+    """
+    return wrap(_ncaa_bracket("basketball-men", division, year))
+
+
+def get_ncaa_schools(*, query: str | None = None) -> dict:
+    """Search the NCAA schools index (~1,200 schools, all divisions).
+
+    Args:
+        query: Optional name or slug filter (e.g. "gonzaga").
+    """
+    return wrap(_ncaa_schools(query))

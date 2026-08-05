@@ -150,8 +150,32 @@ Derive the current year from the system prompt's date (e.g., `currentDate: 2026-
 | `get_futures` | Futures/odds markets (National Championship, Heisman, etc.) |
 | `get_team_stats` | Team statistical profile |
 | `get_player_stats` | Player statistical profile |
+| `get_ncaa_scoreboard` | Official NCAA scoreboard — FBS and FCS |
+| `get_ncaa_schedule` | Which weeks have games (official index) |
+| `get_ncaa_game` | Official NCAA game information |
+| `get_ncaa_boxscore` | Official NCAA box score |
+| `get_ncaa_play_by_play` | Official play-by-play with drive context |
+| `get_ncaa_scoring_summary` | Official scoring summary |
+| `get_ncaa_schools` | NCAA schools index (all divisions) |
 
 See `references/api-reference.md` for full parameter lists and return shapes.
+
+## Official NCAA Backend
+
+The `get_ncaa_*` commands read the NCAA's own endpoints (data.ncaa.com +
+sdataprod.ncaa.com) — coverage ESPN does not carry:
+
+- **FCS scoreboards** via `division="fcs"` — ESPN's college coverage is
+  FBS-centric.
+- **Official game detail**: `get_ncaa_game`, `get_ncaa_boxscore`,
+  `get_ncaa_play_by_play` (with drive context), `get_ncaa_scoring_summary`.
+- **The schools index** (~1,200 schools, all divisions): `get_ncaa_schools`.
+
+NCAA game ids (e.g. `6306261`, from `get_ncaa_scoreboard`) and ESPN event ids
+share nothing — join on game date plus team names. Football divisions are
+`fbs`/`fcs` (not d1-d3). Game-detail commands ride NCAA's GraphQL persisted
+queries, whose hashes rotate when ncaa.com redeploys; when that happens those
+commands say so explicitly while the scoreboard/schedule commands keep working.
 
 ## Examples
 
