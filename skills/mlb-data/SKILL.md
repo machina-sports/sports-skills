@@ -71,8 +71,36 @@ Derive the active season from the system prompt's date — not just the calendar
 | `get_depth_chart` | Depth chart for a team |
 | `get_team_stats` | Team statistical profile |
 | `get_player_stats` | Player statistical profile |
+| `find_mlb_player` | Search MLB's player registry by name |
+| `get_mlbstats_schedule` | Games via the MLB Stats API — history to 1901, carries gamePk ids |
+| `get_mlbstats_player_stats` | Season/career/year-by-year splits by stat group via MLB Stats API |
+| `get_mlbstats_play_by_play` | Pitch-level PBP — velocity, spin, plate coords, exit velo, launch angle |
+| `get_mlbstats_boxscore` | Full box score with per-player batting/pitching via MLB Stats API |
+| `get_mlbstats_standings` | Standings by division via MLB Stats API |
+| `get_mlbstats_leaders` | League leaders for any stat category via MLB Stats API |
 
 See `references/api-reference.md` for full parameter lists and return shapes.
+
+## Using ESPN and the MLB Stats API Together
+
+The `get_mlbstats_*` commands read statsapi.mlb.com — MLB's own open API. It
+carries the analytics layer ESPN does not: per-pitch velocity/spin/location,
+exit velocity and launch angle on balls in play, career splits by stat group,
+and schedules back to 1901. The two sources use unrelated id systems:
+
+- **Game ids.** MLB uses `gamePk` (e.g. `775296`); ESPN uses event ids
+  (e.g. `401570367`). No shared column — join on the game date plus teams.
+- **Team abbreviations.** Two teams differ: ESPN `ARI`/`CHW` vs MLB `AZ`/`CWS`.
+  Every `get_mlbstats_*` team filter accepts either spelling, and rows carry
+  both (`team_abbreviation`, `team_abbreviation_espn`).
+- **Player ids.** MLB person ids (`660271`) and ESPN athlete ids are unrelated.
+  Resolve names with `find_mlb_player`; ASCII spellings match accented names
+  ("acuna" finds "Ronald Acuña Jr.").
+- **Leaders come grouped.** A category like `homeRuns` exists for hitting,
+  catching, and pitching (home runs *allowed*); rows are labelled with
+  `stat_group` — pass `stat_group=` to get just one.
+
+Responses include MLB's `copyright` notice, passed through from the API.
 
 ## Examples
 
