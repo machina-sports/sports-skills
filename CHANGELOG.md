@@ -1,3 +1,12 @@
+## [Unreleased]
+
+### Fixed
+- **`xctf.get_team_roster` emitted URL slugs its own search could not match:** rosters returned `name: "Amaya_Bharadwaj"` — the TFRRS name slug — so feeding a roster entry straight into `search_athlete` found nothing. Athletes now carry a readable `display_name` alongside the slug (which is still needed to build athlete URLs), closing the round trip.
+- **A wrong `school` value returned a silently empty roster:** the parameter takes a TFRRS team slug (e.g. `CA_college_m_Stanford`), but a plain school name produced `status=True` with `count=0`, indistinguishable from a team with no athletes. When every roster page misses, the call now explains the expected format and quotes the upstream failure. A partial failure returns the data it did get plus a `warnings[]` entry.
+
+### Added
+- **`tests/test_xctf.py`:** offline coverage for name-slug conversion (including doubled underscores and multi-word surnames), roster parsing and deduplication, links with and without the `.html` suffix, the bad-slug error, partial-failure warnings, and single-sport filtering.
+
 ## [0.29.0]
 
 ### Added
