@@ -117,6 +117,12 @@ Get schedules/results through the nflverse backend.
 
 Returns `events[]` with `game_id`, teams, scores, date/time, line fields, and location.
 
+Cross-provider identifiers on each event:
+- `espn_event_id` — the ESPN event ID for the same game. Pass it as `event_id` to `get_game_summary`, `get_play_by_play`, or `get_win_probability`.
+- `pfr_game_id`, `gsis_game_id` — Pro-Football-Reference and GSIS identifiers.
+
+Score vs. market fields: `total` is the combined points actually scored; `total_line` is the betting over/under. `result` is the home margin, `spread_line` the closing spread.
+
 ### get_nflverse_weekly_rosters
 Get weekly roster snapshots through the nflverse backend.
 - `season` (int, optional): Season year
@@ -126,21 +132,24 @@ Get weekly roster snapshots through the nflverse backend.
 Returns `players[]` with normalized roster fields: team, player_id, player_name, position, jersey_number, status, college, and experience fields when available.
 
 ### get_nflverse_player_stats
-Get normalized nflverse player stat rows.
+Get normalized nflverse player stat rows. **Returns regular-season totals by default.**
 - `season` (int, optional): Season year
 - `player_id` (str, optional): nflverse/GSIS player identifier
 - `team` (str, optional): Team abbreviation filter
 - `position` (str, optional): Position filter
+- `week` (int, optional): NFL week filter. Implies per-game rows.
+- `summary_level` (str, optional): `reg` (default), `post`, `reg+post`, or `week`
 
-Returns `players[]`, each with identity fields (`player_id`, `player_name`, `position`, `team`) plus a `stats` object containing backend columns (completions, passing_yards, passing_tds, rushing_yards, etc.).
+Returns `players[]`, each with identity fields (`player_id`, `player_name`, `position`, `team`) plus a `stats` object containing backend columns (completions, passing_yards, passing_tds, rushing_yards, etc.). Season aggregates include `games`; only `summary_level="week"` rows carry `week`, `game_id`, and `opponent_team`.
 
 ### get_nflverse_team_stats
-Get normalized nflverse team stat rows.
+Get normalized nflverse team stat rows. **Returns regular-season totals by default.**
 - `season` (int, optional): Season year
 - `team` (str, optional): Team abbreviation filter
-- `week` (int, optional): Week filter when available
+- `week` (int, optional): NFL week filter. Implies per-game rows.
+- `summary_level` (str, optional): `reg` (default), `post`, `reg+post`, or `week`
 
-Returns `teams[]`, each with team/season context plus a `stats` object containing backend columns. Note: with `nfl_data_py`, team stats fall back to schedule data (game-by-game results) since a dedicated team stats endpoint is not available.
+Returns `teams[]`, each with team/season context plus a `stats` object containing backend columns. Requires the `nflreadpy` backend (Python 3.10+); on `nfl_data_py` this returns an explanatory error, because that backend has no team-stat table.
 
 ### get_nflverse_play_by_play
 Get normalized nflverse play-by-play rows.
@@ -153,10 +162,12 @@ Get normalized nflverse play-by-play rows.
 Returns `plays[]` with game/play identifiers, quarter/clock, teams, down/distance, description, EPA, WP/WPA, and score state.
 
 Notes:
-- The nflverse backend requires the `[nfl]` optional extra: `pip install sports-skills[nfl]`. It prefers `nflreadpy` when installed and falls back to `nfl_data_py` for compatibility.
+- The nflverse backend requires the `[nfl]` optional extra: `pip install sports-skills[nfl]`. On Python 3.10+ this installs `nflreadpy` (preferred); on Python 3.9 it installs `nfl_data_py`, which cannot serve `get_nflverse_team_stats`.
 - These commands keep `nfl-data` as the user-facing skill while exposing table-style datasets under the same module.
 - The ESPN-backed commands (e.g. `get_scoreboard`, `get_standings`) work with zero extra dependencies. The nflverse commands provide deeper historical/analytical data (seasonal aggregates, EPA, win probability per play) but require the optional install.
 - Parquet support (`pyarrow` or `fastparquet`) is needed for most nflverse data beyond schedules.
+- Team abbreviations: the `team` filters accept ESPN spellings (`LAR`, `WSH`) and translate them to nflverse's (`LA`, `WAS`). A `team` filter that matches nothing returns a `warnings[]` entry rather than a silently empty list.
+- Player IDs are not portable between the two backends: ESPN athlete IDs and nflverse GSIS IDs (`00-0033873`) are unrelated and there is no crosswalk. Match on name plus team.
 
 ## Team IDs
 
