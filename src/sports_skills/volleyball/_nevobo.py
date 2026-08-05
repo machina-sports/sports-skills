@@ -26,6 +26,10 @@ _last_request_time = 0.0
 _cache: dict[str, tuple[float, object]] = {}
 _CACHE_TTL = 300  # seconds
 
+# Resolved poule paths change at most once a season, so they can be held far
+# longer than ordinary responses.
+_POULE_CACHE_TTL = 21600  # 6 hours
+
 
 def _throttle():
     global _last_request_time
@@ -65,6 +69,72 @@ def _hydra_request(path, params=None):
         return {"error": True, "message": f"Connection error: {e.reason}"}
     except Exception as e:
         return {"error": True, "message": str(e)}
+
+
+_POULE_CODE_RE = re.compile(r"^nationale-competitie-([a-z0-9]+)-\d+$")
+
+
+def resolve_poule_path(competition_family, poule_code, fallback=None):
+    """Look up a national poule's current path from the Nevobo API.
+
+    Both halves of a poule path carry a season counter that Nevobo increments
+    each season — ``competitie-eredivisie-1`` becomes ``competitie-eredivisie``,
+    ``…-eh-11`` becomes ``…-eh-12`` — so a hardcoded path 404s once the season
+    turns over. Resolving by the parts that stay put (the competition family and
+    the poule's letter code) survives the rollover.
+
+    Args:
+        competition_family: slug stem, e.g. "competitie-eredivisie".
+        poule_code: poule letter code, e.g. "eh" for Eredivisie Heren.
+        fallback: path to return when resolution fails.
+
+    Returns:
+        A poule path suitable for the RSS export endpoints, or ``fallback``.
+    """
+    cache_key = f"_poule:{competition_family}:{poule_code}"
+    now = time.monotonic()
+    cached = _cache.get(cache_key)
+    if cached and (now - cached[0]) < _POULE_CACHE_TTL:
+        return cached[1]
+
+    competition = _find_national_competition(competition_family)
+    if not competition:
+        return fallback
+
+    data = _hydra_request("/competitie/poules", {"competitie": competition, "itemsPerPage": 100})
+    if isinstance(data, dict) and data.get("error"):
+        return fallback
+    for item in (data or {}).get("hydra:member", []):
+        ref = str(item.get("@id", ""))
+        match = _POULE_CODE_RE.match(ref.rsplit("/", 1)[-1])
+        if match and match.group(1) == poule_code:
+            # Strip the "/competitie/poules/" prefix the export paths omit.
+            path = ref.split("/competitie/poules/", 1)[-1]
+            _cache[cache_key] = (time.monotonic(), path)
+            return path
+    return fallback
+
+
+def _find_national_competition(family):
+    """Return the @id of the national competition whose slug matches `family`."""
+    for page in (1, 2, 3, 4, 5, 6):
+        data = _hydra_request(
+            "/competitie/competities", {"itemsPerPage": 30, "page": page}
+        )
+        if isinstance(data, dict) and data.get("error"):
+            return None
+        members = (data or {}).get("hydra:member", [])
+        if not members:
+            return None
+        for item in members:
+            ref = str(item.get("@id", ""))
+            if "/nationale-competitie/" not in ref:
+                continue
+            slug = ref.rsplit("/", 1)[-1]
+            # Tolerate the trailing season counter: "competitie-eredivisie-1".
+            if slug == family or re.fullmatch(rf"{re.escape(family)}-\d+", slug):
+                return ref
+    return None
 
 
 def _rss_request(export_path):

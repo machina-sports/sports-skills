@@ -17,6 +17,8 @@ LEAGUES = {
     "nevobo-eredivisie-heren": {
         "source": "nevobo",
         "poule_path": "nationale-competitie/competitie-eredivisie-1/nationale-competitie-eh-11",
+        "competition_family": "competitie-eredivisie",
+        "poule_code": "eh",
         "name": "Eredivisie Heren",
         "country": "Netherlands",
         "gender": "men",
@@ -24,6 +26,8 @@ LEAGUES = {
     "nevobo-eredivisie-dames": {
         "source": "nevobo",
         "poule_path": "nationale-competitie/competitie-eredivisie-1/nationale-competitie-ed-11",
+        "competition_family": "competitie-eredivisie",
+        "poule_code": "ed",
         "name": "Eredivisie Dames",
         "country": "Netherlands",
         "gender": "women",
@@ -31,6 +35,8 @@ LEAGUES = {
     "nevobo-topdivisie-heren-a": {
         "source": "nevobo",
         "poule_path": "nationale-competitie/competitie-seniorencompetitie-5/nationale-competitie-tah-1",
+        "competition_family": "competitie-seniorencompetitie",
+        "poule_code": "tah",
         "name": "Topdivisie Heren A",
         "country": "Netherlands",
         "gender": "men",
@@ -38,6 +44,8 @@ LEAGUES = {
     "nevobo-topdivisie-heren-b": {
         "source": "nevobo",
         "poule_path": "nationale-competitie/competitie-seniorencompetitie-5/nationale-competitie-tbh-1",
+        "competition_family": "competitie-seniorencompetitie",
+        "poule_code": "tbh",
         "name": "Topdivisie Heren B",
         "country": "Netherlands",
         "gender": "men",
@@ -45,6 +53,8 @@ LEAGUES = {
     "nevobo-topdivisie-dames-a": {
         "source": "nevobo",
         "poule_path": "nationale-competitie/competitie-seniorencompetitie-5/nationale-competitie-tad-1",
+        "competition_family": "competitie-seniorencompetitie",
+        "poule_code": "tad",
         "name": "Topdivisie Dames A",
         "country": "Netherlands",
         "gender": "women",
@@ -52,6 +62,8 @@ LEAGUES = {
     "nevobo-topdivisie-dames-b": {
         "source": "nevobo",
         "poule_path": "nationale-competitie/competitie-seniorencompetitie-5/nationale-competitie-tbd-1",
+        "competition_family": "competitie-seniorencompetitie",
+        "poule_code": "tbd",
         "name": "Topdivisie Dames B",
         "country": "Netherlands",
         "gender": "women",
@@ -59,6 +71,8 @@ LEAGUES = {
     "nevobo-superdivisie-heren": {
         "source": "nevobo",
         "poule_path": "nationale-competitie/competitie-seniorencompetitie-5/nationale-competitie-sh-1",
+        "competition_family": "competitie-seniorencompetitie",
+        "poule_code": "sh",
         "name": "Superdivisie Heren",
         "country": "Netherlands",
         "gender": "men",
@@ -66,6 +80,8 @@ LEAGUES = {
     "nevobo-superdivisie-dames": {
         "source": "nevobo",
         "poule_path": "nationale-competitie/competitie-seniorencompetitie-5/nationale-competitie-sd-1",
+        "competition_family": "competitie-seniorencompetitie",
+        "poule_code": "sd",
         "name": "Superdivisie Dames",
         "country": "Netherlands",
         "gender": "women",
@@ -82,6 +98,19 @@ def _get_league(competition_id):
             f"Unknown competition_id '{competition_id}'. Available: {available}"
         )
     return league, None
+
+
+def _poule_path(league):
+    """Resolve a league's current Nevobo poule path.
+
+    Nevobo bumps a season counter inside these paths, so the configured value is
+    only a fallback — the live path is looked up by the parts that do not change.
+    """
+    return _nevobo.resolve_poule_path(
+        league.get("competition_family"),
+        league.get("poule_code"),
+        fallback=league.get("poule_path"),
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -122,7 +151,7 @@ def get_standings(*, competition_id: str) -> dict:
     league, err = _get_league(competition_id)
     if err:
         return err
-    result = _nevobo.get_poule_standings(league["poule_path"])
+    result = _nevobo.get_poule_standings(_poule_path(league))
     if isinstance(result, dict) and result.get("error"):
         return wrap(result)
     result["competition_id"] = competition_id
@@ -139,7 +168,7 @@ def get_schedule(*, competition_id: str) -> dict:
     league, err = _get_league(competition_id)
     if err:
         return err
-    result = _nevobo.get_poule_schedule(league["poule_path"])
+    result = _nevobo.get_poule_schedule(_poule_path(league))
     if isinstance(result, dict) and result.get("error"):
         return wrap(result)
     result["competition_id"] = competition_id
@@ -156,7 +185,7 @@ def get_results(*, competition_id: str) -> dict:
     league, err = _get_league(competition_id)
     if err:
         return err
-    result = _nevobo.get_poule_results(league["poule_path"])
+    result = _nevobo.get_poule_results(_poule_path(league))
     if isinstance(result, dict) and result.get("error"):
         return wrap(result)
     result["competition_id"] = competition_id
