@@ -72,8 +72,40 @@ Derive the current year from the system prompt's date (e.g., `currentDate: 2026-
 | `get_depth_chart` | Depth chart for a team |
 | `get_team_stats` | Team statistical profile |
 | `get_player_stats` | Player statistical profile |
+| `find_nba_player` | Search the NBA Stats player registry (all eras) |
+| `get_nbastats_game_log` | League game log via NBA Stats — history to 1946, carries NBA game ids |
+| `get_nbastats_player_career` | Career stats season by season via NBA Stats |
+| `get_nbastats_team_stats` | League team stats via NBA Stats — advanced ratings, pace, four factors |
+| `get_nbastats_shot_chart` | Per-shot court coordinates via NBA Stats |
+| `get_nbastats_play_by_play` | Play-by-play with coordinates for past seasons via NBA Stats |
+| `get_nbastats_advanced_boxscore` | Advanced box score (ratings, usage) via NBA Stats |
 
 See `references/api-reference.md` for full parameter lists and return shapes.
+
+## Using ESPN and NBA Stats Together
+
+The `get_nbastats_*` commands read stats.nba.com — the analytics layer (advanced
+ratings, shot coordinates, deep history) that ESPN's endpoints do not carry. The
+two sources use unrelated id systems:
+
+- **Game ids.** NBA Stats uses 10-digit ids (`"0022400061"`); ESPN uses event ids
+  (`"401704627"`). There is no shared column — join on the game date plus the two
+  team abbreviations.
+- **Team abbreviations.** Six teams are spelled differently: ESPN `GS`/`NO`/`NY`/
+  `SA`/`UTAH`/`WSH` vs NBA `GSW`/`NOP`/`NYK`/`SAS`/`UTA`/`WAS`. Every
+  `get_nbastats_*` team filter accepts either spelling, and result rows carry both
+  (`team_abbreviation` and `team_abbreviation_espn`).
+- **Player ids.** NBA person ids (`"203999"`) and ESPN athlete ids are unrelated.
+  Resolve names with `find_nba_player`; ASCII spellings match accented names
+  ("jokic" finds "Nikola Jokić").
+- **Seasons.** Pass the starting year (`season=2024` means 2024-25). The NBA form
+  (`"2024-25"`) is also accepted.
+
+stats.nba.com throttles by client and volume: heavy bursts (and many
+datacenter/cloud IPs) get silently tarpitted rather than refused. The commands
+fail fast with an explanatory error when that happens — wait before retrying;
+do not hammer. Responses are cached, and the ESPN-backed and `get_live_*`
+commands are unaffected.
 
 ## Examples
 
