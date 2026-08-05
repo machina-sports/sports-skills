@@ -78,8 +78,33 @@ Derive the current year from the system prompt's date (e.g., `currentDate: 2026-
 | `get_futures` | Futures/odds markets (National Championship, etc.) |
 | `get_team_stats` | Team statistical profile |
 | `get_player_stats` | Player statistical profile |
+| `get_ncaa_scoreboard` | Official NCAA scoreboard — D1, D2, and D3 |
+| `get_ncaa_schedule` | Which dates have games (official index) |
+| `get_ncaa_game` | Official NCAA game information |
+| `get_ncaa_boxscore` | Official NCAA box score |
+| `get_ncaa_play_by_play` | Official play-by-play |
+| `get_ncaa_bracket` | March Madness bracket with live scores |
+| `get_ncaa_schools` | NCAA schools index (all divisions) |
 
 See `references/api-reference.md` for full parameter lists and return shapes.
+
+## Official NCAA Backend
+
+The `get_ncaa_*` commands read the NCAA's own endpoints (data.ncaa.com +
+sdataprod.ncaa.com) — coverage ESPN does not carry:
+
+- **D2 and D3 scoreboards** via `division="d2"`/`"d3"` — ESPN's college
+  coverage is D1-centric.
+- **The official March Madness bracket** with live scores: `get_ncaa_bracket`.
+- **Official game detail**: `get_ncaa_game`, `get_ncaa_boxscore`,
+  `get_ncaa_play_by_play`.
+- **The schools index** (~1,200 schools, all divisions): `get_ncaa_schools`.
+
+NCAA game ids (from `get_ncaa_scoreboard`) and ESPN event ids share nothing —
+join on game date plus team names. Game-detail and bracket commands ride NCAA's
+GraphQL persisted queries, whose hashes rotate when ncaa.com redeploys; when
+that happens those commands say so explicitly while the scoreboard/schedule
+commands keep working.
 
 ## Examples
 

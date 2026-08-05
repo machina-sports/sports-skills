@@ -5,6 +5,30 @@ Wraps ESPN public endpoints. No API keys required. Zero config.
 
 from __future__ import annotations
 
+from sports_skills._ncaa import (
+    fetch_boxscore as _fetch_ncaa_boxscore,
+)
+from sports_skills._ncaa import (
+    fetch_game_info as _fetch_ncaa_game_info,
+)
+from sports_skills._ncaa import (
+    fetch_play_by_play as _fetch_ncaa_play_by_play,
+)
+from sports_skills._ncaa import (
+    fetch_schedule as _fetch_ncaa_schedule,
+)
+from sports_skills._ncaa import (
+    fetch_schools as _fetch_ncaa_schools,
+)
+from sports_skills._ncaa import (
+    fetch_scoreboard as _fetch_ncaa_scoreboard,
+)
+from sports_skills._ncaa import (
+    fetch_scoring_summary as _fetch_ncaa_scoring_summary,
+)
+from sports_skills._ncaa import (
+    guard as _ncaa_guard,
+)
 from sports_skills._response import wrap
 from sports_skills.cfb._connector import (
     get_futures as _get_futures,
@@ -198,3 +222,115 @@ def get_player_stats(
             )
         )
     )
+
+
+# ============================================================
+# Official NCAA backend (data.ncaa.com + sdataprod.ncaa.com)
+# ============================================================
+
+def _ncaa_call(fetch, *args, **kwargs):
+    """Run one shared-NCAA fetcher through the agent-safe error guard."""
+    return _ncaa_guard(lambda _rd: fetch(*args, **kwargs))({})
+
+
+def _ncaa_scoreboard(sport, division, **kw):
+    return _ncaa_call(_fetch_ncaa_scoreboard, sport, division, **kw)
+
+
+def _ncaa_schedule(sport, division, **kw):
+    return _ncaa_call(_fetch_ncaa_schedule, sport, division, **kw)
+
+
+def _ncaa_game_info(game_id):
+    return _ncaa_call(_fetch_ncaa_game_info, game_id)
+
+
+def _ncaa_boxscore(sport, game_id):
+    return _ncaa_call(_fetch_ncaa_boxscore, sport, game_id)
+
+
+def _ncaa_play_by_play(sport, game_id, limit):
+    return _ncaa_call(_fetch_ncaa_play_by_play, sport, game_id, limit)
+
+
+def _ncaa_scoring_summary(game_id):
+    return _ncaa_call(_fetch_ncaa_scoring_summary, game_id)
+
+
+def _ncaa_schools(query):
+    return _ncaa_call(_fetch_ncaa_schools, query)
+
+
+
+def get_ncaa_scoreboard(*, week: int, division: str | None = None, season: int | None = None) -> dict:
+    """Get the official NCAA scoreboard — including FCS, which ESPN barely covers.
+
+    Rows carry NCAA game ids, which the other get_ncaa_* functions take. NCAA
+    ids and ESPN event ids share nothing; join on game date plus team names.
+
+    Args:
+        week: Week number (1-20; 16+ are the playoff).
+        division: "fbs" (default) or "fcs".
+        season: Season starting year (e.g. 2024). Defaults to the current season.
+    """
+    return wrap(_ncaa_scoreboard("football", division, year=season, week=week))
+
+
+def get_ncaa_schedule(*, division: str | None = None, season: int | None = None) -> dict:
+    """Get which weeks have games, from the official NCAA schedule index.
+
+    Args:
+        division: "fbs" (default) or "fcs".
+        season: Season starting year (e.g. 2024). Defaults to the current season.
+    """
+    return wrap(_ncaa_schedule("football", division, year=season))
+
+
+def get_ncaa_game(*, game_id: str) -> dict:
+    """Get official NCAA game information for one game.
+
+    Args:
+        game_id: NCAA game id from get_ncaa_scoreboard (e.g. "6306261").
+            Not an ESPN event id.
+    """
+    return wrap(_ncaa_game_info(game_id))
+
+
+def get_ncaa_boxscore(*, game_id: str) -> dict:
+    """Get the official NCAA box score for one game.
+
+    Args:
+        game_id: NCAA game id from get_ncaa_scoreboard (e.g. "6306261").
+            Not an ESPN event id.
+    """
+    return wrap(_ncaa_boxscore("football", game_id))
+
+
+def get_ncaa_play_by_play(*, game_id: str, limit: int | None = None) -> dict:
+    """Get official NCAA play-by-play with drive context for one game.
+
+    Args:
+        game_id: NCAA game id from get_ncaa_scoreboard (e.g. "6306261").
+            Not an ESPN event id.
+        limit: Maximum plays to return; truncation is flagged in the response.
+    """
+    return wrap(_ncaa_play_by_play("football", game_id, limit))
+
+
+def get_ncaa_scoring_summary(*, game_id: str) -> dict:
+    """Get the official NCAA scoring summary for one game.
+
+    Args:
+        game_id: NCAA game id from get_ncaa_scoreboard (e.g. "6306261").
+            Not an ESPN event id.
+    """
+    return wrap(_ncaa_scoring_summary(game_id))
+
+
+def get_ncaa_schools(*, query: str | None = None) -> dict:
+    """Search the NCAA schools index (~1,200 schools, all divisions).
+
+    Args:
+        query: Optional name or slug filter (e.g. "michigan").
+    """
+    return wrap(_ncaa_schools(query))
