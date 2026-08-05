@@ -13,7 +13,13 @@ import urllib.parse
 import urllib.request
 from datetime import datetime
 
-from sports_skills._espn_base import normalize_odds
+from sports_skills._espn_base import (
+    _HOST_FALLBACK_CODES,
+    _SITE_API_HOSTS,
+    _summarize_http_error,
+    normalize_odds,
+)
+from sports_skills._espn_base import _USER_AGENT as _SHARED_USER_AGENT
 
 logger = logging.getLogger("sports_skills.football")
 
@@ -417,7 +423,8 @@ _tm_rate_limiter = _RateLimiter(max_tokens=2, refill_rate=2.0 / 60.0)
 # HTTP Helpers — Retry, Error Handling, Request Functions
 # ============================================================
 
-_USER_AGENT = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36"
+# Shared with _espn_base so the ESPN User-Agent is defined in one place.
+_USER_AGENT = _SHARED_USER_AGENT
 
 # HTTP status codes worth retrying (transient server/infra errors)
 _RETRYABLE_CODES = {429, 500, 502, 503, 504}
@@ -471,7 +478,11 @@ def _http_fetch(
                 body = e.read().decode() if e.fp else ""
             except Exception:
                 pass
-            last_error = {"error": True, "status_code": e.code, "message": body}
+            last_error = {
+                "error": True,
+                "status_code": e.code,
+                "message": _summarize_http_error(e.code, url, body),
+            }
             if not _is_retryable(e):
                 # Client error (400, 401, 403, 404) — don't retry
                 logger.debug("HTTP %d (non-retryable) for %s", e.code, url)
@@ -529,23 +540,28 @@ def _espn_request(
     cached = _cache_get(cache_key)
     if cached is not None:
         return cached
-    url = (
-        f"https://site.api.espn.com/apis/site/v2/sports/soccer/{league_slug}/{resource}"
-    )
-    if params:
-        url += "?" + urllib.parse.urlencode(params)
+    query = "?" + urllib.parse.urlencode(params) if params else ""
     headers = {"User-Agent": _USER_AGENT}
-    raw, err = _http_fetch(
-        url, headers=headers, rate_limiter=_espn_rate_limiter, max_retries=max_retries
-    )
-    if err:
-        return err
-    try:
-        data = json.loads(raw.decode())
-        _cache_set(cache_key, data, ttl=120)
-        return data
-    except (json.JSONDecodeError, ValueError):
-        return {"error": True, "message": "ESPN returned invalid JSON"}
+    err = None
+    for host in _SITE_API_HOSTS:
+        url = f"https://{host}/apis/site/v2/sports/soccer/{league_slug}/{resource}{query}"
+        raw, err = _http_fetch(
+            url, headers=headers, rate_limiter=_espn_rate_limiter, max_retries=max_retries
+        )
+        if err:
+            if err.get("status_code") in _HOST_FALLBACK_CODES:
+                logger.debug(
+                    "HTTP %s from %s; trying mirror host", err.get("status_code"), host
+                )
+                continue
+            return err
+        try:
+            data = json.loads(raw.decode())
+            _cache_set(cache_key, data, ttl=120)
+            return data
+        except (json.JSONDecodeError, ValueError):
+            return {"error": True, "message": "ESPN returned invalid JSON"}
+    return err
 
 
 def _espn_web_request(league_slug, resource, params=None):
@@ -2578,12 +2594,18 @@ def get_daily_schedule(request_data):
     date_key = date.replace("-", "")
     events = []
     seen = set()
+    attempted = 0
+    failed = []
+    last_message = ""
     for slug, league in LEAGUES.items():
         espn_slug = league.get("espn")
         if not espn_slug:
             continue
+        attempted += 1
         data = _espn_request(espn_slug, "scoreboard", {"dates": date_key})
         if data.get("error"):
+            failed.append(slug)
+            last_message = data.get("message", "") or last_message
             continue
         for e in data.get("events", []):
             eid = e.get("id", "")
@@ -2591,7 +2613,14 @@ def get_daily_schedule(request_data):
                 seen.add(eid)
                 events.append(_normalize_espn_event(e, slug))
     if events:
-        return {"date": date, "events": events}
+        result = {"date": date, "events": events}
+        if failed:
+            result["partial"] = True
+            result["warnings"] = [
+                f"{len(failed)} of {attempted} competitions unavailable "
+                f"({', '.join(failed[:5])}{', …' if len(failed) > 5 else ''}): {last_message}"
+            ]
+        return result
     # openfootball fallback: scan all leagues for matches on this date
     for slug, league in LEAGUES.items():
         of = league.get("openfootball")
@@ -2611,7 +2640,16 @@ def get_daily_schedule(request_data):
         for m in data.get("matches", []):
             if m.get("date") == date:
                 events.append(_normalize_openfootball_match(m, slug, year))
-    return {"date": date, "events": events}
+    result = {"date": date, "events": events}
+    if failed:
+        # The openfootball fallback covers fewer competitions than ESPN, so a
+        # caller needs to know this answer is narrower than a normal one.
+        result["partial"] = True
+        result["warnings"] = [
+            f"All {attempted} ESPN competitions unavailable ({last_message}); "
+            "served from the openfootball fallback, which covers fewer competitions"
+        ]
+    return result
 
 
 # --- Event Details (ESPN summary primary) ---

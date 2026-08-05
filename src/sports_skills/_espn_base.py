@@ -8,14 +8,19 @@ from __future__ import annotations
 
 import datetime
 import gzip
+import html
 import json
 import logging
+import os
 import re
+import sys
 import threading
 import time
 import urllib.error
 import urllib.parse
 import urllib.request
+from importlib.metadata import PackageNotFoundError
+from importlib.metadata import version as _pkg_version
 
 logger = logging.getLogger("sports_skills._espn_base")
 
@@ -104,13 +109,94 @@ _espn_rate_limiter = RateLimiter(max_tokens=2, refill_rate=2.0)
 # HTTP Helpers — Retry, Error Handling
 # ============================================================
 
-_USER_AGENT = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36"
+def _default_user_agent():
+    """Build the outbound User-Agent for ESPN requests.
+
+    The interpreter version is derived rather than hardcoded so the string never
+    misreports the client. Operators can override it via
+    ``SPORTS_SKILLS_USER_AGENT`` without waiting on a release.
+    """
+    override = os.environ.get("SPORTS_SKILLS_USER_AGENT")
+    if override:
+        return override
+    try:
+        pkg_version = _pkg_version("sports-skills")
+    except PackageNotFoundError:
+        pkg_version = "dev"
+    return (
+        f"Python-urllib/{sys.version_info.major}.{sys.version_info.minor}"
+        f" (+sports-skills/{pkg_version}; https://github.com/machina-sports/sports-skills)"
+    )
+
+
+_USER_AGENT = _default_user_agent()
 
 _RETRYABLE_CODES = {429, 500, 502, 503, 504}
+
+# Both hosts serve the identical /apis/site/v2/sports/... surface — same paths,
+# same query semantics, same response shape — so the second is a drop-in mirror
+# when the first refuses a request.
+_SITE_API_HOSTS = ("site.api.espn.com", "site.web.api.espn.com")
+
+# Status codes where a different host may still serve the request. A 404 is not
+# included: a missing resource is missing on every host.
+_HOST_FALLBACK_CODES = {401, 403, 451}
 
 _MAX_RETRIES = 2
 _RETRY_BASE_DELAY = 1.0
 _RETRY_MAX_DELAY = 4.0
+
+
+def _unwrap_json_error(text):
+    """Pull the human-readable sentence out of a JSON error envelope.
+
+    Upstream 4xx bodies are JSON like ``{"error":{"message":"No stats found.",
+    "code":404}}``. Handed to an agent verbatim that reads as data rather than as
+    a failure, so lift the message out and drop the wrapper.
+    """
+    if not text.lstrip().startswith(("{", "[")):
+        return None
+    try:
+        payload = json.loads(text)
+    except (json.JSONDecodeError, ValueError):
+        return None
+    seen = payload
+    for _ in range(4):
+        if isinstance(seen, list):
+            seen = seen[0] if seen else None
+        if not isinstance(seen, dict):
+            break
+        for key in ("message", "detail", "error_description", "reason"):
+            value = seen.get(key)
+            if isinstance(value, str) and value.strip():
+                return value.strip()
+        seen = seen.get("error") or seen.get("errors")
+    return None
+
+
+def _summarize_http_error(code, url, body):
+    """Collapse an upstream error body into one informative line.
+
+    Upstream error responses are HTML pages. Passing them through as ``message``
+    is useless to a calling agent, so reduce them to the status, the host, the
+    page title, and any provider reference id worth quoting in a support report.
+    """
+    host = urllib.parse.urlsplit(url).netloc or "upstream"
+    text = html.unescape((body or "").strip())
+    if not text:
+        return f"HTTP {code} from {host}"
+    head = text[:200].lstrip().lower()
+    if not (head.startswith(("<!doctype", "<html")) or "<html" in head):
+        detail = _unwrap_json_error(text)
+        return f"HTTP {code} from {host}: {detail}" if detail else text[:300]
+    parts = [f"HTTP {code} from {host}"]
+    title = re.search(r"<title>(.*?)</title>", text, re.IGNORECASE | re.DOTALL)
+    if title and title.group(1).strip():
+        parts.append(title.group(1).strip())
+    ref = re.search(r"Reference\s*#\s*([\w.-]+)", text)
+    if ref:
+        parts.append(f"reference {ref.group(1)}")
+    return " — ".join(parts)
 
 
 def _is_retryable(exc):
@@ -155,7 +241,11 @@ def _http_fetch(
                 body = e.read().decode() if e.fp else ""
             except Exception:
                 pass
-            last_error = {"error": True, "status_code": e.code, "message": body}
+            last_error = {
+                "error": True,
+                "status_code": e.code,
+                "message": _summarize_http_error(e.code, url, body),
+            }
             if not _is_retryable(e):
                 logger.debug("HTTP %d (non-retryable) for %s", e.code, url)
                 return None, last_error
@@ -215,21 +305,30 @@ def espn_request(sport_path, resource="scoreboard", params=None, max_retries=_MA
     cached = _cache_get(cache_key)
     if cached is not None:
         return cached
-    url = f"https://site.api.espn.com/apis/site/v2/sports/{sport_path}/{resource}"
-    if params:
-        url += "?" + urllib.parse.urlencode(params)
+    query = "?" + urllib.parse.urlencode(params) if params else ""
     headers = {"User-Agent": _USER_AGENT}
-    raw, err = _http_fetch(
-        url, headers=headers, rate_limiter=_espn_rate_limiter, max_retries=max_retries
-    )
-    if err:
-        return err
-    try:
-        data = json.loads(raw.decode())
-        _cache_set(cache_key, data, ttl=120)
-        return data
-    except (json.JSONDecodeError, ValueError):
-        return {"error": True, "message": "ESPN returned invalid JSON"}
+    err = None
+    for host in _SITE_API_HOSTS:
+        url = f"https://{host}/apis/site/v2/sports/{sport_path}/{resource}{query}"
+        raw, err = _http_fetch(
+            url, headers=headers, rate_limiter=_espn_rate_limiter, max_retries=max_retries
+        )
+        if err:
+            # Only worth another host when this one refused to serve us at all.
+            # A 404 means the resource genuinely does not exist anywhere.
+            if err.get("status_code") in _HOST_FALLBACK_CODES:
+                logger.debug(
+                    "HTTP %s from %s; trying mirror host", err.get("status_code"), host
+                )
+                continue
+            return err
+        try:
+            data = json.loads(raw.decode())
+            _cache_set(cache_key, data, ttl=120)
+            return data
+        except (json.JSONDecodeError, ValueError):
+            return {"error": True, "message": "ESPN returned invalid JSON"}
+    return err
 
 
 def espn_web_request(sport_path, resource, params=None):
@@ -504,6 +603,40 @@ CORE_LEAGUE_MAP = {
 def _current_year():
     """Return the current year (UTC)."""
     return datetime.datetime.utcnow().year
+
+
+def fetch_season(loader, season_year, explicit):
+    """Fetch a season-scoped resource, stepping back a year for an implied season.
+
+    Season-scoped stats endpoints are empty until a season has been played, so a
+    season derived from the calendar (rather than requested by the caller) points
+    at a year with no data for months every offseason. When the season was
+    implied, retry the prior year and report the substitution; when the caller
+    named a season, return its error untouched rather than answering about a
+    different year.
+
+    Args:
+        loader: callable taking a year and returning an ESPN response dict.
+        season_year: the season to try first.
+        explicit: True when the caller supplied the season.
+
+    Returns:
+        ``(data, season_used, note)`` where note is None unless a year was
+        substituted.
+    """
+    data = loader(season_year)
+    if explicit or not isinstance(data, dict) or not data.get("error"):
+        return data, season_year, None
+    prior = season_year - 1
+    fallback = loader(prior)
+    if not isinstance(fallback, dict) or fallback.get("error"):
+        return data, season_year, None
+    note = (
+        f"season {season_year} has no data yet; returned {prior}. "
+        f"Pass the season explicitly to query {season_year}."
+    )
+    logger.debug("season %s empty; fell back to %s", season_year, prior)
+    return fallback, prior, note
 
 
 def _resolve_team_ref(ref_url: str) -> str:
