@@ -930,7 +930,14 @@ def _normalize_openfootball_match(match, slug, year):
     """Normalize an openfootball match to Machina event format."""
     league = LEAGUES.get(slug, {})
     score = match.get("score") or {}
-    ft = score.get("ft") or []
+    # openfootball is inconsistent: score is usually {"ft": [h, a]} but some
+    # seasons ship a bare [h, a] list (e.g. en.1 2025-26 has 27 of them)
+    if isinstance(score, dict):
+        ft = score.get("ft") or []
+    elif isinstance(score, list):
+        ft = score
+    else:
+        ft = []
     has_score = len(ft) == 2
     status = "closed" if has_score else "not_started"
     date_str = match.get("date", "")
