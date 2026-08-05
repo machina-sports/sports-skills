@@ -54,6 +54,27 @@ from sports_skills.mlb._connector import (
 from sports_skills.mlb._connector import (
     get_win_probability as _get_win_probability,
 )
+from sports_skills.mlb._stats import (
+    find_mlb_player as _find_mlb_player,
+)
+from sports_skills.mlb._stats import (
+    get_mlbstats_boxscore as _get_mlbstats_boxscore,
+)
+from sports_skills.mlb._stats import (
+    get_mlbstats_leaders as _get_mlbstats_leaders,
+)
+from sports_skills.mlb._stats import (
+    get_mlbstats_play_by_play as _get_mlbstats_play_by_play,
+)
+from sports_skills.mlb._stats import (
+    get_mlbstats_player_stats as _get_mlbstats_player_stats,
+)
+from sports_skills.mlb._stats import (
+    get_mlbstats_schedule as _get_mlbstats_schedule,
+)
+from sports_skills.mlb._stats import (
+    get_mlbstats_standings as _get_mlbstats_standings,
+)
 
 
 def _params(**kwargs):
@@ -213,5 +234,143 @@ def get_player_stats(
             _params(
                 player_id=player_id, season_year=season_year, season_type=season_type
             )
+        )
+    )
+
+
+# ============================================================
+# MLB Stats API backend (statsapi.mlb.com) — analytics layer
+# ============================================================
+
+
+def find_mlb_player(*, name: str) -> dict:
+    """Search MLB's player registry by name.
+
+    Returns MLB person ids, which the other get_mlbstats_* functions take as
+    ``player_id``. These are MLB ids, unrelated to ESPN athlete ids. ASCII
+    queries match accented names ("acuna" finds "Ronald Acuña Jr.").
+
+    Args:
+        name: Full or partial player name (e.g. "Ohtani", "Aaron Judge").
+    """
+    return wrap(_find_mlb_player(_params(name=name)))
+
+
+def get_mlbstats_schedule(
+    *,
+    date: str | None = None,
+    season: int | None = None,
+    team: str | None = None,
+    game_type: str | None = None,
+) -> dict:
+    """Get MLB games via the MLB Stats API, keyed by gamePk.
+
+    The gamePk each row carries is what the other get_mlbstats_* functions
+    take. History reaches back to 1901. Rows carry both MLB and ESPN team
+    abbreviations; join to the ESPN functions on (game_date, teams) — the two
+    id systems are unrelated.
+
+    Args:
+        date: A single day, YYYY-MM-DD.
+        season: Season year for a team schedule (requires team).
+        team: Team abbreviation. ESPN spellings ("ARI", "CHW") are translated
+            to MLB's ("AZ", "CWS").
+        game_type: "regular", "spring", "wildcard", "division", "lcs",
+            "worldseries", or "allstar".
+    """
+    return wrap(
+        _get_mlbstats_schedule(
+            _params(date=date, season=season, team=team, game_type=game_type)
+        )
+    )
+
+
+def get_mlbstats_player_stats(
+    *,
+    player_id: str | None = None,
+    player: str | None = None,
+    stat_type: str | None = None,
+    group: str | None = None,
+    season: int | None = None,
+) -> dict:
+    """Get a player's stats via the MLB Stats API.
+
+    Args:
+        player_id: MLB person id (e.g. "660271"). Find it with find_mlb_player.
+        player: Player name to resolve instead of player_id. Must match exactly
+            one player; ambiguous names return the candidates.
+        stat_type: "season" (default), "career", or "year_by_year".
+        group: "hitting" (default), "pitching", or "fielding".
+        season: Season year when stat_type is "season". Defaults to the most
+            recent season.
+    """
+    return wrap(
+        _get_mlbstats_player_stats(
+            _params(
+                player_id=player_id,
+                player=player,
+                stat_type=stat_type,
+                group=group,
+                season=season,
+            )
+        )
+    )
+
+
+def get_mlbstats_play_by_play(*, game_pk: str, limit: int | None = None) -> dict:
+    """Get pitch-level play-by-play via the MLB Stats API.
+
+    Every pitch carries velocity, spin rate, and plate coordinates; balls in
+    play add exit velocity, launch angle, and distance — data the ESPN-backed
+    get_play_by_play does not carry.
+
+    Args:
+        game_pk: MLB game id from get_mlbstats_schedule (e.g. "775296").
+            Not an ESPN event id.
+        limit: Maximum plays to return; truncation is flagged in the response.
+    """
+    return wrap(_get_mlbstats_play_by_play(_params(game_pk=game_pk, limit=limit)))
+
+
+def get_mlbstats_boxscore(*, game_pk: str) -> dict:
+    """Get the full box score (team + per-player batting/pitching) via the MLB Stats API.
+
+    Args:
+        game_pk: MLB game id from get_mlbstats_schedule (e.g. "775296").
+            Not an ESPN event id.
+    """
+    return wrap(_get_mlbstats_boxscore(_params(game_pk=game_pk)))
+
+
+def get_mlbstats_standings(*, season: int | None = None) -> dict:
+    """Get MLB standings by division via the MLB Stats API.
+
+    Args:
+        season: Season year. Defaults to the most recent season.
+    """
+    return wrap(_get_mlbstats_standings(_params(season=season)))
+
+
+def get_mlbstats_leaders(
+    *,
+    category: str,
+    season: int | None = None,
+    group: str | None = None,
+    limit: int | None = None,
+) -> dict:
+    """Get league leaders for a stat category via the MLB Stats API.
+
+    Args:
+        category: MLB stat name in camelCase — e.g. "homeRuns",
+            "battingAverage", "earnedRunAverage", "strikeouts", "stolenBases",
+            "wins", "saves".
+        season: Season year. Defaults to the most recent season.
+        group: Optional "hitting", "pitching", or "fielding" to disambiguate
+            categories that exist in more than one group (e.g. strikeouts).
+        limit: Max leaders to return (default 10).
+    """
+    return wrap(
+        _get_mlbstats_leaders(
+            _params(category=category, season=season, group=group, limit=limit)
         )
     )
