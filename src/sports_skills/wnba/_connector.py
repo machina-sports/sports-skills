@@ -19,6 +19,7 @@ from sports_skills._espn_base import (
     espn_request,
     espn_summary,
     espn_web_request,
+    fetch_season,
     normalize_boxscore,
     normalize_core_stats,
     normalize_futures,
@@ -356,7 +357,9 @@ def get_standings(request_data):
     groups = _normalize_standings(data)
     return {
         "groups": groups,
-        "season": data.get("season", {}).get("year", ""),
+        # Prefer the requested season: ESPN's envelope reports the *current*
+        # season regardless of the season filter applied to the events.
+        "season": _echo_season(season, data),
     }
 
 
@@ -400,6 +403,20 @@ def get_team_roster(request_data):
     }
 
 
+def _echo_season(requested, data):
+    """Report the season the events actually describe.
+
+    ESPN's response envelope carries the current season even when the request
+    filtered to an earlier one, so a requested season wins.
+    """
+    if requested not in (None, ""):
+        try:
+            return int(requested)
+        except (TypeError, ValueError):
+            return requested
+    return data.get("season", {}).get("year", "")
+
+
 def get_team_schedule(request_data):
     """Get schedule for a specific WNBA team."""
     params = request_data.get("params", {})
@@ -428,7 +445,9 @@ def get_team_schedule(request_data):
             "abbreviation": team_info.get("abbreviation", ""),
         },
         "events": events,
-        "season": data.get("season", {}).get("year", ""),
+        # Prefer the requested season: ESPN's envelope reports the *current*
+        # season regardless of the season filter applied to the events.
+        "season": _echo_season(season, data),
         "count": len(events),
     }
 
@@ -635,11 +654,18 @@ def get_futures(request_data=None):
     """Get WNBA futures odds (e.g. championship winner, MVP)."""
     params = (request_data or {}).get("params", {})
     limit = params.get("limit", 10)
-    season_year = params.get("season_year") or _current_year()
-    data = espn_core_request(SPORT_PATH, f"seasons/{season_year}/futures")
+    requested_season = params.get("season_year")
+    season_year = requested_season or _current_year()
+    data, season_year, season_note = fetch_season(
+        lambda yr: espn_core_request(SPORT_PATH, f"seasons/{yr}/futures"),
+        season_year,
+        requested_season is not None,
+    )
     if data.get("error"):
         return data
     result = normalize_futures(data, limit=limit)
+    if season_note:
+        result["warnings"] = [season_note]
     result["season_year"] = season_year
     return result
 
@@ -650,15 +676,22 @@ def get_team_stats(request_data):
     team_id = params.get("team_id")
     if not team_id:
         return {"error": True, "message": "team_id is required"}
-    season_year = params.get("season_year") or _current_year()
+    requested_season = params.get("season_year")
+    season_year = requested_season or _current_year()
     season_type = params.get("season_type", 2)
-    data = espn_core_request(
-        SPORT_PATH,
-        f"seasons/{season_year}/types/{season_type}/teams/{team_id}/statistics",
+    data, season_year, season_note = fetch_season(
+        lambda yr: espn_core_request(
+            SPORT_PATH,
+            f"seasons/{yr}/types/{season_type}/teams/{team_id}/statistics",
+        ),
+        season_year,
+        requested_season is not None,
     )
     if data.get("error"):
         return data
     result = normalize_core_stats(data)
+    if season_note:
+        result["warnings"] = [season_note]
     result["team_id"] = str(team_id)
     result["season_year"] = season_year
     result["season_type"] = season_type
@@ -671,15 +704,22 @@ def get_player_stats(request_data):
     player_id = params.get("player_id")
     if not player_id:
         return {"error": True, "message": "player_id is required"}
-    season_year = params.get("season_year") or _current_year()
+    requested_season = params.get("season_year")
+    season_year = requested_season or _current_year()
     season_type = params.get("season_type", 2)
-    data = espn_core_request(
-        SPORT_PATH,
-        f"seasons/{season_year}/types/{season_type}/athletes/{player_id}/statistics",
+    data, season_year, season_note = fetch_season(
+        lambda yr: espn_core_request(
+            SPORT_PATH,
+            f"seasons/{yr}/types/{season_type}/athletes/{player_id}/statistics",
+        ),
+        season_year,
+        requested_season is not None,
     )
     if data.get("error"):
         return data
     result = normalize_core_stats(data)
+    if season_note:
+        result["warnings"] = [season_note]
     result["player_id"] = str(player_id)
     result["season_year"] = season_year
     result["season_type"] = season_type

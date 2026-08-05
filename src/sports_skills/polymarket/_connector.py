@@ -89,6 +89,7 @@ _clob_rate_limiter = _RateLimiter(max_tokens=50, refill_rate=50.0)
 # HTTP Helpers
 # ============================================================
 
+# Polymarket requires its own User-Agent — keep it separate from the ESPN one.
 _USER_AGENT = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36"
 
 

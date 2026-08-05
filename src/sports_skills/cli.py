@@ -183,7 +183,7 @@ _REGISTRY = {
         "get_lol_tournaments": {"optional": ["region", "limit"]},
     },
     "betting": {
-        "convert_odds": {"required": ["odds", "from_format"]},
+        "convert_odds": {"required": ["odds"], "optional": ["from_format"]},
         "devig": {"required": ["odds"], "optional": ["format"]},
         "find_edge": {"required": ["fair_prob", "market_prob"]},
         "kelly_criterion": {"required": ["fair_prob", "market_prob"]},
@@ -324,8 +324,10 @@ _REGISTRY = {
         "get_player_stats": {"required": ["player_id"], "optional": ["season_year", "season_type"]},
         "get_nflverse_schedule": {"optional": ["season", "week"]},
         "get_nflverse_weekly_rosters": {"optional": ["season", "week", "team"]},
-        "get_nflverse_player_stats": {"optional": ["season", "player_id", "team", "position"]},
-        "get_nflverse_team_stats": {"optional": ["season", "team", "week"]},
+        "get_nflverse_player_stats": {
+            "optional": ["season", "player_id", "team", "position", "week", "summary_level"]
+        },
+        "get_nflverse_team_stats": {"optional": ["season", "team", "week", "summary_level"]},
         "get_nflverse_play_by_play": {"optional": ["season", "week", "team", "game_id", "limit"]},
     },
     "nba": {
