@@ -290,7 +290,7 @@ def get_mlbstats_player_stats(
     player_id: str | None = None,
     player: str | None = None,
     stat_type: str | None = None,
-    group: str | None = None,
+    stat_group: str | None = None,
     season: int | None = None,
 ) -> dict:
     """Get a player's stats via the MLB Stats API.
@@ -300,7 +300,7 @@ def get_mlbstats_player_stats(
         player: Player name to resolve instead of player_id. Must match exactly
             one player; ambiguous names return the candidates.
         stat_type: "season" (default), "career", or "year_by_year".
-        group: "hitting" (default), "pitching", or "fielding".
+        stat_group: "hitting" (default), "pitching", or "fielding".
         season: Season year when stat_type is "season". Defaults to the most
             recent season.
     """
@@ -310,7 +310,7 @@ def get_mlbstats_player_stats(
                 player_id=player_id,
                 player=player,
                 stat_type=stat_type,
-                group=group,
+                stat_group=stat_group,
                 season=season,
             )
         )
@@ -355,7 +355,7 @@ def get_mlbstats_leaders(
     *,
     category: str,
     season: int | None = None,
-    group: str | None = None,
+    stat_group: str | None = None,
     limit: int | None = None,
 ) -> dict:
     """Get league leaders for a stat category via the MLB Stats API.
@@ -365,12 +365,13 @@ def get_mlbstats_leaders(
             "battingAverage", "earnedRunAverage", "strikeouts", "stolenBases",
             "wins", "saves".
         season: Season year. Defaults to the most recent season.
-        group: Optional "hitting", "pitching", or "fielding" to disambiguate
-            categories that exist in more than one group (e.g. strikeouts).
+        stat_group: Optional "hitting", "pitching", or "fielding" to
+            disambiguate categories that exist in more than one group
+            (e.g. strikeouts, homeRuns).
         limit: Max leaders to return (default 10).
     """
     return wrap(
         _get_mlbstats_leaders(
-            _params(category=category, season=season, group=group, limit=limit)
+            _params(category=category, season=season, stat_group=stat_group, limit=limit)
         )
     )

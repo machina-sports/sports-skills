@@ -337,7 +337,7 @@ def get_mlbstats_schedule(request_data: dict[str, Any]) -> dict[str, Any]:
 def get_mlbstats_player_stats(request_data: dict[str, Any]) -> dict[str, Any]:
     params = request_data.get("params", {})
     stat_type = _lookup(_STAT_TYPES, params.get("stat_type"), "season", "stat_type")
-    group = _lookup(_STAT_GROUPS, params.get("group"), "hitting", "group")
+    group = _lookup(_STAT_GROUPS, params.get("stat_group"), "hitting", "stat_group")
     person_id, display = _resolve_player(params.get("player_id"), params.get("player"))
 
     query = {"stats": stat_type, "group": group}
@@ -360,7 +360,7 @@ def get_mlbstats_player_stats(request_data: dict[str, Any]) -> dict[str, Any]:
         "player_id": person_id,
         "player": display,
         "stat_type": stat_type,
-        "group": group,
+        "stat_group": group,
         "splits": splits,
         "count": len(splits),
         "copyright": data.get("copyright"),
@@ -529,7 +529,7 @@ def get_mlbstats_leaders(request_data: dict[str, Any]) -> dict[str, Any]:
             "battingAverage, earnedRunAverage, strikeouts, stolenBases, wins, saves."
         )
     season = _season_str(params.get("season"))
-    group = params.get("group")
+    group = params.get("stat_group")
     limit = params.get("limit") or 10
 
     query = {
@@ -539,7 +539,7 @@ def get_mlbstats_leaders(request_data: dict[str, Any]) -> dict[str, Any]:
         "limit": int(limit),
     }
     if group is not None:
-        query["statGroup"] = _lookup(_STAT_GROUPS, group, None, "group")
+        query["statGroup"] = _lookup(_STAT_GROUPS, group, None, "stat_group")
 
     data = _request("stats/leaders", query)
     blocks = data.get("leagueLeaders", [])

@@ -408,14 +408,14 @@ _REGISTRY = {
         "find_mlb_player": {"required": ["name"]},
         "get_mlbstats_schedule": {"optional": ["date", "season", "team", "game_type"]},
         "get_mlbstats_player_stats": {
-            "optional": ["player_id", "player", "stat_type", "group", "season"]
+            "optional": ["player_id", "player", "stat_type", "stat_group", "season"]
         },
         "get_mlbstats_play_by_play": {"required": ["game_pk"], "optional": ["limit"]},
         "get_mlbstats_boxscore": {"required": ["game_pk"]},
         "get_mlbstats_standings": {"optional": ["season"]},
         "get_mlbstats_leaders": {
             "required": ["category"],
-            "optional": ["season", "group", "limit"],
+            "optional": ["season", "stat_group", "limit"],
         },
     },
     "tennis": {

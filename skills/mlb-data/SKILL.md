@@ -98,7 +98,7 @@ and schedules back to 1901. The two sources use unrelated id systems:
   ("acuna" finds "Ronald Acuña Jr.").
 - **Leaders come grouped.** A category like `homeRuns` exists for hitting,
   catching, and pitching (home runs *allowed*); rows are labelled with
-  `stat_group` — pass `group=` to get just one.
+  `stat_group` — pass `stat_group=` to get just one.
 
 Responses include MLB's `copyright` notice, passed through from the API.
 

@@ -187,7 +187,7 @@ class TestPlayerStats:
 
     def test_season_param_only_sent_for_season_type(self, offline):
         _stats.get_mlbstats_player_stats(
-            {"params": {"player_id": "660271", "stat_type": "career", "group": "pitching"}}
+            {"params": {"player_id": "660271", "stat_type": "career", "stat_group": "pitching"}}
         )
         path, params = offline[-1]
         assert "season" not in params
@@ -196,7 +196,7 @@ class TestPlayerStats:
 
     def test_invalid_group_lists_valid(self, offline):
         out = _stats.get_mlbstats_player_stats(
-            {"params": {"player_id": "1", "group": "batting"}}
+            {"params": {"player_id": "1", "stat_group": "batting"}}
         )
         assert out["error"] is True and "hitting" in out["message"]
 
@@ -290,7 +290,7 @@ class TestLeaders:
 
     def test_group_is_sent_upstream(self, offline):
         _stats.get_mlbstats_leaders(
-            {"params": {"category": "strikeouts", "season": 2024, "group": "pitching"}}
+            {"params": {"category": "strikeouts", "season": 2024, "stat_group": "pitching"}}
         )
         path, params = offline[-1]
         assert params["statGroup"] == "pitching"
