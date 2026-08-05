@@ -37,7 +37,9 @@ For nflverse-backed commands (`get_nflverse_*`), install the NFL extra:
 ```bash
 pip install sports-skills[nfl]
 ```
-This installs `nfl-data-py` (or use `nflreadpy` if preferred). Parquet support (`pyarrow`) is also needed for most nflverse data beyond schedules.
+On Python 3.10+ this installs `nflreadpy` (the preferred backend) plus `pyarrow`, which is needed for most nflverse data beyond schedules. On Python 3.9 it installs `nfl-data-py` instead, since `nflreadpy` requires 3.10+.
+
+The `nfl-data-py` backend is a reduced fallback: it cannot serve `get_nflverse_team_stats`, which returns an explanatory error there. Use Python 3.10+ for full nflverse coverage.
 
 ## Quick Start
 
@@ -90,13 +92,35 @@ Derive the current year from the system prompt's date (e.g., `currentDate: 2026-
 | `get_depth_chart` | Depth chart for a team |
 | `get_team_stats` | Team statistical profile |
 | `get_player_stats` | Player statistical profile |
-| `get_nflverse_schedule` | nflverse-backed schedules/results table |
+| `get_nflverse_schedule` | nflverse-backed schedules/results table (carries `espn_event_id`) |
 | `get_nflverse_weekly_rosters` | nflverse-backed weekly rosters |
-| `get_nflverse_player_stats` | nflverse-backed normalized player stat rows |
-| `get_nflverse_team_stats` | nflverse-backed normalized team stat rows |
+| `get_nflverse_player_stats` | nflverse-backed player stats — season totals by default |
+| `get_nflverse_team_stats` | nflverse-backed team stats — season totals by default |
 | `get_nflverse_play_by_play` | nflverse-backed play-by-play rows |
 
 See `references/api-reference.md` for full parameter lists and return shapes.
+
+## Using ESPN and nflverse Together
+
+The two backends use different identifier systems. `get_nflverse_schedule` is the
+bridge: each event carries `espn_event_id`, which is exactly the ESPN event ID.
+
+To combine nflverse analytics (EPA, win probability, betting lines) with ESPN
+detail (box scores, drives) for the same game:
+1. Call `get_nflverse_schedule(season=..., week=...)`.
+2. Read `espn_event_id` off the event you want.
+3. Pass it as `event_id` to `get_game_summary`, `get_play_by_play`, or
+   `get_win_probability`.
+
+Two things that do not line up automatically:
+- **Team abbreviations.** ESPN uses `LAR` and `WSH`; nflverse uses `LA` and `WAS`.
+  The `get_nflverse_*` functions accept either and translate. Going the other way
+  (nflverse → ESPN), resolve via `get_teams`.
+- **Player IDs.** ESPN athlete IDs and nflverse GSIS IDs (`00-0033873`) are
+  unrelated, and no crosswalk is available. Match on name plus team instead.
+
+Field to watch on schedule rows: `total` is the combined points actually scored,
+while `total_line` is the betting over/under. Use `total_line` for market work.
 
 ## Examples
 

@@ -249,6 +249,11 @@ def get_player_stats(
 def get_nflverse_schedule(*, season: int | None = None, week: int | None = None) -> dict:
     """Get NFL schedule via nflverse backend.
 
+    Each event carries ``espn_event_id``, the ESPN event ID for the same game —
+    use it to join these rows to ``get_game_summary``, ``get_play_by_play``, and
+    the other ESPN-backed functions here. ``total`` is the combined points
+    scored; ``total_line`` is the betting over/under.
+
     Args:
         season: Season year. Defaults to current NFL season.
         week: Optional NFL week number.
@@ -264,7 +269,8 @@ def get_nflverse_weekly_rosters(
     Args:
         season: Season year. Defaults to current NFL season.
         week: Optional NFL week number.
-        team: Optional team abbreviation filter (e.g. "KC").
+        team: Optional team abbreviation filter (e.g. "KC"). ESPN spellings
+            ("LAR", "WSH") are translated to nflverse's ("LA", "WAS").
     """
     return wrap(
         _get_nflverse_weekly_rosters(_params(season=season, week=week, team=team))
@@ -277,33 +283,62 @@ def get_nflverse_player_stats(
     player_id: str | None = None,
     team: str | None = None,
     position: str | None = None,
+    week: int | None = None,
+    summary_level: str | None = None,
 ) -> dict:
     """Get NFL player stats via nflverse backend.
+
+    Returns regular-season totals by default. Pass ``week`` (or
+    ``summary_level="week"``) for per-game rows.
 
     Args:
         season: Season year. Defaults to current NFL season.
         player_id: Optional nflverse/GSIS player identifier.
-        team: Optional team abbreviation filter.
+        team: Optional team abbreviation filter. ESPN spellings ("LAR", "WSH")
+            are translated to their nflverse equivalents ("LA", "WAS").
         position: Optional position filter.
+        week: Optional NFL week number. Implies per-game rows.
+        summary_level: One of "reg" (default), "post", "reg+post", or "week".
     """
     return wrap(
         _get_nflverse_player_stats(
-            _params(season=season, player_id=player_id, team=team, position=position)
+            _params(
+                season=season,
+                player_id=player_id,
+                team=team,
+                position=position,
+                week=week,
+                summary_level=summary_level,
+            )
         )
     )
 
 
 def get_nflverse_team_stats(
-    *, season: int | None = None, team: str | None = None, week: int | None = None
+    *,
+    season: int | None = None,
+    team: str | None = None,
+    week: int | None = None,
+    summary_level: str | None = None,
 ) -> dict:
     """Get NFL team stats via nflverse backend.
 
+    Returns regular-season totals by default. Pass ``week`` (or
+    ``summary_level="week"``) for per-game rows. Requires the nflreadpy backend
+    (Python 3.10+); nfl_data_py has no team-stat table.
+
     Args:
         season: Season year. Defaults to current NFL season.
-        team: Optional team abbreviation filter.
-        week: Optional week filter when the backend exposes weekly rows.
+        team: Optional team abbreviation filter. ESPN spellings ("LAR", "WSH")
+            are translated to their nflverse equivalents ("LA", "WAS").
+        week: Optional NFL week number. Implies per-game rows.
+        summary_level: One of "reg" (default), "post", "reg+post", or "week".
     """
-    return wrap(_get_nflverse_team_stats(_params(season=season, team=team, week=week)))
+    return wrap(
+        _get_nflverse_team_stats(
+            _params(season=season, team=team, week=week, summary_level=summary_level)
+        )
+    )
 
 
 def get_nflverse_play_by_play(
