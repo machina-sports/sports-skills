@@ -95,6 +95,9 @@ sdataprod.ncaa.com) — coverage ESPN does not carry:
 
 - **D2 and D3 scoreboards** via `division="d2"`/`"d3"` — ESPN's college
   coverage is D1-centric.
+- **Full D1 days without grouping tricks**: the ESPN-backed `get_scoreboard`
+  defaults to Top 25 games only (pass `group=50` there for all of D1);
+  `get_ncaa_scoreboard` returns every D1 game by default.
 - **The official March Madness bracket** with live scores: `get_ncaa_bracket`.
 - **Official game detail**: `get_ncaa_game`, `get_ncaa_boxscore`,
   `get_ncaa_play_by_play`.
