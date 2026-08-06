@@ -926,18 +926,29 @@ def _openfootball_fetch(slug, year):
         return None
 
 
-def _normalize_openfootball_match(match, slug, year):
-    """Normalize an openfootball match to Machina event format."""
-    league = LEAGUES.get(slug, {})
-    score = match.get("score") or {}
-    # openfootball is inconsistent: score is usually {"ft": [h, a]} but some
-    # seasons ship a bare [h, a] list (e.g. en.1 2025-26 has 27 of them)
+
+def _openfootball_ft(match):
+    """Extract the full-time score pair from an openfootball match.
+
+    openfootball is inconsistent: ``score`` is usually ``{"ft": [h, a]}`` but
+    some seasons ship a bare ``[h, a]`` list (en.1 2025-26 has 27 of them), and
+    unplayed matches omit it entirely. Returns ``[]`` when no usable pair
+    exists so every consumer shares one shape check.
+    """
+    score = match.get("score")
     if isinstance(score, dict):
         ft = score.get("ft") or []
     elif isinstance(score, list):
         ft = score
     else:
         ft = []
+    return ft if isinstance(ft, list) else []
+
+
+def _normalize_openfootball_match(match, slug, year):
+    """Normalize an openfootball match to Machina event format."""
+    league = LEAGUES.get(slug, {})
+    ft = _openfootball_ft(match)
     has_score = len(ft) == 2
     status = "closed" if has_score else "not_started"
     date_str = match.get("date", "")
@@ -1031,9 +1042,8 @@ def _openfootball_get_standings(slug, year):
         return []
     table = {}
     for m in data.get("matches", []):
-        score = m.get("score") or {}
-        ft = score.get("ft")
-        if not ft or len(ft) != 2:
+        ft = _openfootball_ft(m)
+        if len(ft) != 2:
             continue
         t1, t2 = m.get("team1", ""), m.get("team2", "")
         for team in (t1, t2):
