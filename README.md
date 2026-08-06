@@ -65,13 +65,13 @@ npx skills add machina-sports/sports-skills@nba-data
 |-------|-------|----------|-------------|
 | [`football-data`](https://skills.sh/machina-sports/sports-skills/football-data) | Football (Soccer) | 25 | ESPN, FPL, Understat, Transfermarkt, football-data.co.uk, ClubElo |
 | [`nfl-data`](https://skills.sh/machina-sports/sports-skills/nfl-data) | NFL | 22 | ESPN, nflverse |
-| [`nba-data`](https://skills.sh/machina-sports/sports-skills/nba-data) | NBA | 21 | ESPN, NBA CDN |
+| [`nba-data`](https://skills.sh/machina-sports/sports-skills/nba-data) | NBA | 28 | ESPN, NBA CDN, NBA Stats (stats.nba.com) |
 | [`wnba-data`](https://skills.sh/machina-sports/sports-skills/wnba-data) | WNBA | 16 | ESPN |
-| [`nhl-data`](https://skills.sh/machina-sports/sports-skills/nhl-data) | NHL | 15 | ESPN |
-| [`mlb-data`](https://skills.sh/machina-sports/sports-skills/mlb-data) | MLB | 16 | ESPN |
+| [`nhl-data`](https://skills.sh/machina-sports/sports-skills/nhl-data) | NHL | 22 | ESPN, NHL API (api-web.nhle.com) |
+| [`mlb-data`](https://skills.sh/machina-sports/sports-skills/mlb-data) | MLB | 23 | ESPN, MLB Stats API (statsapi.mlb.com) |
 | [`tennis-data`](https://skills.sh/machina-sports/sports-skills/tennis-data) | Tennis (ATP + WTA) | 5 | ESPN |
-| [`cfb-data`](https://skills.sh/machina-sports/sports-skills/cfb-data) | College Football (CFB) | 14 | ESPN |
-| [`cbb-data`](https://skills.sh/machina-sports/sports-skills/cbb-data) | College Basketball (CBB) | 18 | ESPN |
+| [`cfb-data`](https://skills.sh/machina-sports/sports-skills/cfb-data) | College Football (CFB) | 21 | ESPN, NCAA (official) |
+| [`cbb-data`](https://skills.sh/machina-sports/sports-skills/cbb-data) | College Basketball (CBB) | 25 | ESPN, NCAA (official) |
 | [`golf-data`](https://skills.sh/machina-sports/sports-skills/golf-data) | Golf (PGA/LPGA/DP World) | 6 | ESPN |
 | [`volleyball-data`](https://skills.sh/machina-sports/sports-skills/volleyball-data) | Volleyball (Dutch) | 10 | Nevobo |
 | [`xctf-data`](https://skills.sh/machina-sports/sports-skills/xctf-data) | Cross Country & Track | 5 | TFRRS, The Stride Report |
@@ -93,12 +93,34 @@ npx skills add machina-sports/sports-skills@nba-data
 | Skill | Purpose | Commands | Notes |
 |-------|---------|----------|-------|
 | [`betting`](https://skills.sh/machina-sports/sports-skills/betting) | Odds math & bet evaluation | 9 | Pure compute — no API calls |
-| [`markets`](https://skills.sh/machina-sports/sports-skills/markets) | ESPN ↔ Kalshi ↔ Polymarket orchestration | 7 | Unified dashboards, cross-platform comparison |
+| [`markets`](https://skills.sh/machina-sports/sports-skills/markets) | ESPN ↔ Kalshi ↔ Polymarket orchestration | 14 | Unified dashboards, live ticks, cross-platform comparison |
 | [`sports-reporter`](https://skills.sh/machina-sports/sports-skills/sports-reporter) | Original sports journalism | prompt-only | Composes other skills to write articles |
 | [`machina`](https://skills.sh/machina-sports/sports-skills/machina) | Gateway to Machina premium / licensed data | prompt-only | Routes to `machina-cli` + MCP |
 | [`world-cup`](https://skills.sh/machina-sports/sports-skills/world-cup) | Premium World Cup 2026 intelligence (read-only) | prompt-only | Routes to a hosted Machina MCP project |
 
-Data coverage varies by league and source — each skill documents its own limits (e.g. [football data coverage](skills/football-data/references/data-coverage.md): xG is top-5 leagues only, FPL stats are Premier League only).
+### Analytics Coverage
+
+Beyond ESPN's live layer, the US-sport skills carry a deeper analytics backend consumed
+directly from each league's own (or community) data source — same skill, second source,
+one JSON envelope:
+
+| Skill | Deep source | What it adds over ESPN | History |
+|-------|-------------|------------------------|---------|
+| `nfl-data` | nflverse | Season/weekly stat tables, EPA & win probability per play, betting lines, ESPN-id bridge | 1999+ |
+| `nba-data` | NBA Stats (stats.nba.com) | Advanced ratings/pace, per-shot court coordinates, play-by-play with locations, career splits, all-era player registry | 1946+ |
+| `mlb-data` | MLB Stats API (official) | Pitch-level data — velocity, spin, plate coordinates, exit velocity, launch angle — career splits by stat group, league leaders | 1901+ |
+| `nhl-data` | NHL API (official) | Play-by-play with on-ice x/y coordinates, cross-league career rows, skater/goalie leaders, historical standings | 1917+ |
+| `cfb-data` | NCAA (official) | **FCS scoreboards**, official game detail, drive-context play-by-play, scoring summaries, schools index | — |
+| `cbb-data` | NCAA (official) | **D2/D3 scoreboards**, official game detail, **March Madness bracket with live scores**, schools index | — |
+
+The two sources in each skill use unrelated id systems — every skill documents the join
+recipe (game date + team abbreviations/names), team filters accept both sources'
+abbreviation spellings, and passing the wrong system's id returns a guided error rather
+than an upstream failure.
+
+Coverage still varies by league and source — each skill documents its own limits (e.g.
+[football data coverage](skills/football-data/references/data-coverage.md): xG is top-5
+leagues only, FPL stats are Premier League only).
 
 ---
 
@@ -153,7 +175,7 @@ sports-skills premium --install    # install machina-cli first
 sports-skills premium --json       # machine-readable output
 ```
 
-When a public API rate-limits a request (HTTP 429), the JSON response gains an additive `upgrade` field pointing at `sports-skills premium`. Suppress it with `SPORTS_SKILLS_NO_UPGRADE_HINTS=1`.
+When a public API rate-limits or throttles a request, or a request needs data the free sources structurally cannot provide, the JSON response gains an additive `upgrade` field pointing at `sports-skills premium` — on both the CLI and the Python SDK. Suppress it with `SPORTS_SKILLS_NO_UPGRADE_HINTS=1`.
 
 Licensed data skills — Sportradar, Stats Perform (Opta), API-Football, Data Sports Group — are coming soon via [Machina Sports](https://machina.gg). Same interface, same JSON envelope, licensed data underneath, built for commercial and production use with SLAs and enterprise support. For early access or enterprise needs, see [machina.gg](https://machina.gg).
 
@@ -190,6 +212,10 @@ This project does not own, license, or redistribute any sports data. Each skill 
 | FastF1 | Open-source library | Yes — [FastF1](https://github.com/theOehrly/Fast-F1) (MIT) |
 | Kalshi | Official public API | Yes — [Trade API v2](https://trading-api.readme.io) |
 | Polymarket | Official public APIs | Yes — [Gamma](https://gamma-api.polymarket.com) + [CLOB](https://docs.polymarket.com) |
+| NBA Stats (stats.nba.com) | Public web endpoints | No — undocumented; throttles by client and volume |
+| MLB Stats API (statsapi.mlb.com) | Official public API | Yes — open, unauthenticated; responses carry MLB's copyright notice |
+| NHL API (api-web.nhle.com) | Official public API | Semi-official — open and unauthenticated, undocumented |
+| NCAA (data.ncaa.com, sdataprod.ncaa.com) | Public web endpoints | No — undocumented; game detail rides frontend GraphQL queries |
 | Nevobo | Official public API | Yes — [Nevobo API](https://api.nevobo.nl) (open, unauthenticated) |
 | TFRRS | Public web data | No — community access, subject to their ToS |
 | The Stride Report | Public RSS feed | No — standard RSS syndication, subject to their ToS |
@@ -210,6 +236,10 @@ This project is built on top of great open-source work and public APIs:
 
 - **[ESPN](https://www.espn.com)** — for keeping their web endpoints accessible. Powers 10 of our sports data skills: Football (13 leagues), NFL, NBA, WNBA, NHL, MLB, Tennis, College Football, College Basketball, and Golf.
 - **[nflverse](https://github.com/nflverse)** — the community-maintained NFL data ecosystem (`nfl_data_py` / `nflreadpy`), powering schedules, weekly rosters, normalized stats, and play-by-play in the NFL skill.
+- **[MLB](https://www.mlb.com)** — for the genuinely open MLB Stats API powering pitch-level play-by-play, career splits, and a century of schedules in the MLB skill.
+- **[NHL](https://www.nhl.com)** — for the open NHL API powering coordinate play-by-play, career rows, and Original-Six-era history in the NHL skill.
+- **[NCAA](https://www.ncaa.com)** — for the public scoreboard, game, and bracket endpoints powering the official college backend in the CFB and CBB skills.
+- **Endpoint references** — [swar/nba_api](https://github.com/swar/nba_api), [zero-sum-seattle/python-mlb-statsapi](https://github.com/zero-sum-seattle/python-mlb-statsapi), [dword4/nhlapi](https://gitlab.com/dword4/nhlapi), and [henrygd/ncaa-api](https://github.com/henrygd/ncaa-api) — community documentation that mapped the request shapes our direct integrations use. Nothing from these projects is bundled; they were the maps.
 - **[Nevobo](https://www.nevobo.nl)** — the Nederlandse Volleybalbond, for their open API providing Dutch volleyball data across the full pyramid (6,400+ poules, 1,737 clubs).
 - **[Fantasy Premier League](https://fantasy.premierleague.com)** — for their community API powering injury news, player stats, ownership data, and ICT index for Premier League players.
 - **[Transfermarkt](https://www.transfermarkt.com)** — for player market values, transfer history, and the richest player data in football.
