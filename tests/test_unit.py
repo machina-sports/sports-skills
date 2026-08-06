@@ -2174,3 +2174,29 @@ class TestOpenfootballScoreShapes:
         a = next(t for t in table if t["team"]["name"] == "A")
         assert a["played"] == 2
         assert a["points"] == 4  # one win, one draw
+
+
+class TestSeasonEmptyExplained:
+    """A season neither source can serve must say so, not return a bare
+    empty success indistinguishable from an empty table."""
+
+    def _patch_empty(self, monkeypatch):
+        from sports_skills.football import _connector as fc
+
+        monkeypatch.setattr(fc, "_espn_request", lambda *a, **k: {"error": True, "message": "x"})
+        monkeypatch.setattr(fc, "_espn_web_request", lambda *a, **k: {"error": True, "message": "x"})
+        monkeypatch.setattr(fc, "_openfootball_fetch", lambda *a, **k: None)
+        monkeypatch.setattr(fc, "_detect_current_season", lambda *a, **k: "2024", raising=False)
+        return fc
+
+    def test_schedule_empty_carries_message(self, monkeypatch):
+        fc = self._patch_empty(monkeypatch)
+        out = fc.get_season_schedule({"params": {"season_id": "premier-league-1888"}})
+        assert out["schedules"] == []
+        assert "openfootball" in out.get("message", "")
+
+    def test_standings_empty_carries_message(self, monkeypatch):
+        fc = self._patch_empty(monkeypatch)
+        out = fc.get_season_standings({"params": {"season_id": "premier-league-1888"}})
+        assert out["standings"] == []
+        assert "No standings found" in out.get("message", "")

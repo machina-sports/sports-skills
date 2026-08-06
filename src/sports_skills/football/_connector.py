@@ -2375,11 +2375,27 @@ def get_season_schedule(request_data):
                 if tid:
                     team_ids.append(str(tid))
     if not team_ids:
-        data = _espn_request(espn_slug, "scoreboard")
+        # No standings for this season (historical or unstarted). Try the
+        # openfootball file for the requested year first — falling back to
+        # today's scoreboard here would label current fixtures as the
+        # requested season's schedule.
+        of_data = _openfootball_fetch(slug, year)
+        if of_data:
+            return {
+                "schedules": [
+                    _normalize_openfootball_match(m, slug, year)
+                    for m in of_data.get("matches", [])
+                ],
+                "source": "openfootball",
+            }
         return {
-            "schedules": [
-                _normalize_espn_event(e, slug) for e in data.get("events", [])
-            ]
+            "schedules": [],
+            "message": (
+                f"No schedule found for {season_id!r} — ESPN has no standings or "
+                "team list for this season and no openfootball fallback file "
+                "exists (openfootball covers roughly 2010s-present for its 10 "
+                "leagues)."
+            ),
         }
     all_events = {}
     expected_total = len(team_ids) * (len(team_ids) - 1)
@@ -2402,7 +2418,14 @@ def get_season_schedule(request_data):
     of_events = _openfootball_get_schedule(slug, year)
     if of_events:
         return {"schedules": of_events, "source": "openfootball"}
-    return {"schedules": []}
+    return {
+        "schedules": [],
+        "message": (
+            f"No schedule found for {season_id!r} — ESPN has nothing for this "
+            "season and no openfootball fallback file exists (openfootball "
+            "covers roughly 2010s-present for its 10 leagues)."
+        ),
+    }
 
 
 def get_season_standings(request_data):
@@ -2439,7 +2462,14 @@ def get_season_standings(request_data):
             "standings": [{"group": league_name, "entries": of_entries}],
             "source": "openfootball",
         }
-    return {"standings": []}
+    return {
+        "standings": [],
+        "message": (
+            f"No standings found for {season_id!r} — ESPN has nothing for this "
+            "season and no openfootball fallback file exists (openfootball "
+            "covers roughly 2010s-present for its 10 leagues)."
+        ),
+    }
 
 
 def get_season_leaders(request_data):

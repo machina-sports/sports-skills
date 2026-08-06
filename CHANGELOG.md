@@ -1,3 +1,9 @@
+## [Unreleased]
+
+### Fixed
+- **`football.get_season_schedule` could label today's fixtures as a historical season:** when ESPN had no standings for the requested season (so no team list), the function fell back to the *current* scoreboard — mid-season, asking for `premier-league-1888` would have returned today's games as that season's schedule. The branch now tries the openfootball file for the requested year and otherwise returns an explained empty. Found during the football-data e2e on the 0.30.0 release artifact.
+- **Season queries neither source can serve now say so:** `get_season_schedule` and `get_season_standings` returned a bare empty success for seasons predating all available data, indistinguishable from an empty table; both now explain that ESPN has nothing and no openfootball fallback file exists.
+
 ## [0.30.0]
 
 ### Added
