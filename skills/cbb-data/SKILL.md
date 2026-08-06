@@ -1,9 +1,9 @@
 ---
 name: cbb-data
 description: |
-  College Basketball (CBB) data via ESPN public endpoints — scores, standings, rosters, schedules, game summaries, play-by-play, win probability, rankings, futures, team/player stats, and news for NCAA Division I men's basketball. Zero config, no API keys.
+  College Basketball (CBB) data via ESPN public endpoints and the NCAA's official endpoints — scores, standings, rosters, schedules, game summaries, play-by-play, win probability, rankings, futures, team/player stats, and news for Division I men's basketball, plus official D2/D3 scoreboards, NCAA game detail, the March Madness bracket with live scores, and the schools index. Zero config, no API keys.
 
-  Use when: user asks about college basketball scores, March Madness, NCAA tournament, standings, rankings, team rosters, schedules, play-by-play, betting futures, team/player statistics, or CBB news.
+  Use when: user asks about college basketball scores, March Madness, the NCAA tournament bracket, standings, rankings, team rosters, schedules, play-by-play, betting futures, team/player statistics, CBB news, or D2/D3 games.
   Don't use when: user asks about NBA/WNBA (use nba-data/wnba-data), college football (use cfb-data), or non-sports topics.
 license: MIT
 metadata:

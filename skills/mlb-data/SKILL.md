@@ -1,9 +1,9 @@
 ---
 name: mlb-data
 description: |
-  MLB data via ESPN public endpoints — scores, standings, rosters, schedules, game summaries, play-by-play, win probability, injuries, transactions, depth charts, team/player stats, leaders, and news. Zero config, no API keys.
+  MLB data via ESPN public endpoints and the official MLB Stats API — scores, standings, rosters, schedules, game summaries, injuries, leaders, and news, plus an analytics backend: pitch-level velocity/spin/exit-velocity, career splits by stat group, league leaders, and schedules to 1901. Zero config, no API keys.
 
-  Use when: user asks about MLB scores, standings, team rosters, schedules, game stats, box scores, play-by-play, injuries, transactions, depth charts, team/player statistics, or MLB news.
+  Use when: user asks about MLB scores, standings, team rosters, schedules, game stats, box scores, play-by-play, injuries, transactions, depth charts, team/player statistics, MLB news, pitch speeds/spin/exit velocity, career stats, league leaders, or historical MLB seasons.
   Don't use when: user asks about minor league baseball, college baseball, or international baseball. For other sports use: nfl-data (NFL), nba-data (NBA), wnba-data (WNBA), nhl-data (NHL), football-data (soccer), tennis-data (tennis), golf-data (golf), cricket-data (cricket), cfb-data (college football), cbb-data (college basketball), fastf1 (F1). For betting odds use polymarket or kalshi. For news use sports-news.
 license: MIT
 metadata:

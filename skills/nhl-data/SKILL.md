@@ -1,9 +1,9 @@
 ---
 name: nhl-data
 description: |
-  NHL data via ESPN public endpoints — scores, standings, rosters, schedules, game summaries, play-by-play, injuries, transactions, futures, team/player stats, leaders, and news. Zero config, no API keys.
+  NHL data via ESPN public endpoints and the official NHL API — scores, standings, rosters, schedules, game summaries, injuries, futures, leaders, and news, plus an analytics backend: play-by-play with on-ice coordinates, cross-league career rows, skater/goalie leaders, and history to 1917. Zero config, no API keys.
 
-  Use when: user asks about NHL scores, standings, team rosters, schedules, game stats, box scores, play-by-play, injuries, transactions, betting futures, team/player statistics, or NHL news.
+  Use when: user asks about NHL scores, standings, team rosters, schedules, game stats, box scores, play-by-play, injuries, transactions, betting futures, team/player statistics, NHL news, shot locations, career stats, skater/goalie leaders, or historical NHL seasons.
   Don't use when: user asks about other hockey leagues (AHL, KHL, college hockey). For other sports use: nfl-data (NFL), nba-data (NBA), wnba-data (WNBA), mlb-data (MLB), football-data (soccer), tennis-data (tennis), golf-data (golf), cricket-data (cricket), cfb-data (college football), cbb-data (college basketball), fastf1 (F1). For betting odds use polymarket or kalshi. For news use sports-news.
 license: MIT
 metadata:

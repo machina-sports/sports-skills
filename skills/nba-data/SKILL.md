@@ -1,9 +1,9 @@
 ---
 name: nba-data
 description: |
-  NBA data via ESPN public endpoints — scores, standings, rosters, schedules, game summaries, play-by-play, win probability, injuries, transactions, futures, depth charts, team/player stats, leaders, and news. Zero config, no API keys.
+  NBA data via ESPN public endpoints, the NBA live CDN, and NBA Stats (stats.nba.com) — scores, standings, rosters, schedules, game summaries, play-by-play, injuries, futures, depth charts, leaders, and news, plus an analytics backend: advanced ratings, per-shot court coordinates, career splits, and history to 1946. Zero config, no API keys.
 
-  Use when: user asks about NBA scores, standings, team rosters, schedules, game stats, box scores, play-by-play, injuries, transactions, betting futures, depth charts, team/player statistics, or NBA news.
+  Use when: user asks about NBA scores, standings, team rosters, schedules, game stats, box scores, play-by-play, injuries, transactions, betting futures, depth charts, team/player statistics, NBA news, shot charts, advanced ratings/pace, career stats, or historical NBA seasons.
   Don't use when: user asks about WNBA (use wnba-data), college basketball (use cbb-data), or other sports.
 license: MIT
 metadata:
