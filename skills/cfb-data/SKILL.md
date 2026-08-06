@@ -1,9 +1,9 @@
 ---
 name: cfb-data
 description: |
-  College Football (CFB) data via ESPN public endpoints — scores, standings, rosters, schedules, game summaries, play-by-play, rankings, injuries, futures, team/player stats, and news for NCAA Division I FBS. Zero config, no API keys.
+  College Football (CFB) data via ESPN public endpoints and the NCAA's official endpoints — scores, standings, rosters, schedules, game summaries, play-by-play, rankings, injuries, futures, team/player stats, and news for FBS, plus official FCS scoreboards, NCAA game detail with drive context, and the schools index. Zero config, no API keys.
 
-  Use when: user asks about college football scores, standings, rankings, team rosters, schedules, game results, play-by-play, injuries, betting futures, team/player statistics, or CFB news.
+  Use when: user asks about college football scores, standings, rankings, team rosters, schedules, game results, play-by-play, injuries, betting futures, team/player statistics, CFB news, or FCS games.
   Don't use when: user asks about NFL (use nfl-data), college basketball (use cbb-data), or non-sports topics.
 license: MIT
 # `metadata` is the only free-form field the VS Code agent-skills

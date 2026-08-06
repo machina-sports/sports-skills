@@ -43,6 +43,7 @@ pip install "sports-skills[dev]"
 
 - **Football (Soccer)**: ESPN, Understat, FPL, Transfermarkt, football-data.co.uk, ClubElo — 25 commands across 30 leagues
 - **US Sports**: NFL, NBA, WNBA, NHL, MLB, College Football (CFB), College Basketball (CBB) — live scores, standings, depth charts, injuries, and leaders
+- **Analytics backends** (same modules, second source): nflverse for NFL (EPA, weekly tables, 1999+), NBA Stats for NBA (shot charts, advanced ratings, 1946+), the official MLB Stats API (pitch-level velocity/spin/exit-velocity, 1901+), the official NHL API (coordinate play-by-play, 1917+), and the NCAA's own endpoints for college (FCS/D2/D3 scoreboards, March Madness bracket)
 - **Tennis**: ATP and WTA tournament scores, rankings, calendars, and player profiles
 - **Golf**: PGA, LPGA, and DP World tour scorecards and leaderboards
 - **College XC/TF**: NCAA cross country and track & field — athlete profiles, personal records, meet results, and news via The Stride Report
