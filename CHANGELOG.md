@@ -1,4 +1,4 @@
-## [Unreleased]
+## [0.30.0]
 
 ### Added
 - **NBA Stats backend (7 new commands):** the analytics layer for NBA that nflverse provides for NFL, consumed directly from stats.nba.com with the stdlib — no new dependencies, works on Python 3.9. `get_nbastats_game_log` (league game log with 10-digit NBA game ids; history back to 1946), `get_nbastats_player_career`, `get_nbastats_team_stats` (advanced ratings/pace/four-factors, measures ESPN does not carry), `get_nbastats_shot_chart` (per-shot court x/y), `get_nbastats_play_by_play` (coordinates, past seasons — the live CDN feed only covers the current one), `get_nbastats_advanced_boxscore`, and `find_nba_player` (all-era registry; ASCII queries match accented names — "jokic" finds "Nikola Jokić"). Team filters accept both ESPN and NBA spellings of the six abbreviations that differ (`GS/GSW`, `NO/NOP`, `NY/NYK`, `SA/SAS`, `UTAH/UTA`, `WSH/WAS`), and rows carry both systems for joining against the ESPN-backed commands — the id systems are unrelated, so the join key is game date plus team abbreviations, documented in the skill.
