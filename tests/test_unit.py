@@ -2112,3 +2112,65 @@ class TestPublicEndpointAssembly:
         out = c.get_team_strength({"params": {"team_id": "359", "team_id_2": "382", "date": "2026-03-01"}})
         assert out["teams"][0]["elo"] is None
         assert "elo_difference" not in out and "favorite" not in out
+
+
+class TestOpenfootballScoreShapes:
+    """openfootball ships `score` as {"ft": [h, a]}, a bare [h, a] list, or not
+    at all (en.1 2025-26 mixes 353 dicts with 27 bare lists). Both the match
+    normalizer and the standings builder read it through one helper."""
+
+    def test_dict_shape(self):
+        from sports_skills.football._connector import _openfootball_ft
+
+        assert _openfootball_ft({"score": {"ft": [2, 1]}}) == [2, 1]
+
+    def test_bare_list_shape(self):
+        from sports_skills.football._connector import _openfootball_ft
+
+        assert _openfootball_ft({"score": [0, 0]}) == [0, 0]
+
+    def test_missing_and_junk_shapes(self):
+        from sports_skills.football._connector import _openfootball_ft
+
+        assert _openfootball_ft({}) == []
+        assert _openfootball_ft({"score": None}) == []
+        assert _openfootball_ft({"score": "2-1"}) == []
+        assert _openfootball_ft({"score": {"ht": [1, 0]}}) == []
+
+    def test_normalizer_handles_bare_list(self):
+        from sports_skills.football._connector import _normalize_openfootball_match
+
+        ev = _normalize_openfootball_match(
+            {"date": "2025-08-16", "team1": "Aston Villa FC", "team2": "Newcastle United FC", "score": [0, 0]},
+            "premier-league",
+            "2025",
+        )
+        assert ev["status"] == "closed"
+        scores = [c["score"] for c in ev["competitors"]]
+        assert scores == [0, 0]
+
+    def test_normalizer_unplayed_match(self):
+        from sports_skills.football._connector import _normalize_openfootball_match
+
+        ev = _normalize_openfootball_match(
+            {"date": "2026-05-24", "team1": "A", "team2": "B"}, "premier-league", "2025"
+        )
+        assert ev["status"] == "not_started"
+
+    def test_standings_survive_mixed_shapes(self):
+        from unittest.mock import patch
+
+        from sports_skills.football import _connector as fc
+
+        data = {
+            "matches": [
+                {"team1": "A", "team2": "B", "score": {"ft": [2, 0]}},
+                {"team1": "A", "team2": "B", "score": [1, 1]},   # bare list — crashed before
+                {"team1": "A", "team2": "B"},                     # unplayed
+            ]
+        }
+        with patch.object(fc, "_openfootball_fetch", return_value=data):
+            table = fc._openfootball_get_standings("premier-league", "2025")
+        a = next(t for t in table if t["team"]["name"] == "A")
+        assert a["played"] == 2
+        assert a["points"] == 4  # one win, one draw
