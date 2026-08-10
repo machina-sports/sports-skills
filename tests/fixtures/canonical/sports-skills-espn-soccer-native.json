@@ -1,0 +1,51 @@
+{
+  "id": "9001",
+  "status": "closed",
+  "start_time": "2026-03-01T20:00:00+00:00",
+  "matchday": null,
+  "round": "",
+  "round_name": "",
+  "competition": {
+    "id": "synthetic-league-1",
+    "name": "Synthetic Premier Division"
+  },
+  "season": {
+    "id": "synthetic-league-1-2026",
+    "name": "2026",
+    "year": "2026"
+  },
+  "venue": {
+    "id": "9101",
+    "name": "Synthetic Home Ground",
+    "city": "Synthetic City",
+    "country": "SYN"
+  },
+  "competitors": [
+    {
+      "team": {
+        "id": "9011",
+        "name": "Synthetic Home United",
+        "short_name": "Home United",
+        "abbreviation": "SHU"
+      },
+      "qualifier": "home",
+      "score": 2
+    },
+    {
+      "team": {
+        "id": "9012",
+        "name": "Synthetic Away Town",
+        "short_name": "Away Town",
+        "abbreviation": "SAT"
+      },
+      "qualifier": "away",
+      "score": 1
+    }
+  ],
+  "scores": {
+    "home": 2,
+    "away": 1
+  },
+  "odds": null,
+  "referees": []
+}
