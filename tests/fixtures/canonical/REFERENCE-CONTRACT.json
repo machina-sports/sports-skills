@@ -1,7 +1,7 @@
 {
   "contract": "machina-sports-schema cross-repository reference contract",
   "source_repository": "machina-sports/machina-templates",
-  "source_commit": "3927b1469485b26f0174544aae0be6131a5fda88",
+  "source_commit": "cf433075666de002e38fb3bd6f5dd8743e7caeb2",
   "profile": "machina-iptc-profile/1.1",
   "schema_version": "canonical-observation/1",
   "machina_schema_version": "machina-sports-schema/1",
