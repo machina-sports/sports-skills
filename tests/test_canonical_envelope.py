@@ -213,18 +213,18 @@ def test_the_rights_block_grants_no_entitlement_and_claims_no_commercial_use():
         assert word not in rights["data_class"], word
 
 
-def test_the_vendored_surface_ships_no_rights_gate_so_the_refusal_is_still_upstream():
-    """Recorded as a fact rather than assumed. machina-templates' ``rights_findings``
-    lives in ``tools/iptc/validate_graph.py``, which is not in the vendored file set,
-    so this package can state a rights block and cannot yet refuse a consumer on it.
-    The consumer-tier gate is B5's CLI work, and this test is what would notice if a
-    gate quietly appeared and made that deferral stale."""
-    from sports_skills.canonical import _vendored
-    from sports_skills.canonical._vendored import serialize
+def test_the_rights_gate_is_vendored_beside_the_serializer_not_written_here():
+    """The deferral this test used to record is closed. machina-templates moved
+    ``rights_findings`` out of ``tools/iptc/validate_graph.py`` and into
+    ``tools/iptc/canonical/rights.py`` precisely so it could be vendored, and the
+    serializer still does not own it: stating a rights block and deciding who may
+    consume one are separate jobs, reported separately. The rule itself is exercised in
+    ``tests/test_canonical_rights.py``."""
+    from sports_skills.canonical._vendored import rights, serialize
 
+    assert callable(rights.rights_findings)
     for name in ("rights_findings", "consumer_tier", "assert_rights"):
         assert not hasattr(serialize, name), name
-        assert not hasattr(_vendored, name), name
 
 
 def test_the_capability_report_claims_only_what_the_payload_supports():
@@ -342,10 +342,12 @@ def test_the_refusal_reports_every_error_rather_than_the_first():
 
 def test_the_public_surface_is_small_and_explicit():
     assert sorted(canonical.__all__) == [
+        "CONSUMER_TIERS",
         "MACHINA_SCHEMA_VERSION",
         "PROFILE_VERSION",
         "SCHEMA_VERSION",
         "canonicalize_event",
+        "rights_findings",
         "to_envelope",
         "to_observation",
     ]

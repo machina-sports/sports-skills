@@ -314,7 +314,7 @@ def test_the_rights_block_is_explicit_prototype_only_open_data():
     consumer with no rights block picks its own licence default."""
     rights = observation()["observation"]["rights"]
     assert rights == {
-        "data_class": "mapping-contract-synthetic-open-prototype",
+        "data_class": "open-public",
         "prototype_only": True,
         "commercial_use": False,
     }

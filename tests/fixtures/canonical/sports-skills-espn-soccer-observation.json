@@ -17,7 +17,7 @@
       ]
     },
     "rights": {
-      "data_class": "mapping-contract-synthetic-open-prototype",
+      "data_class": "open-public",
       "prototype_only": true,
       "commercial_use": false
     },

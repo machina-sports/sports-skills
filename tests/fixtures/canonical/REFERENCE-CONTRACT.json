@@ -1,7 +1,7 @@
 {
   "contract": "machina-sports-schema cross-repository reference contract",
   "source_repository": "machina-sports/machina-templates",
-  "source_commit": "8218136b573e4c1c0f1d66c433f34736c192e4a5",
+  "source_commit": "783e111945dd9f92c9fefb1a349c294ef2381633",
   "profile": "machina-iptc-profile/1.1",
   "schema_version": "canonical-observation/1",
   "machina_schema_version": "machina-sports-schema/1",
@@ -12,11 +12,11 @@
     },
     "sports-skills-espn-soccer-observation.json": {
       "source_path": "tools/iptc/fixtures/observations/sports-skills-espn-soccer-observation.json",
-      "sha256": "fd17ce102a869e87c5badbe7bb0d2bb5525946c3230ced51cb84739dfed15f6a"
+      "sha256": "0517a18d46025190e253ca7c03490dd45113263e1bc9ee58c5954fae3bdb5b30"
     },
     "sports-skills-espn-soccer-envelope.json": {
       "source_path": "tools/iptc/fixtures/corrected/sports-skills-espn-soccer-envelope.json",
-      "sha256": "f18154ff79b94bfcf04e37a3e8d91014759887342de18803f302c71e299627bc"
+      "sha256": "f3e6b8578c65c31ed696a74c49b3f6ba501a18730d8889b1b2a45adbe6df026e"
     }
   }
 }

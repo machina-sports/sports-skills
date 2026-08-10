@@ -47,8 +47,18 @@ PROVIDER = {"namespace": "sports-skills/espn", "family": "open-data"}
 #: Constants, not arguments. This package is public and non-commercial, so it can
 #: never emit anything else, and a rights block whose licence claim is set by its
 #: caller is not a rights block.
+#:
+#: ``open-public`` classifies **the data this adapter emits**: ESPN's public endpoints,
+#: read live. It is one constant stamped onto the synthetic reference fixture and onto
+#: every real match this module will ever read, so it has to be true of both — a class
+#: naming the fixture would travel out attached to live events and call them synthetic.
+#: What the checked-in fixture *is* is a separate question, answered separately in
+#: machina-templates' ``provenance.json`` and never written into a rights block.
+#:
+#: The two booleans are what the gate reads, and they are unchanged: reclassifying the
+#: data relaxes nothing.
 RIGHTS = {
-    "data_class": "mapping-contract-synthetic-open-prototype",
+    "data_class": "open-public",
     "prototype_only": True,
     "commercial_use": False,
 }

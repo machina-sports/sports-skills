@@ -31,22 +31,31 @@ validate. Collapsing them would report an adapter bug and a payload gap as one e
 input that would otherwise make every output unreproducible, and the cross-repository
 reference fixtures depend on it being passed in.
 
-Nothing here is wired into the CLI, and the default native output of every existing
-function is untouched. A consumer-tier rights gate is **not** part of this surface:
-every envelope produced here carries ``prototype_only`` with ``commercial_use``
-false, and enforcing that against a consumer is separate work.
+Stating a rights block and deciding who may consume one are separate jobs, so
+:func:`rights_findings` is exposed beside them and is **the vendored function itself**,
+not a wrapper. A licence rule reimplemented on this side of the vendoring boundary would
+give two definitions of one contract, and the copy that drifted would be the one
+deciding whether prototype-only data reaches a commercial surface. Every envelope this
+package produces is ``prototype_only`` with ``commercial_use`` false, so a
+``production`` consumer is refused every time — which is the answer, not a bug.
+
+The default native output of every existing function is untouched. The CLI reaches this
+package only when the caller asks for ``--format machina-canonical``.
 """
 
 from ._vendored import MACHINA_SCHEMA_VERSION, PROFILE_VERSION, SCHEMA_VERSION
 from ._vendored.ids import surrogate_resolver
+from ._vendored.rights import CONSUMER_TIERS, rights_findings
 from ._vendored.serialize import canonical_envelope
 from .adapters import football
 
 __all__ = [
+    "CONSUMER_TIERS",
     "MACHINA_SCHEMA_VERSION",
     "PROFILE_VERSION",
     "SCHEMA_VERSION",
     "canonicalize_event",
+    "rights_findings",
     "to_envelope",
     "to_observation",
 ]

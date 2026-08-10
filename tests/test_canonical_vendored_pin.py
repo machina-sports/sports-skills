@@ -19,6 +19,10 @@ import hashlib
 import json
 from pathlib import Path
 
+import pytest
+
+from tests.test_canonical_reference_fixtures import templates_checkout
+
 VENDORED = Path(__file__).resolve().parents[1] / "src/sports_skills/canonical/_vendored"
 
 MANIFEST_PATH = VENDORED / "VENDORED.json"
@@ -31,6 +35,7 @@ EXPECTED_FILES = (
     "ids.py",
     "observation.py",
     "official-property-names.json",
+    "rights.py",
     "serialize.py",
     "shared-context.json",
     "vocab.py",
@@ -163,6 +168,32 @@ def test_the_packaged_data_files_are_readable_through_the_package():
     assert allowlist["target_version"] == "1.1"
     context = json.loads(package.joinpath("shared-context.json").read_text(encoding="utf-8"))
     assert "@context" in context
+
+
+def test_the_vendored_pin_and_the_reference_contract_cite_the_same_commit():
+    """Two manifests describing one upstream checkout. Vendoring the runtime from one
+    commit and the fixtures from another would produce a contract that reproduces
+    nothing, and both hash sets would still pass."""
+    from tests.test_canonical_reference_fixtures import manifest as contract
+
+    assert manifest()["source_commit"] == contract()["source_commit"]
+
+
+def test_the_vendored_runtime_is_byte_identical_to_the_machina_templates_original():
+    """The strong half of the pin, run only when a checkout at the cited commit is at
+    hand. A recorded sha256 proves nobody edited the copy *here*; only this proves the
+    copy was ever the upstream file, which is the mistake a re-vendor can make."""
+    checkout = templates_checkout()
+    if checkout is None:
+        pytest.skip(
+            "no machina-templates checkout at the pinned commit; "
+            "set MACHINA_TEMPLATES_ROOT to run this comparison"
+        )
+    source = checkout / manifest()["source_path"]
+    for name in EXPECTED_FILES:
+        upstream = source / name
+        assert upstream.is_file(), name
+        assert (VENDORED / name).read_bytes() == upstream.read_bytes(), name
 
 
 def test_the_serializer_can_load_its_context_and_its_allowlist():
