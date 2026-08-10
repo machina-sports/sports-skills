@@ -165,6 +165,45 @@ Works with every agent that supports the SKILL.md format: [sportsclaw](https://s
 
 ---
 
+## Machina Sports Schema (canonical output)
+
+Football event commands can emit the **Machina Sports Schema** envelope instead of the native payload: one provider's observation of one event, serialized as JSON-LD against the [IPTC Sport Schema](https://sportschema.org) 1.1 profile, with a provider-id crosswalk, a capability report, and a provenance block naming the pinned upstream commit.
+
+```bash
+# One event → one envelope, printed directly
+sports-skills football get_event_summary --event_id=740000 \
+  --format=machina-canonical --observed-at=2026-03-01T22:05:00+00:00
+
+# A day's fixtures → {provider, format, events}, every event a full envelope
+sports-skills football scores --date=2026-03-01 \
+  --canonical --observed-at=2026-03-01T22:05:00+00:00
+```
+
+`--canonical` is an alias for `--format=machina-canonical`. It is supported on `football get_event_summary` and `football get_daily_schedule` (also reachable as `scores`); every other command refuses the flag by name rather than wrapping data the schema does not describe. From Python:
+
+```python
+from sports_skills import canonical, football
+
+event = football.get_event_summary(event_id="740000")["data"]["event"]
+document = canonical.canonicalize_event(event, observed_at="2026-03-01T22:05:00+00:00")
+```
+
+**`--observed-at` is required and must carry a UTC offset.** It is never read from the clock. It is the one input that makes the document reproducible, and the cross-repository reference fixtures this output is tested byte-for-byte against depend on it being stated rather than guessed.
+
+**Rights: prototype only.** Every envelope carries `rights: {"data_class": "open-public", "prototype_only": true, "commercial_use": false}`. `open-public` classifies the *source* — ESPN's public endpoints, read live — and is not an entitlement; the two booleans are the licence claim, and they are constants this package cannot be asked for a better version of. Gate a consumer against them with `--consumer-tier`:
+
+```bash
+sports-skills football get_event_summary --event_id=740000 --canonical \
+  --observed-at=2026-03-01T22:05:00+00:00 --consumer-tier=production
+# → refused: rights-prototype-only, exit status 1
+```
+
+`prototype` (the default) is served. `production` refuses every envelope this package can produce, with one actionable finding and a nonzero exit status, and the same rule is callable directly as `canonical.rights_findings(document, consumer_tier="production")`. That gate is vendored byte-exact from `machina-templates` rather than reimplemented here, so both repositories answer the question with the same code. For licensed data cleared for commercial use, see [machina.gg](https://machina.gg).
+
+The default output of every command is unchanged: no module on the native path imports the canonical package, and the CLI reaches it only when you ask for it by name.
+
+---
+
 ## Premium & Licensed Data
 
 `sports-skills premium` hands off to [`machina-cli`](https://github.com/machina-sports/machina-cli) for licensed and real-time data feeds:
