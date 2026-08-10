@@ -31,14 +31,21 @@ envelope this adapter emits is ``open-public`` and ``prototype_only``, so a
 ``production`` consumer is refused every time — that is the answer, not a defect. The
 refusal is one finding even for a scoreboard: two events carrying one adapter's single
 rights constant is one licence problem, and repeating it per event would scale the noise
-with the fixture list while burying the line that names the fix. An empty scoreboard is
-served at every tier, because no prototype-only data reached the consumer.
+with the fixture list while burying the line that names the fix.
+
+That refusal is decided *before* the provider is called, against the adapter's own
+rights constant rather than against whatever came back, because the answer does not
+depend on the result set. Asking only the emitted envelopes would serve an empty
+scoreboard at every tier — there is nothing to object to — and a production integration
+would read that as permission to configure a prototype-only adapter, on the accident of
+a day with no matches. The envelopes are still gated after they are built, so a document
+whose licence claim ever disagreed with the constant is refused on its own terms.
 """
 
 from datetime import datetime
 
 from . import canonicalize_event, rights_findings
-from ._vendored.rights import CONSUMER_TIERS
+from ._vendored.rights import CONSUMER_TIERS, ENVELOPE_KEY
 from .adapters import football
 
 #: The one ``--format`` value this mode answers to. Any other value is left alone for
@@ -93,8 +100,9 @@ def supported_commands():
 def validate_request(module, command, *, observed_at, consumer_tier):
     """Everything refusable before the provider is called.
 
-    Called first on purpose: a caller who forgot ``--observed-at`` should not pay for an
-    ESPN round trip to be told so.
+    Called first on purpose: a caller who forgot ``--observed-at``, or who named a tier
+    this adapter's licence cannot serve, should not pay for an ESPN round trip to be
+    told so.
     """
     if (module, command) not in EVENT_COMMANDS:
         raise CanonicalCliError(
@@ -120,6 +128,7 @@ def validate_request(module, command, *, observed_at, consumer_tier):
             "the permissive tier.",
             error_code="CANONICAL_UNKNOWN_CONSUMER_TIER",
         )
+    _check_rights([_adapter_envelope()], consumer_tier)
 
 
 def render(module, command, result, *, observed_at, consumer_tier):
@@ -216,8 +225,24 @@ def _envelope(event, *, observed_at, label=None):
         ) from None
 
 
+def _adapter_envelope():
+    """The licence claim every envelope this mode can emit will carry, gate-shaped.
+
+    Built from the adapter's own constant, so the tier is answered by the same fact the
+    documents would have stated rather than by a second reading of the policy. It is a
+    rights block and nothing else because that is all the gate reads, and a fuller
+    stand-in would be a document claiming an observation nobody made.
+    """
+    return {ENVELOPE_KEY: {"rights": dict(football.RIGHTS)}}
+
+
 def _check_rights(envelopes, consumer_tier):
-    """The vendored gate, run over every envelope, reported once per distinct reason."""
+    """The vendored gate, run over every envelope, reported once per distinct reason.
+
+    "this adapter's output" rather than "this document", because the preflight runs the
+    same gate over the same rights before any document exists — and one refusal that
+    reads correctly in both places beats two that each read correctly in one.
+    """
     findings = []
     seen = set()
     for envelope in envelopes:
@@ -228,8 +253,8 @@ def _check_rights(envelopes, consumer_tier):
             findings.append(finding)
     if findings:
         raise CanonicalCliError(
-            f"the '{consumer_tier}' consumer tier may not consume this document: "
-            f"{findings[0]['detail']}",
+            f"the '{consumer_tier}' consumer tier may not consume this adapter's "
+            f"output: {findings[0]['detail']}",
             error_code="RIGHTS_REFUSED",
             findings=findings,
         )

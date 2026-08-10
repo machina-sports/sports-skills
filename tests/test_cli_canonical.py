@@ -359,6 +359,63 @@ def test_a_production_consumer_is_refused_once_for_a_whole_scoreboard(
     assert len(json.loads(out)["findings"]) == 1
 
 
+def test_an_empty_production_scoreboard_is_refused_rather_than_served(
+    monkeypatch, capsys,
+):
+    """The edge the per-envelope gate could not see. A day with no matches has no
+    envelope to inspect, so a gate that only reads emitted envelopes finds nothing to
+    object to and serves the request — telling a production integration its
+    configuration is permitted, on the accident of today's fixture list. The answer to
+    "may production consume this adapter?" is a property of the adapter, not of how many
+    matches were on."""
+    code, out = run(
+        ["football", "get_daily_schedule", "--date=2026-03-01",
+         "--format", CANONICAL_FORMAT, "--observed-at", OBSERVED_AT,
+         "--consumer-tier", "production"],
+        monkeypatch, capsys, schedule=daily_schedule(events=[]),
+    )
+    assert code == 1
+    payload = json.loads(out)
+    assert payload["status"] is False
+    assert len(payload["findings"]) == 1
+    finding = payload["findings"][0]
+    assert finding["code"] == "rights-prototype-only"
+    assert finding["consumer_tier"] == "production"
+    assert finding["data_class"] == "open-public"
+    assert "machina_sports_schema" not in out
+
+
+@pytest.mark.parametrize("argv", [
+    ["football", "get_event_summary", "--event_id=9001"],
+    ["football", "get_daily_schedule", "--date=2026-03-01"],
+])
+def test_a_production_consumer_is_refused_before_the_provider_is_called(
+    argv, monkeypatch, capsys,
+):
+    """Refused before the request, for both shapes of canonical output. The rights
+    constant is known without asking ESPN anything, so a production caller should not
+    pay for a round trip to be told the tier is not served — and the answer must not
+    depend on what came back. The substituted commands raise if reached."""
+    code, out = run(
+        argv + ["--canonical", "--observed-at", OBSERVED_AT,
+                "--consumer-tier", "production"],
+        monkeypatch, capsys,
+    )
+    assert code == 1
+    assert [f["code"] for f in json.loads(out)["findings"]] == ["rights-prototype-only"]
+
+
+def test_the_preflight_gates_the_rights_the_envelopes_actually_carry():
+    """The preflight answers before any envelope exists, so it has to be asking about
+    the same licence claim the envelopes would have carried. If the adapter's constant
+    and the emitted block ever diverge, the check refuses the wrong document."""
+    from sports_skills import canonical
+    from sports_skills.canonical.adapters import football as adapter
+
+    envelope = canonical.canonicalize_event(native(), observed_at=OBSERVED_AT)
+    assert envelope["machina_sports_schema"]["rights"] == adapter.RIGHTS
+
+
 def test_the_refusal_prints_no_canonical_document(monkeypatch, capsys):
     """A refusal that also emitted the envelope would refuse nothing."""
     code, out = run(

@@ -198,7 +198,7 @@ sports-skills football get_event_summary --event_id=740000 --canonical \
 # → refused: rights-prototype-only, exit status 1
 ```
 
-`prototype` (the default) is served. `production` refuses every envelope this package can produce, with one actionable finding and a nonzero exit status, and the same rule is callable directly as `canonical.rights_findings(document, consumer_tier="production")`. That gate is vendored byte-exact from `machina-templates` rather than reimplemented here, so both repositories answer the question with the same code. For licensed data cleared for commercial use, see [machina.gg](https://machina.gg).
+`prototype` (the default) is served. `production` refuses every envelope this package can produce, with one actionable finding and a nonzero exit status — including a query that returns nothing, which is refused before the provider is called, because the licence answer is the adapter's and not the result set's. The same rule is callable directly as `canonical.rights_findings(document, consumer_tier="production")`. That gate is vendored byte-exact from `machina-templates` rather than reimplemented here, so both repositories answer the question with the same code. For licensed data cleared for commercial use, see [machina.gg](https://machina.gg).
 
 The default output of every command is unchanged: no module on the native path imports the canonical package, and the CLI reaches it only when you ask for it by name.
 
