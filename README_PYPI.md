@@ -66,14 +66,14 @@ sports-skills --help
 
 List commands for a specific sport:
 ```bash
-sports-skills nfl --help
+sports-skills nfl
 ```
 
 Execute a command:
 ```bash
 sports-skills nfl get_scoreboard --date 2026-02-24
 sports-skills football get_current_season --competition_id premier-league
-sports-skills polymarket get_markets --query "super bowl"
+sports-skills polymarket search_markets --query "super bowl"
 sports-skills news fetch_items --query "Lando Norris" --limit 5
 sports-skills xctf get_news --limit 5
 sports-skills xctf search_athlete --name "Jane Hedengren" --school "UT_college_f_BYU"
@@ -99,7 +99,7 @@ table = football.get_season_standings(season_id="premier-league-2025")
 print(table["data"]["standings"])
 
 # Fetch live odds from Polymarket
-markets = polymarket.get_markets(query="bitcoin")
+markets = polymarket.search_markets(query="super bowl")
 print(markets["data"]["markets"])
 
 # Get latest NCAA XC/TF news from The Stride Report
@@ -117,14 +117,45 @@ print(profile["data"]["prs"])
 
 To extract the OpenAI/Anthropic compatible tool schema for any module:
 
-```python
-from sports_skills import nfl
-import json
-
-# Returns a list of dicts formatted exactly like Anthropic/OpenAI tools
-schema = nfl.generate_schema()
-print(json.dumps(schema, indent=2))
+```bash
+sports-skills nfl schema
 ```
+
+Prints `{sport, version, tools}` — `tools` is one Anthropic/OpenAI-shaped tool definition per command.
+
+---
+
+## Machina Sports Schema (canonical output)
+
+Football event commands can emit the **Machina Sports Schema** envelope instead of the native payload: one provider's observation of one event, serialized as JSON-LD against the [IPTC Sport Schema](https://sportschema.org) 1.1 profile, with a provider-id crosswalk, a capability report, and a provenance block naming the pinned upstream commit.
+
+```bash
+# One event → one envelope, printed directly
+sports-skills football get_event_summary --event_id=740000 \
+  --format=machina-canonical --observed-at=2026-03-01T22:05:00+00:00
+
+# A day's fixtures → {provider, format, events}, every event a full envelope
+sports-skills football get_daily_schedule --date=2026-03-01 \
+  --canonical --observed-at=2026-03-01T22:05:00+00:00
+```
+
+`--canonical` is an alias for `--format=machina-canonical`. It is supported on `football get_event_summary` and `football get_daily_schedule` (also reachable as `scores`); every other command refuses the flag by name rather than wrapping data the schema does not describe.
+
+**`--observed-at` is required and must carry a UTC offset.** It is never read from the clock: it is the one input that makes the document reproducible, and the reference fixtures this output is tested byte-for-byte against depend on it being stated rather than guessed.
+
+**Rights: prototype only.** Every envelope carries `rights: {"data_class": "open-public", "prototype_only": true, "commercial_use": false}`. Gate a consumer against them with `--consumer-tier`:
+
+```bash
+sports-skills football get_event_summary --event_id=740000 --canonical \
+  --observed-at=2026-03-01T22:05:00+00:00 --consumer-tier=production
+# → refused: rights-prototype-only, exit status 1
+```
+
+`prototype` (the default) is served. `production` refuses every envelope this package can produce, with one actionable finding and a nonzero exit status — including a query that returns nothing, which is refused before the provider is called, because the licence answer is the adapter's and not the result set's. For licensed data cleared for commercial use, see [machina.gg](https://machina.gg).
+
+The default output of every command is unchanged: no module on the native path imports the canonical package, and the CLI reaches it only when you ask for it by name.
+
+---
 
 ## License
 MIT
