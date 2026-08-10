@@ -1,0 +1,485 @@
+{
+  "machina_sports_schema": {
+    "schema_version": "machina-sports-schema/1",
+    "profile": "machina-iptc-profile/1.1",
+    "sport_schema_graph": {
+      "@context": {
+        "rdf": "http://www.w3.org/1999/02/22-rdf-syntax-ns#",
+        "rdfs": "http://www.w3.org/2000/01/rdf-schema#",
+        "xsd": "http://www.w3.org/2001/XMLSchema#",
+        "owl": "http://www.w3.org/2002/07/owl#",
+        "skos": "http://www.w3.org/2004/02/skos/core#",
+        "sh": "http://www.w3.org/ns/shacl#",
+        "dcterms": "http://purl.org/dc/terms/",
+        "prov": "http://www.w3.org/ns/prov#",
+        "schema": "https://schema.org/",
+        "schemaorg": "https://schema.org/",
+        "sport": "https://sportschema.org/ontologies/main/",
+        "spstat": "https://sportschema.org/ontologies/corestatistics/",
+        "spfacet": "https://sportschema.org/ontologies/sport-facets/",
+        "spamfstat": "https://sportschema.org/ontologies/american-football/",
+        "spbblstat": "https://sportschema.org/ontologies/baseball/",
+        "spbkbstat": "https://sportschema.org/ontologies/basketball/",
+        "spespstat": "https://sportschema.org/ontologies/esports/",
+        "spgolf": "https://sportschema.org/ontologies/golf/",
+        "spgolstat": "https://sportschema.org/ontologies/golf/",
+        "spmcrstat": "https://sportschema.org/ontologies/motor-racing/",
+        "sprgxstat": "https://sportschema.org/ontologies/rugby/",
+        "spsocstat": "https://sportschema.org/ontologies/soccer/",
+        "sptenstat": "https://sportschema.org/ontologies/tennis/",
+        "spvolstat": "https://sportschema.org/ontologies/volleyball/",
+        "medtop": "http://cv.iptc.org/newscodes/mediatopic/",
+        "subj": "http://cv.iptc.org/newscodes/subjectcode/",
+        "ikos": "http://cv.iptc.org/newscodes/ikos/",
+        "aspfacet": "http://cv.iptc.org/newscodes/asportfacet/",
+        "aspfacetvalue": "http://cv.iptc.org/newscodes/asportfacetvalue/",
+        "spactionclass": "http://cv.iptc.org/newscodes/spactionclass/",
+        "spcompetitionscope": "http://cv.iptc.org/newscodes/spcompetitionscope/",
+        "spct": "http://cv.iptc.org/newscodes/spct/",
+        "spesaction": "http://cv.iptc.org/newscodes/spesaction/",
+        "speventoutcome": "http://cv.iptc.org/newscodes/speventoutcome/",
+        "speventoutcometype": "http://cv.iptc.org/newscodes/speventoutcometype/",
+        "speventstatus": "http://cv.iptc.org/newscodes/speventstatus/",
+        "spgolholetype": "http://cv.iptc.org/newscodes/spgolholetype/",
+        "sphorposition": "http://cv.iptc.org/newscodes/sphorposition/",
+        "spichposition": "http://cv.iptc.org/newscodes/spichposition/",
+        "spplayerstatus": "http://cv.iptc.org/newscodes/spplayerstatus/",
+        "spresulteffect": "http://cv.iptc.org/newscodes/spresulteffect/",
+        "spscoreunits": "http://cv.iptc.org/newscodes/spscoreunits/",
+        "spsocactiontype": "http://cv.iptc.org/newscodes/spsocaction/",
+        "spsocposition": "http://cv.iptc.org/newscodes/spsocposition/",
+        "spsocrole": "http://cv.iptc.org/newscodes/spsocrole/",
+        "sptournamentform": "http://cv.iptc.org/newscodes/sptournamentform/",
+        "sptournamentphase": "http://cv.iptc.org/newscodes/sptournamentphase/",
+        "machina": "https://machina.gg/ns/sport/1.0/"
+      },
+      "@graph": [
+        {
+          "@id": "urn:machina:sports:competition:xc983a33029ed9a55a34b922a7f8ddc7d",
+          "@type": "sport:Competition",
+          "rdfs:label": "Synthetic Premier Division",
+          "sport:sport": {
+            "@id": "medtop:20001065"
+          }
+        },
+        {
+          "@id": "urn:machina:sports:competition:x316bb6300bb2d8db3691e399ea650522",
+          "@type": "sport:Competition",
+          "rdfs:label": "Synthetic Premier Division 2026",
+          "sport:sport": {
+            "@id": "medtop:20001065"
+          },
+          "sport:competitionType": {
+            "@id": "spct:season"
+          },
+          "sport:parent": {
+            "@id": "urn:machina:sports:competition:xc983a33029ed9a55a34b922a7f8ddc7d"
+          }
+        },
+        {
+          "@id": "urn:machina:sports:site:x70ed3bee258bc9a5f456ff03f83ca0df",
+          "@type": "sport:Site",
+          "rdfs:label": "Synthetic Home Ground"
+        },
+        {
+          "@id": "urn:machina:sports:team:xc5e6eb33acaef3504ff5fd9c9fdf07c5",
+          "@type": "sport:Team",
+          "rdfs:label": "Synthetic Home United"
+        },
+        {
+          "@id": "urn:machina:sports:team:x6db1801abba4c6eac80b3296bd73dc74",
+          "@type": "sport:Team",
+          "rdfs:label": "Synthetic Away Town"
+        },
+        {
+          "@id": "urn:machina:sports:event:x8d703481b8b2545eede3d19ac879fc6d",
+          "@type": "sport:Event",
+          "rdfs:label": "Synthetic Home United vs Synthetic Away Town",
+          "sport:sport": {
+            "@id": "medtop:20001065"
+          },
+          "sport:eventInCompetition": {
+            "@id": "urn:machina:sports:competition:x316bb6300bb2d8db3691e399ea650522"
+          },
+          "sport:location": {
+            "@id": "urn:machina:sports:site:x70ed3bee258bc9a5f456ff03f83ca0df"
+          },
+          "sport:startDateTime": {
+            "@value": "2026-03-01T20:00:00+00:00",
+            "@type": "xsd:dateTime"
+          },
+          "sport:eventStatus": {
+            "@id": "speventstatus:post-event"
+          },
+          "sport:participation": [
+            {
+              "@id": "urn:machina:sports:participation:x75ca92d81218a338c11c9e0434cd74f2"
+            },
+            {
+              "@id": "urn:machina:sports:participation:xeaa16752bac4d3c3ea2f076046abca5d"
+            }
+          ]
+        },
+        {
+          "@id": "urn:machina:sports:participation:x75ca92d81218a338c11c9e0434cd74f2",
+          "@type": "sport:TeamParticipation",
+          "rdfs:label": "Synthetic Home United participation in Synthetic Home United vs Synthetic Away Town",
+          "sport:participationBy": {
+            "@id": "urn:machina:sports:team:xc5e6eb33acaef3504ff5fd9c9fdf07c5"
+          },
+          "sport:alignment": "home",
+          "sport:score": "2"
+        },
+        {
+          "@id": "urn:machina:sports:participation:xeaa16752bac4d3c3ea2f076046abca5d",
+          "@type": "sport:TeamParticipation",
+          "rdfs:label": "Synthetic Away Town participation in Synthetic Home United vs Synthetic Away Town",
+          "sport:participationBy": {
+            "@id": "urn:machina:sports:team:x6db1801abba4c6eac80b3296bd73dc74"
+          },
+          "sport:alignment": "away",
+          "sport:score": "1"
+        },
+        {
+          "@id": "urn:machina:sports:provider-identifier:x3a50766a61a2e59aa176fc7d6018d59b",
+          "@type": "machina:ProviderIdentifier",
+          "rdfs:label": "sports-skills/espn competition synthetic-league-1",
+          "machina:identifies": {
+            "@id": "urn:machina:sports:competition:xc983a33029ed9a55a34b922a7f8ddc7d"
+          },
+          "machina:providerNamespace": "sports-skills/espn",
+          "machina:providerId": "synthetic-league-1",
+          "machina:resolutionMethod": "provider-native"
+        },
+        {
+          "@id": "urn:machina:sports:provider-identifier:x504b8e0514135736337a1b02f3729a87",
+          "@type": "machina:ProviderIdentifier",
+          "rdfs:label": "sports-skills/espn season synthetic-league-1-2026",
+          "machina:identifies": {
+            "@id": "urn:machina:sports:competition:x316bb6300bb2d8db3691e399ea650522"
+          },
+          "machina:providerNamespace": "sports-skills/espn",
+          "machina:providerId": "synthetic-league-1-2026",
+          "machina:resolutionMethod": "provider-native"
+        },
+        {
+          "@id": "urn:machina:sports:provider-identifier:xdeea9af45c554ed557a368109260a509",
+          "@type": "machina:ProviderIdentifier",
+          "rdfs:label": "sports-skills/espn site 9101",
+          "machina:identifies": {
+            "@id": "urn:machina:sports:site:x70ed3bee258bc9a5f456ff03f83ca0df"
+          },
+          "machina:providerNamespace": "sports-skills/espn",
+          "machina:providerId": "9101",
+          "machina:resolutionMethod": "provider-native"
+        },
+        {
+          "@id": "urn:machina:sports:provider-identifier:xe7c554ecdbce03c5e97e40a4dc726447",
+          "@type": "machina:ProviderIdentifier",
+          "rdfs:label": "sports-skills/espn event 9001",
+          "machina:identifies": {
+            "@id": "urn:machina:sports:event:x8d703481b8b2545eede3d19ac879fc6d"
+          },
+          "machina:providerNamespace": "sports-skills/espn",
+          "machina:providerId": "9001",
+          "machina:resolutionMethod": "provider-native"
+        },
+        {
+          "@id": "urn:machina:sports:provider-identifier:x359539bbce8752145c3c925bffe089d9",
+          "@type": "machina:ProviderIdentifier",
+          "rdfs:label": "sports-skills/espn team 9011",
+          "machina:identifies": {
+            "@id": "urn:machina:sports:team:xc5e6eb33acaef3504ff5fd9c9fdf07c5"
+          },
+          "machina:providerNamespace": "sports-skills/espn",
+          "machina:providerId": "9011",
+          "machina:resolutionMethod": "provider-native"
+        },
+        {
+          "@id": "urn:machina:sports:provider-identifier:x41bcac281bce7158338a86d48f74f527",
+          "@type": "machina:ProviderIdentifier",
+          "rdfs:label": "sports-skills/espn team 9012",
+          "machina:identifies": {
+            "@id": "urn:machina:sports:team:x6db1801abba4c6eac80b3296bd73dc74"
+          },
+          "machina:providerNamespace": "sports-skills/espn",
+          "machina:providerId": "9012",
+          "machina:resolutionMethod": "provider-native"
+        },
+        {
+          "@id": "urn:machina:sports:observation-provenance:x938a7f0cee1eff1b469e426607ca57b5",
+          "@type": "machina:ObservationProvenance",
+          "rdfs:label": "sports-skills/espn observation of event x8d703481b8b2545eede3d19ac879fc6d",
+          "machina:describes": {
+            "@id": "urn:machina:sports:event:x8d703481b8b2545eede3d19ac879fc6d"
+          },
+          "machina:providerNamespace": "sports-skills/espn",
+          "machina:observedAt": {
+            "@value": "2026-03-01T22:05:00+00:00",
+            "@type": "xsd:dateTime"
+          },
+          "machina:adapterVersion": "1",
+          "machina:serializerVersion": "1",
+          "machina:rightsClass": "open-public"
+        }
+      ]
+    },
+    "event_view": {
+      "event_id": "urn:machina:sports:event:x8d703481b8b2545eede3d19ac879fc6d",
+      "label": "Synthetic Home United vs Synthetic Away Town",
+      "sport": "soccer",
+      "start_time": "2026-03-01T20:00:00+00:00",
+      "status": "closed",
+      "competition": {
+        "id": "urn:machina:sports:competition:xc983a33029ed9a55a34b922a7f8ddc7d",
+        "name": "Synthetic Premier Division"
+      },
+      "season": {
+        "id": "urn:machina:sports:competition:x316bb6300bb2d8db3691e399ea650522",
+        "name": "Synthetic Premier Division 2026"
+      },
+      "site": {
+        "id": "urn:machina:sports:site:x70ed3bee258bc9a5f456ff03f83ca0df",
+        "name": "Synthetic Home Ground",
+        "city": "Synthetic City",
+        "country": "SYN"
+      },
+      "participants": [
+        {
+          "id": "urn:machina:sports:team:xc5e6eb33acaef3504ff5fd9c9fdf07c5",
+          "role": "home",
+          "name": "Synthetic Home United",
+          "score": "2"
+        },
+        {
+          "id": "urn:machina:sports:team:x6db1801abba4c6eac80b3296bd73dc74",
+          "role": "away",
+          "name": "Synthetic Away Town",
+          "score": "1"
+        }
+      ],
+      "provider": {
+        "namespace": "sports-skills/espn",
+        "family": "open-data",
+        "raw": {
+          "id": "9001",
+          "status": "closed",
+          "start_time": "2026-03-01T20:00:00+00:00",
+          "matchday": null,
+          "round": "",
+          "round_name": "",
+          "competition": {
+            "id": "synthetic-league-1",
+            "name": "Synthetic Premier Division"
+          },
+          "season": {
+            "id": "synthetic-league-1-2026",
+            "name": "2026",
+            "year": "2026"
+          },
+          "venue": {
+            "id": "9101",
+            "name": "Synthetic Home Ground",
+            "city": "Synthetic City",
+            "country": "SYN"
+          },
+          "competitors": [
+            {
+              "team": {
+                "id": "9011",
+                "name": "Synthetic Home United",
+                "short_name": "Home United",
+                "abbreviation": "SHU"
+              },
+              "qualifier": "home",
+              "score": 2
+            },
+            {
+              "team": {
+                "id": "9012",
+                "name": "Synthetic Away Town",
+                "short_name": "Away Town",
+                "abbreviation": "SAT"
+              },
+              "qualifier": "away",
+              "score": 1
+            }
+          ],
+          "scores": {
+            "home": 2,
+            "away": 1
+          },
+          "odds": null,
+          "referees": []
+        }
+      }
+    },
+    "provenance": {
+      "provider": {
+        "namespace": "sports-skills/espn",
+        "family": "open-data"
+      },
+      "adapter": {
+        "name": "sports_skills.canonical.adapters.football",
+        "version": "1"
+      },
+      "serializer": {
+        "name": "machina-iptc-serializer",
+        "version": "1"
+      },
+      "profile": "machina-iptc-profile/1.1",
+      "upstream_pin": {
+        "repository": "https://github.com/iptc/sport-schema",
+        "commit": "0e77bf8678f3702fe81c28673bede35efe47d633",
+        "target_version": "1.1"
+      },
+      "observed_at": "2026-03-01T22:05:00+00:00",
+      "source_refs": [
+        {
+          "kind": "endpoint-class",
+          "value": "espn/summary",
+          "note": "endpoint class only; no URL, query or credential is recorded"
+        }
+      ],
+      "rights": {
+        "data_class": "open-public",
+        "prototype_only": true,
+        "commercial_use": false
+      },
+      "determinism": {
+        "id_strategy": "provider-scoped-surrogate",
+        "digest": "blake2b-128",
+        "canonical_id_service": "not-available-in-this-phase"
+      }
+    },
+    "provider_ids": [
+      {
+        "machina_id": "urn:machina:sports:competition:xc983a33029ed9a55a34b922a7f8ddc7d",
+        "entity_type": "competition",
+        "provider_namespace": "sports-skills/espn",
+        "provider_id": "synthetic-league-1",
+        "resolution_method": "provider-native",
+        "confidence": 1.0,
+        "evidence": "observation.competition.provider_id"
+      },
+      {
+        "machina_id": "urn:machina:sports:competition:x316bb6300bb2d8db3691e399ea650522",
+        "entity_type": "season",
+        "provider_namespace": "sports-skills/espn",
+        "provider_id": "synthetic-league-1-2026",
+        "resolution_method": "provider-native",
+        "confidence": 1.0,
+        "evidence": "observation.competition.season.provider_id"
+      },
+      {
+        "machina_id": "urn:machina:sports:site:x70ed3bee258bc9a5f456ff03f83ca0df",
+        "entity_type": "site",
+        "provider_namespace": "sports-skills/espn",
+        "provider_id": "9101",
+        "resolution_method": "provider-native",
+        "confidence": 1.0,
+        "evidence": "observation.site.provider_id"
+      },
+      {
+        "machina_id": "urn:machina:sports:event:x8d703481b8b2545eede3d19ac879fc6d",
+        "entity_type": "event",
+        "provider_namespace": "sports-skills/espn",
+        "provider_id": "9001",
+        "resolution_method": "provider-native",
+        "confidence": 1.0,
+        "evidence": "observation.event.provider_id"
+      },
+      {
+        "machina_id": "urn:machina:sports:team:xc5e6eb33acaef3504ff5fd9c9fdf07c5",
+        "entity_type": "team",
+        "provider_namespace": "sports-skills/espn",
+        "provider_id": "9011",
+        "resolution_method": "provider-native",
+        "confidence": 1.0,
+        "evidence": "observation.participants[0].provider_id"
+      },
+      {
+        "machina_id": "urn:machina:sports:team:x6db1801abba4c6eac80b3296bd73dc74",
+        "entity_type": "team",
+        "provider_namespace": "sports-skills/espn",
+        "provider_id": "9012",
+        "resolution_method": "provider-native",
+        "confidence": 1.0,
+        "evidence": "observation.participants[1].provider_id"
+      }
+    ],
+    "capabilities": {
+      "tier": "core",
+      "tiers_satisfied": [
+        "core"
+      ],
+      "present": [
+        "event.competition",
+        "event.identity",
+        "event.participants",
+        "event.score",
+        "event.start_time",
+        "event.status",
+        "provenance"
+      ],
+      "absent": [
+        "event.actions",
+        "event.clock",
+        "event.coordinates",
+        "event.expected_metrics",
+        "event.formations",
+        "event.lineups",
+        "event.live_statistics",
+        "event.period",
+        "event.play_by_play",
+        "event.result",
+        "event.tracking",
+        "participant.player_statistics"
+      ],
+      "not_expressible": [
+        "event.coordinates",
+        "event.expected_metrics",
+        "event.formations",
+        "event.tracking"
+      ],
+      "by_tier": {
+        "core": {
+          "required_present": [
+            "event.competition",
+            "event.identity",
+            "event.participants",
+            "event.start_time",
+            "event.status",
+            "provenance"
+          ],
+          "required_absent": [],
+          "optional_present": [
+            "event.score"
+          ],
+          "optional_absent": [
+            "event.result"
+          ]
+        },
+        "live": {
+          "required_present": [],
+          "required_absent": [
+            "event.actions",
+            "event.clock",
+            "event.period"
+          ],
+          "optional_present": [],
+          "optional_absent": [
+            "event.live_statistics",
+            "event.play_by_play"
+          ]
+        }
+      },
+      "violations": []
+    },
+    "rights": {
+      "data_class": "open-public",
+      "prototype_only": true,
+      "commercial_use": false
+    }
+  }
+}

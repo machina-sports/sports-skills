@@ -613,6 +613,7 @@ def _cli_error(
     hint=None,
     dependency=None,
     extra=None,
+    findings=None,
 ):
     """Print error as JSON to stdout (for agents) and plain text to stderr (for humans), then exit."""
     payload = {"status": False, "data": None, "message": message}
@@ -624,6 +625,8 @@ def _cli_error(
         payload["dependency"] = dependency
     if extra:
         payload["extra"] = extra
+    if findings:
+        payload["findings"] = findings
     print(json.dumps(payload, indent=2))
     print(f"Error: {message}", file=sys.stderr)
     sys.exit(1)
@@ -992,6 +995,56 @@ def _deploy_handoff(remaining):
     print(f"\n  Docs: {_MACHINA_DOCS}")
 
 
+#: The one ``--format`` value that selects Machina Sports Schema output. Restated here
+#: rather than imported, because it is what decides *whether* to import the canonical
+#: package at all — and a native CLI run must not pay for that import. A test asserts
+#: this string and ``canonical._cli.CANONICAL_FORMAT`` are the same, so the restatement
+#: cannot drift.
+_CANONICAL_FORMAT = "machina-canonical"
+
+
+def _canonical_validate(module_name, command_name, args):
+    """Refuse an impossible canonical request before the provider is called.
+
+    The import is inside the function on purpose: the canonical package is reachable
+    from the CLI only when a caller asks for it by name, so the native path's import
+    cost is unchanged.
+    """
+    from sports_skills.canonical import _cli as canonical
+
+    try:
+        canonical.validate_request(
+            module_name,
+            command_name,
+            observed_at=args.observed_at,
+            consumer_tier=args.consumer_tier or canonical.DEFAULT_CONSUMER_TIER,
+        )
+    except canonical.CanonicalCliError as e:
+        _cli_error(str(e), error_code=e.error_code, hint=e.hint, findings=e.findings)
+
+
+def _print_canonical(module_name, command_name, result, args):
+    """Print one command's result as a canonical document, or refuse.
+
+    ``default=str`` is deliberately not passed to ``json.dumps`` here, unlike on the
+    native path: a canonical envelope is pure JSON already, and stringifying an
+    unexpected value would publish it rather than fail on it.
+    """
+    from sports_skills.canonical import _cli as canonical
+
+    try:
+        document = canonical.render(
+            module_name,
+            command_name,
+            result,
+            observed_at=args.observed_at,
+            consumer_tier=args.consumer_tier or canonical.DEFAULT_CONSUMER_TIER,
+        )
+    except canonical.CanonicalCliError as e:
+        _cli_error(str(e), error_code=e.error_code, hint=e.hint, findings=e.findings)
+    print(json.dumps(document, indent=2, ensure_ascii=False))
+
+
 def build_catalog():
     """Return the ``catalog`` payload.
 
@@ -1023,6 +1076,19 @@ def main():
         "command", nargs="?", help="Command name (e.g., get_season_standings)"
     )
     parser.add_argument("--version", action="store_true", help="Show version")
+    parser.add_argument(
+        "--canonical",
+        action="store_true",
+        help=f"Alias for --format={_CANONICAL_FORMAT}: emit the Machina Sports Schema envelope instead of the native payload (football event commands only)",
+    )
+    parser.add_argument(
+        "--observed-at",
+        help=f"ISO-8601 offset-aware instant the observation was made (e.g. 2026-03-01T22:05:00+00:00). Required by --format={_CANONICAL_FORMAT}; never read from the clock",
+    )
+    parser.add_argument(
+        "--consumer-tier",
+        help=f"Rights tier to gate --format={_CANONICAL_FORMAT} output against: prototype (default) or production. Open-data envelopes are prototype-only, so production refuses them",
+    )
 
     # Parse known args, rest are --key=value params
     args, remaining = parser.parse_known_args()
@@ -1111,6 +1177,25 @@ def main():
     # Parse --key=value, --key value, and --flag params
     kwargs = _parse_cli_kwargs(remaining)
 
+    # Canonical (Machina Sports Schema) output is opt-in, via --canonical or the one
+    # --format value below. Only that exact value is intercepted: `format` is an
+    # existing parameter of `betting devig`, so every other value still belongs to the
+    # command. The two canonical-only flags are refused on the native path rather than
+    # ignored — accepting --consumer-tier there would imply a rights check that never
+    # ran, and accepting --observed-at would imply a record the native payload does not
+    # carry.
+    canonical_mode = args.canonical or kwargs.get("format") == _CANONICAL_FORMAT
+    if canonical_mode:
+        kwargs.pop("format", None)
+    else:
+        for flag, value in (("--observed-at", args.observed_at),
+                            ("--consumer-tier", args.consumer_tier)):
+            if value is not None:
+                _cli_error(
+                    f"{flag} only applies to --format={_CANONICAL_FORMAT} output. "
+                    f"Add --format={_CANONICAL_FORMAT} (or --canonical), or drop {flag}."
+                )
+
     # Check required params
     cmd_info = _REGISTRY[module_name][command_name]
     required = cmd_info.get("required", [])
@@ -1138,8 +1223,16 @@ def main():
     if not func:
         _cli_error(f"Function '{command_name}' not found in module '{module_name}'")
 
+    # Before the request, not after: a caller who named an unsupported command or forgot
+    # --observed-at should not pay for a provider round trip to find out.
+    if canonical_mode:
+        _canonical_validate(module_name, command_name, args)
+
     try:
         result = func(**kwargs)
+        if canonical_mode:
+            _print_canonical(module_name, command_name, result, args)
+            return
         result = _premium.attach(result)
         print(json.dumps(result, indent=2, default=str, ensure_ascii=False))
     except TypeError as e:

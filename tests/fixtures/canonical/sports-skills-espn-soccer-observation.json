@@ -1,0 +1,116 @@
+{
+  "schema_version": "canonical-observation/1",
+  "observation": {
+    "provider": {
+      "namespace": "sports-skills/espn",
+      "family": "open-data"
+    },
+    "observed_at": "2026-03-01T22:05:00+00:00",
+    "adapter": {
+      "name": "sports_skills.canonical.adapters.football",
+      "version": "1",
+      "source_refs": [
+        {
+          "kind": "endpoint-class",
+          "value": "espn/summary"
+        }
+      ]
+    },
+    "rights": {
+      "data_class": "open-public",
+      "prototype_only": true,
+      "commercial_use": false
+    },
+    "sport": {
+      "medtop": "20001065",
+      "key": "soccer"
+    },
+    "competition": {
+      "provider_id": "synthetic-league-1",
+      "name": "Synthetic Premier Division",
+      "season": {
+        "provider_id": "synthetic-league-1-2026",
+        "name": "Synthetic Premier Division 2026"
+      }
+    },
+    "site": {
+      "provider_id": "9101",
+      "name": "Synthetic Home Ground",
+      "city": "Synthetic City",
+      "country": "SYN"
+    },
+    "event": {
+      "provider_id": "9001",
+      "label": "Synthetic Home United vs Synthetic Away Town",
+      "start_time": "2026-03-01T20:00:00+00:00",
+      "status": "closed"
+    },
+    "participants": [
+      {
+        "kind": "team",
+        "provider_id": "9011",
+        "name": "Synthetic Home United",
+        "alignment": "home",
+        "score": "2"
+      },
+      {
+        "kind": "team",
+        "provider_id": "9012",
+        "name": "Synthetic Away Town",
+        "alignment": "away",
+        "score": "1"
+      }
+    ],
+    "raw": {
+      "id": "9001",
+      "status": "closed",
+      "start_time": "2026-03-01T20:00:00+00:00",
+      "matchday": null,
+      "round": "",
+      "round_name": "",
+      "competition": {
+        "id": "synthetic-league-1",
+        "name": "Synthetic Premier Division"
+      },
+      "season": {
+        "id": "synthetic-league-1-2026",
+        "name": "2026",
+        "year": "2026"
+      },
+      "venue": {
+        "id": "9101",
+        "name": "Synthetic Home Ground",
+        "city": "Synthetic City",
+        "country": "SYN"
+      },
+      "competitors": [
+        {
+          "team": {
+            "id": "9011",
+            "name": "Synthetic Home United",
+            "short_name": "Home United",
+            "abbreviation": "SHU"
+          },
+          "qualifier": "home",
+          "score": 2
+        },
+        {
+          "team": {
+            "id": "9012",
+            "name": "Synthetic Away Town",
+            "short_name": "Away Town",
+            "abbreviation": "SAT"
+          },
+          "qualifier": "away",
+          "score": 1
+        }
+      ],
+      "scores": {
+        "home": 2,
+        "away": 1
+      },
+      "odds": null,
+      "referees": []
+    }
+  }
+}

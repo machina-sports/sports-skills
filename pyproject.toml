@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "sports-skills"
-version = "0.30.1"
+version = "0.31.0"
 description = "Lightweight Python SDK for sports data — football, F1, NFL, NBA, WNBA, NHL, MLB, tennis, CFB, CBB, golf, volleyball, prediction markets, betting analysis, and news"
 readme = "README_PYPI.md"
 requires-python = ">=3.9.10"
@@ -55,6 +55,10 @@ sports-skills = "sports_skills.cli:main"
 target-version = "py39"
 line-length = 120
 src = ["src"]
+# Vendored byte-exact from machina-templates and pinned by sha256 in
+# canonical/_vendored/VENDORED.json. Autoformatting or auto-fixing it would break
+# the pin, and the fix for a lint finding there belongs upstream.
+extend-exclude = ["src/sports_skills/canonical/_vendored"]
 
 [tool.ruff.lint]
 select = ["E", "F", "W", "I", "UP", "B", "SIM"]

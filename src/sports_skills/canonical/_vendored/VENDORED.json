@@ -1,0 +1,25 @@
+{
+  "consumer": "machina-sports/sports-skills",
+  "source_repository": "machina-sports/machina-templates",
+  "source_path": "tools/iptc/canonical",
+  "source_commit": "cf433075666de002e38fb3bd6f5dd8743e7caeb2",
+  "profile": "machina-iptc-profile/1.1",
+  "schema_version": "canonical-observation/1",
+  "machina_schema_version": "machina-sports-schema/1",
+  "upstream_pin": {
+    "repository": "https://github.com/iptc/sport-schema",
+    "commit": "0e77bf8678f3702fe81c28673bede35efe47d633",
+    "target_version": "1.1"
+  },
+  "files": {
+    "__init__.py": "eef2b7a77c1cdf0a777051354cb0a798a567cc8344c7459f37e5cfb3ec2b0792",
+    "capabilities.py": "452d85e2032d2307f4e8cde6c793c9f0a7aabe8df4e521cec03aeda241cc3685",
+    "ids.py": "06910976674e3b4747e0bd5f2b71ba92c6214b54bf76fb604f7920d1893781f4",
+    "observation.py": "9cb09d74dee9a0b9b24315a1c193cb20a1be29e2bcdf1c1a8deb76c3c9d4998f",
+    "official-property-names.json": "02a9c69c56a88bc0b6a4a86d35428356b4bc5d783e3a6c6957942b26df88fb61",
+    "rights.py": "7177ff0bf7899c77b99f14a5a39c21919d2d7bc2d539757c8f2e8376f317739e",
+    "serialize.py": "9fd27295de78f285b50213d0d237ac45c225562708c118e2bbb1cd7584dc7bd8",
+    "shared-context.json": "50a437a694057037bc1b9580772b37671a5af62802df5e652e8e59d11759b695",
+    "vocab.py": "2782eada455637f23edc3cf4bc751fb500fc987c84725c55a230f46e683ecbdd"
+  }
+}
