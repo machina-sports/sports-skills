@@ -21,7 +21,7 @@ from pathlib import Path
 
 import pytest
 
-from tests.test_canonical_reference_fixtures import templates_checkout
+from tests.test_canonical_reference_fixtures import pinned_bytes, templates_checkout
 
 VENDORED = Path(__file__).resolve().parents[1] / "src/sports_skills/canonical/_vendored"
 
@@ -186,14 +186,16 @@ def test_the_vendored_runtime_is_byte_identical_to_the_machina_templates_origina
     checkout = templates_checkout()
     if checkout is None:
         pytest.skip(
-            "no machina-templates checkout at the pinned commit; "
+            "no machina-templates checkout carrying the pinned commit; "
             "set MACHINA_TEMPLATES_ROOT to run this comparison"
         )
-    source = checkout / manifest()["source_path"]
+    document = manifest()
     for name in EXPECTED_FILES:
-        upstream = source / name
-        assert upstream.is_file(), name
-        assert (VENDORED / name).read_bytes() == upstream.read_bytes(), name
+        upstream = pinned_bytes(
+            checkout, f"{document['source_path']}/{name}",
+            commit=document["source_commit"],
+        )
+        assert (VENDORED / name).read_bytes() == upstream, name
 
 
 def test_the_serializer_can_load_its_context_and_its_allowlist():

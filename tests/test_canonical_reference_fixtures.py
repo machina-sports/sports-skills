@@ -63,11 +63,15 @@ def canonical_bytes(document):
 
 
 def templates_checkout():
-    """A machina-templates worktree at the pinned commit, or ``None``.
+    """A machina-templates checkout that *contains* the pinned commit, or ``None``.
 
-    Only a checkout at the pinned commit is compared. A checkout that has moved on
-    would differ for reasons that are not drift in this repository's copy, and
-    failing on that would train people to ignore this test.
+    Containment rather than ``HEAD ==``: the pin is a commit, and git can produce that
+    commit's bytes from any checkout that has it, whatever the working tree is currently
+    on. Requiring ``HEAD`` to match made this gate skip itself the moment the sibling
+    repository landed its next commit — which is always, since it is under active
+    development — so the strong half of the contract stopped running for a reason that
+    had nothing to do with drift. ``pinned_bytes`` below reads the blob, never the file
+    on disk, so a dirty or advanced worktree cannot make this test pass *or* fail.
     """
     candidates = []
     configured = os.environ.get("MACHINA_TEMPLATES_ROOT")
@@ -81,15 +85,23 @@ def templates_checkout():
         if not (candidate / ".git").exists():
             continue
         try:
-            head = subprocess.run(
-                ["git", "-C", str(candidate), "rev-parse", "HEAD"],
-                capture_output=True, text=True, check=True,
-            ).stdout.strip()
+            subprocess.run(
+                ["git", "-C", str(candidate), "cat-file", "-e", pinned + "^{commit}"],
+                capture_output=True, check=True,
+            )
         except (OSError, subprocess.CalledProcessError):
             continue
-        if head == pinned:
-            return candidate
+        return candidate
     return None
+
+
+def pinned_bytes(checkout, source_path, commit=None):
+    """One file's bytes exactly as the pinned commit recorded them."""
+    return subprocess.run(
+        ["git", "-C", str(checkout), "show",
+         f"{commit or manifest()['source_commit']}:{source_path}"],
+        capture_output=True, check=True,
+    ).stdout
 
 
 def test_the_manifest_names_its_upstream_source_and_pins_every_fixture():
@@ -195,16 +207,16 @@ def test_the_expected_envelope_is_the_full_machina_sports_schema_block():
 
 
 def test_the_fixtures_are_byte_identical_to_the_machina_templates_originals():
-    """The strong cross-repository check, run only when a checkout at the pinned
-    commit is present. Skipped in CI by design; a recorded sha256 is what holds
-    the line there."""
+    """The strong cross-repository check, run whenever a checkout carrying the pinned
+    commit is present. Skipped in CI by design; a recorded sha256 is what holds the line
+    there."""
     checkout = templates_checkout()
     if checkout is None:
         pytest.skip(
-            "no machina-templates checkout at the pinned commit; "
+            "no machina-templates checkout carrying the pinned commit; "
             "set MACHINA_TEMPLATES_ROOT to run this comparison"
         )
     for name, entry in sorted(manifest()["files"].items()):
-        upstream = checkout / entry["source_path"]
-        assert upstream.is_file(), entry["source_path"]
-        assert (FIXTURES / name).read_bytes() == upstream.read_bytes(), name
+        assert (FIXTURES / name).read_bytes() == pinned_bytes(
+            checkout, entry["source_path"]
+        ), name

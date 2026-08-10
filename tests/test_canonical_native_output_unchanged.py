@@ -24,10 +24,15 @@ import pytest
 
 SRC = Path(__file__).resolve().parents[1] / "src/sports_skills"
 
-#: Modules on the default output path. If one of these imported the canonical
-#: package, "canonical is additive" would stop being checkable by inspection.
+#: Modules that must never reach the canonical package at all. If one of these
+#: imported it, "canonical is additive" would stop being checkable by inspection.
+#:
+#: ``cli.py`` is deliberately not here: it is the one module a caller can *ask* for
+#: canonical output through, so it must be able to reach the package. The narrower rule
+#: it obeys instead — the import is inside a function, so a native run never performs
+#: it — is checked separately below and again at runtime in
+#: ``tests/test_cli_canonical.py``.
 NATIVE_SURFACE = (
-    SRC / "cli.py",
     SRC / "__init__.py",
     SRC / "__main__.py",
     SRC / "football",
@@ -94,6 +99,41 @@ def test_no_module_on_the_default_output_path_imports_the_canonical_package():
                 if module:
                     assert "canonical" not in module, (path.name, module)
     assert scanned > 0
+
+
+def test_the_cli_reaches_the_canonical_package_only_from_inside_a_function():
+    """The CLI's replacement for the blanket rule above. A module-level import would be
+    paid by every native invocation, including ``--version`` and ``catalog``; an import
+    inside the function that needs it is paid only by a caller who asked for canonical
+    output. Static, so it holds for branches no test exercises."""
+    tree = ast.parse((SRC / "cli.py").read_text(encoding="utf-8"))
+
+    def canonical_imports(root):
+        found = []
+        for node in ast.walk(root):
+            if isinstance(node, ast.Import):
+                found += [alias.name for alias in node.names]
+            elif isinstance(node, ast.ImportFrom):
+                found.append(node.module or "")
+        return [name for name in found if "canonical" in name]
+
+    anywhere = canonical_imports(tree)
+    in_functions = [
+        name for node in ast.walk(tree) if isinstance(node, ast.FunctionDef)
+        for name in canonical_imports(node)
+    ]
+    assert in_functions, "no function imports it, so the canonical mode is unreachable"
+    assert sorted(anywhere) == sorted(in_functions)
+
+
+def test_the_cli_and_the_canonical_mode_agree_on_the_format_name():
+    """``cli.py`` restates the format string because it is what decides whether to
+    import the canonical package at all. Two spellings of one flag value would make the
+    mode silently unreachable."""
+    from sports_skills import cli
+    from sports_skills.canonical import _cli as canonical_cli
+
+    assert cli._CANONICAL_FORMAT == canonical_cli.CANONICAL_FORMAT
 
 
 def test_importing_the_package_does_not_import_the_canonical_surface():
