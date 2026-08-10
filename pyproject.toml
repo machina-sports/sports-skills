@@ -55,6 +55,10 @@ sports-skills = "sports_skills.cli:main"
 target-version = "py39"
 line-length = 120
 src = ["src"]
+# Vendored byte-exact from machina-templates and pinned by sha256 in
+# canonical/_vendored/VENDORED.json. Autoformatting or auto-fixing it would break
+# the pin, and the fix for a lint finding there belongs upstream.
+extend-exclude = ["src/sports_skills/canonical/_vendored"]
 
 [tool.ruff.lint]
 select = ["E", "F", "W", "I", "UP", "B", "SIM"]
