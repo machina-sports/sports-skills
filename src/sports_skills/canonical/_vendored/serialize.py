@@ -46,7 +46,13 @@ from . import (
     UPSTREAM_TARGET_VERSION,
 )
 from .capabilities import capability_report
-from .observation import PLACEHOLDERS, validate_observation
+from .observation import (
+    PLACEHOLDERS,
+    RESOLUTION_DEFAULT,
+    RESOLUTION_METHODS,
+    source_ref_credential_findings,
+    validate_observation,
+)
 from .vocab import (
     ACTION_CLASS,
     COMPETITION_TYPE,
@@ -61,9 +67,11 @@ from .vocab import (
 #: The shared Machina JSON-LD context, packaged beside this module.
 SHARED_CONTEXT_PATH = Path(__file__).resolve().parent / "shared-context.json"
 
-#: How a provider identifier came to be attached to a Machina identity. There is
-#: no fourth value and no fuzzy matching in this phase (RFC 002 §5).
-RESOLUTION_PROVIDER_NATIVE = "provider-native"
+#: How a provider identifier came to be attached to a Machina identity is stated
+#: by the observation, one entity at a time, and validated there.
+#: ``RESOLUTION_METHODS`` and ``RESOLUTION_DEFAULT`` are imported from
+#: ``observation`` above rather than restated here: a closed value set with two
+#: copies is a closed value set one edit away from having four members.
 
 _context_cache = None
 
@@ -491,8 +499,27 @@ def _action_resources(graph, observation, ids, id_resolver):
             "sport:Action", properties))
 
 
+def _resolution_method(section):
+    """How ``section``'s provider identifier came to be attached.
+
+    The observation states it; this reads it. Nothing here decides the answer
+    from the provider namespace or from the shape of the identifier, because that
+    would put knowledge of which adapters hardcode what into the one module that
+    is shared by all of them — and then correcting an adapter would mean editing
+    the serializer.
+
+    Absence means :data:`RESOLUTION_DEFAULT`. A value outside
+    :data:`RESOLUTION_METHODS` is refused by ``validate_observation``, which
+    ``canonical_envelope`` runs before anything reaches here; it is not silently
+    rewritten, because a validator that repairs hides the bug it exists to
+    expose and this module has the same job.
+    """
+    stated = _text(section.get("resolution_method")) if isinstance(section, dict) else None
+    return stated if stated in RESOLUTION_METHODS else RESOLUTION_DEFAULT
+
+
 def _crosswalk_entries(observation, ids):
-    """``(entity_kind, machina_id, provider_id, evidence)`` per identified entity.
+    """``(kind, machina_id, provider_id, evidence, method)`` per identified entity.
 
     Participations, memberships and actions are absent on purpose: they are
     structures this serializer derives, not entities the provider named, so
@@ -500,29 +527,34 @@ def _crosswalk_entries(observation, ids):
     """
     competition = _section(observation, "competition")
     season = competition.get("season") if isinstance(competition.get("season"), dict) else {}
+    phase = _section(observation, "phase")
+    site = _section(observation, "site")
+    event = _section(observation, "event")
     entries = [
         ("competition", ids.competition, competition.get("provider_id"),
-         "observation.competition.provider_id"),
+         "observation.competition.provider_id", _resolution_method(competition)),
         ("season", ids.season, season.get("provider_id"),
-         "observation.competition.season.provider_id"),
-        ("phase", ids.phase, _section(observation, "phase").get("provider_id"),
-         "observation.phase.provider_id"),
-        ("site", ids.site, _section(observation, "site").get("provider_id"),
-         "observation.site.provider_id"),
-        ("event", ids.event, _section(observation, "event").get("provider_id"),
-         "observation.event.provider_id"),
+         "observation.competition.season.provider_id", _resolution_method(season)),
+        ("phase", ids.phase, phase.get("provider_id"),
+         "observation.phase.provider_id", _resolution_method(phase)),
+        ("site", ids.site, site.get("provider_id"),
+         "observation.site.provider_id", _resolution_method(site)),
+        ("event", ids.event, event.get("provider_id"),
+         "observation.event.provider_id", _resolution_method(event)),
     ]
     for index, participant in enumerate(_participants(observation)):
         provider_id = participant.get("provider_id")
+        evidence = "observation.participants[{0}].provider_id".format(index)
+        method = _resolution_method(participant)
         if participant.get("kind") == "team":
             entries.append(("team", ids.teams.get(provider_id), provider_id,
-                            "observation.participants[{0}].provider_id".format(index)))
+                            evidence, method))
         elif participant.get("kind") == "individual":
             entries.append(("athlete", ids.athletes.get(provider_id), provider_id,
-                            "observation.participants[{0}].provider_id".format(index)))
+                            evidence, method))
     return [
-        (kind, machina_id, _text(provider_id), evidence)
-        for kind, machina_id, provider_id, evidence in entries
+        (kind, machina_id, _text(provider_id), evidence, method)
+        for kind, machina_id, provider_id, evidence, method in entries
         if machina_id and _text(provider_id) is not None
     ]
 
@@ -688,16 +720,26 @@ SOURCE_REF_NOTE = "endpoint class only; no URL, query or credential is recorded"
 def _source_refs(adapter):
     """``adapter.source_refs`` reduced to ``kind``/``value``/``note``.
 
-    ``validate_observation`` has already refused anything request-shaped, so this
-    only has to project. Entries the adapter left unannotated get the note that
-    states the constraint they were accepted under.
+    Entries carrying a credential or a request are dropped rather than projected,
+    using ``observation.source_ref_credential_findings`` — the same rule that
+    refuses them at the boundary, not a second copy of it. Dropping here is not a
+    relaxation of that refusal: :func:`canonical_envelope` still raises, and
+    ``validate_observation`` still reports. It is what makes this function fail
+    closed when it is called on its own, which it can be — it used to project
+    whatever it was handed on the grounds that the validator had run, and nothing
+    made that true.
+
+    Entries the adapter left unannotated get the note that states the constraint
+    they were accepted under. That note reads "no URL, query or credential is
+    recorded", so stamping it onto an entry that holds one is the specific lie
+    this filter exists to prevent.
     """
     refs = adapter.get("source_refs")
     if not isinstance(refs, list):
         return []
     projected = []
     for ref in refs:
-        if not isinstance(ref, dict):
+        if not isinstance(ref, dict) or source_ref_credential_findings(ref):
             continue
         entry = {}
         _put(entry, "kind", _text(ref.get("kind")))
@@ -750,11 +792,19 @@ def provider_identifiers(document, *, id_resolver):
     keeps them from disagreeing; a second pass over the observation would be a
     second chance to.
 
-    ``confidence`` is ``1.0`` because ``provider-native`` means the provider
-    stated the identifier itself. There is no fuzzy matching in this phase, so
-    there is no case here that deserves a lower number — and inventing a spread
-    of confidences nothing measured would be exactly the false precision the
-    profile exists to keep out.
+    ``resolution_method`` is the observation's, not a constant. It was one until
+    A16, which made four entries across the Sportradar NFL and MLB rows claim the
+    provider had stated a competition and season identifier that those payloads
+    do not contain at all.
+
+    ``confidence`` is ``1.0`` for all three methods, and that is not an oversight.
+    It measures the strength of the *link* between a provider string and a Machina
+    identity, and all three methods are exact statements about where the string
+    came from — there is no fuzzy matching in this phase, so nothing here is a
+    match that could have been a near-miss. What varies is how much the string is
+    worth as evidence about the provider, and ``resolution_method`` is the field
+    that says so. Spreading invented confidences over it would be exactly the
+    false precision the profile exists to keep out.
     """
     observation = _observation(document)
     ids = _Identities(observation, id_resolver)
@@ -767,11 +817,12 @@ def provider_identifiers(document, *, id_resolver):
             "entity_type": kind,
             "provider_namespace": namespace,
             "provider_id": provider_id,
-            "resolution_method": RESOLUTION_PROVIDER_NATIVE,
+            "resolution_method": method,
             "confidence": 1.0,
             "evidence": evidence,
         }
-        for kind, machina_id, provider_id, evidence in _crosswalk_entries(observation, ids)
+        for kind, machina_id, provider_id, evidence, method
+        in _crosswalk_entries(observation, ids)
     ]
 
 
@@ -779,13 +830,14 @@ def _crosswalk_resources(graph, observation, ids, id_resolver):
     namespace = _text(_namespace(observation))
     if namespace is None:
         return
-    for kind, machina_id, provider_id, _evidence in _crosswalk_entries(observation, ids):
+    for kind, machina_id, provider_id, _evidence, method in _crosswalk_entries(
+            observation, ids):
         properties = {
             "rdfs:label": "{0} {1} {2}".format(namespace, kind, provider_id),
             "machina:identifies": {"@id": machina_id},
             "machina:providerNamespace": namespace,
             "machina:providerId": provider_id,
-            "machina:resolutionMethod": RESOLUTION_PROVIDER_NATIVE,
+            "machina:resolutionMethod": method,
         }
         graph.add(_resource(
             id_resolver("provider-identifier", kind, provider_id),

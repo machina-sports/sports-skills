@@ -70,6 +70,40 @@ _REQUIRED_FIELDS = (
 #: artefact, not a participant.
 PARTICIPANT_KINDS = ("team", "individual")
 
+#: How a provider identifier came to be attached to a Machina identity, in the
+#: order RFC 002 §5 lists them: the provider stated it, no stable provider
+#: identifier exists and the value is positional, or the caller supplied it.
+#: There is no fourth value and no fuzzy matching in this phase, which is why
+#: this is a closed set rather than a free string.
+RESOLUTION_METHODS = ("provider-native", "ordinal-derived", "declared")
+
+#: What an identity-bearing section that says nothing means.
+#:
+#: Defaulting at all is a real choice, and it is defensible only in this
+#: direction: an adapter that read a provider field and did not annotate it did
+#: read a provider field. The two cases that are *not* provider-native — a
+#: hardcoded mapping constant and a positional key — are exactly the cases an
+#: adapter author has to think about, so those are the ones that must be written
+#: down. Requiring the key everywhere would have every adapter spell out
+#: ``provider-native`` on six sections, which buries the two lines that matter.
+RESOLUTION_DEFAULT = "provider-native"
+
+#: Sections whose ``provider_id`` becomes a crosswalk entry, and which may
+#: therefore state how that identifier was resolved. Participants are the sixth
+#: and are handled with the rest of their per-item checks, because their path
+#: carries an index.
+#:
+#: A resolution method anywhere else would be a fact about an identifier the
+#: crosswalk never records, so it is not accepted there rather than being
+#: accepted and ignored.
+IDENTITY_BEARING_SECTIONS = (
+    ("competition",),
+    ("competition", "season"),
+    ("phase",),
+    ("site",),
+    ("event",),
+)
+
 #: The provider payload. Held verbatim, surfaced only in ``event_view``, and
 #: deliberately exempt from the placeholder scan: a real payload is full of
 #: nulls and provider-side "TBD" strings, and scanning it would make every
@@ -266,6 +300,41 @@ def _check_participants(observation, errors):
             )
 
 
+def _check_resolution_method(node, path, errors):
+    """``resolution_method`` is optional; when present it is one of three values.
+
+    Checked rather than defaulted, because the field's whole job is to be the
+    place a weak crosswalk says so. A value outside the set is not a weaker claim
+    than ``provider-native`` — it is an unreadable one, and a consumer deciding
+    whether to trust an identifier cannot act on it.
+    """
+    if not isinstance(node, dict) or "resolution_method" not in node:
+        return
+    method = node["resolution_method"]
+    if method not in RESOLUTION_METHODS:
+        errors.append(
+            "{0}.resolution_method: '{1}' is not one of {2}".format(
+                path, method, ", ".join(RESOLUTION_METHODS)
+            )
+        )
+
+
+def _check_resolution_methods(observation, errors):
+    for section in IDENTITY_BEARING_SECTIONS:
+        node = observation
+        path = "observation"
+        for key in section:
+            path = "{0}.{1}".format(path, key)
+            node = node.get(key) if isinstance(node, dict) else None
+        _check_resolution_method(node, path, errors)
+    participants = observation.get("participants")
+    if isinstance(participants, list):
+        for index, participant in enumerate(participants):
+            _check_resolution_method(
+                participant, "observation.participants[{0}]".format(index), errors
+            )
+
+
 def _check_rights(observation, errors):
     rights = observation.get("rights")
     if rights is None:
@@ -302,12 +371,73 @@ def _check_adapter(observation, errors):
     _check_source_refs(adapter, errors)
 
 
-#: Substrings that make a ``source_refs`` value a request rather than an endpoint
-#: class. A URL is how an API key, a licensed path or a customer identifier ends
-#: up committed to a fixture file, and a fixture is the artefact that gets
-#: published. Rejected here rather than stripped by the serializer: stripping
-#: would let such a fixture validate clean, which is the wrong place to be lenient.
-_REQUEST_SHAPED = ("://", "?", "&", "key=", "token=", "secret", "Authorization")
+#: Substrings that make a ``source_refs`` entry a request or a credential rather
+#: than an endpoint class. A URL is how an API key, a licensed path or a customer
+#: identifier ends up committed to a fixture file, and a fixture is the artefact
+#: that gets published. Rejected here rather than stripped by the serializer:
+#: stripping would let such a fixture validate clean, which is the wrong place to
+#: be lenient.
+#:
+#: Written casefolded and matched casefolded. The first version of this tuple
+#: matched raw substrings, so ``Authorization`` was refused while
+#: ``authorization`` was accepted, ``token=`` while ``TOKEN=`` was accepted, and
+#: ``key=`` while ``API_KEY=`` was accepted. Casing is not something the producer
+#: of a leaked header controls on our behalf, so a case-sensitive credential
+#: filter is a filter with a documented way round it.
+#:
+#: Order is the reported order: the URL and query markers come first because a
+#: request-shaped value is the more useful thing to be told about, and the
+#: ``api_key``/``api-key``/``apikey`` spellings precede ``key=`` so the error names
+#: the whole word rather than its tail.
+CREDENTIAL_MARKERS = (
+    "://", "?", "&",
+    "api_key", "api-key", "apikey", "key=",
+    "token", "authorization", "bearer",
+    "secret", "password", "cookie",
+)
+
+#: The fields of a ``source_refs`` entry that are published verbatim, and are
+#: therefore all scanned. Scanning ``value`` alone would leave two published
+#: fields as places to put the string ``value`` may not hold.
+SOURCE_REF_TEXT_FIELDS = ("kind", "value", "note")
+
+
+def credential_marker(text):
+    """The first :data:`CREDENTIAL_MARKERS` entry ``text`` contains, or ``None``.
+
+    Case-insensitive via ``str.casefold``, which folds more than ``lower`` does
+    and is the right primitive for "are these the same characters" on text that
+    did not have to be ASCII.
+
+    Non-strings are not scanned. They are reported as a type error by the caller,
+    and guessing at ``str()`` of a dict would invent text nobody wrote.
+    """
+    if not isinstance(text, str):
+        return None
+    folded = text.casefold()
+    for marker in CREDENTIAL_MARKERS:
+        if marker in folded:
+            return marker
+    return None
+
+
+def source_ref_credential_findings(ref):
+    """``[(field, marker)]`` for every published field of ``ref`` that is unsafe.
+
+    The one rule both the validator and the serializer read. They used to be two
+    rules — a substring tuple here and "the validator has already run" there —
+    and the second one is not a rule at all: ``provenance_block`` is a public
+    function, so a caller that skipped :func:`validate_observation` published
+    whatever it was handed.
+    """
+    if not isinstance(ref, dict):
+        return []
+    findings = []
+    for field in SOURCE_REF_TEXT_FIELDS:
+        marker = credential_marker(ref.get(field))
+        if marker is not None:
+            findings.append((field, marker))
+    return findings
 
 
 def _check_source_refs(adapter, errors):
@@ -336,17 +466,13 @@ def _check_source_refs(adapter, errors):
             if not isinstance(ref.get(key), str) or not ref.get(key):
                 errors.append("{0}.{1}: required non-empty string is missing".format(
                     pointer, key))
-        value = ref.get("value")
-        if isinstance(value, str):
-            for marker in _REQUEST_SHAPED:
-                if marker in value:
-                    errors.append(
-                        "{0}.value: '{1}' looks like a request rather than an "
-                        "endpoint class (contains '{2}'). Record the endpoint "
-                        "class only; no URL, query or credential.".format(
-                            pointer, value, marker)
-                    )
-                    break
+        for field, marker in source_ref_credential_findings(ref):
+            errors.append(
+                "{0}.{1}: '{2}' looks like a request or a credential rather "
+                "than an endpoint class (contains '{3}'). Record the endpoint "
+                "class only; no URL, query or credential.".format(
+                    pointer, field, ref[field], marker)
+            )
 
 
 def validate_observation(document):
@@ -372,6 +498,7 @@ def validate_observation(document):
 
     _check_required(observation, errors)
     _check_participants(observation, errors)
+    _check_resolution_methods(observation, errors)
     _check_datetimes(observation, errors)
     _check_rights(observation, errors)
     _check_adapter(observation, errors)
