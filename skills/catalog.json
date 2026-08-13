@@ -210,6 +210,17 @@
       "skill_path": "skills/polymarket-trading/SKILL.md",
       "untrusted_content": true
     },
+    "prophetx": {
+      "description": "ProphetX betting exchange \u2014 public tournament, event, and market CATALOG. No API key, read-only. Covers soccer, tennis, basketball, baseball (MLB), NFL, NHL. The public surface exposes market structure and matched stake but NO odds/p",
+      "external_network": true,
+      "mode": "read_only",
+      "money_movement": false,
+      "requires_explicit_confirmation": false,
+      "risk": "medium",
+      "secrets_required": false,
+      "skill_path": "skills/prophetx/SKILL.md",
+      "untrusted_content": true
+    },
     "sports-news": {
       "description": "Sports news via RSS/Atom feeds and Google News. Fetch headlines, search by query, filter by date. Covers football news, transfer rumors, match reports, and any sport via Google News.",
       "external_network": true,

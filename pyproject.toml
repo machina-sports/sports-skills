@@ -12,7 +12,7 @@ license = "MIT"
 authors = [
     { name = "Machina Sports", email = "hello@machina.gg" },
 ]
-keywords = ["prediction-markets", "kalshi", "polymarket", "betting", "odds-comparison", "arbitrage", "sports", "football", "f1", "nfl", "nba", "wnba", "nhl", "mlb", "tennis", "atp", "wta", "cfb", "cbb", "college-football", "college-basketball", "ncaa", "golf", "pga", "lpga", "volleyball", "nevobo", "eredivisie", "news"]
+keywords = ["prediction-markets", "kalshi", "polymarket", "prophetx", "betting", "odds-comparison", "arbitrage", "sports", "football", "f1", "nfl", "nba", "wnba", "nhl", "mlb", "tennis", "atp", "wta", "cfb", "cbb", "college-football", "college-basketball", "ncaa", "golf", "pga", "lpga", "volleyball", "nevobo", "eredivisie", "news"]
 classifiers = [
     "Development Status :: 3 - Alpha",
     "Intended Audience :: Developers",

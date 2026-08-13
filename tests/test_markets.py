@@ -362,29 +362,37 @@ class TestFetchScheduleMocked:
 
 
 class TestSearchEntityMocked:
+    @patch("sports_skills.markets._connector._search_prophetx")
     @patch("sports_skills.markets._connector._search_polymarket")
     @patch("sports_skills.markets._connector._search_kalshi")
-    def test_search_entity_combines_results(self, mock_kalshi, mock_poly):
+    def test_search_entity_combines_results(self, mock_kalshi, mock_poly, mock_prophetx):
         mock_kalshi.return_value = [
             {"source": "kalshi", "title": "Lakers vs Celtics", "event_ticker": "EVT1", "markets": []}
         ]
         mock_poly.return_value = [{"source": "polymarket", "title": "Lakers Game", "market_id": "MKT1", "outcomes": []}]
+        mock_prophetx.return_value = [
+            {"source": "prophetx", "title": "Lakers at Celtics", "event_id": 1, "markets": []}
+        ]
 
         result = search_entity({"params": {"query": "Lakers"}})
         assert result["status"] is True
-        assert result["data"]["total_results"] == 2
+        assert result["data"]["total_results"] == 3
         assert len(result["data"]["kalshi"]) == 1
         assert len(result["data"]["polymarket"]) == 1
+        assert len(result["data"]["prophetx"]) == 1
 
+    @patch("sports_skills.markets._connector._search_prophetx")
     @patch("sports_skills.markets._connector._search_polymarket")
     @patch("sports_skills.markets._connector._search_kalshi")
-    def test_search_entity_partial_failure(self, mock_kalshi, mock_poly):
+    def test_search_entity_partial_failure(self, mock_kalshi, mock_poly, mock_prophetx):
         mock_kalshi.side_effect = Exception("Kalshi down")
         mock_poly.return_value = [{"source": "polymarket", "title": "Lakers Game", "market_id": "MKT1", "outcomes": []}]
+        mock_prophetx.side_effect = Exception("ProphetX down")
 
         result = search_entity({"params": {"query": "Lakers"}})
         assert result["status"] is True
         assert len(result["data"]["polymarket"]) == 1
+        assert result["data"]["prophetx"] == []
         assert "warnings" in result["data"]
 
     def test_search_entity_missing_query(self):
@@ -398,10 +406,11 @@ class TestSearchEntityMocked:
 
 
 class TestGetTodaysMarketsMocked:
+    @patch("sports_skills.markets._connector._search_prophetx")
     @patch("sports_skills.markets._connector._search_polymarket")
     @patch("sports_skills.markets._connector._search_kalshi")
     @patch("sports_skills.markets._connector._fetch_all_schedules")
-    def test_returns_dashboard(self, mock_schedules, mock_kalshi, mock_poly):
+    def test_returns_dashboard(self, mock_schedules, mock_kalshi, mock_poly, mock_prophetx):
         mock_schedules.return_value = (
             [
                 {
