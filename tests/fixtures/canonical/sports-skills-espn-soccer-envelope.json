@@ -1,7 +1,7 @@
 {
   "machina_sports_schema": {
     "schema_version": "machina-sports-schema/1",
-    "profile": "machina-iptc-profile/1.1",
+    "profile": "machina-iptc-profile/1.2",
     "sport_schema_graph": {
       "@context": {
         "rdf": "http://www.w3.org/1999/02/22-rdf-syntax-ns#",
@@ -433,6 +433,7 @@
         "event.period",
         "event.play_by_play",
         "event.result",
+        "event.start_time.bounded",
         "event.tracking",
         "participant.player_statistics"
       ],
@@ -457,7 +458,8 @@
             "event.score"
           ],
           "optional_absent": [
-            "event.result"
+            "event.result",
+            "event.start_time.bounded"
           ]
         },
         "live": {

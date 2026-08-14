@@ -37,6 +37,7 @@ import json
 from pathlib import Path
 
 from . import (
+    EXACT_OBSERVATION_PROFILE_VERSION,
     MACHINA_SCHEMA_VERSION,
     PROFILE_VERSION,
     SERIALIZER_NAME,
@@ -45,11 +46,16 @@ from . import (
     UPSTREAM_REPOSITORY,
     UPSTREAM_TARGET_VERSION,
 )
-from .capabilities import capability_report
+from .capabilities import (
+    GRAPH_UNAVAILABLE_EXACT_START_TIME,
+    GRAPH_UNAVAILABLE_REASONS,
+    capability_report,
+)
 from .observation import (
     PLACEHOLDERS,
     RESOLUTION_DEFAULT,
     RESOLUTION_METHODS,
+    TEMPORAL_EVIDENCE_KEY,
     source_ref_credential_findings,
     validate_observation,
 )
@@ -66,6 +72,33 @@ from .vocab import (
 
 #: The shared Machina JSON-LD context, packaged beside this module.
 SHARED_CONTEXT_PATH = Path(__file__).resolve().parent / "shared-context.json"
+
+
+class GraphUnavailable(ValueError):
+    """No ``sport_schema_graph`` exists for this observation, and why.
+
+    RFC 002 §12.4.
+
+    A typed refusal carrying an enumerated ``reason``, rather than an
+    unstructured error or an empty ``@graph``. Both alternatives are worse in the
+    same direction: an empty graph looks like a conformant document describing
+    nothing, and a message a consumer has to pattern-match is not a contract.
+
+    A ``ValueError`` subclass, so callers that already handle the serializer's
+    refusals keep working and only callers that want to branch on the reason have
+    to know the type.
+    """
+
+    def __init__(self, reason):
+        if reason not in GRAPH_UNAVAILABLE_REASONS:
+            raise ValueError("unknown graph-unavailability reason")
+        # The token is in the message too: a log line that carries only str(error)
+        # should still name the reason a reader has to act on.
+        super().__init__(
+            "sport_schema_graph is unavailable for this observation: {0}".format(reason)
+        )
+        self.reason = reason
+
 
 #: How a provider identifier came to be attached to a Machina identity is stated
 #: by the observation, one entity at a time, and validated there.
@@ -652,6 +685,18 @@ def _view_actions(observation):
     return actions
 
 
+def _temporal_evidence(event):
+    """``event.temporal_evidence`` as the view carries it: verbatim, or nothing.
+
+    A copy rather than the object itself, so a caller mutating the projection
+    cannot reach back into the observation it was derived from. Nothing is
+    reformatted — ``source_value`` is the observed lexical fact, offset included,
+    and rewriting it is the one thing this member exists to prevent (G1).
+    """
+    evidence = event.get(TEMPORAL_EVIDENCE_KEY)
+    return dict(evidence) if isinstance(evidence, dict) else None
+
+
 def event_view(document, *, id_resolver):
     """A compact non-RDF projection of one observation (RFC 002 §3).
 
@@ -681,6 +726,14 @@ def event_view(document, *, id_resolver):
     _put(view, "label", _text(event.get("label")))
     _put(view, "sport", _text(_section(observation, "sport").get("key")))
     _put(view, "start_time", _text(event.get("start_time")))
+    # Where a reduced-precision start actually lives (RFC 002 §12.4): the graph refuses
+    # such an observation, so this projection is the only place the bounds, the
+    # verbatim source value and its derivation travel — with our provenance
+    # beside them, which is the whole reason they are here rather than in an
+    # interoperability document no external consumer can read provenance from.
+    # Copied whole and unrewritten: the member IS the evidence, and a projection
+    # that picked fields would be a second spelling of it.
+    _put(view, TEMPORAL_EVIDENCE_KEY, _temporal_evidence(event))
     _put(view, "end_time", _text(event.get("end_time")))
     _put(view, "status", _text(event.get("status")))
     _put(view, "outcome_type", _text(event.get("outcome_type")))
@@ -771,7 +824,18 @@ def provenance_block(document, *, id_resolver):
     if isinstance(block.get("adapter"), dict):
         block["adapter"].pop("source_refs", None)
     block["serializer"] = {"name": SERIALIZER_NAME, "version": SERIALIZER_VERSION}
-    block["profile"] = PROFILE_VERSION
+    # The conformance claim of THIS document, not the version of the serializer
+    # that built it — the envelope's own `profile` says that. An exact
+    # observation projects byte-for-byte as `machina-iptc-profile/1.1` specifies,
+    # so 1.1 is what it conforms to; 1.2 adds one rule and it is a rule about a
+    # case this document is not. Stamping the running profile here instead moved
+    # a field inside `provenance`, which RFC 002 §12 freezes for exact
+    # observations, and made the enumerated diff five items instead of four.
+    block["profile"] = (
+        PROFILE_VERSION
+        if TEMPORAL_EVIDENCE_KEY in _section(observation, "event")
+        else EXACT_OBSERVATION_PROFILE_VERSION
+    )
     block["upstream_pin"] = {
         "repository": UPSTREAM_REPOSITORY,
         "commit": UPSTREAM_COMMIT,
@@ -873,6 +937,13 @@ def sport_schema_graph(document, *, id_resolver):
     clock, the environment or the network.
     """
     observation = _observation(document)
+    # Before any resource is built, so no partial Event can escape and so the
+    # refusal cannot depend on which resource happened to be reached first. The
+    # rule is "this document carries the member", not "carries a member that
+    # validated": a document whose evidence is broken has no exact instant
+    # either, and emitting a graph for it would be the fail-open branch.
+    if TEMPORAL_EVIDENCE_KEY in _section(observation, "event"):
+        raise GraphUnavailable(GRAPH_UNAVAILABLE_EXACT_START_TIME)
     ids = _Identities(observation, id_resolver)
     graph = _Graph()
 
@@ -915,16 +986,30 @@ def canonical_envelope(document, *, id_resolver):
         )
 
     observation = _observation(document)
-    return {"machina_sports_schema": {
+    # Built key by key rather than as one literal, because one member is now
+    # conditional and the emission order is part of the output: the corrected
+    # fixtures are compared byte-for-byte, so a reordered envelope is a diff.
+    envelope = {
         "schema_version": MACHINA_SCHEMA_VERSION,
         "profile": PROFILE_VERSION,
-        "sport_schema_graph": sport_schema_graph(document, id_resolver=id_resolver),
-        "event_view": event_view(document, id_resolver=id_resolver)["event_view"],
-        "provenance": provenance_block(document, id_resolver=id_resolver)["provenance"],
-        "provider_ids": provider_identifiers(document, id_resolver=id_resolver),
-        # Unwrapped: capability_report returns its own {"capabilities": …}
-        # envelope, and nesting it would give the consumer
-        # machina_sports_schema.capabilities.capabilities.
-        "capabilities": capability_report(document)["capabilities"],
-        "rights": dict(_section(observation, "rights")),
-    }}
+    }
+    try:
+        envelope["sport_schema_graph"] = sport_schema_graph(
+            document, id_resolver=id_resolver)
+    except GraphUnavailable:
+        # Not a swallowed error: the member is *omitted*, and
+        # capability_report below states the same enumerated reason on the same
+        # record. Catching the typed refusal rather than re-testing the
+        # condition here keeps one rule in one place — a second copy of "is this
+        # observation graph-able" is a second copy that can disagree.
+        pass
+    envelope["event_view"] = event_view(document, id_resolver=id_resolver)["event_view"]
+    envelope["provenance"] = provenance_block(
+        document, id_resolver=id_resolver)["provenance"]
+    envelope["provider_ids"] = provider_identifiers(document, id_resolver=id_resolver)
+    # Unwrapped: capability_report returns its own {"capabilities": …} envelope,
+    # and nesting it would give the consumer
+    # machina_sports_schema.capabilities.capabilities.
+    envelope["capabilities"] = capability_report(document)["capabilities"]
+    envelope["rights"] = dict(_section(observation, "rights"))
+    return {"machina_sports_schema": envelope}

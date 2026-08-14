@@ -16,6 +16,21 @@ Python package users (includes all sports modules in the base package):
 pip install sports-skills
 ```
 
+Canonical NBA Phase-1A output is available from normalized ESPN event and play-by-play
+values. Start-time precision is always explicit; minute values retain their source text
+and produce a bounded compact view without claiming an exact Sport Schema graph.
+
+```python
+from sports_skills import canonical
+
+document = canonical.canonicalize_nba_event(
+    event,
+    plays,
+    observed_at="2026-06-14T03:30:00Z",
+    start_time_precision="minute",
+)
+```
+
 To upgrade to the latest version, run the install command with the `--yes` flag:
 
 ```bash

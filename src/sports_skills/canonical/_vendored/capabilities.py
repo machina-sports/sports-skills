@@ -18,6 +18,8 @@ library only, and no import of ``tools.*``.
 
 from __future__ import annotations
 
+from .observation import has_reduced_temporal_evidence
+
 TIER_ORDER = ("core", "live", "advanced")
 
 TIER_REQUIRED = {
@@ -28,7 +30,10 @@ TIER_REQUIRED = {
 }
 
 TIER_OPTIONAL = {
-    "core": ("event.score", "event.result"),
+    # ``event.start_time.bounded`` is optional, never required. Requiring it
+    # would knock every existing exact observation out of the core tier, which is
+    # a breaking change wearing an additive costume (RFC 002 §12.4).
+    "core": ("event.score", "event.result", "event.start_time.bounded"),
     "live": ("event.play_by_play", "event.live_statistics"),
     "advanced": ("event.coordinates", "event.tracking", "event.expected_metrics",
                  "event.lineups", "event.formations"),
@@ -48,6 +53,19 @@ STARTED_STATUSES = ("in_progress", "closed")
 #: The finding raised for exactly that case. Kept out of tier gating on purpose,
 #: so a legitimate pre-match payload still reaches core.
 SCORE_VIOLATION = "score-absent-on-started-event"
+
+#: Why ``sport_schema_graph`` is unavailable for a record (RFC 002 §12.4).
+#:
+#: An enumerated token, never free text: a consumer that receives no graph has to
+#: be able to branch on *why*, and a sentence somebody rewrites is not something
+#: to branch on. The profile binds an IPTC start-datetime property whose value
+#: would have to be an exact instant, and a reduced-precision observation has
+#: none — so it emits no graph at all rather than a partial ``sport:Event`` or a
+#: ``machina:``-namespaced substitute inside the interoperability document.
+GRAPH_UNAVAILABLE_EXACT_START_TIME = "exact-event-start-time-required"
+
+#: The closed set of those reasons.
+GRAPH_UNAVAILABLE_REASONS = (GRAPH_UNAVAILABLE_EXACT_START_TIME,)
 
 
 def _participants(observation):
@@ -92,6 +110,11 @@ _PRESENCE = {
         lambda o: len(_participants(o)) >= 2,
     "event.start_time":
         lambda o: _has(o.get("event"), "start_time"),
+    # Present iff the record carries *valid* reduced temporal evidence. The two
+    # names are mutually exclusive by construction, because the observation
+    # contract admits exactly one of the two temporal states (RFC 002 §12.2).
+    "event.start_time.bounded":
+        lambda o: has_reduced_temporal_evidence(o.get("event")),
     "event.status":
         lambda o: _has(o.get("event"), "status"),
     "provenance":
@@ -162,17 +185,22 @@ def capability_report(document):
     if event.get("status") in STARTED_STATUSES and "event.score" not in present_set:
         violations.append(SCORE_VIOLATION)
 
-    return {
-        "capabilities": {
-            "tier": tiers_satisfied[-1] if tiers_satisfied else None,
-            "tiers_satisfied": tiers_satisfied,
-            "present": present,
-            "absent": absent,
-            "not_expressible": list(NOT_EXPRESSIBLE),
-            "by_tier": by_tier,
-            "violations": violations,
-        }
+    report = {
+        "tier": tiers_satisfied[-1] if tiers_satisfied else None,
+        "tiers_satisfied": tiers_satisfied,
+        "present": present,
+        "absent": absent,
+        "not_expressible": list(NOT_EXPRESSIBLE),
+        "by_tier": by_tier,
+        "violations": violations,
     }
+    # Set only when the graph is genuinely unavailable, so an exact observation's
+    # report is unchanged key for key: a reason key present-and-null on every
+    # exact record would be a fifth entry in RFC 002 §12.3's enumerated diff, and a
+    # null is not a fact anyway.
+    if "event.start_time.bounded" in present_set:
+        report["graph_unavailable_reason"] = GRAPH_UNAVAILABLE_EXACT_START_TIME
+    return {"capabilities": report}
 
 
 def check_compatibility(capabilities, requires=(), optional=()):
