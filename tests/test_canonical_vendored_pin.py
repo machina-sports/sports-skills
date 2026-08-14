@@ -76,8 +76,8 @@ def test_the_manifest_names_its_upstream_source_and_the_contract_versions():
     assert document["consumer"] == "machina-sports/sports-skills"
     assert document["source_repository"] == "machina-sports/machina-templates"
     assert len(document["source_commit"]) == 40
-    assert document["profile"] == "machina-iptc-profile/1.1"
-    assert document["schema_version"] == "canonical-observation/1"
+    assert document["profile"] == "machina-iptc-profile/1.2"
+    assert document["schema_version"] == "canonical-observation/1.1"
     assert document["machina_schema_version"] == "machina-sports-schema/1"
 
 
@@ -141,8 +141,8 @@ def test_the_vendored_runtime_parses_as_python_39():
 def test_the_runtime_is_importable_and_exposes_the_pinned_versions():
     from sports_skills.canonical import _vendored
 
-    assert _vendored.PROFILE_VERSION == "machina-iptc-profile/1.1"
-    assert _vendored.SCHEMA_VERSION == "canonical-observation/1"
+    assert _vendored.PROFILE_VERSION == "machina-iptc-profile/1.2"
+    assert _vendored.SCHEMA_VERSION == "canonical-observation/1.1"
     assert _vendored.MACHINA_SCHEMA_VERSION == "machina-sports-schema/1"
     assert _vendored.UPSTREAM_TARGET_VERSION == "1.1"
 

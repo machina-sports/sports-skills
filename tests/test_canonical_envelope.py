@@ -82,7 +82,7 @@ def test_the_envelope_carries_every_part_and_both_versions():
         "rights", "schema_version", "sport_schema_graph",
     ]
     assert document["schema_version"] == "machina-sports-schema/1"
-    assert document["profile"] == "machina-iptc-profile/1.1"
+    assert document["profile"] == "machina-iptc-profile/1.2"
 
 
 def test_the_graph_is_one_inline_context_and_one_flat_graph():
@@ -243,8 +243,17 @@ def test_the_capability_report_claims_only_what_the_payload_supports():
 def test_the_capability_report_names_the_absences_a_consumer_would_plan_against():
     absent = block()["capabilities"]["absent"]
     for capability in ("event.clock", "event.period", "event.actions", "event.result",
-                       "participant.player_statistics", "event.lineups"):
+                       "event.start_time.bounded", "participant.player_statistics", "event.lineups"):
         assert capability in absent, capability
+
+
+def test_exact_observations_keep_the_exact_projection_and_no_graph_refusal():
+    document = block()
+    assert "sport_schema_graph" in document
+    assert "graph_unavailable_reason" not in document["capabilities"]
+    assert document["event_view"]["start_time"] == START_TIME
+    assert "temporal_evidence" not in document["event_view"]
+    assert document["provenance"]["profile"] == "machina-iptc-profile/1.1"
 
 
 # ---------------------------------------------------------------------------
@@ -347,8 +356,10 @@ def test_the_public_surface_is_small_and_explicit():
         "PROFILE_VERSION",
         "SCHEMA_VERSION",
         "canonicalize_event",
+        "canonicalize_nba_event",
         "rights_findings",
         "to_envelope",
+        "to_nba_observation",
         "to_observation",
     ]
     for name in canonical.__all__:

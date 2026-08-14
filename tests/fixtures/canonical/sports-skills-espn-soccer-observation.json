@@ -1,5 +1,5 @@
 {
-  "schema_version": "canonical-observation/1",
+  "schema_version": "canonical-observation/1.1",
   "observation": {
     "provider": {
       "namespace": "sports-skills/espn",

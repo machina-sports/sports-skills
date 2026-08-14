@@ -47,7 +47,7 @@ from ._vendored import MACHINA_SCHEMA_VERSION, PROFILE_VERSION, SCHEMA_VERSION
 from ._vendored.ids import surrogate_resolver
 from ._vendored.rights import CONSUMER_TIERS, rights_findings
 from ._vendored.serialize import canonical_envelope
-from .adapters import football
+from .adapters import football, nba
 
 __all__ = [
     "CONSUMER_TIERS",
@@ -55,9 +55,11 @@ __all__ = [
     "PROFILE_VERSION",
     "SCHEMA_VERSION",
     "canonicalize_event",
+    "canonicalize_nba_event",
     "rights_findings",
     "to_envelope",
     "to_observation",
+    "to_nba_observation",
 ]
 
 
@@ -93,9 +95,7 @@ def to_envelope(observation):
     namespace = None
     if isinstance(document, dict) and isinstance(document.get("provider"), dict):
         namespace = document["provider"].get("namespace")
-    return canonical_envelope(
-        observation, id_resolver=surrogate_resolver(namespace)
-    )
+    return canonical_envelope(observation, id_resolver=surrogate_resolver(namespace))
 
 
 def canonicalize_event(event, *, observed_at):
@@ -105,3 +105,25 @@ def canonicalize_event(event, *, observed_at):
     nothing more.
     """
     return to_envelope(to_observation(event, observed_at=observed_at))
+
+
+def to_nba_observation(event, plays=None, *, observed_at, start_time_precision):
+    """One normalized NBA event and normalized play set as an observation."""
+    return nba.to_observation(
+        event,
+        plays,
+        observed_at=observed_at,
+        start_time_precision=start_time_precision,
+    )
+
+
+def canonicalize_nba_event(event, plays=None, *, observed_at, start_time_precision):
+    """Compose :func:`to_nba_observation` with the shared envelope serializer."""
+    return to_envelope(
+        to_nba_observation(
+            event,
+            plays,
+            observed_at=observed_at,
+            start_time_precision=start_time_precision,
+        )
+    )

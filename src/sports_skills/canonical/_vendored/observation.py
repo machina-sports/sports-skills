@@ -28,7 +28,11 @@ import json
 import re
 from pathlib import Path
 
-from . import SCHEMA_VERSION
+from . import (
+    ACCEPTED_SCHEMA_VERSIONS,
+    PREDECESSOR_SCHEMA_VERSION,
+    SCHEMA_VERSION,
+)
 
 #: Values that are a fabricated stand-in for a fact the provider never supplied.
 #:
@@ -44,10 +48,16 @@ PLACEHOLDERS = frozenset({
     "Unknown Title", "unknown Phase",
 })
 
-#: Keys ``observation.event`` must carry. An event without a status is not an
-#: event we can place on a timeline, and one without a start time is not an event
-#: we can place at all.
-REQUIRED_EVENT_KEYS = ("provider_id", "start_time", "status")
+#: Keys ``observation.event`` must carry unconditionally. An event without a
+#: status is not an event we can place on a timeline.
+#:
+#: The start instant is **not** here, and its absence from this tuple is the
+#: whole of RFC 002 §12.2 in the required-field machinery: an event states
+#: its start
+#: either exactly, in ``start_time``, or as reduced-precision evidence, and which
+#: one is required depends on the document. :func:`_check_temporal_state` owns
+#: that question so it is answered in one place and reported once.
+REQUIRED_EVENT_KEYS = ("provider_id", "status")
 
 #: ``(path-within-observation, key)`` pairs that must be present.
 #:
@@ -121,7 +131,109 @@ _DATETIME_RE = re.compile(
     r"(?:[Zz]|[+-](\d{2}):(\d{2}))$"
 )
 
+#: A minute-precision value with a mandatory explicit offset: the shape a
+#: source-normalizer produces when the provider published no second-of-minute.
+#: No seconds group at all, which is what makes an exact value smuggled into the
+#: evidence member a parse failure rather than a value to be inspected.
+_MINUTE_RE = re.compile(
+    r"^(\d{4})-(\d{2})-(\d{2})[Tt](\d{2}):(\d{2})(?:[Zz]|([+-])(\d{2}):(\d{2}))$"
+)
+
+#: How wide the interval each declared precision denotes is, in seconds. A table
+#: rather than a constant, because the number is a property of the precision and
+#: the validator has to be able to say which one it checked.
+PRECISION_WIDTH_SECONDS = {"minute": 60}
+
+#: Where reduced-precision temporal evidence lives, within ``observation.event``.
+TEMPORAL_EVIDENCE_KEY = "temporal_evidence"
+
+#: Which event instant the evidence describes. Closed to the one instant
+#: ``event.start_time`` covers: an unrecognised ``kind`` would otherwise let an
+#: end-of-event bound satisfy a consumer asking for a bounded *start*.
+TEMPORAL_KINDS = ("start",)
+
+#: How the bounds were produced. One value, because there is one derivation and
+#: no best-effort branch (RFC 002 §12.2).
+TEMPORAL_DERIVATIONS = ("declared_precision_interval",)
+
+#: The complete key set of the evidence member, and the reason it is closed
+#: rather than merely documented: RFC 002 §12.2 refuses "any additional offset-bearing
+#: field alongside ``source_value``", and no list of the field names somebody
+#: might invent for a second offset can be complete. Refusing every unknown key
+#: is the same rule stated in a way a machine can check.
+TEMPORAL_EVIDENCE_KEYS = ("kind", "source_value", "precision",
+                          "lower_inclusive", "upper_exclusive", "provenance")
+
+#: A derived bound as the contract requires it: second-precision, UTC, spelled
+#: ``Z``. ``+00:00`` is the same instant and a different spelling, and two
+#: spellings of one bound is drift waiting to happen.
+_BOUND_RE = re.compile(r"^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$")
+
 _allowlist_cache = None
+
+
+def derive_bounds(source_value, precision):
+    """``(lower_inclusive, upper_exclusive)`` for one reduced-precision value.
+
+    A pure function of ``(source_value, precision)`` and nothing else (RFC 002 §12.1,
+    G2). Both bounds come back as second-precision RFC 3339 instants normalized
+    to UTC, so every consumer compares like with like, and the interval is
+    half-open and strictly non-empty.
+
+    **No timezone database participates, ever** (G7). The offset is explicit, it
+    is read out of ``source_value`` itself, and the arithmetic is fixed-offset
+    subtraction. There is no zone name to resolve, so there is no DST rule to
+    apply and no ``zoneinfo`` to consult — a value at a DST transition instant
+    derives exactly the bounds the same wall value derives anywhere else.
+
+    Raises ``ValueError`` for anything this version cannot derive: an unknown
+    precision, a naive value, a zone name, an out-of-range offset, or an already
+    exact value. Deriving from a value the contract refuses would put a bound
+    under a document the validator is about to reject.
+    """
+    if precision not in PRECISION_WIDTH_SECONDS:
+        raise ValueError(
+            "precision '{0}' is not one of {1}".format(
+                precision, ", ".join(sorted(PRECISION_WIDTH_SECONDS))
+            )
+        )
+    if not isinstance(source_value, str):
+        raise ValueError("source_value must be a string")
+    match = _MINUTE_RE.match(source_value)
+    if match is None:
+        raise ValueError(
+            "source_value is not a minute-precision RFC 3339 value with an "
+            "explicit offset"
+        )
+    year, month, day, hour, minute = (int(group) for group in match.groups()[:5])
+    sign, offset_hour, offset_minute = match.group(6), match.group(7), match.group(8)
+    if offset_hour is None:
+        offset = datetime.timedelta(0)
+    else:
+        if int(offset_hour) > 23 or int(offset_minute) > 59:
+            raise ValueError("source_value carries an out-of-range UTC offset")
+        offset = datetime.timedelta(hours=int(offset_hour), minutes=int(offset_minute))
+        if sign == "-":
+            offset = -offset
+    # datetime() is what refuses 2030-02-30 and hour 25: the regex counts digits,
+    # and a calendar is the only thing that knows February.
+    stated = datetime.datetime(year, month, day, hour, minute)
+    lower = stated - offset
+    upper = lower + datetime.timedelta(seconds=PRECISION_WIDTH_SECONDS[precision])
+    return _utc_instant(lower), _utc_instant(upper)
+
+
+def _utc_instant(moment):
+    """``moment`` as a second-precision, ``Z``-normalized RFC 3339 instant.
+
+    Formatted field by field rather than with ``strftime``: ``%Y`` is not
+    zero-padded consistently across platforms, and a bound whose spelling depends
+    on the C library is not a bound two repositories can compare.
+    """
+    return "{0:04d}-{1:02d}-{2:02d}T{3:02d}:{4:02d}:{5:02d}Z".format(
+        moment.year, moment.month, moment.day,
+        moment.hour, moment.minute, moment.second,
+    )
 
 
 def official_property_curies():
@@ -238,6 +350,198 @@ def _check_datetimes(observation, errors):
                 "{0}: '{1}' is not an RFC 3339 datetime with an explicit "
                 "offset".format(path, value)
             )
+
+
+def _parse_bound(value):
+    """A ``Z``-normalized second-precision bound as a datetime, or ``None``."""
+    if not isinstance(value, str) or not _BOUND_RE.match(value):
+        return None
+    try:
+        return datetime.datetime(
+            int(value[0:4]), int(value[5:7]), int(value[8:10]),
+            int(value[11:13]), int(value[14:16]), int(value[17:19]),
+        )
+    except ValueError:
+        return None
+
+
+def _check_temporal_provenance(evidence, path, errors):
+    """Provenance for the derivation: identifiers and versions only.
+
+    Required, because the bounds are derived data sitting next to observed data
+    and nothing else in the member says which of the two a reader is looking at.
+    Scanned for request- and credential-shaped material with the same rule
+    ``source_refs`` uses, rather than a second copy of it — and the finding names
+    the field and the marker, never the value, for the reason
+    :func:`_check_source_refs` gives.
+    """
+    provenance = evidence.get("provenance")
+    if not isinstance(provenance, dict):
+        errors.append(
+            "{0}.provenance: required object is missing; a derived bound with no "
+            "stated derivation is not auditable".format(path)
+        )
+        return
+    derivation = provenance.get("derivation")
+    if derivation not in TEMPORAL_DERIVATIONS:
+        errors.append(
+            "{0}.provenance.derivation: '{1}' is not one of {2}".format(
+                path, derivation, ", ".join(TEMPORAL_DERIVATIONS)
+            )
+        )
+    for key in sorted(provenance):
+        marker = credential_marker(provenance.get(key))
+        if marker is not None:
+            errors.append(
+                "{0}.provenance.{1}: request- or credential-shaped material was "
+                "redacted (contains '{2}'). Provenance records identifiers and "
+                "versions only.".format(path, key, marker)
+            )
+
+
+def _check_temporal_bounds(evidence, path, errors):
+    """The derived half-open interval: well-formed, non-empty, and recomputable."""
+    parsed = {}
+    for key in ("lower_inclusive", "upper_exclusive"):
+        if key not in evidence:
+            errors.append("{0}.{1}: required field is missing".format(path, key))
+            continue
+        moment = _parse_bound(evidence[key])
+        if moment is None:
+            errors.append(
+                "{0}.{1}: bounds are second-precision RFC 3339 instants "
+                "normalized to UTC and spelled 'Z'".format(path, key)
+            )
+            continue
+        parsed[key] = moment
+
+    lower, upper = parsed.get("lower_inclusive"), parsed.get("upper_exclusive")
+    if lower is None or upper is None:
+        return
+    if lower >= upper:
+        # One finding for inverted and zero-width alike: both are the same
+        # defect, an interval that admits no instant.
+        errors.append(
+            "{0}: lower_inclusive must be strictly before upper_exclusive; "
+            "a zero-width or inverted interval is not an interval".format(path)
+        )
+        return
+    expected = PRECISION_WIDTH_SECONDS.get(evidence.get("precision"))
+    if expected is not None and (upper - lower).total_seconds() != expected:
+        errors.append(
+            "{0}: precision '{1}' denotes an interval of exactly {2} s, not "
+            "{3:.0f} s".format(path, evidence.get("precision"), expected,
+                               (upper - lower).total_seconds())
+        )
+
+
+def _check_temporal_recomputation(evidence, path, errors):
+    """The bounds are the ones ``(source_value, precision)`` actually denotes.
+
+    This is what makes the derivation auditable rather than merely documented: a
+    reviewer, and this validator, recompute it from the two observed facts. A
+    bound that cannot be recomputed is a number with a plausible source
+    reference, which is the failure the whole log exists to prevent.
+    """
+    try:
+        lower, upper = derive_bounds(evidence.get("source_value"),
+                                     evidence.get("precision"))
+    except ValueError as error:
+        errors.append("{0}.source_value: {1}".format(path, error))
+        return
+    for key, derived in (("lower_inclusive", lower), ("upper_exclusive", upper)):
+        if key in evidence and evidence[key] != derived:
+            errors.append(
+                "{0}.{1}: '{2}' is not recomputable from source_value and "
+                "precision, which denote '{3}'".format(
+                    path, key, evidence[key], derived)
+            )
+
+
+def _check_temporal_evidence(event, path, errors):
+    """Every reason ``event.temporal_evidence`` is not valid reduced evidence."""
+    evidence = event.get(TEMPORAL_EVIDENCE_KEY)
+    if not isinstance(evidence, dict):
+        errors.append("{0}: expected an object".format(path))
+        return
+
+    unknown = sorted(set(evidence) - set(TEMPORAL_EVIDENCE_KEYS))
+    if unknown:
+        # The offset lives in source_value and nowhere else, so a second
+        # offset-bearing field is refused by refusing every key the member does
+        # not define. The names are echoed because they are contract keys the
+        # adapter author chose, not values.
+        errors.append(
+            "{0}: unexpected field(s) {1}; the member is closed to {2}, and the "
+            "UTC offset lives in source_value alone".format(
+                path, ", ".join(unknown), ", ".join(TEMPORAL_EVIDENCE_KEYS))
+        )
+
+    kind = evidence.get("kind")
+    if kind not in TEMPORAL_KINDS:
+        errors.append("{0}.kind: '{1}' is not one of {2}".format(
+            path, kind, ", ".join(TEMPORAL_KINDS)))
+
+    precision = evidence.get("precision")
+    if precision not in PRECISION_WIDTH_SECONDS:
+        errors.append(
+            "{0}.precision: '{1}' is not one of {2}; precision is declared, "
+            "never inferred from how the value is spelled".format(
+                path, precision, ", ".join(sorted(PRECISION_WIDTH_SECONDS)))
+        )
+
+    if "source_value" not in evidence:
+        errors.append(
+            "{0}.source_value: required field is missing; the lexical value the "
+            "source stated is the observed fact the bounds are derived "
+            "from".format(path)
+        )
+
+    _check_temporal_provenance(evidence, path, errors)
+    _check_temporal_bounds(evidence, path, errors)
+    if precision in PRECISION_WIDTH_SECONDS and "source_value" in evidence:
+        _check_temporal_recomputation(evidence, path, errors)
+
+
+def has_reduced_temporal_evidence(event):
+    """Whether ``event`` carries **valid** reduced temporal evidence.
+
+    Validity is the whole point: the capability report and the graph refusal both
+    key on this, and a report that answered "the key is there" would advertise a
+    bounded start for a member the validator is about to reject.
+    """
+    if not isinstance(event, dict) or TEMPORAL_EVIDENCE_KEY not in event:
+        return False
+    errors = []
+    _check_temporal_evidence(event, "event.{0}".format(TEMPORAL_EVIDENCE_KEY), errors)
+    return not errors
+
+
+def _check_temporal_state(observation, errors):
+    """D5 — exactly one of the two admissible temporal states, or refuse."""
+    event = observation.get("event")
+    if not isinstance(event, dict):
+        # Already reported by _check_required; saying it again buries the finding
+        # that names the fix.
+        return
+    path = "observation.event.{0}".format(TEMPORAL_EVIDENCE_KEY)
+    exact = "start_time" in event
+    reduced = TEMPORAL_EVIDENCE_KEY in event
+    if exact and reduced:
+        errors.append(
+            "{0}: an event states its start exactly, in observation.event."
+            "start_time, or as reduced-precision evidence here — never both. "
+            "Two claims about one instant is an inconsistent dual "
+            "assertion.".format(path)
+        )
+    elif not exact and not reduced:
+        errors.append(
+            "observation.event: required field is missing; state the start "
+            "instant exactly in start_time, or as reduced-precision evidence in "
+            "{0}".format(TEMPORAL_EVIDENCE_KEY)
+        )
+    if reduced:
+        _check_temporal_evidence(event, path, errors)
 
 
 def _check_statistics(statistics, path, errors):
@@ -498,10 +802,11 @@ def validate_observation(document):
         return ["document: expected a JSON object"]
 
     errors = []
-    if document.get("schema_version") != SCHEMA_VERSION:
+    declared = document.get("schema_version")
+    if declared not in ACCEPTED_SCHEMA_VERSIONS:
         errors.append(
-            "schema_version: expected '{0}', found '{1}'".format(
-                SCHEMA_VERSION, document.get("schema_version")
+            "schema_version: '{0}' is not one of {1}".format(
+                declared, ", ".join(ACCEPTED_SCHEMA_VERSIONS)
             )
         )
 
@@ -510,7 +815,9 @@ def validate_observation(document):
         errors.append("observation: required field is missing")
         return errors
 
+    _check_predecessor_carries_no_temporal_evidence(declared, observation, errors)
     _check_required(observation, errors)
+    _check_temporal_state(observation, errors)
     _check_participants(observation, errors)
     _check_resolution_methods(observation, errors)
     _check_datetimes(observation, errors)
@@ -518,3 +825,24 @@ def validate_observation(document):
     _check_adapter(observation, errors)
     _scan_fabrication(observation, "observation", errors)
     return errors
+
+
+def _check_predecessor_carries_no_temporal_evidence(declared, observation, errors):
+    """A document may not carry a member the contract it declares never defined.
+
+    The predecessor identifier stays accepted so existing exact documents keep
+    reading, and that is all it stays accepted for. Reading temporal evidence
+    under it would validate a document against a contract that does not describe
+    it — the "member added without a bump" failure the version bump exists to
+    make impossible.
+    """
+    if declared != PREDECESSOR_SCHEMA_VERSION:
+        return
+    event = observation.get("event")
+    if isinstance(event, dict) and TEMPORAL_EVIDENCE_KEY in event:
+        errors.append(
+            "schema_version: '{0}' defines no observation.event.{1}; a document "
+            "carrying reduced-precision temporal evidence declares '{2}'".format(
+                PREDECESSOR_SCHEMA_VERSION, TEMPORAL_EVIDENCE_KEY, SCHEMA_VERSION
+            )
+        )

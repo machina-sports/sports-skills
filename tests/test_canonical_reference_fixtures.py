@@ -203,7 +203,10 @@ def test_the_expected_envelope_is_the_full_machina_sports_schema_block():
         "rights", "schema_version", "sport_schema_graph",
     ]
     assert block["schema_version"] == "machina-sports-schema/1"
-    assert block["profile"] == "machina-iptc-profile/1.1"
+    assert block["profile"] == "machina-iptc-profile/1.2"
+    assert block["provenance"]["profile"] == "machina-iptc-profile/1.1"
+    assert "event.start_time.bounded" in block["capabilities"]["absent"]
+    assert "graph_unavailable_reason" not in block["capabilities"]
 
 
 def test_the_fixtures_are_byte_identical_to_the_machina_templates_originals():
