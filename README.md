@@ -101,6 +101,7 @@ npx skills add machina-sports/sports-skills@nba-data
 |-------|----------|----------|----------|
 | [`kalshi`](https://skills.sh/machina-sports/sports-skills/kalshi) | Kalshi (CFTC-regulated) | 16 | Soccer, Basketball, Baseball, Tennis, NFL, Hockey, Esports (CS2/LoL/Dota2) |
 | [`polymarket`](https://skills.sh/machina-sports/sports-skills/polymarket) | Polymarket | 14 | NFL, NBA, MLB, Soccer, Tennis, Cricket, MMA, Esports — read-only |
+| [`prophetx`](https://skills.sh/machina-sports/sports-skills/prophetx) | ProphetX exchange | 7 | Soccer, Tennis, Basketball, MLB, NFL, NHL — markets + exchange odds where a public book exists (`selections_available`); read-only |
 | `polymarket-trading` | Polymarket CLOB | 7 | High-risk wallet-backed order placement/cancel; explicit user approval required |
 
 ### Tools & Workflows
@@ -305,7 +306,7 @@ This project is built on top of great open-source work and public APIs:
 - **[TFRRS](https://www.tfrrs.org)** — Track & Field Results Reporting System, for NCAA cross country and track & field athlete profiles, personal records, rosters, and meet results.
 - **[The Stride Report](https://www.thestridereport.com)** — for NCAA XC/TF news coverage via their public RSS feed.
 - **[feedparser](https://github.com/kurtmckee/feedparser)** — reliable RSS/Atom parsing for the news skill.
-- **[Kalshi](https://kalshi.com)** and **[Polymarket](https://polymarket.com)** — for their public market data APIs.
+- **[Kalshi](https://kalshi.com)**, **[Polymarket](https://polymarket.com)**, and **[ProphetX](https://prophetx.co)** — for their public market data APIs.
 - **[skills.sh](https://skills.sh)** — the open agent skills directory and CLI.
 - **[Agent Skills](https://agentskills.io)** — the open spec that makes skills interoperable across agents.
 

@@ -405,6 +405,98 @@ def _search_polymarket(entity: str, sport: str | None = None) -> list[dict]:
     return results
 
 
+def _prophetx_outcome_odds(outcome: dict) -> dict | None:
+    """Extract top-of-book American odds from a normalized ProphetX outcome.
+
+    Selections are optional on the public surface (empty/suspended books come
+    back null); when present they are a dict or a list of price levels.
+    """
+    selection = outcome.get("selections")
+    if isinstance(selection, list):
+        selection = selection[0] if selection else None
+    for candidate in (selection, outcome):
+        if isinstance(candidate, dict) and candidate.get("odds_american") is not None:
+            raw = candidate.get("_raw") or {}
+            label = outcome.get("name") or raw.get("displayName") or raw.get("name") or ""
+            return {
+                "outcome": label,
+                "odds_american": candidate.get("odds_american"),
+                "implied_probability": candidate.get("implied_probability"),
+            }
+    return None
+
+
+def _search_prophetx(entity: str, sport: str | None = None) -> list[dict]:
+    """Use prophetx.search_markets for exchange market discovery.
+
+    ProphetX's public API always exposes market structure (markets/lines/
+    outcomes plus totalStake); odds appear per market only when a public order
+    book exists (``selections_available``) — empty/suspended books carry no
+    prices. Top-of-book odds are surfaced per outcome when available.
+    """
+    try:
+        from sports_skills import prophetx
+    except ImportError:
+        logger.warning("prophetx module not available")
+        return []
+
+    try:
+        kwargs = {"query": entity}
+        if sport:
+            kwargs["sport"] = sport
+        result = prophetx.search_markets(**kwargs)
+    except Exception as exc:
+        logger.warning("ProphetX search failed: %s", exc)
+        return []
+
+    if not result.get("status"):
+        return []
+
+    data = result.get("data", {})
+    markets = data.get("markets", [])
+    if not isinstance(markets, list):
+        return []
+
+    events_map: dict[str, dict] = {}
+    for m in markets:
+        event_id = m.get("event_id")
+        if event_id not in events_map:
+            events_map[event_id] = {
+                "source": "prophetx",
+                "event_id": event_id,
+                "title": m.get("event_name", ""),
+                "scheduled": m.get("event_scheduled", ""),
+                "tournament": m.get("tournament", ""),
+                "markets": [],
+            }
+        outcomes = []
+        if m.get("selections_available"):
+            for outcome in m.get("outcomes", []) or []:
+                odds = _prophetx_outcome_odds(outcome)
+                if odds:
+                    outcomes.append(odds)
+        events_map[event_id]["markets"].append(
+            {
+                "market_key": m.get("market_key", ""),
+                "title": m.get("name", ""),
+                "type": m.get("type", ""),
+                "total_stake": m.get("total_stake", 0),
+                "selections_available": m.get("selections_available", False),
+                "outcomes": outcomes,
+            }
+        )
+
+    results = list(events_map.values())
+    for event in results:
+        if not any(m["selections_available"] for m in event["markets"]):
+            event["note"] = (
+                "no public order book currently exposed for this event's "
+                "markets — structure/stake only (odds require an open book "
+                "or the authenticated Affiliate API)"
+            )
+    return results
+
+
 # ============================================================
 # 2E. Odds Normalization
 # ============================================================
@@ -416,6 +508,9 @@ def _normalize_price(price: float, source: str) -> dict:
     source="polymarket": price is 0-1, use betting.convert_odds(from_format="probability")
     source="kalshi":     price is 0-100 int, divide by 100 then convert
     source="espn":       price is American odds, use betting.convert_odds(from_format="american")
+    source="prophetx":   price is American odds (exchange odds — from public
+                         selections when an order book is exposed, or from the
+                         authenticated Affiliate surface)
     """
     from sports_skills.betting._calcs import convert_odds
 
@@ -428,7 +523,7 @@ def _normalize_price(price: float, source: str) -> dict:
         if prob <= 0 or prob >= 1:
             return {"implied_probability": prob, "american": 0.0, "decimal": 0.0, "source": source}
         result = convert_odds({"params": {"odds": prob, "from_format": "probability"}})
-    elif source == "espn":
+    elif source in ("espn", "prophetx"):
         result = convert_odds({"params": {"odds": price, "from_format": "american"}})
     else:
         return {"implied_probability": 0.0, "american": 0.0, "decimal": 0.0, "source": source}
@@ -487,6 +582,7 @@ def get_todays_markets(request_data: dict) -> dict:
 
         kalshi_matches = []
         poly_matches = []
+        prophetx_matches = []
 
         try:
             kalshi_matches = _search_kalshi(search_query, game["sport"])
@@ -498,10 +594,16 @@ def get_todays_markets(request_data: dict) -> dict:
         except Exception as exc:
             warnings.append(f"Polymarket search failed for '{search_query}': {exc}")
 
+        try:
+            prophetx_matches = _search_prophetx(search_query, game["sport"])
+        except Exception as exc:
+            warnings.append(f"ProphetX search failed for '{search_query}': {exc}")
+
         game_entry = {
             **game,
             "kalshi_markets": kalshi_matches,
             "polymarket_markets": poly_matches,
+            "prophetx_markets": prophetx_matches,
         }
         dashboard.append(game_entry)
 
@@ -535,6 +637,7 @@ def search_entity(request_data: dict) -> dict:
 
     kalshi_results = []
     poly_results = []
+    prophetx_results = []
     warnings = []
 
     try:
@@ -547,7 +650,12 @@ def search_entity(request_data: dict) -> dict:
     except Exception as exc:
         warnings.append(f"Polymarket search failed: {exc}")
 
-    total = len(kalshi_results) + len(poly_results)
+    try:
+        prophetx_results = _search_prophetx(query, sport)
+    except Exception as exc:
+        warnings.append(f"ProphetX search failed: {exc}")
+
+    total = len(kalshi_results) + len(poly_results) + len(prophetx_results)
 
     return _success_partial(
         {
@@ -555,6 +663,7 @@ def search_entity(request_data: dict) -> dict:
             "sport": sport,
             "kalshi": kalshi_results,
             "polymarket": poly_results,
+            "prophetx": prophetx_results,
             "total_results": total,
         },
         warnings,
@@ -626,6 +735,7 @@ def compare_odds(request_data: dict) -> dict:
     warnings = []
     kalshi_matches = []
     poly_matches = []
+    prophetx_matches = []
 
     if search_query:
         try:
@@ -637,6 +747,11 @@ def compare_odds(request_data: dict) -> dict:
             poly_matches = _search_polymarket(search_query, sport)
         except Exception as exc:
             warnings.append(f"Polymarket search failed: {exc}")
+
+        try:
+            prophetx_matches = _search_prophetx(search_query, sport)
+        except Exception as exc:
+            warnings.append(f"ProphetX search failed: {exc}")
 
     # Check for arbitrage if we have matching market prices
     arb_check = None
@@ -658,6 +773,21 @@ def compare_odds(request_data: dict) -> dict:
             if 0 < price < 1:
                 all_probs.append(price)
                 all_labels.append(f"poly_{outcome.get('outcome', '')}")
+
+    # ProphetX exposes odds only when a public order book exists. Only the
+    # primary full-game moneyline joins the pool — derivative moneylines
+    # (1st-half, first-5-innings, ...) share the type but price a different
+    # proposition than the ESPN home/away odds.
+    for px in prophetx_matches:
+        moneylines = [m for m in px.get("markets", []) if m.get("type") == "moneyline" and m.get("outcomes")]
+        if not moneylines:
+            continue
+        game_ml = next((m for m in moneylines if m.get("title") == "Moneyline"), moneylines[0])
+        for outcome in game_ml.get("outcomes", []):
+            prob = outcome.get("implied_probability") or 0
+            if 0 < prob < 1:
+                all_probs.append(prob)
+                all_labels.append(f"prophetx_{outcome.get('outcome', '')}")
 
     if len(all_probs) >= 2:
         try:
@@ -685,6 +815,7 @@ def compare_odds(request_data: dict) -> dict:
             "espn_odds": espn_comparison,
             "kalshi_markets": kalshi_matches,
             "polymarket_markets": poly_matches,
+            "prophetx_markets": prophetx_matches,
             "arbitrage_check": arb_check,
         },
         warnings,
@@ -891,7 +1022,9 @@ def normalize_price(request_data: dict) -> dict:
 
     Params:
         price (float): The price/odds value.
-        source (str): Source platform — "polymarket", "kalshi", or "espn".
+        source (str): Source platform — "polymarket", "kalshi", "espn", or
+            "prophetx" (American odds, from public selections when an order
+            book is exposed or from the authenticated Affiliate surface).
     """
     params = request_data.get("params", {})
 
@@ -901,8 +1034,8 @@ def normalize_price(request_data: dict) -> dict:
         return _error(f"Invalid price: {e}")
 
     source = str(params.get("source", "")).lower()
-    if source not in ("polymarket", "kalshi", "espn"):
-        return _error(f"Unknown source '{source}'. Use 'polymarket', 'kalshi', or 'espn'.")
+    if source not in ("polymarket", "kalshi", "espn", "prophetx"):
+        return _error(f"Unknown source '{source}'. Use 'polymarket', 'kalshi', 'espn', or 'prophetx'.")
 
     result = _normalize_price(price, source)
     return _success(result, f"Normalized {source} price {price}")

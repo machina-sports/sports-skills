@@ -17,6 +17,7 @@ from sports_skills.markets._connector import (
     _normalize_name,
     _normalize_price,
     _parse_kalshi_event_tail,
+    _search_prophetx,
     _success_partial,
     compare_odds,
     evaluate_market,
@@ -362,29 +363,37 @@ class TestFetchScheduleMocked:
 
 
 class TestSearchEntityMocked:
+    @patch("sports_skills.markets._connector._search_prophetx")
     @patch("sports_skills.markets._connector._search_polymarket")
     @patch("sports_skills.markets._connector._search_kalshi")
-    def test_search_entity_combines_results(self, mock_kalshi, mock_poly):
+    def test_search_entity_combines_results(self, mock_kalshi, mock_poly, mock_prophetx):
         mock_kalshi.return_value = [
             {"source": "kalshi", "title": "Lakers vs Celtics", "event_ticker": "EVT1", "markets": []}
         ]
         mock_poly.return_value = [{"source": "polymarket", "title": "Lakers Game", "market_id": "MKT1", "outcomes": []}]
+        mock_prophetx.return_value = [
+            {"source": "prophetx", "title": "Lakers at Celtics", "event_id": 1, "markets": []}
+        ]
 
         result = search_entity({"params": {"query": "Lakers"}})
         assert result["status"] is True
-        assert result["data"]["total_results"] == 2
+        assert result["data"]["total_results"] == 3
         assert len(result["data"]["kalshi"]) == 1
         assert len(result["data"]["polymarket"]) == 1
+        assert len(result["data"]["prophetx"]) == 1
 
+    @patch("sports_skills.markets._connector._search_prophetx")
     @patch("sports_skills.markets._connector._search_polymarket")
     @patch("sports_skills.markets._connector._search_kalshi")
-    def test_search_entity_partial_failure(self, mock_kalshi, mock_poly):
+    def test_search_entity_partial_failure(self, mock_kalshi, mock_poly, mock_prophetx):
         mock_kalshi.side_effect = Exception("Kalshi down")
         mock_poly.return_value = [{"source": "polymarket", "title": "Lakers Game", "market_id": "MKT1", "outcomes": []}]
+        mock_prophetx.side_effect = Exception("ProphetX down")
 
         result = search_entity({"params": {"query": "Lakers"}})
         assert result["status"] is True
         assert len(result["data"]["polymarket"]) == 1
+        assert result["data"]["prophetx"] == []
         assert "warnings" in result["data"]
 
     def test_search_entity_missing_query(self):
@@ -393,15 +402,88 @@ class TestSearchEntityMocked:
 
 
 # ============================================================
+# Mocked: ProphetX search adapter (odds passthrough)
+# ============================================================
+
+
+def _prophetx_normalized_market(selections_available: bool) -> dict:
+    market = {
+        "event_id": 19742,
+        "event_name": "Bengals at Eagles",
+        "event_scheduled": "2026-08-16T17:00:00Z",
+        "tournament": "NFL",
+        "market_key": "19742:219",
+        "name": "Moneyline",
+        "type": "moneyline",
+        "total_stake": 7156.79,
+        "selections_available": selections_available,
+        "outcomes": [],
+    }
+    if selections_available:
+        market["outcomes"] = [
+            {
+                "id": 4,
+                "name": "",
+                "selections": {
+                    "odds_american": -150,
+                    "implied_probability": 0.6,
+                    "_raw": {"displayName": "Eagles -150"},
+                },
+            },
+            {
+                "id": 5,
+                "name": "",
+                "selections": [
+                    {
+                        "odds_american": 130,
+                        "implied_probability": 0.4348,
+                        "_raw": {"displayName": "Bengals +130"},
+                    }
+                ],
+            },
+        ]
+    return market
+
+
+class TestSearchProphetxMocked:
+    @patch("sports_skills.prophetx.search_markets")
+    def test_surfaces_top_of_book_odds_when_book_exists(self, mock_search):
+        mock_search.return_value = {
+            "status": True,
+            "data": {"markets": [_prophetx_normalized_market(True)]},
+        }
+        results = _search_prophetx("Eagles", "nfl")
+        assert len(results) == 1
+        event = results[0]
+        assert "note" not in event
+        assert event["markets"][0]["outcomes"] == [
+            {"outcome": "Eagles -150", "odds_american": -150, "implied_probability": 0.6},
+            {"outcome": "Bengals +130", "odds_american": 130, "implied_probability": 0.4348},
+        ]
+
+    @patch("sports_skills.prophetx.search_markets")
+    def test_flags_events_without_public_book(self, mock_search):
+        mock_search.return_value = {
+            "status": True,
+            "data": {"markets": [_prophetx_normalized_market(False)]},
+        }
+        results = _search_prophetx("Eagles", "nfl")
+        assert len(results) == 1
+        assert "no public order book" in results[0]["note"]
+        assert results[0]["markets"][0]["outcomes"] == []
+
+
+# ============================================================
 # Mocked: Get Todays Markets
 # ============================================================
 
 
 class TestGetTodaysMarketsMocked:
+    @patch("sports_skills.markets._connector._search_prophetx")
     @patch("sports_skills.markets._connector._search_polymarket")
     @patch("sports_skills.markets._connector._search_kalshi")
     @patch("sports_skills.markets._connector._fetch_all_schedules")
-    def test_returns_dashboard(self, mock_schedules, mock_kalshi, mock_poly):
+    def test_returns_dashboard(self, mock_schedules, mock_kalshi, mock_poly, mock_prophetx):
         mock_schedules.return_value = (
             [
                 {
@@ -468,10 +550,11 @@ class TestGetSportScheduleMocked:
 
 
 class TestCompareOddsMocked:
+    @patch("sports_skills.markets._connector._search_prophetx")
     @patch("sports_skills.markets._connector._search_polymarket")
     @patch("sports_skills.markets._connector._search_kalshi")
     @patch("sports_skills.markets._connector._load_sport_module")
-    def test_compare_odds_pipeline(self, mock_load, mock_kalshi, mock_poly):
+    def test_compare_odds_pipeline(self, mock_load, mock_kalshi, mock_poly, mock_prophetx):
         mock_mod = MagicMock()
         mock_mod.get_game_summary.return_value = {
             "status": True,
@@ -496,12 +579,76 @@ class TestCompareOddsMocked:
                 ],
             }
         ]
+        mock_prophetx.return_value = []
 
         result = compare_odds({"params": {"sport": "nba", "event_id": "123"}})
         assert result["status"] is True
         assert result["data"]["home_team"] == "Boston Celtics"
         assert result["data"]["away_team"] == "Los Angeles Lakers"
         assert "espn_odds" in result["data"]
+
+    @patch("sports_skills.markets._connector._search_prophetx")
+    @patch("sports_skills.markets._connector._search_polymarket")
+    @patch("sports_skills.markets._connector._search_kalshi")
+    @patch("sports_skills.markets._connector._load_sport_module")
+    def test_prophetx_moneyline_odds_join_arb_pool(self, mock_load, mock_kalshi, mock_poly, mock_prophetx):
+        mock_mod = MagicMock()
+        mock_mod.get_game_summary.return_value = {
+            "status": True,
+            "data": {
+                "competitors": [
+                    {"team": {"name": "Boston Celtics"}, "home_away": "home"},
+                    {"team": {"name": "Los Angeles Lakers"}, "home_away": "away"},
+                ],
+                "odds": {},
+            },
+        }
+        mock_load.return_value = mock_mod
+        mock_kalshi.return_value = []
+        mock_poly.return_value = []
+        mock_prophetx.return_value = [
+            {
+                "source": "prophetx",
+                "event_id": 19742,
+                "title": "Lakers at Celtics",
+                "markets": [
+                    {
+                        "market_key": "19742:219",
+                        "title": "Moneyline",
+                        "type": "moneyline",
+                        "selections_available": True,
+                        "outcomes": [
+                            {"outcome": "Celtics -150", "odds_american": -150, "implied_probability": 0.6},
+                            {"outcome": "Lakers +130", "odds_american": 130, "implied_probability": 0.4348},
+                        ],
+                    },
+                    {
+                        "market_key": "19742:263",
+                        "title": "1st Half Moneyline",
+                        "type": "moneyline",
+                        "selections_available": True,
+                        "outcomes": [{"outcome": "Celtics 1H -120", "odds_american": -120, "implied_probability": 0.5455}],
+                    },
+                    {
+                        "market_key": "19742:258",
+                        "title": "Total Points",
+                        "type": "total",
+                        "selections_available": True,
+                        "outcomes": [{"outcome": "Over 220", "odds_american": -110, "implied_probability": 0.5238}],
+                    },
+                ],
+            }
+        ]
+
+        result = compare_odds({"params": {"sport": "nba", "event_id": "123"}})
+        assert result["status"] is True
+        arb = result["data"]["arbitrage_check"]
+        assert arb is not None  # two prophetx moneyline probs reached the pool
+        labels = [a.get("label", "") for a in arb["allocations"]]
+        assert "prophetx_Celtics -150" in labels
+        assert "prophetx_Lakers +130" in labels
+        assert not any("Over 220" in label for label in labels)  # non-moneyline stays out
+        assert not any("1H" in label for label in labels)  # derivative moneylines stay out
 
     def test_missing_sport(self):
         result = compare_odds({"params": {"event_id": "123"}})

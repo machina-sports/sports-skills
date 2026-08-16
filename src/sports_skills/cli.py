@@ -171,6 +171,27 @@ _REGISTRY = {
         },
         "get_esports_odds": {"optional": ["game", "status", "limit"]},
     },
+    "prophetx": {
+        # Public read-only market CATALOG (no odds on this surface).
+        "get_tournaments": {"optional": ["limit", "sport", "next"]},
+        "get_events": {
+            "required": ["tournament_id"],
+            "optional": ["limit", "status"],
+        },
+        "get_markets": {
+            "required": ["event_id"],
+            "optional": ["api_version", "market_type"],
+        },
+        "get_market": {
+            "required": ["event_id", "market_id"],
+            "optional": ["api_version"],
+        },
+        "search_markets": {
+            "optional": ["sport", "query", "status", "limit", "api_version"],
+        },
+        "get_todays_events": {"optional": ["sport", "limit"]},
+        "get_sports_config": {},
+    },
     "esports": {
         "get_pro_matches": {"optional": ["limit"]},
         "get_leagues": {"optional": ["tier", "limit"]},
@@ -646,6 +667,10 @@ def _load_module(name):
         from sports_skills import kalshi
 
         return kalshi
+    elif name == "prophetx":
+        from sports_skills import prophetx
+
+        return prophetx
     elif name == "esports":
         from sports_skills import esports
 
@@ -1070,7 +1095,7 @@ def main():
         description="Lightweight CLI for sports data — football, F1, NFL, NBA, WNBA, NHL, MLB, tennis, cricket, CFB, CBB, golf, volleyball, prediction markets, betting analysis, metadata, and news.",
     )
     parser.add_argument(
-        "module", nargs="?", help="Module name: football, f1, nfl, nba, wnba, nhl, mlb, tennis, cricket, cfb, cbb, golf, volleyball, xctf, esports, polymarket, polymarket-trading, kalshi, betting, markets, metadata, news"
+        "module", nargs="?", help="Module name: football, f1, nfl, nba, wnba, nhl, mlb, tennis, cricket, cfb, cbb, golf, volleyball, xctf, esports, polymarket, polymarket-trading, kalshi, prophetx, betting, markets, metadata, news"
     )
     parser.add_argument(
         "command", nargs="?", help="Command name (e.g., get_season_standings)"
