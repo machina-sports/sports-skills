@@ -1,15 +1,19 @@
 # Valid Commands & Common Mistakes
 
-## CRITICAL: this is a catalog, not an odds feed
+## CRITICAL: odds exist only where a public order book does
 
-The ProphetX public API exposes market STRUCTURE, not prices. Never invent or
-estimate odds from this skill's output, and never present `total_stake`
-(matched volume) as odds or available liquidity.
+The ProphetX public API always exposes market STRUCTURE; prices appear per
+market only when `selections_available` is `true`. Never invent or estimate
+odds for markets without a book, and never present `total_stake` (matched
+volume) as odds or available liquidity.
 
 ```
-WRONG: "ProphetX has the Eagles at -150"        → odds are not in this data
+WRONG: "ProphetX has the Eagles at -150"         → when selections_available is false
+RIGHT: "ProphetX's moneyline book has the Eagles at -150 (implied 60%)"
+                                                 → when selections_available is true
 RIGHT: "ProphetX lists Moneyline/Spread/Total (+189 props) for Bengals at Eagles;
-        public odds aren't exposed — matched stake on the moneyline is $7,156"
+        no public book on these markets right now — matched stake on the
+        moneyline is $7,156"                     → when selections_available is false
 ```
 
 ## Sport-Aware Commands (recommended)
@@ -29,8 +33,9 @@ RIGHT: "ProphetX lists Moneyline/Spread/Total (+189 props) for Bengals at Eagles
 
 - Using market `id` as a unique key — it's the market-TYPE id (219 = Moneyline
   everywhere). Use `market_key` (`event_id:market_id`).
-- Expecting odds in `outcomes`/`selections` — check `selections_available`
-  first (currently always `False` publicly).
+- Expecting odds in `outcomes`/`selections` on every market — check
+  `selections_available` first (empty/suspended books return `[null, null]`,
+  common on in-play markets).
 - Forgetting `api_version=v2` when the user asks about player props or
   alternate lines — v1 only carries the core catalog.
 - Passing a league code where a sport is needed: `epl`/`mls`/`worldcup` alias

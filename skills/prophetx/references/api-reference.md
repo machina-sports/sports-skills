@@ -25,9 +25,9 @@ Aliases: `nfl`, `cfb` → american-football; `nba`, `wnba`, `cbb` → basketball
 ## Normalized fields
 
 - Event: `id`, `name`, `tournament_id`, `tournament`, `scheduled` (ISO-8601 UTC), `status` (`not_started`, `live`), `home`, `away`, `competitors[]` (`seq` 0 = home), `venue`, `source_url`, `retrieved_at`, `_raw`.
-- Market: `id` (market-TYPE id), `market_key` (`"<event_id>:<id>"` — the per-event key), `event_id`, `name`, `type` (`moneyline`/`spread`/`total`/`sup_moneyline`), `subtype` (v2), `category` (v2), `status`, `total_stake` (matched volume — NOT liquidity), `outcomes[]`, `market_lines[]` (v2 alt lines; `favourite: true` marks the primary line), `selections_available` (currently always `False` on the public surface), `api_version`, `source_url`, `retrieved_at`, `_raw`.
-- Outcome: `id`, `name`, `competitor_id`, `line`, `display_line`, `line_id`; `odds_american` + `implied_probability` appear ONLY if the upstream ever populates odds.
+- Market: `id` (market-TYPE id), `market_key` (`"<event_id>:<id>"` — the per-event key), `event_id`, `name`, `type` (`moneyline`/`spread`/`total`/`sup_moneyline`), `subtype` (v2), `category` (v2), `status`, `total_stake` (matched volume — NOT liquidity), `outcomes[]`, `market_lines[]` (v2 alt lines; `favourite: true` marks the primary line), `selections_available` (`True` when a public order book is exposed on this market), `api_version`, `source_url`, `retrieved_at`, `_raw`.
+- Outcome: `id`, `name`, `competitor_id`, `line`, `display_line`, `line_id`; `selections` (top-of-book/levels with `odds_american`, `implied_probability`, `stake`, `_raw`) and outcome-level `odds_american` + `implied_probability` appear ONLY when the upstream populates odds.
 
-## No odds on this surface
+## Odds availability
 
-`selections` is `[null, null]` on every observed market (including live games). Do not present `total_stake` as odds/liquidity. Odds require the authenticated ProphetX Affiliate API (Machina connector track).
+`selections` are populated only where a public order book exists — check `selections_available` per market. Pre-game core markets (moneyline/spread/total) usually carry books; in-play and low-activity markets often return `[null, null]`. When no book is exposed, do not present `total_stake` as odds/liquidity and never invent prices. Guaranteed full odds coverage requires the authenticated ProphetX Affiliate API (Machina connector track).

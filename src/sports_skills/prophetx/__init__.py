@@ -131,7 +131,8 @@ def search_markets(
         sport: Sport code or alias — 'soccer', 'tennis', 'basketball',
             'baseball', 'ice-hockey', 'american-football', 'nfl', 'nba',
             'mlb', 'nhl', 'epl', 'mls', 'worldcup', ...
-        status: Market status filter (default: 'open').
+        status: Market status filter — 'open' (default; matches upstream
+            'active'/'open'), any raw upstream status, or 'all' to disable.
         limit: Max markets to return (default: 50).
         api_version: 'v1' (default) or 'v2' (alt lines + player props).
     """

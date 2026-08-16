@@ -86,7 +86,7 @@ npx skills add machina-sports/sports-skills@nba-data
 |-------|----------|----------|----------|
 | [`kalshi`](https://skills.sh/machina-sports/sports-skills/kalshi) | Kalshi (CFTC-regulated) | 16 | Soccer, Basketball, Baseball, Tennis, NFL, Hockey, Esports (CS2/LoL/Dota2) |
 | [`polymarket`](https://skills.sh/machina-sports/sports-skills/polymarket) | Polymarket | 14 | NFL, NBA, MLB, Soccer, Tennis, Cricket, MMA, Esports — read-only |
-| [`prophetx`](https://skills.sh/machina-sports/sports-skills/prophetx) | ProphetX exchange | 7 | Soccer, Tennis, Basketball, MLB, NFL, NHL — market **catalog** only (public API exposes no odds); read-only |
+| [`prophetx`](https://skills.sh/machina-sports/sports-skills/prophetx) | ProphetX exchange | 7 | Soccer, Tennis, Basketball, MLB, NFL, NHL — markets + exchange odds where a public book exists (`selections_available`); read-only |
 | `polymarket-trading` | Polymarket CLOB | 7 | High-risk wallet-backed order placement/cancel; explicit user approval required |
 
 ### Tools & Workflows

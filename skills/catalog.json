@@ -211,7 +211,7 @@
       "untrusted_content": true
     },
     "prophetx": {
-      "description": "ProphetX betting exchange \u2014 public tournament, event, and market CATALOG. No API key, read-only. Covers soccer, tennis, basketball, baseball (MLB), NFL, NHL. The public surface exposes market structure and matched stake but NO odds/p",
+      "description": "ProphetX betting exchange \u2014 public tournaments, events, markets, and exchange odds where a public order book exists (check selections_available; empty books return structure and matched stake only). No API key, read-only. Covers soccer, tennis, basketball, MLB, NFL, NHL.",
       "external_network": true,
       "mode": "read_only",
       "money_movement": false,

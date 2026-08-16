@@ -321,6 +321,42 @@ class TestPagination:
         assert result["status"] is False
         assert "503" in result["message"]
 
+    @patch("sports_skills.prophetx._connector._request")
+    def test_paged_fetch_exposes_resume_cursor(self, mock_request):
+        page1 = _tournaments_page([_tournament(i, f"T{i}", 1, "Soccer") for i in range(1, 51)], 50)
+        mock_request.side_effect = [page1]
+        result = get_tournaments({"params": {"limit": 50}})
+        assert result["status"] is True
+        assert result["data"]["next"] == 50  # caller can resume past `limit`
+
+
+# ============================================================
+# Path-parameter validation
+# ============================================================
+
+
+class TestIdValidation:
+    def test_non_integer_ids_fail_gracefully(self):
+        from sports_skills.prophetx._connector import get_events
+
+        result = get_events({"params": {"tournament_id": "27/events"}})
+        assert result["status"] is False
+        assert "integer" in result["message"]
+
+        result = get_markets({"params": {"event_id": "19742/../admin"}})
+        assert result["status"] is False
+        assert "integer" in result["message"]
+
+        result = get_market({"params": {"event_id": "abc", "market_id": 219}})
+        assert result["status"] is False
+        assert "integer" in result["message"]
+
+    @patch("sports_skills.prophetx._connector._request")
+    def test_numeric_strings_accepted(self, mock_request):
+        mock_request.return_value = {"data": {"markets": [_market_v1(19742)]}}
+        result = get_markets({"params": {"event_id": "19742"}})
+        assert result["status"] is True
+
 
 # ============================================================
 # Empty results
@@ -507,9 +543,32 @@ class TestSearchAndToday:
         assert result["status"] is True
         assert result["data"]["markets"] == []
 
-    @patch("sports_skills.prophetx._connector._connector_today", create=True)
     @patch("sports_skills.prophetx._connector._request")
-    def test_todays_events_filters_by_utc_date(self, mock_request, _):
+    def test_search_status_filter_applies_non_open_values(self, mock_request):
+        closed = _market_v1(19742)
+        closed["id"] = 258
+        closed["status"] = "closed"
+
+        def route(endpoint, params=None, ttl=60):
+            if endpoint == "/v1/tournaments":
+                return _tournaments_page([_tournament(27, "NFL", 16, "American Football")], None)
+            if endpoint.startswith("/v1/tournaments/27/events"):
+                return {"next": None, "data": [_event(19742)]}
+            if endpoint.startswith("/v1/events/19742/markets"):
+                return {"data": {"markets": [_market_v1(19742), closed]}}
+            raise AssertionError(f"unexpected endpoint {endpoint}")
+
+        mock_request.side_effect = route
+        result = search_markets({"params": {"sport": "nfl", "status": "closed"}})
+        assert result["status"] is True
+        assert [m["status"] for m in result["data"]["markets"]] == ["closed"]
+
+        mock_request.side_effect = route
+        result = search_markets({"params": {"sport": "nfl", "status": "all"}})
+        assert result["data"]["count"] == 2
+
+    @patch("sports_skills.prophetx._connector._request")
+    def test_todays_events_filters_by_utc_date(self, mock_request):
         from datetime import datetime, timezone
 
         today = datetime.now(timezone.utc).strftime("%Y-%m-%dT12:00:00Z")

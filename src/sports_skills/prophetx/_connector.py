@@ -1,4 +1,4 @@
-"""ProphetX betting exchange — public read-only market catalog endpoints.
+"""ProphetX betting exchange — public read-only market data endpoints.
 
 Wraps the ProphetX public trade API for tournament/event/market discovery.
 No authentication required; this module never sends credentials and only
@@ -8,18 +8,19 @@ This is the KEYLESS public surface — it is distinct from the authenticated
 ProphetX Affiliate API (Machina connector, separate track). Do not add
 Authorization headers or write operations here.
 
-Upstream behavior verified live (2026-08-13):
+Upstream behavior verified live (2026-08-13, re-verified 2026-08-16):
 - Envelope varies by endpoint: ``{"next": int, "data": {"tournaments": [...]}}``,
   ``{"next": "<epoch>_<id>", "data": [...]}`` (a bare list), ``{"data": {"markets":
   [...]}}`` with no ``next``, and a literal ``{}`` body for empty results.
 - Errors: ``{"error": "<msg>", "error_code": <int>}`` with HTTP 400/404.
-- ``selections`` on markets/marketLines came back ``[null, null]`` in EVERY
-  observed market — including 89 active markets on a LIVE MLB game. The public
-  surface is a market CATALOG (tournaments/events/markets/lines/outcomes plus
-  ``totalStake`` and the ``favourite`` primary-line flag); odds/prices/liquidity
-  are NOT exposed here (they live behind the authenticated Affiliate API).
-  Odds fields are therefore OPTIONAL, normalized only when actually present,
-  and must never be invented.
+- ``selections`` on markets/marketLines are OPTIONAL: when a public order book
+  is exposed they carry American odds, stake, and price levels; when the book
+  is empty or suspended (common on in-play and low-activity markets) they come
+  back ``[null, null]``. Availability varies per market — 2026-08-13 probes
+  saw all-null selections on a live game, 2026-08-16 probes saw populated
+  moneyline/spread/total books on pre-game markets. Always check the
+  ``selections_available`` flag; normalize odds only when actually present,
+  and never invent them.
 - Event ``status`` values observed: ``not_started``, ``live``. End of
   pagination: ``next`` is null/absent on the final page.
 - No rate-limit headers observed; throttle conservatively anyway (CloudFront +
@@ -266,7 +267,7 @@ def _unwrap(response, key):
     data = response.get("data")
     if data is None:
         # Empty body `{}` observed for tournaments without events.
-        return ([], next_cursor) if not response or "data" in response or response == {} else (None, None)
+        return ([], next_cursor) if not response or "data" in response else (None, None)
     if isinstance(data, list):
         return data, next_cursor
     if isinstance(data, dict):
@@ -482,7 +483,8 @@ def _normalize_market(market, event_id=None, api_version="v1"):
 def _fetch_tournaments_paged(max_items, ttl=600):
     """Collect /v1/tournaments pages following the integer `next` cursor.
 
-    Returns (tournaments, error): error only when the FIRST page fails.
+    Returns (tournaments, next_cursor, error): error only when the FIRST page
+    fails; next_cursor lets callers resume past ``max_items``.
     """
     tournaments = []
     cursor = None
@@ -496,17 +498,17 @@ def _fetch_tournaments_paged(max_items, ttl=600):
         err = _check_error(response)
         if err:
             if tournaments:
-                return tournaments, None
-            return [], err
+                return tournaments, cursor, None
+            return [], None, err
         page, cursor = _unwrap(response, "tournaments")
         if page is None:
             if tournaments:
-                return tournaments, None
-            return [], _error("Unexpected tournaments payload shape (schema drift)")
+                return tournaments, None, None
+            return [], None, _error("Unexpected tournaments payload shape (schema drift)")
         tournaments.extend(page)
         if not cursor or not page:
             break
-    return tournaments[:max_items], None
+    return tournaments[:max_items], cursor, None
 
 
 def _fetch_events_paged(tournament_id, max_items, ttl=60):
@@ -620,10 +622,9 @@ def get_tournaments(request_data):
             if tournaments is None:
                 return _error("Unexpected tournaments payload shape (schema drift)")
         else:
-            tournaments, err = _fetch_tournaments_paged(limit)
+            tournaments, cursor, err = _fetch_tournaments_paged(limit)
             if err:
                 return err
-            cursor = None
 
         if sport_id is not None:
             tournaments = [t for t in tournaments if (t.get("sport") or {}).get("id") == sport_id]
@@ -650,6 +651,10 @@ def get_events(request_data):
         tournament_id = params.get("tournament_id")
         if tournament_id in (None, ""):
             return _error("tournament_id is required")
+        try:
+            tournament_id = int(tournament_id)
+        except (TypeError, ValueError):
+            return _error(f"tournament_id must be an integer, got '{tournament_id}'")
 
         limit = min(int(params.get("limit", 50)), 200)
         events, err = _fetch_events_paged(tournament_id, limit)
@@ -683,6 +688,10 @@ def get_markets(request_data):
         event_id = params.get("event_id")
         if event_id in (None, ""):
             return _error("event_id is required")
+        try:
+            event_id = int(event_id)
+        except (TypeError, ValueError):
+            return _error(f"event_id must be an integer, got '{event_id}'")
 
         api_version = str(params.get("api_version", "v1")).lower()
         if api_version not in ("v1", "v2"):
@@ -732,6 +741,10 @@ def get_market(request_data):
             return _error("event_id is required")
         if market_id in (None, ""):
             return _error("market_id is required")
+        try:
+            event_id = int(event_id)
+        except (TypeError, ValueError):
+            return _error(f"event_id must be an integer, got '{event_id}'")
 
         result = get_markets(
             {
@@ -762,7 +775,8 @@ def search_markets(request_data):
     Params:
         query (str): Keyword matched against event name/competitors/tournament
         sport (str): Sport code or alias ('soccer', 'nfl', 'mlb', 'epl', ...)
-        status (str): Market status filter (default: 'open' -> upstream 'active')
+        status (str): Market status filter — 'open' (default; matches upstream
+            'active'/'open'), any raw upstream status value, or 'all' to disable
         limit (int): Max markets returned (default: 50)
         api_version (str): 'v1' (default) or 'v2'
     """
@@ -828,7 +842,11 @@ def search_markets(request_data):
             if err:
                 continue
             for market in event_markets:
-                if status == "open" and market.get("status") not in ("active", "open"):
+                market_status = market.get("status")
+                if status in ("open", "active"):
+                    if market_status not in ("active", "open"):
+                        continue
+                elif status and status != "all" and market_status != status:
                     continue
                 normalized = _normalize_market(market, event_id=event["id"], api_version=used_version)
                 normalized["event_name"] = event["name"]

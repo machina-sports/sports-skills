@@ -405,13 +405,34 @@ def _search_polymarket(entity: str, sport: str | None = None) -> list[dict]:
     return results
 
 
-def _search_prophetx(entity: str, sport: str | None = None) -> list[dict]:
-    """Use prophetx.search_markets for catalog discovery (no public odds).
+def _prophetx_outcome_odds(outcome: dict) -> dict | None:
+    """Extract top-of-book American odds from a normalized ProphetX outcome.
 
-    ProphetX's public API is a market CATALOG: markets/lines/outcomes plus
-    totalStake, but no odds/prices (verified live 2026-08-13, including live
-    games). Results here support discovery and Direct Play handoff, not
-    price comparison.
+    Selections are optional on the public surface (empty/suspended books come
+    back null); when present they are a dict or a list of price levels.
+    """
+    selection = outcome.get("selections")
+    if isinstance(selection, list):
+        selection = selection[0] if selection else None
+    for candidate in (selection, outcome):
+        if isinstance(candidate, dict) and candidate.get("odds_american") is not None:
+            raw = candidate.get("_raw") or {}
+            label = outcome.get("name") or raw.get("displayName") or raw.get("name") or ""
+            return {
+                "outcome": label,
+                "odds_american": candidate.get("odds_american"),
+                "implied_probability": candidate.get("implied_probability"),
+            }
+    return None
+
+
+def _search_prophetx(entity: str, sport: str | None = None) -> list[dict]:
+    """Use prophetx.search_markets for exchange market discovery.
+
+    ProphetX's public API always exposes market structure (markets/lines/
+    outcomes plus totalStake); odds appear per market only when a public order
+    book exists (``selections_available``) — empty/suspended books carry no
+    prices. Top-of-book odds are surfaced per outcome when available.
     """
     try:
         from sports_skills import prophetx
@@ -446,18 +467,34 @@ def _search_prophetx(entity: str, sport: str | None = None) -> list[dict]:
                 "title": m.get("event_name", ""),
                 "scheduled": m.get("event_scheduled", ""),
                 "tournament": m.get("tournament", ""),
-                "note": "catalog only — ProphetX public API exposes no odds",
                 "markets": [],
             }
-        events_map[event_id]["markets"].append({
-            "market_key": m.get("market_key", ""),
-            "title": m.get("name", ""),
-            "type": m.get("type", ""),
-            "total_stake": m.get("total_stake", 0),
-            "selections_available": m.get("selections_available", False),
-        })
+        outcomes = []
+        if m.get("selections_available"):
+            for outcome in m.get("outcomes", []) or []:
+                odds = _prophetx_outcome_odds(outcome)
+                if odds:
+                    outcomes.append(odds)
+        events_map[event_id]["markets"].append(
+            {
+                "market_key": m.get("market_key", ""),
+                "title": m.get("name", ""),
+                "type": m.get("type", ""),
+                "total_stake": m.get("total_stake", 0),
+                "selections_available": m.get("selections_available", False),
+                "outcomes": outcomes,
+            }
+        )
 
-    return list(events_map.values())
+    results = list(events_map.values())
+    for event in results:
+        if not any(m["selections_available"] for m in event["markets"]):
+            event["note"] = (
+                "no public order book currently exposed for this event's "
+                "markets — structure/stake only (odds require an open book "
+                "or the authenticated Affiliate API)"
+            )
+    return results
 
 
 # ============================================================
@@ -471,8 +508,9 @@ def _normalize_price(price: float, source: str) -> dict:
     source="polymarket": price is 0-1, use betting.convert_odds(from_format="probability")
     source="kalshi":     price is 0-100 int, divide by 100 then convert
     source="espn":       price is American odds, use betting.convert_odds(from_format="american")
-    source="prophetx":   price is American odds (exchange odds from the
-                         authenticated surface; the public catalog has none)
+    source="prophetx":   price is American odds (exchange odds — from public
+                         selections when an order book is exposed, or from the
+                         authenticated Affiliate surface)
     """
     from sports_skills.betting._calcs import convert_odds
 
@@ -711,8 +749,6 @@ def compare_odds(request_data: dict) -> dict:
             warnings.append(f"Polymarket search failed: {exc}")
 
         try:
-            # Catalog-only: ProphetX public data has no odds, so it joins
-            # discovery output but never the arbitrage/price comparison below.
             prophetx_matches = _search_prophetx(search_query, sport)
         except Exception as exc:
             warnings.append(f"ProphetX search failed: {exc}")
@@ -737,6 +773,18 @@ def compare_odds(request_data: dict) -> dict:
             if 0 < price < 1:
                 all_probs.append(price)
                 all_labels.append(f"poly_{outcome.get('outcome', '')}")
+
+    # ProphetX exposes odds only when a public order book exists; moneyline
+    # markets keep this comparison apples-to-apples with the ESPN home/away odds.
+    for px in prophetx_matches:
+        for market in px.get("markets", []):
+            if market.get("type") != "moneyline":
+                continue
+            for outcome in market.get("outcomes", []):
+                prob = outcome.get("implied_probability") or 0
+                if 0 < prob < 1:
+                    all_probs.append(prob)
+                    all_labels.append(f"prophetx_{outcome.get('outcome', '')}")
 
     if len(all_probs) >= 2:
         try:
@@ -972,8 +1020,8 @@ def normalize_price(request_data: dict) -> dict:
     Params:
         price (float): The price/odds value.
         source (str): Source platform — "polymarket", "kalshi", "espn", or
-            "prophetx" (American odds; ProphetX public catalog has no odds —
-            use this for odds obtained from the authenticated surface).
+            "prophetx" (American odds, from public selections when an order
+            book is exposed or from the authenticated Affiliate surface).
     """
     params = request_data.get("params", {})
 
