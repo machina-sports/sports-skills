@@ -88,6 +88,31 @@ SPORT_ALIASES = {
     "wta": "tennis",
 }
 
+# League aliases collapse to a whole sport (epl -> soccer returns ALL soccer
+# tournaments), and composite commands scan at most _MAX_TOURNAMENTS_SCANNED
+# of them — without ranking, "Premier League" sits past the cap and a
+# sport=epl search never reaches it. These hints pull the intended
+# tournament(s) to the front of the scan order.
+LEAGUE_HINTS = {
+    "epl": "premier league",
+    "ucl": "champions league",
+    "laliga": "la liga",
+    "bundesliga": "bundesliga",
+    "seriea": "serie a",
+    "ligue1": "ligue 1",
+    "mls": "mls",
+    "worldcup": "world cup",
+    "nfl": "nfl",
+    "cfb": "college football",
+    "nba": "nba",
+    "wnba": "wnba",
+    "cbb": "college basketball",
+    "mlb": "mlb",
+    "nhl": "nhl",
+    "atp": "atp",
+    "wta": "wta",
+}
+
 # ============================================================
 # Module-Level Cache (TTL-based)
 # ============================================================
@@ -290,12 +315,17 @@ def _now_iso():
 
 
 def _american_to_probability(odds):
-    """Implied probability from American odds. Returns None when not derivable."""
+    """Implied probability from American odds. Returns None when not derivable.
+
+    American odds are always >= 100 in magnitude; upstream sometimes echoes the
+    LINE in the ``odds`` field of alt-line selections (e.g. ``odds: 4.5`` with
+    ``displayOdds: "+4.5"`` on a Run Line) — such values are not prices.
+    """
     try:
         value = float(odds)
     except (TypeError, ValueError):
         return None
-    if value == 0:
+    if abs(value) < 100:
         return None
     if value > 0:
         return round(100.0 / (value + 100.0), 4)
@@ -318,8 +348,9 @@ def _normalize_selection(selection):
     if not isinstance(selection, dict):
         return None
     odds = selection.get("odds")
+    is_price = isinstance(odds, (int, float)) and abs(odds) >= 100
     normalized = {
-        "odds_american": odds if isinstance(odds, (int, float)) else None,
+        "odds_american": odds if is_price else None,
         "implied_probability": _american_to_probability(odds),
         "line_id": selection.get("line_id") or selection.get("lineID") or selection.get("lineId"),
         "stake": selection.get("stake"),
@@ -402,7 +433,7 @@ def _normalize_outcome(outcome, selections=None):
         "line_id": outcome.get("lineID") or outcome.get("lineId"),
     }
     odds = outcome.get("odds")
-    if isinstance(odds, (int, float)) and odds != 0:
+    if isinstance(odds, (int, float)) and abs(odds) >= 100:
         normalized["odds_american"] = odds
         normalized["implied_probability"] = _american_to_probability(odds)
     if selections is not None:
@@ -574,6 +605,14 @@ def _resolve_sport(sport):
     if sport_id is None:
         return None, None
     return code, sport_id
+
+
+def _league_hint(sport):
+    """Tournament-name hint for a league alias ('epl' -> 'premier league')."""
+    if not sport:
+        return None
+    code = str(sport).strip().lower().replace("_", "-").replace(" ", "-")
+    return LEAGUE_HINTS.get(code)
 
 
 def _parse_scheduled(value):
@@ -783,6 +822,9 @@ def search_markets(request_data):
     try:
         params = request_data.get("params", {})
         query = (params.get("query") or "").strip().lower()
+        # Token-AND matching: "Orioles Rays" must find "Baltimore Orioles at
+        # Tampa Bay Rays" (compare_odds builds "<away> <home>" queries).
+        query_tokens = query.split()
         sport = params.get("sport")
         status = params.get("status", "open")
         limit = min(int(params.get("limit", 50)), 200)
@@ -796,10 +838,15 @@ def search_markets(request_data):
             return tournaments_result
         tournaments = tournaments_result["data"]["tournaments"]
 
-        if query:
-
+        hint = _league_hint(sport)
+        if hint or query:
+            # Rank the intended league (from the alias) and query-name matches
+            # ahead of the scan cap so they are actually reached.
             def tournament_rank(t):
-                return 0 if query in t["name"].lower() else 1
+                name = t["name"].lower()
+                hint_rank = 0 if hint and hint in name else 1
+                query_rank = 0 if query_tokens and all(tok in name for tok in query_tokens) else 1
+                return (hint_rank, query_rank)
 
             tournaments = sorted(tournaments, key=tournament_rank)
         tournaments = tournaments[:_MAX_TOURNAMENTS_SCANNED]
@@ -821,7 +868,7 @@ def search_markets(request_data):
                         normalized["away"],
                     ]
                 ).lower()
-                if query and query not in haystack:
+                if query_tokens and not all(tok in haystack for tok in query_tokens):
                     continue
                 candidate_events.append(normalized)
 
@@ -888,7 +935,11 @@ def get_todays_events(request_data):
             tournaments_result = get_tournaments({"params": {"limit": 200}})
         if not tournaments_result.get("status"):
             return tournaments_result
-        tournaments = tournaments_result["data"]["tournaments"][:_MAX_TOURNAMENTS_SCANNED]
+        tournaments = tournaments_result["data"]["tournaments"]
+        hint = _league_hint(sport)
+        if hint:
+            tournaments = sorted(tournaments, key=lambda t: 0 if hint in t["name"].lower() else 1)
+        tournaments = tournaments[:_MAX_TOURNAMENTS_SCANNED]
 
         today = datetime.now(timezone.utc).date()
         events_today = []

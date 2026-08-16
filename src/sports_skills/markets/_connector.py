@@ -774,17 +774,20 @@ def compare_odds(request_data: dict) -> dict:
                 all_probs.append(price)
                 all_labels.append(f"poly_{outcome.get('outcome', '')}")
 
-    # ProphetX exposes odds only when a public order book exists; moneyline
-    # markets keep this comparison apples-to-apples with the ESPN home/away odds.
+    # ProphetX exposes odds only when a public order book exists. Only the
+    # primary full-game moneyline joins the pool — derivative moneylines
+    # (1st-half, first-5-innings, ...) share the type but price a different
+    # proposition than the ESPN home/away odds.
     for px in prophetx_matches:
-        for market in px.get("markets", []):
-            if market.get("type") != "moneyline":
-                continue
-            for outcome in market.get("outcomes", []):
-                prob = outcome.get("implied_probability") or 0
-                if 0 < prob < 1:
-                    all_probs.append(prob)
-                    all_labels.append(f"prophetx_{outcome.get('outcome', '')}")
+        moneylines = [m for m in px.get("markets", []) if m.get("type") == "moneyline" and m.get("outcomes")]
+        if not moneylines:
+            continue
+        game_ml = next((m for m in moneylines if m.get("title") == "Moneyline"), moneylines[0])
+        for outcome in game_ml.get("outcomes", []):
+            prob = outcome.get("implied_probability") or 0
+            if 0 < prob < 1:
+                all_probs.append(prob)
+                all_labels.append(f"prophetx_{outcome.get('outcome', '')}")
 
     if len(all_probs) >= 2:
         try:

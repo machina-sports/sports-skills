@@ -623,6 +623,13 @@ class TestCompareOddsMocked:
                         ],
                     },
                     {
+                        "market_key": "19742:263",
+                        "title": "1st Half Moneyline",
+                        "type": "moneyline",
+                        "selections_available": True,
+                        "outcomes": [{"outcome": "Celtics 1H -120", "odds_american": -120, "implied_probability": 0.5455}],
+                    },
+                    {
                         "market_key": "19742:258",
                         "title": "Total Points",
                         "type": "total",
@@ -641,6 +648,7 @@ class TestCompareOddsMocked:
         assert "prophetx_Celtics -150" in labels
         assert "prophetx_Lakers +130" in labels
         assert not any("Over 220" in label for label in labels)  # non-moneyline stays out
+        assert not any("1H" in label for label in labels)  # derivative moneylines stay out
 
     def test_missing_sport(self):
         result = compare_odds({"params": {"event_id": "123"}})

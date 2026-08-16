@@ -468,6 +468,23 @@ class TestNormalization:
         assert _american_to_probability(100) == 0.5
         assert _american_to_probability(0) is None
         assert _american_to_probability("n/a") is None
+        # Sub-100 magnitudes are not valid American odds (upstream echoes the
+        # LINE in the odds field on alt-line selections, e.g. 4.5 on a Run Line).
+        assert _american_to_probability(4.5) is None
+        assert _american_to_probability(-99) is None
+
+    def test_line_echoed_in_odds_field_is_not_a_price(self):
+        market = _market_v1()
+        market["selections"] = [
+            [{"odds": 4.5, "line": 4.5, "displayOdds": "+4.5", "stake": 26.67}],
+            [{"odds": -110, "stake": 50}],
+        ]
+        normalized = _normalize_market(market, api_version="v1")
+        line_echo, real_price = normalized["outcomes"]
+        assert line_echo["selections"][0]["odds_american"] is None
+        assert line_echo["selections"][0]["implied_probability"] is None
+        assert line_echo["selections"][0]["stake"] == 26.67  # stake still surfaced
+        assert real_price["selections"][0]["odds_american"] == -110
 
 
 # ============================================================
@@ -542,6 +559,43 @@ class TestSearchAndToday:
         result = search_markets({"params": {"sport": "nfl", "query": "zebras"}})
         assert result["status"] is True
         assert result["data"]["markets"] == []
+
+    @patch("sports_skills.prophetx._connector._request")
+    def test_search_multi_token_query_matches_across_haystack(self, mock_request):
+        # compare_odds builds "<away> <home>" queries — tokens are not
+        # contiguous in "Bengals at Eagles", so matching must be token-AND.
+        mock_request.side_effect = self._route
+        result = search_markets({"params": {"sport": "nfl", "query": "Bengals Eagles"}})
+        assert result["status"] is True
+        assert result["data"]["count"] == 1
+
+        mock_request.side_effect = self._route
+        result = search_markets({"params": {"sport": "nfl", "query": "Bengals zebras"}})
+        assert result["data"]["markets"] == []
+
+    @patch("sports_skills.prophetx._connector._request")
+    def test_league_alias_ranks_intended_tournament_into_scan_window(self, mock_request):
+        # 13 alphabetical soccer tournaments ahead of Premier League would push
+        # it past the 12-tournament scan cap without LEAGUE_HINTS ranking.
+        fillers = [_tournament(100 + i, f"A-League {i:02d}", 1, "Soccer") for i in range(13)]
+        epl = _tournament(47, "Premier League", 1, "Soccer")
+
+        def route(endpoint, params=None, ttl=60):
+            if endpoint == "/v1/tournaments":
+                return _tournaments_page(fillers + [epl], None)
+            if endpoint.startswith("/v1/tournaments/47/events"):
+                return {"next": None, "data": [_event(555, name="Arsenal vs Coventry")]}
+            if endpoint.startswith("/v1/tournaments/1"):
+                return {"next": None, "data": []}
+            if endpoint.startswith("/v1/events/555/markets"):
+                return {"data": {"markets": [_market_v1(555)]}}
+            raise AssertionError(f"unexpected endpoint {endpoint}")
+
+        mock_request.side_effect = route
+        result = search_markets({"params": {"sport": "epl", "query": "arsenal"}})
+        assert result["status"] is True
+        assert result["data"]["count"] == 1
+        assert result["data"]["markets"][0]["event_name"] == "Arsenal vs Coventry"
 
     @patch("sports_skills.prophetx._connector._request")
     def test_search_status_filter_applies_non_open_values(self, mock_request):
