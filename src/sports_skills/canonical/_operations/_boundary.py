@@ -12,11 +12,7 @@ _OWNER_CONTEXT_LOCK = threading.RLock()
 def _fresh_owner_context():
     with serialize.SHARED_CONTEXT_PATH.open(encoding="utf-8") as handle:
         document = json.load(handle)
-    return {
-        key: value
-        for key, value in document["@context"].items()
-        if isinstance(value, str)
-    }
+    return {key: value for key, value in document["@context"].items() if isinstance(value, str)}
 
 
 @contextmanager
