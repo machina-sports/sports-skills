@@ -10,7 +10,7 @@ import sys
 import types
 from pathlib import Path
 
-VERSION = "0.32.0"
+VERSION = "0.33.0"
 
 distribution = importlib.metadata.distribution("sports-skills")
 if distribution.version != VERSION:
@@ -53,6 +53,158 @@ successor = importlib.import_module("sports_skills.canonical._vendored.successor
 for item in runtime["private_symbols"]:
     if not hasattr(successor, item["symbol"]):
         raise SystemExit(f"private symbol missing: {item['symbol']}")
+
+operations = importlib.resources.files("sports_skills.canonical._operations")
+operation_package = json.loads(operations.joinpath("package.json").read_text(encoding="utf-8"))
+if len(operation_package["operations"]) != 9:
+    raise SystemExit("provider-attested operation inventory is not nine")
+for relative, expected in operation_package["resource_digests"].items():
+    payload = operations.joinpath(relative).read_bytes()
+    if "sha256:" + hashlib.sha256(payload).hexdigest() != expected:
+        raise SystemExit(f"operation resource byte mismatch: {relative}")
+
+request = b'{"requires":[],"optional":[]}'
+successes = (
+    ("arena_soccer_event", "soccer-exact-authoritative", "with_iptc_graph"),
+    ("arena_nfl_event", "nfl-exact-authoritative", "with_iptc_graph"),
+    ("arena_nba_event", "nba-exact-authoritative", "with_iptc_graph"),
+    ("arena_soccer_event", "soccer-exact-provider-scoped", "operational_only"),
+    ("arena_nfl_event", "nfl-exact-provider-scoped", "operational_only"),
+    ("arena_nba_event", "nba-exact-provider-scoped", "operational_only"),
+    ("arena_soccer_event", "soccer-reduced-provider-scoped", "operational_only"),
+    ("arena_soccer_longitudinal", "soccer-date-range-string", "operational_only"),
+    ("arena_soccer_longitudinal", "soccer-season-number", "operational_only"),
+    ("arena_nfl_longitudinal", "nfl-rolling-anchor-number", "operational_only"),
+    ("arena_nfl_longitudinal", "nfl-season-string", "operational_only"),
+    ("arena_nba_longitudinal", "nba-career-string", "operational_only"),
+)
+for operation, fixture_id, mode in successes:
+    arguments = f'{{"fixture_id":"{fixture_id}"}}'.encode()
+    if "longitudinal" in operation:
+        output = canonical.to_longitudinal_envelope(
+            operation=operation,
+            request_bytes=request,
+            operation_arguments_bytes=arguments,
+            consumer_tier="prototype",
+        )
+        root = json.loads(output)["machina_longitudinal_schema"]
+    else:
+        output = canonical.to_successor_envelope(
+            operation=operation,
+            request_bytes=request,
+            operation_arguments_bytes=arguments,
+            output_mode=mode,
+            consumer_tier="prototype",
+        )
+        root = json.loads(output)["machina_sports_schema"]
+    if root["rights"]["operation"] != operation:
+        raise SystemExit(f"installed operation returned wrong rights: {operation}")
+
+refusals = (
+    (
+        "arena_soccer_refusal_event",
+        b'{"fixture_id":"provider-scoped-graph"}',
+        "with_iptc_graph",
+        "prototype",
+        request,
+        "canonical-identity-required-for-graph",
+    ),
+    (
+        "arena_soccer_refusal_event",
+        b'{"fixture_id":"reduced-graph"}',
+        "with_iptc_graph",
+        "prototype",
+        request,
+        "exact-event-start-time-required",
+    ),
+    (
+        "arena_soccer_refusal_event",
+        b'{"fixture_id":"source-representation-mismatch"}',
+        "operational_only",
+        "prototype",
+        request,
+        "source-representation-mismatch",
+    ),
+    (
+        "arena_nfl_refusal_event",
+        b'{"fixture_id":"rights-ineligible"}',
+        "operational_only",
+        "production",
+        request,
+        "consumer-tier-not-allowed",
+    ),
+    (
+        "arena_nfl_refusal_event",
+        b'{"fixture_id":"unsupported-capability"}',
+        "operational_only",
+        "prototype",
+        b'{"requires":["adapter.can_supply.event.action.spatial_evidence"],"optional":[]}',
+        "required-adapter-capability-missing",
+    ),
+    (
+        "arena_nba_refusal_event",
+        b'{"fixture_id":"ambiguous-identity"}',
+        "with_iptc_graph",
+        "prototype",
+        request,
+        "canonical-identity-required-for-graph",
+    ),
+    (
+        "arena_nba_refusal_event",
+        b'{"fixture_id":"unpromised-managed-collection"}',
+        "operational_only",
+        "prototype",
+        request,
+        "unpromised-managed-collection-present",
+    ),
+    (
+        "arena_nba_refusal_event",
+        b'{"fixture_id":"unresolved-identity"}',
+        "with_iptc_graph",
+        "prototype",
+        request,
+        "canonical-identity-required-for-graph",
+    ),
+    (
+        "arena_nfl_refusal_event",
+        b'{"event_id":"1","event_id":"2"}',
+        "operational_only",
+        "prototype",
+        request,
+        "duplicate-json-key",
+    ),
+    (
+        "arena_nfl_refusal_event",
+        b'{"api_key":"synthetic-not-a-secret"}',
+        "operational_only",
+        "prototype",
+        request,
+        "secret-operation-argument-forbidden",
+    ),
+    (
+        "arena_nfl_refusal_event",
+        b'{"undeclared_selector":"synthetic"}',
+        "operational_only",
+        "prototype",
+        request,
+        "unknown-operation-argument",
+    ),
+)
+for operation, arguments, mode, tier, request_bytes, expected in refusals:
+    try:
+        canonical.to_successor_envelope(
+            operation=operation,
+            request_bytes=request_bytes,
+            operation_arguments_bytes=arguments,
+            output_mode=mode,
+            consumer_tier=tier,
+        )
+    except successor.CanonicalContractError as error:
+        if error.reason != expected:
+            raise SystemExit(f"installed refusal drift: {operation}: {error.reason}") from error
+    else:
+        raise SystemExit(f"installed refusal unexpectedly succeeded: {operation}")
+
 try:
     importlib.import_module("machina_sports_canonical")
 except ModuleNotFoundError:

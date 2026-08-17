@@ -32,7 +32,7 @@ dependencies = [
 ]
 
 [project.urls]
-"Reviewed source" = "https://github.com/machina-sports/sports-skills/tree/f2f2de1334f6c8fed177e7d34babdc3f23e48171"
+"Reviewed source" = "https://github.com/machina-sports/sports-skills/tree/cb0da2f1e6f6d9e06895c3093e5214f1b73d850f"
 
 [project.optional-dependencies]
 f1 = ["fastf1>=3.0", "pandas>=2.0"]
