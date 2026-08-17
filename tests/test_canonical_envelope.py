@@ -352,15 +352,21 @@ def test_the_refusal_reports_every_error_rather_than_the_first():
 def test_the_public_surface_is_small_and_explicit():
     assert sorted(canonical.__all__) == [
         "CONSUMER_TIERS",
+        "LONGITUDINAL_SCHEMA_VERSION",
         "MACHINA_SCHEMA_VERSION",
         "PROFILE_VERSION",
         "SCHEMA_VERSION",
+        "SUCCESSOR_MACHINA_SCHEMA_VERSION",
+        "SUCCESSOR_PROFILE_VERSION",
+        "SUCCESSOR_SCHEMA_VERSION",
         "canonicalize_event",
         "canonicalize_nba_event",
         "rights_findings",
         "to_envelope",
+        "to_longitudinal_envelope",
         "to_nba_observation",
         "to_observation",
+        "to_successor_envelope",
     ]
     for name in canonical.__all__:
         assert hasattr(canonical, name), name

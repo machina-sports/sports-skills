@@ -1,28 +1,113 @@
-name: Publish to PyPI
+name: Publish sports-skills
 
 on:
-  release:
-    types: [published]
+  push:
+    tags:
+      - "v*"
 
 permissions:
-  id-token: write
+  contents: read
+
+env:
+  RELEASE_VERSION: "0.32.0"
+  REVIEWED_SOURCE_COMMIT: "f2f2de1334f6c8fed177e7d34babdc3f23e48171"
+  SOURCE_DATE_EPOCH: "1786928109"
 
 jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262  # v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065  # v5
+        with:
+          python-version: "3.14"
+      - name: Verify tag and reviewed Step 8 ancestry
+        run: |
+          test "$GITHUB_REF_NAME" = "v${RELEASE_VERSION}"
+          git merge-base --is-ancestor "$REVIEWED_SOURCE_COMMIT" "$GITHUB_SHA"
+          git diff --exit-code "$REVIEWED_SOURCE_COMMIT" -- \
+            src/sports_skills/canonical/_vendored \
+            src/sports_skills/canonical/adapters \
+            src/sports_skills/canonical/__init__.py
+      - name: Install pinned release tooling
+        run: python -m pip install -r requirements-release.txt
+      - name: Build the release artifacts once
+        run: python packaging/release.py . dist
+      - name: Verify reviewed checksums and exact artifact gates
+        run: |
+          (cd dist && sha256sum *.whl *.tar.gz) > SHA256SUMS.actual
+          diff -u release/${RELEASE_VERSION}/SHA256SUMS SHA256SUMS.actual
+          cp release/${RELEASE_VERSION}/SHA256SUMS SHA256SUMS
+          python packaging/verify_release.py dist SHA256SUMS
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02  # v4
+        with:
+          name: sports-skills-release
+          path: |
+            dist
+            SHA256SUMS
+            packaging/probe_installed.py
+            packaging/verify_release.py
+          if-no-files-found: error
+
+  verify-installed:
+    needs: build
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.9", "3.14"]
+    steps:
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093  # v4
+        with:
+          name: sports-skills-release
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065  # v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Install without dependencies and probe installed bytes
+        run: |
+          python -m venv "$RUNNER_TEMP/probe"
+          "$RUNNER_TEMP/probe/bin/python" -m pip install --no-deps --no-index dist/*.whl
+          "$RUNNER_TEMP/probe/bin/python" -I packaging/probe_installed.py
+
   publish:
+    needs: [build, verify-installed]
     runs-on: ubuntu-latest
     environment: pypi
+    permissions:
+      id-token: write
+      contents: read
     steps:
-      - uses: actions/checkout@v4
-
-      - uses: actions/setup-python@v5
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093  # v4
         with:
-          python-version: "3.12"
+          name: sports-skills-release
+      - name: Verify checksums, version, provenance, License-Expression, and License-File
+        run: |
+          cd dist && sha256sum --check --strict ../SHA256SUMS && cd ..
+          python3 packaging/verify_release.py dist SHA256SUMS
+      - uses: pypa/gh-action-pypi-publish@dc37677b2e1c63e2034f94d8a5b11f265b73ba33  # release/v1
+        with:
+          packages-dir: dist
+          print-hash: true
 
-      - name: Install build tools
-        run: pip install build
-
-      - name: Build package
-        run: python -m build
-
-      - name: Publish to PyPI
-        uses: pypa/gh-action-pypi-publish@release/v1
+  release:
+    needs: publish
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093  # v4
+        with:
+          name: sports-skills-release
+      - name: Verify GitHub Release bytes
+        run: |
+          cd dist && sha256sum --check --strict ../SHA256SUMS && cd ..
+          python3 packaging/verify_release.py dist SHA256SUMS
+      - uses: softprops/action-gh-release@3bb12739c298aeb8a4eeaf626c5b8d85266b0e65  # v2
+        with:
+          tag_name: ${{ github.ref_name }}
+          files: |
+            dist/*.whl
+            dist/*.tar.gz
+            SHA256SUMS
+          fail_on_unmatched_files: true

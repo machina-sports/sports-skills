@@ -1,3 +1,12 @@
+## [0.32.0]
+
+### Added
+- **Canonical Evidence Contract Phase 1 consumer:** the complete reviewed canonical 0.3.0 owner runtime and required resources are byte-vendored with exact owner inventories, and the two additive successor wrappers preserve the existing native and legacy paths.
+- **Release-safe artifact pipeline:** reproducible wheel and sdist builds use the reviewed Step 8 source commit's fixed epoch, a checked-in two-artifact checksum authority, clean installed-artifact probes on Python 3.9 and current Python, and a reviewer-gated trusted-publishing workflow that uploads the build job's verified bytes without rebuilding them.
+
+### Changed
+- **No Step 8 runtime change:** 0.32.0 changes distribution metadata and publishing controls only; canonical wrappers, adapters, and vendored owner bytes remain exactly as reviewed at `f2f2de1334f6c8fed177e7d34babdc3f23e48171`.
+
 ## [0.31.0]
 
 ### Added

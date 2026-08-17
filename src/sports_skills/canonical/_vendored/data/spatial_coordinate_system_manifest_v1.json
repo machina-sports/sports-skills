@@ -1,0 +1,16 @@
+{
+  "schema_version": "machina-spatial-coordinate-system-manifest/1",
+  "manifest_id": "machina-phase1-coordinate-systems",
+  "manifest_version": "1",
+  "entries": [
+    {
+      "coordinate_system_ref": {"id": "normalized-pitch", "version": "1"},
+      "kind": "normalized",
+      "unit": "normalized",
+      "orientation": {"origin": "bottom_left", "x": "left_to_right", "y": "bottom_to_top", "attacking_direction": "positive_x"},
+      "bounds": {"min_x": "0.0", "max_x": "1.0", "min_y": "0.0", "max_y": "1.0"},
+      "output_scale": 4,
+      "definition_digest": "sha256:d3d781d6c9589501e91bc850f24b45a716905e6ee9c309059057a7f9f630ab5e"
+    }
+  ]
+}

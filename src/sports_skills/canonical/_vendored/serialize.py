@@ -37,6 +37,7 @@ import json
 from pathlib import Path
 
 from . import (
+    ACCEPTED_SCHEMA_VERSIONS,
     EXACT_OBSERVATION_PROFILE_VERSION,
     MACHINA_SCHEMA_VERSION,
     PROFILE_VERSION,
@@ -936,6 +937,11 @@ def sport_schema_graph(document, *, id_resolver):
     observation always produces byte-identical output. Nothing here reads the
     clock, the environment or the network.
     """
+    declared = document.get("schema_version") if isinstance(document, dict) else None
+    if declared not in ACCEPTED_SCHEMA_VERSIONS:
+        raise ValueError(
+            "schema_version: '{0}' is not one of {1}".format(
+                declared, ", ".join(ACCEPTED_SCHEMA_VERSIONS)))
     observation = _observation(document)
     # Before any resource is built, so no partial Event can escape and so the
     # refusal cannot depend on which resource happened to be reached first. The

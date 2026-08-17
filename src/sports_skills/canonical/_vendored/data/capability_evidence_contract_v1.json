@@ -1,0 +1,11 @@
+{
+  "schema_version": "machina-capability-evidence-contract/1",
+  "contract_id": "machina-phase1-capability-evidence",
+  "contract_version": 1,
+  "mappings": [
+    {"adapter_capability": "adapter.can_supply.event.participation_statistics", "output_kind": "event", "record_capability": "event.participation_statistics", "evidence_alternatives": [[{"kind": "collection_pattern", "pattern_id": "event.participant_statistics", "validation": "contains_validated_statistic"}, {"kind": "non_collection", "evidence_class": "validated_statistic_source_and_disposition"}]]},
+    {"adapter_capability": "adapter.can_supply.event.action.spatial_evidence", "output_kind": "event", "record_capability": "event.action.spatial_evidence", "evidence_alternatives": [[{"kind": "collection_pattern", "pattern_id": "event.actions", "validation": "contains_validated_spatial"}, {"kind": "non_collection", "evidence_class": "validated_spatial_evidence_and_disposition"}]]},
+    {"adapter_capability": "adapter.can_supply.identity.resolution_evidence", "output_kind": "event", "record_capability": "identity.resolution_evidence", "evidence_alternatives": [[{"kind": "non_collection", "evidence_class": "complete_identity_census"}]]},
+    {"adapter_capability": "adapter.can_supply.identity.resolution_evidence", "output_kind": "longitudinal", "record_capability": "longitudinal.identity.resolution_evidence", "evidence_alternatives": [[{"kind": "non_collection", "evidence_class": "complete_identity_census"}]]}
+  ]
+}

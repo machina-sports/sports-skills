@@ -1,8 +1,10 @@
 """Smoke tests — verify every module imports and the CLI registry is consistent."""
 
 import importlib
+import os
 import subprocess
 import sys
+from pathlib import Path
 
 import pytest
 
@@ -43,6 +45,52 @@ def test_module_imports(module):
     """Every module should import without errors."""
     mod = importlib.import_module(module)
     assert mod is not None
+
+
+def test_package_root_directly_exports_news_and_volleyball():
+    import sports_skills
+
+    assert sports_skills.news is importlib.import_module("sports_skills.news")
+    assert sports_skills.volleyball is importlib.import_module("sports_skills.volleyball")
+
+
+@pytest.mark.parametrize("module", ["sports_skills.news", "sports_skills.volleyball"])
+def test_package_root_propagates_public_module_import_errors(module):
+    """Root imports are eager: failures in public modules must not be masked."""
+    script = f"""
+import importlib.abc
+import importlib.util
+import sys
+
+target = {module!r}
+
+class FailingLoader(importlib.abc.Loader):
+    def create_module(self, spec):
+        return None
+
+    def exec_module(self, module):
+        raise ImportError("root-import-sentinel:" + target)
+
+class FailingFinder(importlib.abc.MetaPathFinder):
+    def find_spec(self, fullname, path=None, target=None):
+        if fullname == {module!r}:
+            return importlib.util.spec_from_loader(fullname, FailingLoader())
+        return None
+
+sys.meta_path.insert(0, FailingFinder())
+import sports_skills
+"""
+    env = os.environ.copy()
+    env["PYTHONPATH"] = str(Path(__file__).resolve().parents[1] / "src")
+    result = subprocess.run(
+        [sys.executable, "-c", script],
+        capture_output=True,
+        text=True,
+        env=env,
+        timeout=10,
+    )
+    assert result.returncode != 0
+    assert f"ImportError: root-import-sentinel:{module}" in result.stderr
 
 
 def test_cli_entrypoint():

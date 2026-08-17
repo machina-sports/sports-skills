@@ -1,0 +1,11 @@
+{
+  "schema_version": "machina-spatial-distance-unit-registry/1",
+  "registry_id": "machina-distance-units",
+  "registry_version": 1,
+  "entries": [
+    {"unit_id": "metre", "dimension": "length", "metres_per_unit": "1.0"},
+    {"unit_id": "yard", "dimension": "length", "metres_per_unit": "0.9144"},
+    {"unit_id": "foot", "dimension": "length", "metres_per_unit": "0.3048"},
+    {"unit_id": "centimetre", "dimension": "length", "metres_per_unit": "0.01"}
+  ]
+}

@@ -1,0 +1,6 @@
+{
+  "schema_version": "machina-successor-provenance-schema/1",
+  "required_members": ["schema_version", "canonical_input_version", "canonical_package", "adapter", "source_artifact_digests"],
+  "forbidden_members": ["rights", "rights_profile", "rights_profile_digest", "consumer_tier", "policy", "entitlement"],
+  "unknown_members": "forbidden"
+}
