@@ -2,6 +2,7 @@
 
 import email
 import hashlib
+import json
 import os
 import re
 import subprocess
@@ -18,8 +19,10 @@ ROOT = Path(__file__).resolve().parents[1]
 VERSION = "0.32.0"
 TAG = f"v{VERSION}"
 REVIEWED_SOURCE_COMMIT = "f2f2de1334f6c8fed177e7d34babdc3f23e48171"
+REVIEWED_SOURCE_TREE = "ca716fa2865d3ae506dd19b7b5151406bb87aedd"
 SOURCE_DATE_EPOCH = 1786928109
 AUTHORITY = ROOT / "release" / VERSION / "SHA256SUMS"
+REVIEW_RECEIPT = ROOT / "release" / VERSION / "review-receipt.json"
 WHEEL_NAME = f"sports_skills-{VERSION}-py3-none-any.whl"
 SDIST_NAME = f"sports_skills-{VERSION}.tar.gz"
 
@@ -74,18 +77,33 @@ def test_every_active_version_surface_is_032():
     assert changelog.startswith("## [0.32.0]\n")
 
 
-def test_release_source_and_epoch_are_derived_from_reviewed_step8_commit():
+def test_release_source_and_epoch_match_review_receipt():
+    receipt = json.loads(REVIEW_RECEIPT.read_text(encoding="ascii"))
+    assert type(receipt) is dict
+    assert receipt == {
+        "schema": "sports-skills-release-review-receipt-v1",
+        "reviewed_source_commit": REVIEWED_SOURCE_COMMIT,
+        "reviewed_source_tree": REVIEWED_SOURCE_TREE,
+        "source_date_epoch": SOURCE_DATE_EPOCH,
+    }
+    assert {key: type(value) for key, value in receipt.items()} == {
+        "schema": str,
+        "reviewed_source_commit": str,
+        "reviewed_source_tree": str,
+        "source_date_epoch": int,
+    }
+
     release_source = (ROOT / "packaging/release.py").read_text(encoding="utf-8")
-    assert f'REVIEWED_SOURCE_COMMIT = "{REVIEWED_SOURCE_COMMIT}"' in release_source
-    assert f"SOURCE_DATE_EPOCH = {SOURCE_DATE_EPOCH}" in release_source
-    actual = subprocess.run(
-        ["git", "show", "-s", "--format=%ct", REVIEWED_SOURCE_COMMIT],
-        check=True,
-        cwd=ROOT,
-        capture_output=True,
-        text=True,
-    ).stdout.strip()
-    assert actual == str(SOURCE_DATE_EPOCH)
+    pyproject = (ROOT / "pyproject.toml").read_text(encoding="utf-8")
+    workflow = (ROOT / ".github/workflows/publish.yml").read_text(encoding="utf-8")
+    assert f'REVIEWED_SOURCE_COMMIT = "{receipt["reviewed_source_commit"]}"' in release_source
+    assert f"SOURCE_DATE_EPOCH = {receipt['source_date_epoch']}" in release_source
+    assert (
+        '"Reviewed source" = '
+        f'"https://github.com/machina-sports/sports-skills/tree/{receipt["reviewed_source_commit"]}"'
+    ) in pyproject
+    assert f'REVIEWED_SOURCE_COMMIT: "{receipt["reviewed_source_commit"]}"' in workflow
+    assert f'SOURCE_DATE_EPOCH: "{receipt["source_date_epoch"]}"' in workflow
 
 
 def test_checksum_authority_is_two_basename_rows_and_not_an_artifact_input(release_builds):
