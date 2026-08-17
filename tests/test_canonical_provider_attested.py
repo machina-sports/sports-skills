@@ -3,6 +3,10 @@
 import ast
 import hashlib
 import json
+import os
+import subprocess
+import sys
+import textwrap
 from pathlib import Path
 
 import pytest
@@ -390,6 +394,83 @@ def test_all_11_refusals_are_stable_and_target_specific(operation, arguments, mo
     assert excinfo.value.reason == reason
 
 
+def test_source_representation_mismatch_reaches_exact_semantic_validation(monkeypatch):
+    from sports_skills import canonical
+
+    activity = {"source_load": 0, "source_reparse": 0, "spatial_parse": 0}
+    original_load = canonical._successor._load_source_artifact
+    original_reparse = canonical._successor._reparse_source_artifact
+    original_spatial_parse = canonical._successor._parse_spatial_source
+
+    def loaded(data, trust):
+        activity["source_load"] += 1
+        return original_load(data, trust)
+
+    def reparsed(artifact, trust):
+        activity["source_reparse"] += 1
+        return original_reparse(artifact, trust)
+
+    def parsed(value, representation):
+        activity["spatial_parse"] += 1
+        return original_spatial_parse(value, representation)
+
+    monkeypatch.setattr(canonical._successor, "_load_source_artifact", loaded)
+    monkeypatch.setattr(canonical._successor, "_reparse_source_artifact", reparsed)
+    monkeypatch.setattr(canonical._successor, "_parse_spatial_source", parsed)
+
+    with pytest.raises(canonical._successor.CanonicalContractError) as excinfo:
+        _execute("arena_soccer_refusal_event", "source-representation-mismatch", "operational_only")
+
+    assert excinfo.value.reason == "source-representation-mismatch"
+    assert activity["source_load"] == 1
+    assert activity["source_reparse"] >= 1
+    assert activity["spatial_parse"] == 1
+
+
+def test_in_memory_fixture_name_bypass_cannot_turn_representation_mismatch_into_success(monkeypatch):
+    from sports_skills import canonical
+    from sports_skills.canonical._operations import _document
+
+    original_thaw = _document.successor._thaw
+
+    def renamed(value):
+        result = original_thaw(value)
+        if (
+            isinstance(result, dict)
+            and result.get("fixture_id") == "source-representation-mismatch"
+            and {"contains_provider_data", "coverage", "event", "identity", "sport", "synthetic"}.issubset(result)
+        ):
+            result["fixture_id"] = "in-memory-renamed-fixture"
+        return result
+
+    monkeypatch.setattr(_document.successor, "_thaw", renamed)
+    with pytest.raises(canonical._successor.CanonicalContractError) as excinfo:
+        _execute("arena_soccer_refusal_event", "source-representation-mismatch", "operational_only")
+    assert excinfo.value.reason == "source-representation-mismatch"
+
+
+def test_in_memory_fixture_name_bypass_cannot_hide_unpromised_collection(monkeypatch):
+    from sports_skills import canonical
+    from sports_skills.canonical._operations import _document
+
+    original_thaw = _document.successor._thaw
+
+    def renamed(value):
+        result = original_thaw(value)
+        if (
+            isinstance(result, dict)
+            and result.get("fixture_id") == "unpromised-managed-collection"
+            and {"contains_provider_data", "coverage", "event", "identity", "sport", "synthetic"}.issubset(result)
+        ):
+            result["fixture_id"] = "in-memory-renamed-fixture"
+        return result
+
+    monkeypatch.setattr(_document.successor, "_thaw", renamed)
+    with pytest.raises(canonical._successor.CanonicalContractError) as excinfo:
+        _execute("arena_nba_refusal_event", "unpromised-managed-collection", "operational_only")
+    assert excinfo.value.reason == "unpromised-managed-collection-present"
+
+
 @pytest.mark.parametrize("operation", ("event", "longitudinal", "not_registered"))
 def test_unregistered_operations_remain_unattested(operation):
     from sports_skills import canonical
@@ -456,10 +537,10 @@ def test_argument_refusals_have_zero_adapter_import_and_source_load(monkeypatch,
     assert activity == {"import": 0, "source": 0}
 
 
-def test_production_refusal_has_zero_adapter_fixture_source_or_network_activity(monkeypatch):
+def test_production_refusal_has_zero_adapter_or_fixture_source_activity(monkeypatch):
     from sports_skills import canonical
 
-    activity = {"import": 0, "source": 0, "network": 0}
+    activity = {"import": 0, "source": 0}
 
     def forbidden(name):
         def fail(*args, **kwargs):
@@ -480,7 +561,7 @@ def test_production_refusal_has_zero_adapter_fixture_source_or_network_activity(
             consumer_tier="production",
         )
     assert excinfo.value.reason == "consumer-tier-not-allowed"
-    assert activity == {"import": 0, "source": 0, "network": 0}
+    assert activity == {"import": 0, "source": 0}
 
 
 def test_success_execution_imports_invokes_reads_and_loads_exactly_once(monkeypatch):
@@ -517,6 +598,126 @@ def test_success_execution_imports_invokes_reads_and_loads_exactly_once(monkeypa
     monkeypatch.setattr(canonical._successor, "_load_source_artifact", loaded)
     _execute("arena_soccer_event", "soccer-exact-provider-scoped", "operational_only")
     assert activity == {"import": 1, "invoke": 1, "fixture_read": 1, "source_load": 1}
+
+
+def test_repeated_phase1_graph_calls_leave_vendored_context_cache_none(monkeypatch):
+    from sports_skills.canonical._vendored import serialize, successor
+
+    context_reads = 0
+    original_open = Path.open
+    original_successor_context = successor.shared_context
+
+    def opened(path, *args, **kwargs):
+        nonlocal context_reads
+        if path == serialize.SHARED_CONTEXT_PATH:
+            context_reads += 1
+        return original_open(path, *args, **kwargs)
+
+    monkeypatch.setattr(serialize, "_context_cache", None)
+    monkeypatch.setattr(Path, "open", opened)
+    assert serialize._context_cache is None
+    first = _execute("arena_soccer_event", "soccer-exact-authoritative", "with_iptc_graph")
+    assert serialize._context_cache is None
+    second = _execute("arena_soccer_event", "soccer-exact-authoritative", "with_iptc_graph")
+    assert serialize._context_cache is None
+    assert successor.shared_context is original_successor_context
+    assert first == second
+    assert context_reads >= 4
+
+
+def test_phase1_graph_ignores_and_preserves_existing_vendored_context_cache(monkeypatch):
+    from sports_skills.canonical._vendored import serialize
+
+    existing = {"poisoned": "context"}
+    monkeypatch.setattr(serialize, "_context_cache", existing)
+    envelope = json.loads(_execute("arena_soccer_event", "soccer-exact-authoritative", "with_iptc_graph"))
+    context = envelope["machina_sports_schema"]["sport_schema_graph"]["@context"]
+    assert serialize._context_cache is existing
+    assert context != existing
+    assert context["sport"] == "https://sportschema.org/ontologies/main/"
+
+
+def test_phase1_boundary_restores_owner_context_and_cache_after_refusal(monkeypatch):
+    from sports_skills import canonical
+    from sports_skills.canonical._vendored import serialize, successor
+
+    existing = {"existing": "native-context"}
+    original_successor_context = successor.shared_context
+    monkeypatch.setattr(serialize, "_context_cache", existing)
+    with pytest.raises(canonical._successor.CanonicalContractError) as excinfo:
+        _execute("arena_soccer_refusal_event", "source-representation-mismatch", "operational_only")
+    assert excinfo.value.reason == "source-representation-mismatch"
+    assert successor.shared_context is original_successor_context
+    assert serialize._context_cache is existing
+
+
+def test_all_success_and_refusal_paths_are_fail_closed_against_network():
+    script = textwrap.dedent(
+        f"""
+        import http.client
+        import json
+        import socket
+        import sys
+
+        def forbidden(*args, **kwargs):
+            raise AssertionError("network attempt")
+
+        def audit(event, args):
+            if event.startswith("socket.") or event in ("http.client.connect", "http.client.send"):
+                raise AssertionError("network audit event: " + event)
+
+        sys.addaudithook(audit)
+        socket.getaddrinfo = forbidden
+        socket.create_connection = forbidden
+        socket.socket.connect = forbidden
+        socket.socket.connect_ex = forbidden
+        http.client.HTTPConnection.connect = forbidden
+        http.client.HTTPConnection.request = forbidden
+
+        from sports_skills import canonical
+
+        request = {REQUEST!r}
+        operations = {OPERATIONS!r}
+        successes = {SUCCESS_CASES!r}
+        refusals = {REFUSAL_CASES!r}
+        for operation, fixture_id, mode in successes:
+            arguments = ('{{"fixture_id":"' + fixture_id + '"}}').encode()
+            if operations[operation][0] == "longitudinal":
+                canonical.to_longitudinal_envelope(
+                    operation=operation,
+                    request_bytes=request,
+                    operation_arguments_bytes=arguments,
+                    consumer_tier="prototype",
+                )
+            else:
+                canonical.to_successor_envelope(
+                    operation=operation,
+                    request_bytes=request,
+                    operation_arguments_bytes=arguments,
+                    output_mode=mode,
+                    consumer_tier="prototype",
+                )
+        for operation, arguments, mode, tier, request_bytes, reason in refusals:
+            try:
+                canonical.to_successor_envelope(
+                    operation=operation,
+                    request_bytes=request_bytes,
+                    operation_arguments_bytes=arguments,
+                    output_mode=mode,
+                    consumer_tier=tier,
+                )
+            except canonical._successor.CanonicalContractError as error:
+                assert error.reason == reason
+            else:
+                raise AssertionError("refusal path returned success: " + operation)
+        """
+    )
+    subprocess.run(
+        [sys.executable, "-c", script],
+        check=True,
+        cwd=ROOT,
+        env={**os.environ, "PYTHONPATH": str(ROOT / "src")},
+    )
 
 
 def test_phase1_execution_and_operation_package_have_no_cache_or_network_path():

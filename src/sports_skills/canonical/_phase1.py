@@ -7,6 +7,7 @@ import re
 from pathlib import Path
 from types import MappingProxyType
 
+from ._operations._boundary import owner_operation_context
 from ._operations._document import build_document
 from ._vendored.successor import CanonicalContractError
 
@@ -329,12 +330,17 @@ def _execute_attested_operation(*, operation, request_bytes, operation_arguments
     from ._vendored import successor
 
     try:
-        return successor.execute_adapter_operation(
-            package_ref=_SPORTS_SKILLS_CANONICAL_PACKAGE_REF,
-            request_bytes=request_bytes,
-            operation_arguments_bytes=operation_arguments_bytes,
-            trusted_loader=_SPORTS_SKILLS_TRUSTED_ADAPTER_PACKAGE_LOADER,
-        )
+        with owner_operation_context():
+            return successor.execute_adapter_operation(
+                package_ref=_SPORTS_SKILLS_CANONICAL_PACKAGE_REF,
+                request_bytes=request_bytes,
+                operation_arguments_bytes=operation_arguments_bytes,
+                trusted_loader=_SPORTS_SKILLS_TRUSTED_ADAPTER_PACKAGE_LOADER,
+            )
+    except CanonicalContractError as error:
+        if error.reason == "spatial-source-representation-mismatch":
+            raise CanonicalContractError("source-representation-mismatch") from error
+        raise
     except ValueError as error:
         if operation == "arena_nfl_refusal_event" and type(error.__cause__).__name__ == "_DuplicateKey":
             raise CanonicalContractError("duplicate-json-key") from error

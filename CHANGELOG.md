@@ -7,6 +7,8 @@
 
 ### Changed
 - **No native or legacy path change:** existing sports APIs, native normalization, legacy canonical `/1.1` output, exports, wrapper signatures, and non-Phase-1 cache behavior remain unchanged.
+- **Exact negative validation:** source-representation and unpromised-collection refusals now travel through their attested semantic and collection validation paths instead of selecting outcomes by fixture name.
+- **Uncached Phase 1 graph boundary:** graph operations read fresh pinned context bytes without consulting or mutating the vendored serializer cache, restore owner module state after every outcome, and run under fail-closed socket/DNS/HTTP regression coverage.
 
 ## [0.32.0]
 

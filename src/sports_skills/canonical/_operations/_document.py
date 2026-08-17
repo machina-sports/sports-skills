@@ -230,10 +230,6 @@ def _coverage(records, artifact, trust, document, fixture_id, kind):
 
 def _event_document(artifact, request, trust, parsed, registry):
     fixture_id = parsed["fixture_id"]
-    if fixture_id == "source-representation-mismatch":
-        raise successor.CanonicalContractError("source-representation-mismatch")
-    if fixture_id == "unpromised-managed-collection":
-        raise successor.CanonicalContractError("unpromised-managed-collection-present")
     records = []
     source_event = parsed["event"]
     reduced = source_event["start"]["state"] == "bounded"
@@ -260,7 +256,7 @@ def _event_document(artifact, request, trust, parsed, registry):
         event["start_time"] = source_event["start"]["value"]
     participants = []
     operation = trust.descriptor["operation"]
-    include_actions = operation != "arena_nba_refusal_event"
+    include_actions = operation != "arena_nba_refusal_event" or request["output_mode"] == "operational_only"
     include_statistics = "refusal" not in operation
     for p_index, source_participant in enumerate(source_event["participants"]):
         participant = {
@@ -303,7 +299,7 @@ def _event_document(artifact, request, trust, parsed, registry):
     }
     if include_actions:
         actions = []
-        include_spatial = "refusal" not in operation
+        include_spatial = "refusal" not in operation or request["output_mode"] == "operational_only"
         coordinate_template = next(
             (
                 item
