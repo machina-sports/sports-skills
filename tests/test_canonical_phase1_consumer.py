@@ -11,9 +11,9 @@ import pytest
 ROOT = Path(__file__).resolve().parents[1]
 VENDORED = ROOT / "src/sports_skills/canonical/_vendored"
 
-OWNER_SOURCE_COMMIT = "ddf12f04803eeb03016c10759aaf2a2be8e85f84"
-OWNER_WHEEL_SHA256 = "52c2b5a321a60ca242166e5522307f72ef974a460e8f906775bb3cf0480d22a1"
-OWNER_RUNTIME_DIGEST = "sha256:5b011b72a9d4061099f39555983b73ec6e26ef7dea650311c6bc8910e53521d6"
+OWNER_SOURCE_COMMIT = "bf96c8d84b308e2e23d7dd7ec8942e2da82f6c14"
+OWNER_WHEEL_SHA256 = "cd454eb8411b5639af7313c713276bfa4a0dc72aab037b66ba451bc3e0f090bd"
+OWNER_RUNTIME_DIGEST = "sha256:96d1817fc0ba4357029860b73b5a2dddcc3738a80240a73cd443c7a30bf25e5b"
 
 LEGACY_ALL = (
     "CONSUMER_TIERS",
@@ -58,6 +58,10 @@ PRIVATE_SYMBOLS = (
     "_validate_successor_envelope_bytes",
     "_validate_longitudinal_envelope_bytes",
     "_statistic_projection_disposition",
+    "_load_0_3_compatibility_closure",
+    "_load_0_4_closure",
+    "_validate_source_shape_schema",
+    "_validate_source_artifact_shape",
     "execute_adapter_operation",
 )
 
@@ -79,7 +83,7 @@ def test_release_receipt_pins_the_reviewed_owner_source_and_wheel():
     assert receipt["source_commit"] == OWNER_SOURCE_COMMIT
     assert receipt["owner_distribution"] == {
         "name": "machina-sports-canonical",
-        "version": "0.3.0",
+        "version": "0.4.1",
         "wheel_sha256": OWNER_WHEEL_SHA256,
         "aggregate_runtime_digest": OWNER_RUNTIME_DIGEST,
     }

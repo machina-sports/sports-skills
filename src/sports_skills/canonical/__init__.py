@@ -44,8 +44,13 @@ package only when the caller asks for ``--format machina-canonical``.
 """
 
 from ._phase1 import (
-    _SPORTS_SKILLS_CANONICAL_PACKAGE_REF,
-    _SPORTS_SKILLS_TRUSTED_ADAPTER_PACKAGE_LOADER,
+    _SPORTS_SKILLS_CANONICAL_PACKAGE_REF as _SPORTS_SKILLS_CANONICAL_PACKAGE_REF,
+)
+from ._phase1 import (
+    _SPORTS_SKILLS_TRUSTED_ADAPTER_PACKAGE_LOADER as _SPORTS_SKILLS_TRUSTED_ADAPTER_PACKAGE_LOADER,
+)
+from ._phase1 import (
+    _execute_attested_operation,
     _execution_request_bytes,
 )
 from ._vendored import (
@@ -57,7 +62,7 @@ from ._vendored import (
     SUCCESSOR_PROFILE_VERSION,
     SUCCESSOR_SCHEMA_VERSION,
 )
-from ._vendored import successor as _successor
+from ._vendored import successor as _successor  # noqa: F401
 from ._vendored.ids import surrogate_resolver
 from ._vendored.rights import CONSUMER_TIERS, rights_findings
 from ._vendored.serialize import canonical_envelope
@@ -157,11 +162,10 @@ def to_successor_envelope(
     execution_request = _execution_request_bytes(
         operation, request_bytes, "event", output_mode, consumer_tier
     )
-    return _successor.execute_adapter_operation(
-        package_ref=_SPORTS_SKILLS_CANONICAL_PACKAGE_REF,
+    return _execute_attested_operation(
+        operation=operation,
         request_bytes=execution_request,
         operation_arguments_bytes=operation_arguments_bytes,
-        trusted_loader=_SPORTS_SKILLS_TRUSTED_ADAPTER_PACKAGE_LOADER,
     )
 
 
@@ -172,9 +176,8 @@ def to_longitudinal_envelope(
     execution_request = _execution_request_bytes(
         operation, request_bytes, "longitudinal", "operational_only", consumer_tier
     )
-    return _successor.execute_adapter_operation(
-        package_ref=_SPORTS_SKILLS_CANONICAL_PACKAGE_REF,
+    return _execute_attested_operation(
+        operation=operation,
         request_bytes=execution_request,
         operation_arguments_bytes=operation_arguments_bytes,
-        trusted_loader=_SPORTS_SKILLS_TRUSTED_ADAPTER_PACKAGE_LOADER,
     )

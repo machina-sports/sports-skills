@@ -1,0 +1,1 @@
+{"fields":[{"allowed_values":["nba-exact-authoritative","nba-exact-provider-scoped"],"canonical_lexical_rule":"exact-operation-fixture-enum/1","name":"fixture_id","provider_parameter_name":"fixture_id","required":true,"semantic_class":"selector","value_kind":"string"}],"secret_fields":"forbidden","unknown_fields":"forbidden"}
