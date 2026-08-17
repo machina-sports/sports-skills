@@ -1,3 +1,15 @@
+## [0.33.0]
+
+### Added
+- **Provider-attested Arena Step 10 operations:** nine prototype-only, synthetic, provider-data-free event and longitudinal operations cover 12 deterministic successes and 11 stable refusals for soccer, NFL, and NBA without network or cache activity.
+- **Canonical owner 0.4.1 trust closure:** the released standard-library-only runtime, all required data, and all 27 canonical records are byte-vendored from owner commit `bf96c8d84b308e2e23d7dd7ec8942e2da82f6c14`; no external canonical dependency is introduced.
+- **Closed package evidence:** nine independent descriptors, package links, local fixture-selector schemas, prototype-only rights profiles, fixture manifests, adapter entrypoints, and immutable synthetic source and identity-authority fixtures are digest-bound inside the wheel.
+
+### Changed
+- **No native or legacy path change:** existing sports APIs, native normalization, legacy canonical `/1.1` output, exports, wrapper signatures, and non-Phase-1 cache behavior remain unchanged.
+- **Exact negative validation:** source-representation and unpromised-collection refusals now travel through their attested semantic and collection validation paths instead of selecting outcomes by fixture name.
+- **Uncached Phase 1 graph boundary:** graph operations read fresh pinned context bytes without consulting or mutating the vendored serializer cache, restore owner module state after every outcome, and run under fail-closed socket/DNS/HTTP regression coverage.
+
 ## [0.32.0]
 
 ### Added
