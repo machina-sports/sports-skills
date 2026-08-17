@@ -238,6 +238,12 @@ def test_publish_workflow_is_tag_triggered_build_once_and_least_privilege():
     verify = workflow.split("  verify-installed:", 1)[1].split("  publish:", 1)[0]
     publish = workflow.split("  publish:", 1)[1].split("  release:", 1)[0]
     release = workflow.split("  release:", 1)[1]
+    assert 'test "$GITHUB_REF_NAME" = "v${RELEASE_VERSION}"' in build
+    assert 'test "$(git rev-parse HEAD)" = "$GITHUB_SHA"' in build
+    assert 'assert package["project"]["version"] == os.environ["RELEASE_VERSION"]' in build
+    assert "merge-base" not in workflow
+    assert "--is-ancestor" not in workflow
+    assert "git diff" not in workflow
     assert "id-token: write" not in build
     assert build.count("packaging/release.py") == 1
     assert 'python-version: ["3.9", "3.14"]' in verify
