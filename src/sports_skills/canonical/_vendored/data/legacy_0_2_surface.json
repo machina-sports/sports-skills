@@ -1,0 +1,27 @@
+{
+  "schema_version": "machina-legacy-python-surface-receipt/1",
+  "distribution_version": "0.2.0",
+  "constants": {
+    "SCHEMA_VERSION": "canonical-observation/1.1",
+    "PROFILE_VERSION": "machina-iptc-profile/1.2",
+    "MACHINA_SCHEMA_VERSION": "machina-sports-schema/1"
+  },
+  "owner_all": [
+    "PROFILE_VERSION",
+    "EXACT_OBSERVATION_PROFILE_VERSION",
+    "SCHEMA_VERSION",
+    "PREDECESSOR_SCHEMA_VERSION",
+    "ACCEPTED_SCHEMA_VERSIONS",
+    "MACHINA_SCHEMA_VERSION",
+    "SERIALIZER_VERSION",
+    "SERIALIZER_NAME",
+    "UPSTREAM_REPOSITORY",
+    "UPSTREAM_COMMIT",
+    "UPSTREAM_TARGET_VERSION"
+  ],
+  "signatures": {
+    "observation.validate_observation": "(document)",
+    "serialize.sport_schema_graph": "(document, *, id_resolver)",
+    "serialize.canonical_envelope": "(document, *, id_resolver)"
+  }
+}

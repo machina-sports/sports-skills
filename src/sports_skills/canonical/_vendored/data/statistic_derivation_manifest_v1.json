@@ -1,0 +1,14 @@
+{
+  "schema_version": "machina-statistic-derivation-manifest/1",
+  "manifest_id": "machina-reviewed-statistic-derivations",
+  "manifest_version": "1",
+  "entries": [
+    {
+      "derivation_id": "ratio",
+      "derivation_version": "1",
+      "algorithm_digest": "sha256:437d609fdabf85bdc81e9a5d7a22c5dc495d83c01f7a9f485645be5e9dbbc498",
+      "input_types": ["integer", "integer"],
+      "output_type": "decimal"
+    }
+  ]
+}

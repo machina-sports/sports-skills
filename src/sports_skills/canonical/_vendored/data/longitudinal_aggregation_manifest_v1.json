@@ -1,0 +1,7 @@
+{
+  "schema_version": "machina-longitudinal-aggregation-manifest/1",
+  "manifest_id": "machina-reviewed-longitudinal-aggregation",
+  "manifest_version": "1",
+  "statistic_rules": [],
+  "period_partition_rules": []
+}

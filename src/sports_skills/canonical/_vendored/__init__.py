@@ -83,6 +83,14 @@ UPSTREAM_REPOSITORY = "https://github.com/iptc/sport-schema"
 UPSTREAM_COMMIT = "0e77bf8678f3702fe81c28673bede35efe47d633"
 UPSTREAM_TARGET_VERSION = "1.1"
 
+#: Opt-in Canonical Evidence Contract Phase 1 identifiers.  The three legacy
+#: names above deliberately continue to describe the 0.2 contract.
+SUCCESSOR_PROFILE_VERSION = "machina-iptc-profile/1.3"
+SUCCESSOR_SCHEMA_VERSION = "canonical-observation/1.2"
+SUCCESSOR_MACHINA_SCHEMA_VERSION = "machina-sports-schema/1.1"
+LONGITUDINAL_SCHEMA_VERSION = "canonical-longitudinal-statistics/1"
+LONGITUDINAL_MACHINA_SCHEMA_VERSION = "machina-longitudinal-schema/1"
+
 __all__ = [
     "PROFILE_VERSION",
     "EXACT_OBSERVATION_PROFILE_VERSION",
@@ -95,4 +103,9 @@ __all__ = [
     "UPSTREAM_REPOSITORY",
     "UPSTREAM_COMMIT",
     "UPSTREAM_TARGET_VERSION",
+    "SUCCESSOR_PROFILE_VERSION",
+    "SUCCESSOR_SCHEMA_VERSION",
+    "SUCCESSOR_MACHINA_SCHEMA_VERSION",
+    "LONGITUDINAL_SCHEMA_VERSION",
+    "LONGITUDINAL_MACHINA_SCHEMA_VERSION",
 ]

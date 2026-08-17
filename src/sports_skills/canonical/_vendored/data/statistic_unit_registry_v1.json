@@ -1,0 +1,11 @@
+{
+  "schema_version": "machina-statistic-unit-registry/1",
+  "registry_id": "machina-statistic-units",
+  "registry_version": 1,
+  "entries": [
+    {"unit_id": "metre", "dimension": "length", "symbol": "m", "definition": "SI metre"},
+    {"unit_id": "minute", "dimension": "time", "symbol": "min", "definition": "60 SI seconds"},
+    {"unit_id": "second", "dimension": "time", "symbol": "s", "definition": "SI second"},
+    {"unit_id": "yard", "dimension": "length", "symbol": "yd", "definition": "0.9144 SI metres"}
+  ]
+}

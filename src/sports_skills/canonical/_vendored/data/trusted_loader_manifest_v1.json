@@ -1,23 +1,4 @@
 {
-  "consumer": "machina-sports/sports-skills",
-  "source_repository": "machina-sports/machina-templates",
-  "source_path": "tools/iptc/canonical",
-  "source_commit": "ddf12f04803eeb03016c10759aaf2a2be8e85f84",
-  "profile": "machina-iptc-profile/1.3",
-  "schema_version_input": "canonical-observation/1.2",
-  "machina_schema_version": "machina-sports-schema/1.1",
-  "owner_distribution": {
-    "name": "machina-sports-canonical",
-    "version": "0.3.0",
-    "wheel_sha256": "52c2b5a321a60ca242166e5522307f72ef974a460e8f906775bb3cf0480d22a1",
-    "aggregate_runtime_digest": "sha256:5b011b72a9d4061099f39555983b73ec6e26ef7dea650311c6bc8910e53521d6"
-  },
-  "trusted_loader_manifest_sha256": "57ac4df94da8fee87a1e526b77455cb93399ffb35d1928555d4f97138ed5f23b",
-  "upstream_pin": {
-    "repository": "https://github.com/iptc/sport-schema",
-    "commit": "0e77bf8678f3702fe81c28673bede35efe47d633",
-    "target_version": "1.1"
-  },
   "schema_version": "machina-canonical-runtime-vendored-manifest/1",
   "owner_package": {
     "name": "machina-sports-canonical",

@@ -43,7 +43,21 @@ The default native output of every existing function is untouched. The CLI reach
 package only when the caller asks for ``--format machina-canonical``.
 """
 
-from ._vendored import MACHINA_SCHEMA_VERSION, PROFILE_VERSION, SCHEMA_VERSION
+from ._phase1 import (
+    _SPORTS_SKILLS_CANONICAL_PACKAGE_REF,
+    _SPORTS_SKILLS_TRUSTED_ADAPTER_PACKAGE_LOADER,
+    _execution_request_bytes,
+)
+from ._vendored import (
+    LONGITUDINAL_SCHEMA_VERSION,
+    MACHINA_SCHEMA_VERSION,
+    PROFILE_VERSION,
+    SCHEMA_VERSION,
+    SUCCESSOR_MACHINA_SCHEMA_VERSION,
+    SUCCESSOR_PROFILE_VERSION,
+    SUCCESSOR_SCHEMA_VERSION,
+)
+from ._vendored import successor as _successor
 from ._vendored.ids import surrogate_resolver
 from ._vendored.rights import CONSUMER_TIERS, rights_findings
 from ._vendored.serialize import canonical_envelope
@@ -60,6 +74,12 @@ __all__ = [
     "to_envelope",
     "to_observation",
     "to_nba_observation",
+    "LONGITUDINAL_SCHEMA_VERSION",
+    "SUCCESSOR_MACHINA_SCHEMA_VERSION",
+    "SUCCESSOR_PROFILE_VERSION",
+    "SUCCESSOR_SCHEMA_VERSION",
+    "to_longitudinal_envelope",
+    "to_successor_envelope",
 ]
 
 
@@ -126,4 +146,35 @@ def canonicalize_nba_event(event, plays=None, *, observed_at, start_time_precisi
             observed_at=observed_at,
             start_time_precision=start_time_precision,
         )
+    )
+
+
+def to_successor_envelope(
+    *, operation, request_bytes, operation_arguments_bytes, output_mode,
+    consumer_tier
+) -> bytes:
+    """Execute one explicitly requested successor event operation."""
+    execution_request = _execution_request_bytes(
+        operation, request_bytes, "event", output_mode, consumer_tier
+    )
+    return _successor.execute_adapter_operation(
+        package_ref=_SPORTS_SKILLS_CANONICAL_PACKAGE_REF,
+        request_bytes=execution_request,
+        operation_arguments_bytes=operation_arguments_bytes,
+        trusted_loader=_SPORTS_SKILLS_TRUSTED_ADAPTER_PACKAGE_LOADER,
+    )
+
+
+def to_longitudinal_envelope(
+    *, operation, request_bytes, operation_arguments_bytes, consumer_tier
+) -> bytes:
+    """Execute one longitudinal operation in its only supported output mode."""
+    execution_request = _execution_request_bytes(
+        operation, request_bytes, "longitudinal", "operational_only", consumer_tier
+    )
+    return _successor.execute_adapter_operation(
+        package_ref=_SPORTS_SKILLS_CANONICAL_PACKAGE_REF,
+        request_bytes=execution_request,
+        operation_arguments_bytes=operation_arguments_bytes,
+        trusted_loader=_SPORTS_SKILLS_TRUSTED_ADAPTER_PACKAGE_LOADER,
     )
