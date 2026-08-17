@@ -260,4 +260,9 @@ def test_ci_reaches_release_gates_on_python_39_and_current_python():
     assert "paths-ignore" not in workflow and "paths:" not in workflow
     assert "pull_request:" in workflow and "push:" in workflow
     assert '"3.9"' in workflow and '"3.14"' in workflow
+    test_job = workflow.split("  test:", 1)[1]
+    assert re.search(
+        r"(?m)^      - uses: actions/checkout@[^\n]+\n        with:\n          fetch-depth: 0$",
+        test_job,
+    )
     assert "pytest -v" in workflow
