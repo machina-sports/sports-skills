@@ -1835,6 +1835,61 @@ class TestFdukMeetingsFromCsv:
 
         assert _fduk_meetings_from_csv("", "Arsenal", "Man City") == []
 
+    def test_same_city_pair_is_not_conflated(self):
+        from sports_skills.football._connector import _fduk_meetings_from_csv
+
+        csv_text = (
+            "Div,Date,HomeTeam,AwayTeam,FTHG,FTAG,FTR\r\n"
+            "F1,01/09/2025,Paris SG,Marseille,2,0,H\r\n"
+            "F1,08/09/2025,Paris FC,Marseille,0,1,A\r\n"
+        )
+        meetings = _fduk_meetings_from_csv(csv_text, "Paris FC", "Marseille", "ligue-1")
+        assert [m["home_team"]["name"] for m in meetings] == ["Paris FC"]
+
+
+class TestFdukResolveLabel:
+    """ESPN display name -> one exact football-data.co.uk label."""
+
+    LABELS = {"Arsenal", "Man City", "Nott'm Forest", "Paris SG", "Paris FC", "FC Koln"}
+
+    def test_fuzzy_single_candidate(self):
+        from sports_skills.football._connector import _fduk_resolve_label
+
+        assert _fduk_resolve_label("Manchester City", self.LABELS) == ("Man City", "fuzzy")
+
+    def test_override_bridges_an_exonym(self):
+        from sports_skills.football._connector import _fduk_resolve_label
+
+        assert _fduk_resolve_label("FC Cologne", self.LABELS) == ("FC Koln", "override")
+        assert _fduk_resolve_label("Paris Saint-Germain", self.LABELS) == ("Paris SG", "override")
+
+    def test_exact_tie_break_splits_the_same_city_pair(self):
+        from sports_skills.football._connector import _fduk_resolve_label
+
+        # "Paris FC" fuzzy-matches "Paris SG" too; the exact rule settles it.
+        assert _fduk_resolve_label("Paris FC", self.LABELS) == ("Paris FC", "exact")
+
+    def test_override_target_absent_is_not_found(self):
+        from sports_skills.football._connector import _fduk_resolve_label
+
+        # PSG did not play in this label set; falling back to fuzzy matching
+        # would hand back the city rival instead of admitting the miss.
+        assert _fduk_resolve_label("Paris Saint-Germain", {"Paris FC", "Lyon"}) == (
+            None,
+            "not_found",
+        )
+
+    def test_not_found(self):
+        from sports_skills.football._connector import _fduk_resolve_label
+
+        assert _fduk_resolve_label("Bromley", self.LABELS) == (None, "not_found")
+
+    def test_ambiguous_is_reported_not_guessed(self):
+        from sports_skills.football._connector import _fduk_resolve_label
+
+        label, method = _fduk_resolve_label("Sporting", {"Sporting Gijon", "Sporting KC"})
+        assert label is None and method.startswith("ambiguous:")
+
 
 # ── Football team strength (ClubElo) ─────────────────────────
 
@@ -2009,6 +2064,102 @@ class TestClubEloDriftGuard:
         assert "clubelo" in _PROVIDER_NAME_OVERRIDES
 
 
+class TestFdukDriftGuard:
+    """Offline drift guard: known clubs across the covered divisions must keep
+    resolving to their exact football-data.co.uk label via _fduk_resolve_label,
+    using a committed real label set (10 seasons per division). Fails loudly if
+    _normalize_name/_ABBREV/_teams_match, the exact tie-break, or the "fduk"
+    override map regresses. (Live source drift — football-data.co.uk renaming a
+    club — is covered by the SKILL gotchas + manual battery.)"""
+
+    @staticmethod
+    def _labels():
+        import json
+        from pathlib import Path
+
+        path = Path(__file__).parent / "fixtures" / "fduk_team_labels.json"
+        with open(path, encoding="utf-8") as f:
+            return {div: set(labels) for div, labels in json.load(f).items()}
+
+    # (ESPN display name, football-data.co.uk division, expected label)
+    CASES = [
+        ("Manchester City", "E0", "Man City"),                 # abbrev man->manchester
+        ("Nottingham Forest", "E0", "Nott'm Forest"),          # nottm abbrev
+        ("Queens Park Rangers", "E1", "QPR"),                  # override: initialism
+        ("Sheffield Wednesday", "E1", "Sheffield Weds"),       # override: abbreviation
+        ("Sheffield United", "E1", "Sheffield United"),        # not "Sheffield Weds"
+        ("Athletic Club", "SP1", "Ath Bilbao"),                # override: city label
+        ("Atletico Madrid", "SP1", "Ath Madrid"),              # override, not "Ath Bilbao"
+        ("Espanyol", "SP1", "Espanol"),                        # override: spelling
+        ("Deportivo", "SP1", "La Coruna"),                     # override: city label
+        ("Real Sociedad", "SP1", "Sociedad"),
+        ("Borussia Monchengladbach", "D1", "M'gladbach"),      # override: abbreviation
+        ("FC Cologne", "D1", "FC Koln"),                       # override: exonym
+        ("Eintracht Frankfurt", "D1", "Ein Frankfurt"),        # override: abbreviation
+        ("1. FC Union Berlin", "D1", "Union Berlin"),
+        ("TSG Hoffenheim", "D1", "Hoffenheim"),
+        ("RB Leipzig", "D1", "RB Leipzig"),
+        ("Internazionale", "I1", "Inter"),                     # not "Milan"
+        ("AC Milan", "I1", "Milan"),                           # not "Inter"
+        ("Paris Saint-Germain", "F1", "Paris SG"),             # override, not "Paris FC"
+        ("Paris FC", "F1", "Paris FC"),                        # exact, not "Paris SG"
+        ("Stade Rennais", "F1", "Rennes"),                     # override: city label
+        ("Fortuna Sittard", "N1", "For Sittard"),              # override: abbreviation
+        ("PSV Eindhoven", "N1", "PSV Eindhoven"),
+        ("Sporting CP", "P1", "Sp Lisbon"),                    # override: exonym
+        ("Braga", "P1", "Sp Braga"),
+        ("Heart of Midlothian", "SC0", "Hearts"),              # override: nickname
+        ("Dundee", "SC0", "Dundee"),                           # not "Dundee United"
+        ("Dundee United", "SC0", "Dundee United"),             # not "Dundee"
+        ("Sint-Truidense", "B1", "St Truiden"),                # override: exonym
+        ("Union St.-Gilloise", "B1", "St. Gilloise"),
+        ("Club Brugge", "B1", "Club Brugge"),                  # not "Cercle Brugge"
+        ("Amed SFK", "T1", "Amedspor"),                        # override: club-name suffix
+        ("Istanbul Basaksehir", "T1", "Buyuksehyr"),           # override: exonym
+        ("Goztepe", "T1", "Goztep"),
+    ]
+
+    def test_known_clubs_resolve(self):
+        from sports_skills.football._connector import _fduk_resolve_label
+
+        labels = self._labels()
+        failures = []
+        for espn_name, div, expected in self.CASES:
+            label, method = _fduk_resolve_label(espn_name, labels[div])
+            got = label or f"UNRESOLVED({method})"
+            if got != expected:
+                failures.append(f"{espn_name} [{div}] -> {got!r}, expected {expected!r}")
+        assert not failures, "fduk resolution drift:\n  " + "\n  ".join(failures)
+
+    def test_override_targets_are_real_labels(self):
+        # Every override target must exist in some covered division, so a stale
+        # override (e.g. after a football-data.co.uk rename) surfaces here.
+        from sports_skills.football._connector import _PROVIDER_NAME_OVERRIDES
+
+        known = set().union(*self._labels().values())
+        dead = sorted(t for t in _PROVIDER_NAME_OVERRIDES["fduk"].values() if t not in known)
+        assert not dead, f"override targets missing from every division: {dead}"
+
+
+class TestProviderOverrideKeys:
+    """Override keys must be `_normalize_name` output for any lookup to hit —
+    e.g. "Paris FC" normalizes to "paris", so "paris fc" as a key is dead."""
+
+    def test_keys_are_normalized(self):
+        from sports_skills.football._connector import (
+            _PROVIDER_NAME_OVERRIDES,
+            _normalize_name,
+        )
+
+        unreachable = [
+            f"{provider}:{key!r}"
+            for provider, overrides in _PROVIDER_NAME_OVERRIDES.items()
+            for key in overrides
+            if _normalize_name(key) != key
+        ]
+        assert not unreachable, f"override keys that can never match: {unreachable}"
+
+
 class TestPublicEndpointAssembly:
     """Hermetic tests of the three new public functions' assembly, mocking the
     network boundary (_resolve_espn_team_meta + the source fetch). Covers the
@@ -2041,6 +2192,68 @@ class TestPublicEndpointAssembly:
         assert s["team1"]["wins"] + s["team2"]["wins"] + s["draws"] == 2
         # Arsenal won 5-1, drew 2-2 → 1 win, 0 losses, 1 draw
         assert s["team1"]["name"] == "Arsenal" and s["team1"]["wins"] == 1 and s["draws"] == 1
+
+    def test_head_to_head_matches_german_exonym_labels(self, monkeypatch):
+        # The reported bug: ESPN "FC Cologne" vs the source's "FC Koln" shares no
+        # word, so every meeting was dropped and H2H reported zero.
+        from sports_skills.football import _connector as c
+
+        self._patch_meta(monkeypatch, {
+            "124": {"name": "FC Cologne", "slug": "bundesliga"},
+            "125": {"name": "TSG Hoffenheim", "slug": "bundesliga"},
+        })
+        csv_text = (
+            "Div,Date,HomeTeam,AwayTeam,FTHG,FTAG,FTR\r\n"
+            "D1,20/09/2025,FC Koln,Hoffenheim,1,0,H\r\n"
+            "D1,14/02/2026,Hoffenheim,FC Koln,2,2,D\r\n"
+        )
+        monkeypatch.setattr(c, "_fduk_fetch_season", lambda div, code, cur: csv_text)
+        out = c.get_head_to_head({"params": {"team_id": "124", "team_id_2": "125", "max_seasons": 1}})
+        assert out["summary"]["total_meetings"] == 2
+        assert [t["matched_as"] for t in out["teams"]] == ["FC Koln", "Hoffenheim"]
+        assert all(t["resolved"] for t in out["teams"])
+        assert "message" not in out
+        # FC Koln won one and drew one
+        assert out["summary"]["team1"]["wins"] == 1 and out["summary"]["draws"] == 1
+
+    def test_head_to_head_reports_an_unresolvable_club(self, monkeypatch):
+        from sports_skills.football import _connector as c
+
+        self._patch_meta(monkeypatch, {
+            "359": {"name": "Arsenal", "slug": "premier-league"},
+            "3129": {"name": "Bromley", "slug": "premier-league"},
+        })
+        csv_text = (
+            "Div,Date,HomeTeam,AwayTeam,FTHG,FTAG,FTR\r\n"
+            "E0,22/09/2024,Man City,Arsenal,2,2,D\r\n"
+        )
+        monkeypatch.setattr(c, "_fduk_fetch_season", lambda div, code, cur: csv_text)
+        out = c.get_head_to_head({"params": {"team_id": "359", "team_id_2": "3129", "max_seasons": 1}})
+        arsenal, bromley = out["teams"]
+        assert arsenal["resolved"] is True and arsenal["matched_as"] == "Arsenal"
+        assert bromley["resolved"] is False and bromley["reason"] == "not_found"
+        assert out["events"] == []
+        # "we could not resolve the club" must not read as "they never met"
+        assert "Bromley (not_found)" in out["message"]
+        assert "name-resolution gap" in out["message"]
+        assert "may not have shared a division" not in out["message"]
+
+    def test_head_to_head_message_when_both_resolve_but_never_met(self, monkeypatch):
+        from sports_skills.football import _connector as c
+
+        self._patch_meta(monkeypatch, {
+            "359": {"name": "Arsenal", "slug": "premier-league"},
+            "382": {"name": "Manchester City", "slug": "premier-league"},
+        })
+        csv_text = (
+            "Div,Date,HomeTeam,AwayTeam,FTHG,FTAG,FTR\r\n"
+            "E0,22/09/2024,Man City,Everton,2,0,H\r\n"
+            "E0,02/02/2025,Arsenal,Everton,1,0,H\r\n"
+        )
+        monkeypatch.setattr(c, "_fduk_fetch_season", lambda div, code, cur: csv_text)
+        out = c.get_head_to_head({"params": {"team_id": "359", "team_id_2": "382", "max_seasons": 1}})
+        assert all(t["resolved"] for t in out["teams"])
+        assert out["events"] == [] and "may not have shared a division" in out["message"]
 
     def test_team_strength_assembly(self, monkeypatch):
         from pathlib import Path

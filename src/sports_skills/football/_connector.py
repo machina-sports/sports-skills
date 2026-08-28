@@ -1181,12 +1181,49 @@ _ABBREV = {
 # This is deliberately NOT a full team database — that would go stale every
 # season (promotions, renames) and break the skill's zero-config promise. Add an
 # entry only when a real, observed miss requires it; add a new provider key when
-# another source needs its own exceptions. The drift-guard test
-# (`TestClubEloDriftGuard`) fails loudly if a known club stops resolving.
+# another source needs its own exceptions. The drift-guard tests
+# (`TestClubEloDriftGuard`, `TestFdukDriftGuard`) fail loudly if a known club
+# stops resolving.
+#
+# Keys are `_normalize_name` output, so e.g. "Paris FC" is keyed "paris" (the
+# normalizer strips the " fc" token). `TestProviderOverrideKeys` enforces that.
 _PROVIDER_NAME_OVERRIDES = {
     "clubelo": {
         "paris saint germain": "Paris SG",
-        "paris fc": "Paris FC",
+        "paris": "Paris FC",
+    },
+    # football-data.co.uk labels are short and often English exonyms or
+    # abbreviations that share no word with the ESPN display name — "FC Koln",
+    # "M'gladbach", "Ein Frankfurt", "Sp Lisbon", "Buyuksehyr". Fuzzy matching
+    # cannot bridge those, so H2H silently returned zero meetings. Every entry
+    # below is an observed miss (ESPN team list vs the division's CSVs).
+    "fduk": {
+        # England
+        "queens park rangers": "QPR",
+        "sheffield wednesday": "Sheffield Weds",
+        # Spain
+        "athletic club": "Ath Bilbao",
+        "atletico madrid": "Ath Madrid",
+        "deportivo": "La Coruna",
+        "espanyol": "Espanol",
+        # Germany
+        "borussia monchengladbach": "M'gladbach",
+        "cologne": "FC Koln",
+        "eintracht frankfurt": "Ein Frankfurt",
+        # France ("Paris SG" vs "Paris FC" is also a same-city collision)
+        "paris saint germain": "Paris SG",
+        "stade rennais": "Rennes",
+        # Netherlands
+        "fortuna sittard": "For Sittard",
+        # Portugal
+        "sporting cp": "Sp Lisbon",
+        # Scotland
+        "heart of midlothian": "Hearts",
+        # Belgium
+        "sint truidense": "St Truiden",
+        # Turkey
+        "amed sfk": "Amedspor",
+        "istanbul basaksehir": "Buyuksehyr",
     },
 }
 
@@ -2971,13 +3008,67 @@ def _fduk_fetch_season(div, code, is_current):
     return text
 
 
+def _fduk_labels_from_csv(text):
+    """The distinct team labels appearing in one division-season CSV."""
+    labels = set()
+    if not text:
+        return labels
+    for row in csv.DictReader(io.StringIO(text)):
+        for key in ("HomeTeam", "AwayTeam"):
+            label = (row.get(key) or "").strip()
+            if label:
+                labels.add(label)
+    return labels
+
+
+def _fduk_resolve_label(espn_name, labels):
+    """Resolve an ESPN team name to one exact football-data.co.uk label.
+
+    `labels` is the pool to resolve against — every label the division shows in
+    the seasons being searched. Returns (label, method), mirroring
+    `_clubelo_resolve`: the override map first, then fuzzy matching, and
+    (None, reason) rather than a guess when nothing matches or several do.
+    Resolving the name once against the whole pool — instead of fuzzy-matching
+    row by row — is what keeps same-city pairs ("Dundee"/"Dundee United",
+    "Paris SG"/"Paris FC") apart.
+
+    An override is authoritative: if its target is absent from the pool the club
+    simply did not play in that division, and falling back to fuzzy matching
+    would hand back the very rival the override exists to exclude.
+    """
+    norm = _normalize_name(espn_name)
+    override = _PROVIDER_NAME_OVERRIDES["fduk"].get(norm)
+    if override:
+        return (override, "override") if override in labels else (None, "not_found")
+    cands = sorted(label for label in labels if _teams_match(espn_name, label))
+    if not cands:
+        return None, "not_found"
+    if len(cands) == 1:
+        return cands[0], "fuzzy"
+    exact = [label for label in cands if _normalize_name(label) == norm]
+    if len(exact) == 1:
+        return exact[0], "exact"
+    return None, "ambiguous:" + "|".join(cands)
+
+
 def _fduk_meetings_from_csv(text, name1, name2, slug=""):
     """Parse a football-data.co.uk CSV and return meetings between two teams.
 
-    Pure function over CSV text (no network). Matches team names fuzzily via
-    `_teams_match` because football-data.co.uk uses short labels (e.g.
-    "Man City", "Nott'm Forest") that differ from ESPN's full names.
+    Pure function over CSV text (no network). Both ESPN names are resolved to
+    the CSV's exact labels first (see `_fduk_resolve_label`), because
+    football-data.co.uk uses short labels (e.g. "Man City", "Nott'm Forest")
+    that differ from ESPN's full names.
     """
+    labels = _fduk_labels_from_csv(text)
+    label1, _ = _fduk_resolve_label(name1, labels)
+    label2, _ = _fduk_resolve_label(name2, labels)
+    if not label1 or not label2:
+        return []
+    return _fduk_meetings_for_labels(text, label1, label2, slug)
+
+
+def _fduk_meetings_for_labels(text, label1, label2, slug=""):
+    """Return the played meetings between two exact football-data.co.uk labels."""
     if not text:
         return []
     meetings = []
@@ -2988,8 +3079,8 @@ def _fduk_meetings_from_csv(text, name1, name2, slug=""):
         date = (row.get("Date") or "").strip()
         if not home or not away or not date:
             continue
-        direct = _teams_match(home, name1) and _teams_match(away, name2)
-        reverse = _teams_match(home, name2) and _teams_match(away, name1)
+        direct = home == label1 and away == label2
+        reverse = home == label2 and away == label1
         if not (direct or reverse):
             continue
         hg = _fduk_int(row.get("FTHG"))
@@ -3025,13 +3116,46 @@ def _fduk_meetings_from_csv(text, name1, name2, slug=""):
 
 
 def _fduk_head_to_head(div, name1, name2, max_seasons, slug=""):
-    """Collect meetings between two teams across recent seasons, newest-first."""
-    meetings = []
+    """Collect meetings between two teams across recent seasons, newest-first.
+
+    Returns (meetings, resolution) where `resolution` is one status dict per
+    team, so callers can tell "this club never matched a football-data.co.uk
+    label" apart from "these two clubs genuinely never met".
+
+    Names are resolved once against the union of every fetched season's labels,
+    not season by season: a season the rival was absent from would otherwise
+    leave a lone candidate for the fuzzy matcher to take (e.g. "Paris FC" in a
+    season only "Paris SG" played in).
+    """
+    seasons = []
     for code, is_current in _fduk_season_codes(max_seasons):
         text = _fduk_fetch_season(div, code, is_current)
-        meetings.extend(_fduk_meetings_from_csv(text, name1, name2, slug))
-    meetings.sort(key=lambda m: m["date"], reverse=True)
-    return meetings
+        if text:
+            seasons.append(text)
+    labels = set()
+    for text in seasons:
+        labels |= _fduk_labels_from_csv(text)
+    resolved = []
+    for name in (name1, name2):
+        label, method = _fduk_resolve_label(name, labels)
+        resolved.append(
+            {
+                "name": name,
+                "resolved": bool(label),
+                "matched_as": label,
+                "reason": None if label else method,
+            }
+        )
+    meetings = []
+    if resolved[0]["resolved"] and resolved[1]["resolved"]:
+        for text in seasons:
+            meetings.extend(
+                _fduk_meetings_for_labels(
+                    text, resolved[0]["matched_as"], resolved[1]["matched_as"], slug
+                )
+            )
+        meetings.sort(key=lambda m: m["date"], reverse=True)
+    return meetings, resolved
 
 
 def _resolve_espn_team_meta(tid, league_hint=None):
@@ -3123,11 +3247,17 @@ def get_head_to_head(request_data):
         }
     max_seasons = _fduk_int(params.get("max_seasons") or ca.get("max_seasons")) or 10
     max_seasons = max(1, min(max_seasons, 34))
-    meetings = _fduk_head_to_head(div, name1, name2, max_seasons, slug)
+    meetings, resolution = _fduk_head_to_head(div, name1, name2, max_seasons, slug)
+    for team, res in zip(teams, resolution):
+        team["resolved"] = res["resolved"]
+        if res["resolved"]:
+            team["matched_as"] = res["matched_as"]
+        else:
+            team["reason"] = res["reason"]
     t1_wins = t2_wins = draws = t1_goals = t2_goals = 0
     for m in meetings:
         hg, ag = m["home_score"], m["away_score"]
-        if _teams_match(m["home_team"]["name"], name1):
+        if m["home_team"]["name"] == resolution[0]["matched_as"]:
             t1_goals += hg
             t2_goals += ag
             t1_here, t2_here = hg, ag
@@ -3153,7 +3283,19 @@ def get_head_to_head(request_data):
         },
         "source": "football-data.co.uk",
     }
-    if not meetings:
+    unresolved = [r for r in resolution if not r["resolved"]]
+    if unresolved:
+        # Distinct from "they never met": we could not tie the club to a
+        # football-data.co.uk label at all, so we know nothing either way.
+        who = ", ".join(f"{r['name']} ({r['reason']})" for r in unresolved)
+        result["message"] = (
+            f"Could not match {who} to a football-data.co.uk team label in the "
+            f"{league.get('name', slug)} over the last {max_seasons} seasons. This is "
+            "a name-resolution gap, not evidence that the clubs never met — the club "
+            "may simply have played in another division in that window. "
+            "Alternative: use get_team_schedule for both teams and compare."
+        )
+    elif not meetings:
         result["message"] = (
             f"No head-to-head meetings found for {name1} vs {name2} in the "
             f"{league.get('name', slug)} over the last {max_seasons} seasons "
