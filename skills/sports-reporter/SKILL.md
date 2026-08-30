@@ -359,7 +359,6 @@ If the user does not specify the sport:
 - ~~`get_match`~~ / ~~`get_results`~~ — use `get_game_summary` with `event_id`
 - ~~`get_box_score`~~ — use `get_game_summary`
 - ~~`get_odds`~~ — use polymarket or kalshi skill if needed
-- ~~`get_head_to_head`~~ (football) — returns empty; build H2H manually via schedules
 
 If a command is not listed in `references/api-reference.md`, it does not exist.
 

@@ -107,6 +107,8 @@ League, Turkish Super Lig). Returns an informative message for other leagues.
 Returns `data.events[]` (per meeting: date, home/away team+score, result, shots/corners
 when available) and `data.summary` (total meetings, per-team wins + goals, draws).
 Only counts meetings in a shared division. ESPN remains the fixture authority.
+`data.teams[]` reports `resolved` + `matched_as` per club: zero meetings with an
+unresolved club means the lookup failed, not that the clubs never met.
 
 ### get_team_strength
 Team strength via ClubElo Elo rating (free CSV). **European clubs only** — a
