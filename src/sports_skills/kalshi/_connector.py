@@ -6,6 +6,7 @@ Uses stdlib only (urllib, json, threading).
 """
 
 import json
+import re
 import threading
 import time
 import urllib.error
@@ -845,24 +846,45 @@ def search_markets(request_data):
                 "wizards": ["washington", "wizards"],
             }
 
-            # Expand query into possible matches
-            search_terms = [normalized_query]
-            for mascot, kalshi_names in norm_map.items():
-                if mascot in normalized_query:
-                    search_terms.extend(kalshi_names)
-
             if query:
-                # Check if ANY of our expanded search terms match the title
-                title_match = any(term in str(title).lower() for term in search_terms)
+                # Cross-venue callers build "<away> <home>" queries ("Orioles
+                # Rays") whose tokens are never contiguous in titles like
+                # "Orioles vs Rays Winner?". Every original token remains
+                # mandatory. Mascot aliases may supplement a token only when
+                # they do not collapse into another token already in the query.
+                query_tokens = re.findall(r"\w+", normalized_query)
+                query_token_set = set(query_tokens)
+                token_groups = []
+                for token in query_tokens:
+                    alternatives = norm_map.get(token, [token])
+                    other_tokens = query_token_set - {token}
+                    safe_alternatives = [
+                        alternative
+                        for alternative in alternatives
+                        if not set(re.findall(r"\w+", alternative)).issubset(other_tokens)
+                    ]
+                    token_groups.append(safe_alternatives or [token])
 
-                # Also check market titles
+                def _matches(haystack):
+                    def _contains(term):
+                        return re.search(rf"(?<!\w){re.escape(term)}(?!\w)", haystack) is not None
+
+                    return bool(token_groups) and all(
+                        any(_contains(term) for term in alternatives) for alternatives in token_groups
+                    )
+
+                # Check if the event title matches
+                title_match = _matches(str(title).lower())
+
+                # Also check each market field independently. Joining title and
+                # subtitle can fabricate a match from unrelated text surfaces.
                 event_match = False
                 markets = event.get("markets", [])
                 if not title_match:
                     for m in markets:
-                        m_title = str(m.get("title", "")).lower()
-                        m_sub = str(m.get("subtitle", "")).lower()
-                        if any(term in m_title or term in m_sub for term in search_terms):
+                        if _matches(str(m.get("title") or "").lower()) or _matches(
+                            str(m.get("subtitle") or "").lower()
+                        ):
                             event_match = True
                             break
 

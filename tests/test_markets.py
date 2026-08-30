@@ -17,6 +17,7 @@ from sports_skills.markets._connector import (
     _normalize_name,
     _normalize_price,
     _parse_kalshi_event_tail,
+    _polymarket_arb_outcomes,
     _search_prophetx,
     _success_partial,
     compare_odds,
@@ -591,7 +592,7 @@ class TestCompareOddsMocked:
     @patch("sports_skills.markets._connector._search_polymarket")
     @patch("sports_skills.markets._connector._search_kalshi")
     @patch("sports_skills.markets._connector._load_sport_module")
-    def test_prophetx_moneyline_odds_join_arb_pool(self, mock_load, mock_kalshi, mock_poly, mock_prophetx):
+    def test_only_game_moneylines_join_arb_pool(self, mock_load, mock_kalshi, mock_poly, mock_prophetx):
         mock_mod = MagicMock()
         mock_mod.get_game_summary.return_value = {
             "status": True,
@@ -605,7 +606,28 @@ class TestCompareOddsMocked:
         }
         mock_load.return_value = mock_mod
         mock_kalshi.return_value = []
-        mock_poly.return_value = []
+        mock_poly.return_value = [
+            {
+                "source": "polymarket",
+                "title": "Celtics vs. Lakers",
+                "market_id": "M1",
+                "sports_market_type": "moneyline",
+                "outcomes": [
+                    {"token_id": "T1", "outcome": "Celtics", "price": 0.61},
+                    {"token_id": "T2", "outcome": "Lakers", "price": 0.42},
+                ],
+            },
+            {
+                "source": "polymarket",
+                "title": "Will there be a run scored in the first inning?",
+                "market_id": "M2",
+                "sports_market_type": "",
+                "outcomes": [
+                    {"token_id": "T3", "outcome": "Yes", "price": 0.5},
+                    {"token_id": "T4", "outcome": "No", "price": 0.5},
+                ],
+            },
+        ]
         mock_prophetx.return_value = [
             {
                 "source": "prophetx",
@@ -643,12 +665,176 @@ class TestCompareOddsMocked:
         result = compare_odds({"params": {"sport": "nba", "event_id": "123"}})
         assert result["status"] is True
         arb = result["data"]["arbitrage_check"]
-        assert arb is not None  # two prophetx moneyline probs reached the pool
+        assert arb is not None
         labels = [a.get("label", "") for a in arb["allocations"]]
-        assert "prophetx_Celtics -150" in labels
-        assert "prophetx_Lakers +130" in labels
+        # One best price per mutually exclusive side: ProphetX is best for
+        # Celtics, Polymarket is best for Lakers.
+        assert labels == ["prophetx_Celtics -150", "poly_Lakers"]
+        assert arb["total_implied"] == pytest.approx(1.02)
         assert not any("Over 220" in label for label in labels)  # non-moneyline stays out
         assert not any("1H" in label for label in labels)  # derivative moneylines stay out
+        assert "poly_Yes" not in labels  # non-moneyline poly markets stay out
+
+    @patch("sports_skills.markets._connector._search_prophetx")
+    @patch("sports_skills.markets._connector._search_polymarket")
+    @patch("sports_skills.markets._connector._search_kalshi")
+    @patch("sports_skills.markets._connector._load_sport_module")
+    def test_cross_venue_arb_uses_best_price_per_side(
+        self, mock_load, mock_kalshi, mock_poly, mock_prophetx
+    ):
+        mock_mod = MagicMock()
+        mock_mod.get_game_summary.return_value = {
+            "status": True,
+            "data": {
+                "competitors": [
+                    {"team": {"name": "Home Team"}, "home_away": "home"},
+                    {"team": {"name": "Away Team"}, "home_away": "away"},
+                ],
+                "odds": {"home_odds": 150, "away_odds": -233.333333},
+            },
+        }
+        mock_load.return_value = mock_mod
+        mock_kalshi.return_value = []
+        mock_poly.return_value = [
+            {
+                "sports_market_type": "moneyline",
+                "outcomes": [
+                    {"outcome": "Home Team", "price": 0.7},
+                    {"outcome": "Away Team", "price": 0.4},
+                ],
+            }
+        ]
+        mock_prophetx.return_value = []
+
+        result = compare_odds({"params": {"sport": "nba", "event_id": "123"}})
+        arb = result["data"]["arbitrage_check"]
+
+        assert arb["arbitrage_found"] is True
+        assert arb["total_implied"] == pytest.approx(0.8)
+        assert [a["label"] for a in arb["allocations"]] == ["espn_Home Team", "poly_Away Team"]
+
+    @patch("sports_skills.markets._connector._search_prophetx")
+    @patch("sports_skills.markets._connector._search_polymarket")
+    @patch("sports_skills.markets._connector._search_kalshi")
+    @patch("sports_skills.markets._connector._load_sport_module")
+    def test_multiple_polymarket_moneylines_do_not_join_one_arb_pool(
+        self, mock_load, mock_kalshi, mock_poly, mock_prophetx
+    ):
+        mock_mod = MagicMock()
+        mock_mod.get_game_summary.return_value = {
+            "status": True,
+            "data": {
+                "competitors": [
+                    {"team": {"name": "Boston Celtics"}, "home_away": "home"},
+                    {"team": {"name": "Los Angeles Lakers"}, "home_away": "away"},
+                ],
+                "odds": {},
+            },
+        }
+        mock_load.return_value = mock_mod
+        mock_kalshi.return_value = []
+        mock_prophetx.return_value = []
+        mock_poly.return_value = [
+            {
+                "market_id": "date-1",
+                "sports_market_type": "moneyline",
+                "outcomes": [
+                    {"outcome": "Celtics", "price": 0.6},
+                    {"outcome": "Lakers", "price": 0.4},
+                ],
+            },
+            {
+                "market_id": "date-2",
+                "sports_market_type": "moneyline",
+                "outcomes": [
+                    {"outcome": "Celtics", "price": 0.65},
+                    {"outcome": "Lakers", "price": 0.35},
+                ],
+            },
+        ]
+
+        result = compare_odds({"params": {"sport": "nba", "event_id": "123"}})
+
+        assert result["data"]["arbitrage_check"] is None
+        assert any("multiple Polymarket moneylines" in warning for warning in result["data"]["warnings"])
+
+    def test_binary_soccer_moneylines_do_not_join_arb_pool(self):
+        outcomes, warning = _polymarket_arb_outcomes(
+            [
+                {
+                    "market_id": "home-contract",
+                    "sports_market_type": "moneyline",
+                    "outcomes": [{"outcome": "Yes", "price": 0.4}, {"outcome": "No", "price": 0.6}],
+                }
+            ]
+        )
+
+        assert outcomes == []
+        assert warning is not None
+        assert "binary Polymarket moneyline" in warning
+
+    def test_incomplete_three_way_moneyline_is_rejected(self):
+        outcomes, warning = _polymarket_arb_outcomes(
+            [
+                {
+                    "sports_market_type": "moneyline",
+                    "outcomes": [
+                        {"outcome": "Home", "price": 0.4},
+                        {"outcome": "Draw", "price": None},
+                        {"outcome": "Away", "price": 0.45},
+                    ],
+                }
+            ]
+        )
+        assert outcomes == []
+        assert warning == "Skipped incomplete Polymarket moneyline."
+
+    def test_non_numeric_moneyline_price_is_rejected(self):
+        outcomes, warning = _polymarket_arb_outcomes(
+            [
+                {
+                    "sports_market_type": "moneyline",
+                    "outcomes": [
+                        {"outcome": "Home", "price": "0.4"},
+                        {"outcome": "Away", "price": 0.6},
+                    ],
+                }
+            ]
+        )
+        assert outcomes == []
+        assert warning == "Skipped invalid Polymarket moneyline prices."
+
+    def test_duplicate_or_blank_moneyline_labels_are_rejected(self):
+        for labels in (("Home", "Home"), ("", "Away")):
+            outcomes, warning = _polymarket_arb_outcomes(
+                [
+                    {
+                        "sports_market_type": "moneyline",
+                        "outcomes": [
+                            {"outcome": labels[0], "price": 0.4},
+                            {"outcome": labels[1], "price": 0.6},
+                        ],
+                    }
+                ]
+            )
+            assert outcomes == []
+            assert warning == "Skipped invalid Polymarket moneyline outcome labels."
+
+    def test_any_binary_yes_or_no_label_is_rejected(self):
+        outcomes, warning = _polymarket_arb_outcomes(
+            [
+                {
+                    "sports_market_type": "moneyline",
+                    "outcomes": [
+                        {"outcome": "Yes", "price": 0.4},
+                        {"outcome": "Draw", "price": 0.6},
+                    ],
+                }
+            ]
+        )
+        assert outcomes == []
+        assert warning is not None
+        assert "binary Polymarket moneyline" in warning
 
     def test_missing_sport(self):
         result = compare_odds({"params": {"event_id": "123"}})

@@ -405,6 +405,38 @@ def _search_polymarket(entity: str, sport: str | None = None) -> list[dict]:
     return results
 
 
+def _polymarket_arb_outcomes(markets: list[dict]) -> tuple[list[dict], str | None]:
+    """Return one complete Polymarket game moneyline for arbitrage comparison."""
+    moneylines = [
+        market for market in markets if market.get("sports_market_type") == "moneyline" and market.get("outcomes")
+    ]
+    if len(moneylines) > 1:
+        return [], "Skipped multiple Polymarket moneylines; contracts cannot share one arbitrage pool."
+    if not moneylines:
+        return [], None
+
+    outcomes = moneylines[0]["outcomes"]
+    valid_outcomes = []
+    for outcome in outcomes:
+        price = outcome.get("price")
+        if not isinstance(price, (int, float)) or isinstance(price, bool):
+            if price is not None:
+                return [], "Skipped invalid Polymarket moneyline prices."
+            continue
+        if 0 < price < 1:
+            valid_outcomes.append(outcome)
+    if len(valid_outcomes) != len(outcomes) or len(valid_outcomes) != 2:
+        return [], "Skipped incomplete Polymarket moneyline."
+
+    labels = [str(outcome.get("outcome") or "").strip().lower() for outcome in valid_outcomes]
+    if any(not label for label in labels) or len(set(labels)) != len(labels):
+        return [], "Skipped invalid Polymarket moneyline outcome labels."
+    if {"yes", "no"} & set(labels):
+        return [], "Skipped binary Polymarket moneyline; one contract is not a complete game market."
+
+    return valid_outcomes, None
+
+
 def _prophetx_outcome_odds(outcome: dict) -> dict | None:
     """Extract top-of-book American odds from a normalized ProphetX outcome.
 
@@ -755,24 +787,41 @@ def compare_odds(request_data: dict) -> dict:
 
     # Check for arbitrage if we have matching market prices
     arb_check = None
-    all_probs = []
-    all_labels = []
-
+    # Gather one price per mutually exclusive side across venues, then keep the
+    # cheapest implied probability for each side. Summing every venue's full
+    # outcome set double-counts the same propositions and can never identify a
+    # real cross-venue arbitrage.
+    side_prices = {"home": [], "away": []}
     if espn_comparison.get("home") and espn_comparison["home"]["implied_probability"] > 0:
-        all_probs.append(espn_comparison["home"]["implied_probability"])
-        all_labels.append(f"espn_{home_team}")
+        side_prices["home"].append(
+            (espn_comparison["home"]["implied_probability"], f"espn_{home_team}")
+        )
 
     if espn_comparison.get("away") and espn_comparison["away"]["implied_probability"] > 0:
-        all_probs.append(espn_comparison["away"]["implied_probability"])
-        all_labels.append(f"espn_{away_team}")
+        side_prices["away"].append(
+            (espn_comparison["away"]["implied_probability"], f"espn_{away_team}")
+        )
 
-    # Add best market prices for arb check
-    for pm in poly_matches:
-        for outcome in pm.get("outcomes", []):
-            price = outcome.get("price", 0)
-            if 0 < price < 1:
-                all_probs.append(price)
-                all_labels.append(f"poly_{outcome.get('outcome', '')}")
+    def _side_for_label(label):
+        normalized = _normalize_name(str(label or ""))
+        scores = {
+            "home": _match_score(normalized, home_team),
+            "away": _match_score(normalized, away_team),
+        }
+        side = "home" if scores["home"] >= scores["away"] else "away"
+        return side if scores[side] >= MATCH_THRESHOLD else None
+
+    # Only one complete game moneyline can join the pool. Separate dated
+    # markets and binary contracts are not one mutually exclusive set.
+    poly_outcomes, poly_warning = _polymarket_arb_outcomes(poly_matches)
+    if poly_warning:
+        warnings.append(poly_warning)
+    for outcome in poly_outcomes:
+        side = _side_for_label(outcome.get("outcome"))
+        if side:
+            side_prices[side].append(
+                (outcome["price"], f"poly_{outcome.get('outcome', '')}")
+            )
 
     # ProphetX exposes odds only when a public order book exists. Only the
     # primary full-game moneyline joins the pool — derivative moneylines
@@ -785,9 +834,19 @@ def compare_odds(request_data: dict) -> dict:
         game_ml = next((m for m in moneylines if m.get("title") == "Moneyline"), moneylines[0])
         for outcome in game_ml.get("outcomes", []):
             prob = outcome.get("implied_probability") or 0
-            if 0 < prob < 1:
-                all_probs.append(prob)
-                all_labels.append(f"prophetx_{outcome.get('outcome', '')}")
+            side = _side_for_label(outcome.get("outcome"))
+            if side and 0 < prob < 1:
+                side_prices[side].append(
+                    (prob, f"prophetx_{outcome.get('outcome', '')}")
+                )
+
+    all_probs = []
+    all_labels = []
+    if side_prices["home"] and side_prices["away"]:
+        for side in ("home", "away"):
+            probability, label = min(side_prices[side], key=lambda candidate: candidate[0])
+            all_probs.append(probability)
+            all_labels.append(label)
 
     if len(all_probs) >= 2:
         try:
