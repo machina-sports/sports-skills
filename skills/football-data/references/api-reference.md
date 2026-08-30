@@ -174,6 +174,11 @@ source has them) plus `data.summary` (`total_meetings`, per-team `wins`+`goals`,
 `draws`). Only counts meetings played in a shared division; ESPN stays the fixture
 authority for live/recent scores.
 
+Each entry in `data.teams[]` carries a `resolved` flag plus `matched_as` (the
+football-data.co.uk label it resolved to) or a `reason` when it did not. A club
+that could not be matched is reported as such — `total_meetings: 0` with an
+unresolved club means "we could not look this pair up", not "they never met".
+
 Coverage: Premier League, Championship, La Liga, Serie A, Bundesliga, Ligue 1,
 Eredivisie, Primeira Liga, Scottish Premiership, Belgian Pro League, Turkish Super Lig.
 
