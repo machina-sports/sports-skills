@@ -1,4 +1,5 @@
 import json
+import re
 import threading
 import time
 import urllib.error
@@ -248,7 +249,7 @@ def _normalize_market(market):
         "clob_token_ids": clob_token_ids,
         "tags": [
             t.get("label", "") if isinstance(t, dict) else t
-            for t in market.get("tags", [])
+            for t in (market.get("tags") or [])
         ],
     }
 
@@ -799,25 +800,35 @@ def search_markets(request_data):
         return _error(f"Error searching markets: {str(e)}")
 
 
+def _query_matches(query, haystack):
+    """Contiguous match, or token-AND for multi-word queries.
+
+    Cross-venue callers build "<away> <home>" queries ("Orioles Rays") whose
+    tokens are never contiguous in titles like "Orioles vs. Rays" — every
+    token must appear, but not adjacently.
+    """
+    query = str(query or "").lower()
+    haystack = str(haystack or "").lower()
+    if re.search(rf"(?<!\w){re.escape(query)}(?!\w)", haystack):
+        return True
+    tokens = query.split()
+    return len(tokens) > 1 and all(re.search(rf"(?<!\w){re.escape(token)}(?!\w)", haystack) for token in tokens)
+
+
 def _text_match(query, event):
     """Check if query matches event title, description, or slug."""
     q = query.lower()
-    return (
-        q in event.get("title", "").lower()
-        or q in event.get("description", "").lower()
-        or q in event.get("slug", "").lower()
-    )
+    fields = [event.get("title"), event.get("description"), event.get("slug")]
+    return any(_query_matches(q, field) for field in fields if field)
 
 
 def _text_match_market(query, market):
     """Check if query matches market question, slug, or parent event title."""
     q = query.lower()
-    if q in market.get("question", "").lower() or q in market.get("slug", "").lower():
-        return True
-    return any(
-        q in e.get("title", "").lower() or q in e.get("slug", "").lower()
-        for e in market.get("events", [])
-    )
+    fields = [market.get("question"), market.get("slug")]
+    for event in market.get("events") or []:
+        fields.extend([event.get("title"), event.get("slug")])
+    return any(_query_matches(q, field) for field in fields if field)
 
 
 def get_sports_config(request_data):
