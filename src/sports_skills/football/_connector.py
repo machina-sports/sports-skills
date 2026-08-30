@@ -1227,6 +1227,17 @@ _PROVIDER_NAME_OVERRIDES = {
     },
 }
 
+# Explicit identity-preserving provider renames. Unlike fuzzy inference, these
+# aliases may be used across seasons without merging distinct same-city clubs.
+_FDUK_HISTORICAL_ALIASES = {
+    "waasland beveren": {"Waasland-Beveren", "Beveren"},
+    "beveren": {"Waasland-Beveren", "Beveren"},
+}
+
+# These normalized names have real provider-label collisions. If their exact
+# label is absent, fail closed rather than returning the same-city rival.
+_FDUK_EXACT_ONLY_NAMES = {"dundee", "dundee united", "paris"}
+
 
 def _expand_abbrev(words):
     """Expand common abbreviations in a word set."""
@@ -3040,14 +3051,16 @@ def _fduk_resolve_label(espn_name, labels):
     override = _PROVIDER_NAME_OVERRIDES["fduk"].get(norm)
     if override:
         return (override, "override") if override in labels else (None, "not_found")
+    exact = [label for label in labels if _normalize_name(label) == norm]
+    if len(exact) == 1:
+        return exact[0], "exact"
+    if norm in _FDUK_EXACT_ONLY_NAMES:
+        return None, "not_found"
     cands = sorted(label for label in labels if _teams_match(espn_name, label))
     if not cands:
         return None, "not_found"
     if len(cands) == 1:
         return cands[0], "fuzzy"
-    exact = [label for label in cands if _normalize_name(label) == norm]
-    if len(exact) == 1:
-        return exact[0], "exact"
     return None, "ambiguous:" + "|".join(cands)
 
 
@@ -3122,38 +3135,42 @@ def _fduk_head_to_head(div, name1, name2, max_seasons, slug=""):
     team, so callers can tell "this club never matched a football-data.co.uk
     label" apart from "these two clubs genuinely never met".
 
-    Names are resolved once against the union of every fetched season's labels,
-    not season by season: a season the rival was absent from would otherwise
-    leave a lone candidate for the fuzzy matcher to take (e.g. "Paris FC" in a
-    season only "Paris SG" played in).
+    Names are anchored against the union of every fetched season's labels. Only
+    explicit, observed provider renames are retained as historical aliases; fuzzy
+    cross-season inference would conflate distinct same-city clubs such as
+    "Dundee" and "Dundee United" or "Paris SG" and "Paris FC".
     """
     seasons = []
     for code, is_current in _fduk_season_codes(max_seasons):
         text = _fduk_fetch_season(div, code, is_current)
         if text:
             seasons.append(text)
-    labels = set()
-    for text in seasons:
-        labels |= _fduk_labels_from_csv(text)
+    season_labels = [_fduk_labels_from_csv(text) for text in seasons]
+    labels = set().union(*season_labels) if season_labels else set()
     resolved = []
     for name in (name1, name2):
         label, method = _fduk_resolve_label(name, labels)
+        matched_labels = {label} if label else set()
+        if label:
+            historical = _FDUK_HISTORICAL_ALIASES.get(_normalize_name(name), set())
+            matched_labels.update(historical & labels)
         resolved.append(
             {
                 "name": name,
                 "resolved": bool(label),
                 "matched_as": label,
+                "labels": matched_labels,
                 "reason": None if label else method,
             }
         )
     meetings = []
     if resolved[0]["resolved"] and resolved[1]["resolved"]:
-        for text in seasons:
-            meetings.extend(
-                _fduk_meetings_for_labels(
-                    text, resolved[0]["matched_as"], resolved[1]["matched_as"], slug
-                )
-            )
+        for text, labels_in_season in zip(seasons, season_labels):
+            label1 = next(iter(resolved[0]["labels"] & labels_in_season), None)
+            label2 = next(iter(resolved[1]["labels"] & labels_in_season), None)
+            if not label1 or not label2:
+                continue
+            meetings.extend(_fduk_meetings_for_labels(text, label1, label2, slug))
         meetings.sort(key=lambda m: m["date"], reverse=True)
     return meetings, resolved
 
@@ -3257,7 +3274,7 @@ def get_head_to_head(request_data):
     t1_wins = t2_wins = draws = t1_goals = t2_goals = 0
     for m in meetings:
         hg, ag = m["home_score"], m["away_score"]
-        if m["home_team"]["name"] == resolution[0]["matched_as"]:
+        if m["home_team"]["name"] in resolution[0]["labels"]:
             t1_goals += hg
             t2_goals += ag
             t1_here, t2_here = hg, ag

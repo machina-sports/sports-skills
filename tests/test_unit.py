@@ -1846,6 +1846,101 @@ class TestFdukMeetingsFromCsv:
         meetings = _fduk_meetings_from_csv(csv_text, "Paris FC", "Marseille", "ligue-1")
         assert [m["home_team"]["name"] for m in meetings] == ["Paris FC"]
 
+    def test_preserves_history_across_provider_label_rename(self, monkeypatch):
+        from sports_skills.football import _connector
+
+        seasons = {
+            "2627": (
+                "Div,Date,HomeTeam,AwayTeam,FTHG,FTAG,FTR\r\n"
+                "B1,01/08/2026,Beveren,Anderlecht,2,0,H\r\n"
+            ),
+            "2021": (
+                "Div,Date,HomeTeam,AwayTeam,FTHG,FTAG,FTR\r\n"
+                "B1,01/08/2020,Waasland-Beveren,Anderlecht,1,0,H\r\n"
+            ),
+        }
+        monkeypatch.setattr(_connector, "_fduk_season_codes", lambda _n: [("2627", True), ("2021", False)])
+        monkeypatch.setattr(
+            _connector,
+            "_fduk_fetch_season",
+            lambda _div, code, _current: seasons[code],
+        )
+
+        meetings, resolution = _connector._fduk_head_to_head(
+            "B1", "Waasland-Beveren", "Anderlecht", 2, "belgian-pro-league"
+        )
+
+        assert [m["date"] for m in meetings] == ["2026-08-01", "2020-08-01"]
+        assert resolution[0]["matched_as"] == "Waasland-Beveren"
+        assert resolution[0]["labels"] == {"Beveren", "Waasland-Beveren"}
+
+    def test_rename_aliases_feed_summary_for_both_home_directions(self, monkeypatch):
+        from sports_skills.football import _connector
+
+        seasons = {
+            "2627": (
+                "Div,Date,HomeTeam,AwayTeam,FTHG,FTAG,FTR\r\n"
+                "B1,01/08/2026,Beveren,Anderlecht,2,0,H\r\n"
+            ),
+            "2021": (
+                "Div,Date,HomeTeam,AwayTeam,FTHG,FTAG,FTR\r\n"
+                "B1,01/08/2020,Anderlecht,Waasland-Beveren,0,1,A\r\n"
+            ),
+        }
+        monkeypatch.setattr(_connector, "_fduk_season_codes", lambda _n: [("2627", True), ("2021", False)])
+        monkeypatch.setattr(
+            _connector,
+            "_fduk_fetch_season",
+            lambda _div, code, _current: seasons[code],
+        )
+        metas = {
+            "13450": {"name": "Waasland-Beveren", "slug": "belgian-pro-league"},
+            "441": {"name": "Anderlecht", "slug": "belgian-pro-league"},
+        }
+        monkeypatch.setattr(_connector, "_resolve_espn_team_meta", lambda tid, _slug=None: metas[tid])
+
+        result = _connector.get_head_to_head(
+            {
+                "params": {
+                    "team_id": "13450",
+                    "team_id_2": "441",
+                    "league_slug": "belgian-pro-league",
+                    "max_seasons": 2,
+                }
+            }
+        )
+
+        assert result["summary"]["team1"]["wins"] == 2
+        assert result["summary"]["team1"]["goals"] == 3
+        assert result["summary"]["team2"]["goals"] == 0
+
+    def test_does_not_merge_same_city_clubs_across_seasons(self, monkeypatch):
+        from sports_skills.football import _connector
+
+        seasons = {
+            "2627": (
+                "Div,Date,HomeTeam,AwayTeam,FTHG,FTAG,FTR\r\n"
+                "SC0,01/08/2026,Dundee United,Celtic,2,0,H\r\n"
+            ),
+            "2021": (
+                "Div,Date,HomeTeam,AwayTeam,FTHG,FTAG,FTR\r\n"
+                "SC0,01/08/2020,Dundee,Celtic,1,0,H\r\n"
+            ),
+        }
+        monkeypatch.setattr(_connector, "_fduk_season_codes", lambda _n: [("2627", True), ("2021", False)])
+        monkeypatch.setattr(
+            _connector,
+            "_fduk_fetch_season",
+            lambda _div, code, _current: seasons[code],
+        )
+
+        meetings, resolution = _connector._fduk_head_to_head(
+            "SC0", "Dundee United", "Celtic", 2, "scottish-premiership"
+        )
+
+        assert [m["home_team"]["name"] for m in meetings] == ["Dundee United"]
+        assert resolution[0]["matched_as"] == "Dundee United"
+
 
 class TestFdukResolveLabel:
     """ESPN display name -> one exact football-data.co.uk label."""
@@ -1868,6 +1963,13 @@ class TestFdukResolveLabel:
 
         # "Paris FC" fuzzy-matches "Paris SG" too; the exact rule settles it.
         assert _fduk_resolve_label("Paris FC", self.LABELS) == ("Paris FC", "exact")
+
+    def test_collision_prone_name_fails_closed_when_exact_label_is_absent(self):
+        from sports_skills.football._connector import _fduk_resolve_label
+
+        assert _fduk_resolve_label("Paris FC", {"Paris SG", "Marseille"}) == (None, "not_found")
+        assert _fduk_resolve_label("Dundee United", {"Dundee", "Celtic"}) == (None, "not_found")
+        assert _fduk_resolve_label("Dundee", {"Dundee United", "Celtic"}) == (None, "not_found")
 
     def test_override_target_absent_is_not_found(self):
         from sports_skills.football._connector import _fduk_resolve_label
