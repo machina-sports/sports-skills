@@ -46,6 +46,7 @@ If the user doesn't specify, ask which tour or show both by calling the command 
 | `get_rankings` | ATP or WTA player rankings |
 | `get_calendar` | Full season tournament calendar |
 | `get_player_info` | Individual tennis player profile |
+| `get_news` | Tennis news articles |
 
 See `references/api-reference.md` for full parameter lists and return shapes.
 
