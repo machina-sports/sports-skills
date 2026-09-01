@@ -13,6 +13,7 @@ agent it does not exist, which takes a working command off the table in the
 product's primary use case.
 """
 
+import re
 from pathlib import Path
 
 import pytest
@@ -36,23 +37,41 @@ def _skill_dir(module: str) -> Path:
     pytest.fail(f"no skill directory for registered module '{module}'")
 
 
-def _documented_text(module: str) -> str:
-    """Every file in the module's skill folder, concatenated.
+def _declared_commands(text: str) -> set[str]:
+    """Command names declared in Markdown table rows or command headings."""
+    commands = set()
+    in_fence = False
+    excluded_section = False
+    for line in text.splitlines():
+        if line.lstrip().startswith("```"):
+            in_fence = not in_fence
+            continue
+        if in_fence:
+            continue
+        section = re.match(r"^##\s+(.+)$", line)
+        if section:
+            excluded_section = "do not exist" in section.group(1).lower()
+        if excluded_section:
+            continue
+        table_command = re.match(r"^\|\s*`([a-z0-9_]+)`\s*\|", line)
+        heading_command = re.match(r"^#{3,4}\s+`?([a-z0-9_]+)`?\s*$", line)
+        match = table_command or heading_command
+        if match:
+            commands.add(match.group(1))
+    return commands
 
-    Deliberately the whole folder rather than SKILL.md alone: several skills
-    keep their command table in `references/api-reference.md` and point at it
-    from SKILL.md, so either location counts as documented.
-    """
-    return "\n".join(
-        path.read_text(encoding="utf-8", errors="ignore")
-        for path in sorted(_skill_dir(module).rglob("*"))
-        if path.is_file()
-    )
+
+def _documented_commands(module: str) -> set[str]:
+    commands = set()
+    for path in sorted(_skill_dir(module).rglob("*.md")):
+        text = path.read_text(encoding="utf-8", errors="ignore")
+        commands.update(_declared_commands(text))
+    return commands
 
 
 @pytest.mark.parametrize("module", sorted(_REGISTRY))
 def test_every_registered_command_is_documented(module):
-    documented = _documented_text(module)
+    documented = _documented_commands(module)
     missing = sorted(command for command in _REGISTRY[module] if command not in documented)
     assert not missing, (
         f"skills/{_skill_dir(module).name}/ documents none of {missing}, "
@@ -64,3 +83,20 @@ def test_every_registered_command_is_documented(module):
 def test_every_registered_module_has_a_skill_directory():
     for module in _REGISTRY:
         assert _skill_dir(module).is_dir()
+
+
+def test_command_mentions_do_not_count_as_declarations():
+    text = """Use `get_market` in an example.
+
+```markdown
+| `get_market` | Example only |
+```
+
+- ~~`get_odds`~~ — does not exist.
+| `get_markets` | List markets |
+
+## Commands that DO NOT exist
+
+### get_odds
+"""
+    assert _declared_commands(text) == {"get_markets"}

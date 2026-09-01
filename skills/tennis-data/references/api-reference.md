@@ -29,6 +29,12 @@ Get individual tennis player profile.
 
 Returns player details: name, nationality, birthplace, height, turned pro year, career titles, and recent match history.
 
+### get_news
+Get tennis news articles for a tour.
+- `tour` (str, required): "atp" or "wta".
+
+Returns news articles for the selected tour.
+
 ## Important: Tennis is Not a Team Sport
 
 - **Tournaments, not games**: Events are multi-day tournaments containing many matches.
