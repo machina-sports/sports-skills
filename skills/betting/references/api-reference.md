@@ -26,6 +26,7 @@
 | `find_arbitrage` | market_probs | labels | Detect arbitrage across outcomes from multiple sources |
 | `parlay_analysis` | legs, parlay_odds | odds_format, correlation | Multi-leg parlay EV and Kelly analysis |
 | `line_movement` | | open_odds, close_odds, open_line, close_line, market_type | Analyze open-to-close line movement |
+| `matchup_probability` | bpi_a, bpi_b | | Win probability from two BPI ratings using a logistic model |
 
 ## Key Concepts
 

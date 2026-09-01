@@ -79,6 +79,10 @@ Derive the current year from the system prompt's date (e.g., `currentDate: 2026-
 | `get_nbastats_shot_chart` | Per-shot court coordinates via NBA Stats |
 | `get_nbastats_play_by_play` | Play-by-play with coordinates for past seasons via NBA Stats |
 | `get_nbastats_advanced_boxscore` | Advanced box score (ratings, usage) via NBA Stats |
+| `get_live_scoreboard` | Real-time scores. Primary cdn.nba.com, fallback ESPN |
+| `get_live_boxscore` | Real-time box score. Primary cdn.nba.com, fallback ESPN |
+| `get_live_playbyplay` | Real-time play-by-play, most recent plays first |
+| `get_player_live_stats` | Real-time stats for one player in today's games |
 
 See `references/api-reference.md` for full parameter lists and return shapes.
 

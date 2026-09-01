@@ -14,6 +14,10 @@
 | `match_markets` | sport | date | Pair the same game across Kalshi and Polymarket (date + team-code join, fuzzy title fallback) |
 | `get_market_price` | venue, ticker (kalshi) or token_id (polymarket) | at_time | Live or point-in-time price — both sides as 0-1 probabilities, one shape for both venues |
 | `get_price_history` | venue, ticker (kalshi) or token_id (polymarket) | interval, start_time, end_time | {timestamp, price} series (0-1 yes probability) at 1m/1h/1d resolution |
+| `get_live_tick` | sport, event_id | | Live market tick for an in-progress game — Kalshi home price + ESPN frame |
+| `get_mock_tick` | mock_file_path | interval_seconds | Deterministic timeline slice from a static mock game file |
+| `get_plays_near_timestamp` | sport, timestamp | game_id, window_seconds, mock_file_path | Plays in the window [timestamp - window_seconds, timestamp] |
+| `resolve_game_market` | sport, event_id | status | Resolve one ESPN game to its Kalshi game-winner market (home side) |
 
 ### `match_markets` notes
 

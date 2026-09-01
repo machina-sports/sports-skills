@@ -97,6 +97,34 @@ Get full player statistical profile for a season.
 
 Returns `categories[]` with detailed stats including value, rank, and per-game averages.
 
+### get_power_index
+Get BPI (Basketball Power Index) ratings for D1 teams.
+- `team_id` (str, optional): ESPN team ID to filter to one team.
+- `limit` (int, optional): Max teams to return. Defaults to 25.
+- `page` (int, optional): Page number for pagination. Defaults to 1.
+
+Returns BPI ratings and rankings for the selected teams.
+
+### get_tournament_projections
+Get NCAA tournament projections with seeds, regions, and advancement probabilities.
+- `limit` (int, optional): Max teams to return. Defaults to the 68-team tournament field.
+
+Returns projected tournament teams with seed, region, and advancement probabilities.
+
+### compare_teams
+Compare two teams using BPI ratings and season stats.
+- `team_a_id` (str, required): ESPN team ID for team A.
+- `team_b_id` (str, required): ESPN team ID for team B.
+
+Returns a side-by-side comparison of both teams.
+
+### find_upset_candidates
+Find potential upsets based on BPI versus seed differential.
+- `min_seed` (int, optional): Minimum seed to consider. Defaults to 10.
+- `max_seed` (int, optional): Maximum seed to consider. Defaults to 16.
+
+Returns potential upset candidates and their BPI-versus-seed differential.
+
 ## Conference IDs (group parameter)
 
 | Conference | Group ID | Conference | Group ID |

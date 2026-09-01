@@ -109,6 +109,31 @@ Get full player statistical profile for a season.
 
 Returns `categories[]` with detailed stats including value, rank, and per-game averages.
 
+### get_live_scoreboard
+Get real-time NBA scores from NBA CDN, with ESPN as a fallback. No parameters.
+
+Returns today's games with live status and scores.
+
+### get_live_boxscore
+Get a real-time NBA box score from NBA CDN, with ESPN as a fallback.
+- `game_id` (str, required): NBA game ID, for example `0022400001`.
+
+Returns game information and the current player box score.
+
+### get_live_playbyplay
+Get real-time NBA play-by-play with the most recent plays first.
+- `game_id` (str, required): NBA game ID.
+- `limit` (int, optional): Maximum plays to return. Defaults to 25.
+- `scoring_only` (bool, optional): Return only scoring plays. Defaults to false.
+
+Returns recent play actions for the game.
+
+### get_player_live_stats
+Get real-time stats for one player in today's games.
+- `player_name` (str, required): Full or partial player name.
+
+Returns the matching player's current box-score line.
+
 ## Team IDs
 
 | Team | ID | Team | ID |

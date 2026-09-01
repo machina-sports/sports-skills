@@ -85,6 +85,10 @@ Derive the current year from the system prompt's date (e.g., `currentDate: 2026-
 | `get_ncaa_play_by_play` | Official play-by-play |
 | `get_ncaa_bracket` | March Madness bracket with live scores |
 | `get_ncaa_schools` | NCAA schools index (all divisions) |
+| `get_power_index` | BPI (Basketball Power Index) ratings for D1 teams |
+| `get_tournament_projections` | NCAA tournament projections with seeds, regions, and advancement probabilities |
+| `compare_teams` | Compare two teams using BPI ratings and season stats |
+| `find_upset_candidates` | Potential upsets based on BPI vs seed differential |
 
 See `references/api-reference.md` for full parameter lists and return shapes.
 
