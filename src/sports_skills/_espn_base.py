@@ -11,6 +11,7 @@ import gzip
 import html
 import json
 import logging
+import math
 import os
 import re
 import sys
@@ -788,6 +789,21 @@ def normalize_core_stats(data):
     return {"categories": categories, "count": len(categories)}
 
 
+def _preferred_future_group(item):
+    """The one sportsbook whose prices a futures market reports.
+
+    ESPN returns a group per sportsbook, and a market carrying two of them
+    lists every competitor twice at different prices. `priority` is ESPN's own
+    ordering, so the lowest number present wins rather than a fixed book:
+    NFL and college football publish only DraftKings at priority 1, so keying
+    on a literal 0 would empty those markets.
+    """
+    groups = item.get("futures", [])
+    if not groups:
+        return None
+    return min(groups, key=lambda g: g.get("provider", {}).get("priority", math.inf))
+
+
 def normalize_futures(data, limit=25):
     """Normalize ESPN core API futures response.
 
@@ -800,7 +816,8 @@ def normalize_futures(data, limit=25):
     futures = []
     for item in data.get("items", []):
         entries = []
-        for future_group in item.get("futures", []):
+        future_group = _preferred_future_group(item)
+        if future_group is not None:
             for book in future_group.get("books", [])[:limit]:
                 athlete_ref = book.get("athlete", {})
                 team_ref = book.get("team", {})
@@ -819,12 +836,16 @@ def normalize_futures(data, limit=25):
                 if athlete_id:
                     entry["id"] = athlete_id
                 entries.append(entry)
-        futures.append({
+        market = {
             "id": item.get("id", ""),
             "name": item.get("displayName", item.get("name", "")),
             "entries": entries,
             "count": len(entries),
-        })
+        }
+        provider_name = (future_group or {}).get("provider", {}).get("name", "")
+        if provider_name:
+            market["provider"] = provider_name
+        futures.append(market)
     return {"futures": futures, "count": len(futures)}
 
 

@@ -82,7 +82,7 @@ Returns `transactions[]` with date, team, and description.
 
 ### get_futures
 Get NBA futures/odds markets (Championship winner, MVP, etc.).
-- `limit` (int, optional): Max entries per market. Defaults to 25.
+- `limit` (int, optional): Max entries per market. Defaults to 10.
 - `season_year` (int, optional): Season year. Defaults to current.
 
 Returns `futures[]` with market name and entries (team/player name + odds value).

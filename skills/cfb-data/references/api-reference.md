@@ -76,7 +76,7 @@ Returns `teams[]` with per-team injury lists including player name, position, st
 
 ### get_futures
 Get college football futures/odds markets (National Championship, Heisman, etc.).
-- `limit` (int, optional): Max entries per market. Defaults to 25.
+- `limit` (int, optional): Max entries per market. Defaults to 10.
 - `season_year` (int, optional): Season year. Defaults to current.
 
 Returns `futures[]` with market name and entries (team/player name + odds value).
