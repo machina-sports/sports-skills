@@ -55,6 +55,9 @@ metadata:
       - name: get_play_by_play
         summary: Full drive + play-by-play breakdown for a game.
         returns: drives[]
+      - name: get_win_probability
+        summary: Win probability timeline for a completed game.
+        returns: timeline[]
       - name: get_schedule
         summary: Season schedule by week — filter by conference group.
         returns: events[]
@@ -145,6 +148,7 @@ Derive the current year from the system prompt's date (e.g., `currentDate: 2026-
 | `get_rankings` | AP Top 25, Coaches Poll, CFP rankings |
 | `get_news` | College football news |
 | `get_play_by_play` | Full play-by-play for a game |
+| `get_win_probability` | Win probability timeline for a completed game |
 | `get_schedule` | Season schedule by week |
 | `get_injuries` | Injury reports across all teams |
 | `get_futures` | Futures/odds markets (National Championship, Heisman, etc.) |

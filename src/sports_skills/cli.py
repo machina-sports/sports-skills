@@ -486,6 +486,7 @@ _REGISTRY = {
         "get_team_schedule": {"required": ["team_id"], "optional": ["season"]},
         "get_game_summary": {"required": ["event_id"]},
         "get_play_by_play": {"required": ["event_id"]},
+        "get_win_probability": {"required": ["event_id"]},
         "get_rankings": {"optional": ["season", "week"]},
         "get_news": {"optional": ["team_id"]},
         "get_schedule": {"optional": ["season", "week", "group"]},
