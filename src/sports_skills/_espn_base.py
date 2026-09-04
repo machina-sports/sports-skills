@@ -789,19 +789,39 @@ def normalize_core_stats(data):
     return {"categories": categories, "count": len(categories)}
 
 
+def _future_group_priority(group):
+    provider = group.get("provider")
+    priority = provider.get("priority") if isinstance(provider, dict) else None
+    try:
+        priority = float(priority)
+    except (TypeError, ValueError):
+        return math.inf
+    return priority if math.isfinite(priority) else math.inf
+
+
 def _preferred_future_group(item):
-    """The one sportsbook whose prices a futures market reports.
+    """Return the one usable sportsbook group a futures market reports.
 
     ESPN returns a group per sportsbook, and a market carrying two of them
-    lists every competitor twice at different prices. `priority` is ESPN's own
-    ordering, so the lowest number present wins rather than a fixed book:
-    NFL and college football publish only DraftKings at priority 1, so keying
-    on a literal 0 would empty those markets.
+    lists every competitor twice at different prices. The lowest finite
+    numeric `priority` wins; numeric strings are accepted, while missing or
+    invalid priorities sort last. Original response order breaks all ties.
+    Groups without mapping-shaped book entries cannot be selected.
     """
-    groups = item.get("futures", [])
-    if not groups:
+    candidates = []
+    for index, group in enumerate(item.get("futures", []) or []):
+        if not isinstance(group, dict):
+            continue
+        books = group.get("books")
+        if not isinstance(books, list) or not any(isinstance(book, dict) for book in books):
+            continue
+        candidates.append((index, group))
+    if not candidates:
         return None
-    return min(groups, key=lambda g: g.get("provider", {}).get("priority", math.inf))
+    return min(
+        candidates,
+        key=lambda candidate: (_future_group_priority(candidate[1]), candidate[0]),
+    )[1]
 
 
 def normalize_futures(data, limit=25):
@@ -818,7 +838,8 @@ def normalize_futures(data, limit=25):
         entries = []
         future_group = _preferred_future_group(item)
         if future_group is not None:
-            for book in future_group.get("books", [])[:limit]:
+            usable_books = [book for book in future_group["books"] if isinstance(book, dict)]
+            for book in usable_books[:limit]:
                 athlete_ref = book.get("athlete", {})
                 team_ref = book.get("team", {})
                 name = ""
@@ -842,7 +863,8 @@ def normalize_futures(data, limit=25):
             "entries": entries,
             "count": len(entries),
         }
-        provider_name = (future_group or {}).get("provider", {}).get("name", "")
+        provider = future_group.get("provider") if future_group else None
+        provider_name = provider.get("name", "") if isinstance(provider, dict) else ""
         if provider_name:
             market["provider"] = provider_name
         futures.append(market)
