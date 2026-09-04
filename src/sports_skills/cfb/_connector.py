@@ -662,6 +662,42 @@ def get_play_by_play(request_data):
 
 
 # ============================================================
+# Win Probability
+# ============================================================
+
+
+def _normalize_win_probability(summary_data):
+    """Normalize win probability timeline from ESPN summary."""
+    wp_raw = summary_data.get("winprobability", [])
+    if not wp_raw:
+        return {"error": True, "message": "No win probability data available for this game"}
+
+    timeline = []
+    for entry in wp_raw:
+        timeline.append({
+            "play_id": str(entry.get("playId", "")),
+            "home_win_pct": round(entry.get("homeWinPercentage", 0) * 100, 1),
+            "tie_pct": round(entry.get("tiePercentage", 0) * 100, 1),
+        })
+
+    return {"timeline": timeline, "count": len(timeline)}
+
+
+def get_win_probability(request_data):
+    """Get win probability timeline for a college football game."""
+    params = request_data.get("params", {})
+    event_id = params.get("event_id")
+    if not event_id:
+        return {"error": True, "message": "event_id is required"}
+
+    data = espn_summary(SPORT_PATH, event_id)
+    if not data:
+        return {"error": True, "message": f"No data found for event {event_id}"}
+
+    return _normalize_win_probability(data)
+
+
+# ============================================================
 # Injuries, Futures, Stats
 # ============================================================
 
