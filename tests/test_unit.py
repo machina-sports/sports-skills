@@ -929,6 +929,155 @@ class TestNormalizeFutures:
         result = normalize_futures(data, limit=5)
         assert result["futures"][0]["count"] == 5
 
+    def _two_provider_market(self):
+        """One market priced by two sportsbooks, as ESPN returns it."""
+        return {
+            "items": [
+                {
+                    "id": "1",
+                    "name": "Winner",
+                    "futures": [
+                        {
+                            "provider": {"id": "58", "name": "ESPN BET", "priority": 0},
+                            "books": [
+                                {"athlete": {}, "team": {}, "value": "+250"},
+                                {"athlete": {}, "team": {}, "value": "+290"},
+                            ],
+                        },
+                        {
+                            "provider": {"id": "100", "name": "DraftKings", "priority": 1},
+                            "books": [{"athlete": {}, "team": {}, "value": "-110"}],
+                        },
+                    ],
+                }
+            ]
+        }
+
+    def test_one_sportsbook_per_market(self):
+        """Two providers used to be flattened into one list, so every
+        competitor appeared twice at contradictory prices."""
+        from sports_skills._espn_base import normalize_futures
+
+        market = normalize_futures(self._two_provider_market())["futures"][0]
+        assert [e["value"] for e in market["entries"]] == ["+250", "+290"]
+        assert market["count"] == 2
+        assert market["provider"] == "ESPN BET"
+
+    def test_limit_counts_entries_not_books_per_provider(self):
+        from sports_skills._espn_base import normalize_futures
+
+        market = normalize_futures(self._two_provider_market(), limit=2)["futures"][0]
+        assert market["count"] == 2
+
+    def test_lowest_priority_present_wins(self):
+        """NFL and college football publish only DraftKings at priority 1, so
+        a literal `priority == 0` would empty those markets."""
+        from sports_skills._espn_base import normalize_futures
+
+        data = {
+            "items": [
+                {
+                    "id": "1",
+                    "name": "Winner",
+                    "futures": [
+                        {
+                            "provider": {"id": "100", "name": "DraftKings", "priority": 1},
+                            "books": [{"athlete": {}, "team": {}, "value": "+700"}],
+                        }
+                    ],
+                }
+            ]
+        }
+        market = normalize_futures(data)["futures"][0]
+        assert market["count"] == 1
+        assert market["provider"] == "DraftKings"
+
+    def test_null_provider_with_entries_still_normalizes(self):
+        from sports_skills._espn_base import normalize_futures
+
+        data = {
+            "items": [
+                {
+                    "id": "1",
+                    "name": "Winner",
+                    "futures": [
+                        {
+                            "provider": None,
+                            "books": [{"athlete": {}, "team": {}, "value": "+400"}],
+                        }
+                    ],
+                }
+            ]
+        }
+        market = normalize_futures(data)["futures"][0]
+        assert [entry["value"] for entry in market["entries"]] == ["+400"]
+        assert "provider" not in market
+
+    def test_null_priority_sorts_after_numeric_priority(self):
+        from sports_skills._espn_base import normalize_futures
+
+        data = self._two_provider_market()
+        groups = data["items"][0]["futures"]
+        groups[0]["provider"]["priority"] = None
+        market = normalize_futures(data)["futures"][0]
+        assert [entry["value"] for entry in market["entries"]] == ["-110"]
+        assert market["provider"] == "DraftKings"
+
+    def test_numeric_string_and_number_priorities_compare_numerically(self):
+        from sports_skills._espn_base import normalize_futures
+
+        data = self._two_provider_market()
+        groups = data["items"][0]["futures"]
+        groups[0]["provider"]["priority"] = "10"
+        groups[1]["provider"]["priority"] = 2
+        market = normalize_futures(data)["futures"][0]
+        assert [entry["value"] for entry in market["entries"]] == ["-110"]
+        assert market["provider"] == "DraftKings"
+
+    def test_empty_preferred_group_falls_back_to_usable_provider(self):
+        from sports_skills._espn_base import normalize_futures
+
+        data = self._two_provider_market()
+        groups = data["items"][0]["futures"]
+        groups[0]["books"] = []
+        groups[1]["books"] = [
+            {"athlete": {}, "team": {}, "value": "+100"},
+            {"athlete": {}, "team": {}, "value": "+200"},
+            {"athlete": {}, "team": {}, "value": "+300"},
+        ]
+        market = normalize_futures(data, limit=2)["futures"][0]
+        assert [entry["value"] for entry in market["entries"]] == ["+100", "+200"]
+        assert market["provider"] == "DraftKings"
+
+    def test_tied_priorities_use_response_order(self):
+        from sports_skills._espn_base import normalize_futures
+
+        data = self._two_provider_market()
+        groups = data["items"][0]["futures"]
+        groups[1]["provider"]["priority"] = 0
+        market = normalize_futures(data)["futures"][0]
+        assert [entry["value"] for entry in market["entries"]] == ["+250", "+290"]
+        assert market["provider"] == "ESPN BET"
+
+    def test_missing_priorities_use_response_order(self):
+        from sports_skills._espn_base import normalize_futures
+
+        data = self._two_provider_market()
+        groups = data["items"][0]["futures"]
+        del groups[0]["provider"]["priority"]
+        del groups[1]["provider"]["priority"]
+        market = normalize_futures(data)["futures"][0]
+        assert [entry["value"] for entry in market["entries"]] == ["+250", "+290"]
+        assert market["provider"] == "ESPN BET"
+
+    def test_market_without_a_provider_still_normalizes(self):
+        from sports_skills._espn_base import normalize_futures
+
+        data = {"items": [{"id": "1", "name": "MVP", "futures": [{"books": []}]}]}
+        market = normalize_futures(data)["futures"][0]
+        assert market["count"] == 0
+        assert "provider" not in market
+
     def test_name_fallback(self):
         from sports_skills._espn_base import normalize_futures
 
