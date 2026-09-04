@@ -61,6 +61,27 @@ Get full play-by-play data for a game.
 
 Returns `drives[]` with play-by-play detail including down, distance, yard line, play description, and scoring plays.
 
+### get_win_probability
+Get the win probability timeline for a college football game.
+- `event_id` (str, required): ESPN event ID.
+
+Returns `timeline[]` and `count`. Each timeline entry contains the ESPN `play_id`, `home_win_pct`, and `tie_pct`; percentages are on a 0–100 scale and rounded to one decimal place.
+
+```json
+{
+  "timeline": [
+    {
+      "play_id": "4018644942",
+      "home_win_pct": 59.0,
+      "tie_pct": 0.0
+    }
+  ],
+  "count": 1
+}
+```
+
+If ESPN returns no summary for the event, the command returns an error with `No data found for event <event_id>`. If the summary has no win probability entries, it returns an error with `No win probability data available for this game` rather than an empty timeline.
+
 ### get_schedule
 Get college football schedule by week.
 - `season` (int, optional): Season year. Defaults to current.
