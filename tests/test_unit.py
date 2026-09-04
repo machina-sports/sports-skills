@@ -3,6 +3,8 @@
 import time
 import urllib.error
 
+import pytest
+
 from sports_skills._espn_base import (
     ESPN_STATUS_MAP,
     _cache_get,
@@ -2515,3 +2517,286 @@ class TestSeasonEmptyExplained:
         out = fc.get_season_standings({"params": {"season_id": "premier-league-1888"}})
         assert out["standings"] == []
         assert "No standings found" in out.get("message", "")
+
+
+# ── local Elo fallback ─────────────────────────────────────────
+
+
+class TestEloPrimitives:
+    """Margin weighting and expected score."""
+
+    def test_goal_multiplier_steps_with_margin(self):
+        from sports_skills.football._connector import _elo_goal_multiplier
+
+        assert _elo_goal_multiplier(0) == 1.0
+        assert _elo_goal_multiplier(-1) == 1.0
+        assert _elo_goal_multiplier(2) == 1.5
+        assert _elo_goal_multiplier(-2) == 1.5
+        # 3+ goals grows, never shrinks
+        assert _elo_goal_multiplier(3) == pytest.approx(14 / 8)
+        assert _elo_goal_multiplier(6) > _elo_goal_multiplier(3)
+
+    def test_expected_score_is_symmetric_and_bounded(self):
+        from sports_skills.football._connector import _elo_expected
+
+        assert _elo_expected(1500, 1500) == pytest.approx(0.5)
+        assert _elo_expected(1900, 1500) + _elo_expected(1500, 1900) == pytest.approx(1.0)
+        assert 0.0 < _elo_expected(1000, 2000) < 0.5
+
+
+class TestFdukResultsFromCsv:
+    """Result extraction feeding the Elo walk."""
+
+    CSV = (
+        "Div,Date,HomeTeam,AwayTeam,FTHG,FTAG,FTR\r\n"
+        "D1,29/08/2026,Bayern Munich,Stuttgart,5,1,H\r\n"
+        "D1,22/08/2026,FC Koln,Hoffenheim,3,2,H\r\n"
+        "D1,05/09/2026,Schalke 04,Bayern Munich,,,\r\n"
+        "D1,,,,,,\r\n"
+    )
+
+    def test_skips_unplayed_and_blank_rows(self):
+        from sports_skills.football._connector import _fduk_results_from_csv
+
+        rows = _fduk_results_from_csv(self.CSV)
+        assert len(rows) == 2
+
+    def test_sorted_oldest_first_so_elo_carries_forward(self):
+        from sports_skills.football._connector import _fduk_results_from_csv
+
+        rows = _fduk_results_from_csv(self.CSV)
+        assert [r[0] for r in rows] == ["2026-08-22", "2026-08-29"]
+
+    def test_empty_text_is_empty_not_an_error(self):
+        from sports_skills.football._connector import _fduk_results_from_csv
+
+        assert _fduk_results_from_csv("") == []
+
+
+class TestLocalEloTable:
+    """The Elo walk over a synthetic division."""
+
+    @staticmethod
+    def _season(rows):
+        head = "Div,Date,HomeTeam,AwayTeam,FTHG,FTAG,FTR\r\n"
+        return head + "".join(rows)
+
+    def _table(self, monkeypatch, seasons):
+        """Run _local_elo_table over canned season CSVs (newest code first)."""
+        from sports_skills.football import _connector as c
+
+        c._cache.clear()
+        codes = [(f"{20 + i}{21 + i}", i == 0) for i in range(len(seasons))]
+        monkeypatch.setattr(c, "_fduk_season_codes", lambda n: codes)
+        by_code = dict(zip([code for code, _ in codes], seasons))
+        monkeypatch.setattr(
+            c, "_fduk_fetch_season", lambda div, code, is_cur: by_code.get(code, "")
+        )
+        return c._local_elo_table("D1", len(seasons))
+
+    def test_winner_gains_exactly_what_the_loser_drops(self, monkeypatch):
+        table = self._table(
+            monkeypatch,
+            [self._season(["D1,10/08/2026,Alpha,Beta,1,0,H\r\n"])],
+        )
+        from sports_skills.football._connector import _ELO_NEWCOMER
+
+        alpha = table["ratings"]["Alpha"] - _ELO_NEWCOMER
+        beta = table["ratings"]["Beta"] - _ELO_NEWCOMER
+        assert alpha > 0
+        assert alpha == pytest.approx(-beta)
+
+    def test_bigger_margin_moves_the_rating_further(self, monkeypatch):
+        narrow = self._table(
+            monkeypatch, [self._season(["D1,10/08/2026,Alpha,Beta,1,0,H\r\n"])]
+        )
+        rout = self._table(
+            monkeypatch, [self._season(["D1,10/08/2026,Alpha,Beta,5,0,H\r\n"])]
+        )
+        assert rout["ratings"]["Alpha"] > narrow["ratings"]["Alpha"]
+
+    def test_home_advantage_makes_an_away_win_worth_more(self, monkeypatch):
+        home = self._table(
+            monkeypatch, [self._season(["D1,10/08/2026,Alpha,Beta,1,0,H\r\n"])]
+        )
+        away = self._table(
+            monkeypatch, [self._season(["D1,10/08/2026,Beta,Alpha,0,1,A\r\n"])]
+        )
+        # Same 1-0 win for Alpha, but away it beats a stiffer expectation.
+        assert away["ratings"]["Alpha"] > home["ratings"]["Alpha"]
+
+    def test_season_boundary_regresses_toward_the_mean(self, monkeypatch):
+        from sports_skills.football._connector import _ELO_START
+
+        # Alpha thrashes a different opponent each week, climbing clear of the mean.
+        season_one = self._season(
+            [
+                f"D1,{day:02d}/08/2026,Alpha,Club{day},4,0,H\r\n"
+                for day in range(10, 22)
+            ]
+        )
+        one = self._table(monkeypatch, [season_one])
+        assert one["ratings"]["Alpha"] > _ELO_START, "setup: Alpha must be above the mean"
+        # A later season Alpha does not play in: the only change is the boundary pull.
+        two = self._table(
+            monkeypatch,
+            [self._season(["D1,10/08/2027,Beta,Gamma,0,0,D\r\n"]), season_one],
+        )
+        assert abs(two["ratings"]["Alpha"] - _ELO_START) < abs(
+            one["ratings"]["Alpha"] - _ELO_START
+        )
+
+    def test_current_labels_come_from_the_newest_season_only(self, monkeypatch):
+        table = self._table(
+            monkeypatch,
+            [
+                self._season(["D1,10/08/2027,Alpha,Beta,1,1,D\r\n"]),
+                self._season(["D1,10/08/2026,Gamma,Delta,1,0,H\r\n"]),
+            ],
+        )
+        assert set(table["current_labels"]) == {"Alpha", "Beta"}
+        # Relegated clubs stay rated, they just are not current.
+        assert "Gamma" in table["ratings"]
+
+    def test_outcome_buckets_tally_the_actual_results(self, monkeypatch):
+        table = self._table(
+            monkeypatch,
+            [
+                self._season(
+                    [
+                        "D1,10/08/2026,Alpha,Beta,1,0,H\r\n",
+                        "D1,17/08/2026,Gamma,Delta,0,0,D\r\n",
+                        "D1,24/08/2026,Epsilon,Zeta,0,2,A\r\n",
+                    ]
+                )
+            ],
+        )
+        totals = [sum(v[i] for v in table["outcomes"].values()) for i in range(3)]
+        assert totals == [1, 1, 1]
+
+
+class TestLocalEloOutcomeProbs:
+    """Empirical win/draw/loss read-off."""
+
+    def test_returns_none_when_history_is_too_thin(self):
+        from sports_skills.football._connector import _local_elo_outcome_probs
+
+        assert _local_elo_outcome_probs(0, {"outcomes": {0: [1, 1, 1]}}) is None
+
+    def test_probabilities_sum_to_one(self):
+        from sports_skills.football._connector import _local_elo_outcome_probs
+
+        probs = _local_elo_outcome_probs(0, {"outcomes": {0: [50, 30, 20]}})
+        assert probs["sample"] == 100
+        assert probs["home_win"] + probs["draw"] + probs["away_win"] == pytest.approx(1.0)
+
+    def test_pools_neighbouring_buckets_to_reach_the_sample_floor(self):
+        from sports_skills.football._connector import _local_elo_outcome_probs
+
+        outcomes = {0: [5, 0, 0], 50: [0, 0, 0], -50: [20, 10, 10]}
+        probs = _local_elo_outcome_probs(10, outcomes and {"outcomes": outcomes})
+        assert probs["sample"] == 45
+
+    def test_no_history_returns_none(self):
+        from sports_skills.football._connector import _local_elo_outcome_probs
+
+        assert _local_elo_outcome_probs(0, {}) is None
+
+
+class TestLocalEloEntry:
+    """ESPN team -> local Elo entry."""
+
+    TABLE = {
+        "ratings": {"Bayern Munich": 1780.0, "Schalke 04": 1420.0, "Hannover": 1440.0},
+        "games": {"Bayern Munich": 300, "Schalke 04": 170, "Hannover": 60},
+        "outcomes": {},
+        "matches": 300,
+        "seasons": 10,
+        "as_of": "2026-08-30",
+        "div": "D1",
+        "current_labels": ["Bayern Munich", "Schalke 04"],
+    }
+
+    def test_uncovered_league_is_reported_not_guessed(self):
+        from sports_skills.football._connector import _local_elo_entry
+
+        entry, _ = _local_elo_entry({"name": "LA Galaxy", "slug": "mls"})
+        assert entry["resolved"] is False
+        assert entry["reason"] == "league_not_covered"
+
+    def test_rank_counts_current_members_only(self, monkeypatch):
+        from sports_skills.football import _connector as c
+
+        monkeypatch.setattr(c, "_local_elo_table", lambda div, n: self.TABLE)
+        entry, _ = c._local_elo_entry({"name": "Bayern Munich", "slug": "bundesliga"})
+        assert (entry["division_rank"], entry["division_size"]) == (1, 2)
+
+    def test_relegated_club_is_rated_but_unranked(self, monkeypatch):
+        from sports_skills.football import _connector as c
+
+        monkeypatch.setattr(c, "_local_elo_table", lambda div, n: self.TABLE)
+        entry, _ = c._local_elo_entry({"name": "Hannover", "slug": "bundesliga"})
+        assert entry["resolved"] is True
+        assert entry["elo"] == 1440.0
+        assert entry["division_rank"] is None
+
+
+class TestLocalEloStrength:
+    """The get_team_strength fallback response."""
+
+    TABLE_D1 = dict(TestLocalEloEntry.TABLE, outcomes={0: [40, 30, 30]})
+
+    def test_source_is_never_labelled_clubelo(self, monkeypatch):
+        from sports_skills.football import _connector as c
+
+        monkeypatch.setattr(c, "_local_elo_table", lambda div, n: self.TABLE_D1)
+        out = c._local_elo_strength(
+            [{"name": "Bayern Munich", "slug": "bundesliga"}], "2026-09-04", 10
+        )
+        assert out["source"] == "local-elo"
+        assert "clubelo" not in out["method"].lower()
+        assert "NOT comparable to ClubElo" in out["message"]
+
+    def test_cross_division_comparison_is_refused(self, monkeypatch):
+        from sports_skills.football import _connector as c
+
+        tables = {
+            "D1": self.TABLE_D1,
+            "E0": dict(
+                self.TABLE_D1,
+                div="E0",
+                ratings={"Arsenal": 1800.0},
+                games={"Arsenal": 300},
+                current_labels=["Arsenal"],
+            ),
+        }
+        monkeypatch.setattr(c, "_local_elo_table", lambda div, n: tables[div])
+        out = c._local_elo_strength(
+            [
+                {"name": "Bayern Munich", "slug": "bundesliga"},
+                {"name": "Arsenal", "slug": "premier-league"},
+            ],
+            "2026-09-04",
+            10,
+        )
+        assert "favorite" not in out
+        assert "elo_difference" not in out
+        assert "different divisions" in out["message"]
+
+    def test_same_division_reports_favourite_and_probabilities(self, monkeypatch):
+        from sports_skills.football import _connector as c
+
+        monkeypatch.setattr(c, "_local_elo_table", lambda div, n: self.TABLE_D1)
+        out = c._local_elo_strength(
+            [
+                {"name": "Schalke 04", "slug": "bundesliga"},
+                {"name": "Bayern Munich", "slug": "bundesliga"},
+            ],
+            "2026-09-04",
+            10,
+        )
+        assert out["favorite"] == "Bayern Munich"
+        assert out["elo_difference"] == pytest.approx(-360.0)
+        probs = out["outcome_probabilities"]
+        assert probs["home_win"] + probs["draw"] + probs["away_win"] == pytest.approx(1.0)
+        assert "Schalke 04 at home" in probs["note"]

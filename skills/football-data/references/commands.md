@@ -123,6 +123,10 @@ Returns `data.teams[]` (per team: `elo`, `rank`, `country`, `level`, `as_of`,
 `matched_as`). With two teams also returns `elo_difference` (team1 − team2) and
 `favorite`. Covers the same 11 European domestic leagues as `get_head_to_head`.
 
+`max_seasons` (int, optional) additionally tunes the local-Elo fallback used when
+ClubElo is unreachable (default 10, max 34). The fallback sets `source: "local-elo"`
+and a division-local scale — see `api-reference.md`.
+
 ### get_match_forecast
 ClubElo win/draw/loss + scoreline forecast for a team's upcoming fixtures (free CSV).
 **ClubElo only forecasts ~a week ahead**, so this is empty between matchdays or in the

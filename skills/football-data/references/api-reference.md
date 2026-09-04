@@ -189,12 +189,28 @@ strength / fixture-difficulty control, not an official result.
 - `team_id_2` (str, optional): Second team ESPN ID → returns an Elo comparison
 - `date` (str, optional): YYYY-MM-DD snapshot for historical Elo (default today)
 - `league_slug` (str, optional): League hint; inferred from the teams when omitted
+- `max_seasons` (int, optional): Seasons of history for the local-Elo fallback only
+  (default 10, max 34); ignored while ClubElo is reachable
 
 Returns `data.teams[]` with `elo`, `rank`, `country`, `level`, `as_of`, `matched_as`,
 and a `resolved` flag. With two teams also returns `elo_difference` (team1 − team2)
 and `favorite`. Team names are matched to ClubElo's labels (country-scoped, reserve
 teams excluded); teams that cannot be confidently matched are reported, not guessed.
 Coverage: the same 11 European domestic leagues as `get_head_to_head`.
+
+**Local-Elo fallback.** When ClubElo is unreachable the command does not fail: it
+returns ratings computed here from the football-data.co.uk result CSVs (the same
+files head-to-head uses), with `source: "local-elo"`, a `method` string naming the
+parameters, and `fallback_reason`. Read `source` before comparing two responses.
+
+The fallback's scale is **division-local and not comparable to ClubElo's** — only
+the gap between two ratings within one division carries meaning, so a comparison
+across divisions is refused (no `favorite`, no `elo_difference`) rather than
+guessed. Entries carry `division_rank` / `division_size` (among the division's
+CURRENT members; a since-relegated club is rated but unranked), `games` (check it
+— a promoted club may be rated off a handful of matches), and `div`. Two teams in
+one division also get `outcome_probabilities`: home/draw/away read empirically off
+that division's own history for the given Elo gap, with the `sample` it rests on.
 
 ### get_match_forecast
 ClubElo win/draw/loss + scoreline forecast for a team's upcoming fixtures (free CSV).
