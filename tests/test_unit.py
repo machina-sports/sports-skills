@@ -524,6 +524,23 @@ class TestNormalizeWinProbability:
         assert result["timeline"][0]["play_id"] == "100"
         assert result["timeline"][1]["home_win_pct"] == 65.0
 
+    def test_cfb_matches_nfl(self):
+        """CFB serves the same three fields, so it normalizes identically."""
+        from sports_skills.cfb._connector import (
+            _normalize_win_probability as cfb_normalize,
+        )
+        from sports_skills.nfl._connector import (
+            _normalize_win_probability as nfl_normalize,
+        )
+
+        data = {
+            "winprobability": [
+                {"playId": "4018644942", "homeWinPercentage": 0.59, "tiePercentage": 0.0},
+            ]
+        }
+        assert cfb_normalize(data) == nfl_normalize(data)
+        assert cfb_normalize({}).get("error") is True
+
 
 # ── Golf: _normalize_player_overview ─────────────────────────
 

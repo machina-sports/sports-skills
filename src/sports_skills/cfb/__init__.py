@@ -72,6 +72,9 @@ from sports_skills.cfb._connector import (
 from sports_skills.cfb._connector import (
     get_teams as _get_teams,
 )
+from sports_skills.cfb._connector import (
+    get_win_probability as _get_win_probability,
+)
 
 
 def _params(**kwargs):
@@ -171,6 +174,15 @@ def get_play_by_play(*, event_id: str) -> dict:
         event_id: ESPN event ID.
     """
     return wrap(_get_play_by_play(_params(event_id=event_id)))
+
+
+def get_win_probability(*, event_id: str) -> dict:
+    """Get win probability timeline for a college football game.
+
+    Args:
+        event_id: ESPN event ID.
+    """
+    return wrap(_get_win_probability(_params(event_id=event_id)))
 
 
 def get_injuries() -> dict:
