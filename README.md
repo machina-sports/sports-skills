@@ -85,7 +85,7 @@ npx skills add machina-sports/sports-skills@nba-data
 | [`nhl-data`](https://skills.sh/machina-sports/sports-skills/nhl-data) | NHL | 22 | ESPN, NHL API (api-web.nhle.com) |
 | [`mlb-data`](https://skills.sh/machina-sports/sports-skills/mlb-data) | MLB | 23 | ESPN, MLB Stats API (statsapi.mlb.com) |
 | [`tennis-data`](https://skills.sh/machina-sports/sports-skills/tennis-data) | Tennis (ATP + WTA) | 5 | ESPN |
-| [`cfb-data`](https://skills.sh/machina-sports/sports-skills/cfb-data) | College Football (CFB) | 21 | ESPN, NCAA (official) |
+| [`cfb-data`](https://skills.sh/machina-sports/sports-skills/cfb-data) | College Football (CFB) | 22 | ESPN, NCAA (official) |
 | [`cbb-data`](https://skills.sh/machina-sports/sports-skills/cbb-data) | College Basketball (CBB) | 25 | ESPN, NCAA (official) |
 | [`golf-data`](https://skills.sh/machina-sports/sports-skills/golf-data) | Golf (PGA/LPGA/DP World) | 6 | ESPN |
 | [`volleyball-data`](https://skills.sh/machina-sports/sports-skills/volleyball-data) | Volleyball (Dutch) | 10 | Nevobo |
