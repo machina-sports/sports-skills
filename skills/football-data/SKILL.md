@@ -78,15 +78,16 @@ This skill stitches several free sources together. **Coverage is not uniform** �
 | `get_season_leaders`, `get_missing_players` | FPL | **Premier League only** |
 | `get_player_profile`, `get_season_transfers` (market value) | Transfermarkt | Any player with a `tm_player_id` |
 | `get_head_to_head` | football-data.co.uk | **11 European domestic leagues** (EPL, Championship, La Liga, Serie A, Bundesliga, Ligue 1, Eredivisie, Primeira Liga, Scottish, Belgian, Turkish). Same-division meetings only. |
-| `get_team_strength` | ClubElo, falling back to local Elo | **European clubs** (incl. Russia). Falls back to ratings computed from football-data.co.uk when ClubElo is down. |
-| `get_match_forecast` | ClubElo | **European clubs** (incl. Russia). No fallback — needs ClubElo's fixture feed. |
+| `get_team_strength`, `get_match_forecast` | ClubElo | **European clubs** (incl. Russia). |
 
 Rule of thumb: **ESPN answers "what happened" everywhere; the enrichment sources ( Understat/FPL/ClubElo/football-data.co.uk ) add depth only in their coverage zone.** ESPN is always the fixture/score authority — never let an enrichment source override an ESPN score.
 
 ### Gotchas (from live testing)
+- **`get_team_profile` returns the squad.** `data.players[]` carries the current roster with ESPN athlete ids, shirt numbers and ages — use it instead of collecting names match by match.
+- **`get_player_season_stats` takes the same league slug as everything else** (`serie-a-brazil`, not only ESPN's `bra.1`), and its gamelog is the last ~5 matches across competitions, not a season total.
+- **Scored penalties are `penalty_goal` in the timeline.** Count `goal` + `penalty_goal` + `own_goal` when reconciling with the score.
 - **Pass IDs, not ambiguous names.** For H2H/strength/forecast, resolve teams with `search_team` first and pass the numeric `team_id`. Names like "Paris Saint-Germain" can collapse onto the wrong club (Paris FC) during name resolution.
 - **ClubElo off-season gaps**: current-date `get_team_strength` can miss clubs in the summer break (a club's weekly Elo period may not span today). If a well-known club returns unresolved, pass an in-season `date` (e.g. `date="2026-03-01"`).
-- **ClubElo outages**: `get_team_strength` falls back to locally computed Elo and sets `source: "local-elo"`. Check that field before comparing numbers across calls — the local scale is division-local, so a rating means nothing outside its own division and cross-division comparisons are refused. The fallback honours `date` (it rates the division as of that date, and each entry's `as_of` is the last match counted). `get_match_forecast` has no fallback and stays empty.
 - **`get_match_forecast` is short-horizon**: ClubElo only forecasts ~a week ahead — empty between matchdays / off-season. That's expected, not a failure.
 - **H2H is same-division only**: two clubs that met in a cup or across tiers won't show; it counts league meetings in the resolved division.
 - **H2H tells "unresolved" apart from "never met"**: football-data.co.uk uses short exonyms/abbreviations ("FC Koln", "M'gladbach", "Sp Lisbon"). Each club in `teams[]` reports `resolved` + `matched_as`; if a club is `resolved: false`, zero meetings means the lookup failed, not that the clubs never played.
@@ -116,7 +117,7 @@ When a piece of the composition isn't covered (e.g. xG outside the top 5, H2H fo
 | `get_season_teams` | Teams in a season |
 | `search_team` | Search for a team by name |
 | `search_player` | Search for a player by name |
-| `get_team_profile` | Basic team info (no squad/roster) |
+| `get_team_profile` | Team info + current squad (roster) |
 | `get_daily_schedule` | All matches for a date across all leagues |
 | `get_event_summary` | Match summary with scores |
 | `get_event_lineups` | Match lineups |
@@ -124,7 +125,7 @@ When a piece of the composition isn't covered (e.g. xG outside the top 5, H2H fo
 | `get_event_timeline` | Match timeline (goals, cards, subs) |
 | `get_team_schedule` | Schedule for a specific team |
 | `get_head_to_head` | Historical H2H results + stats (European domestic leagues) |
-| `get_team_strength` | Elo rating / two-team comparison (European clubs); local-Elo fallback if ClubElo is down |
+| `get_team_strength` | ClubElo Elo rating / two-team comparison (European clubs) |
 | `get_match_forecast` | ClubElo win/draw/loss + scoreline forecast (~week ahead) |
 | `get_event_xg` | xG data (top 5 leagues only) |
 | `get_event_players_statistics` | Player-level match stats with optional xG |
@@ -191,7 +192,7 @@ Result: A preview blending head-to-head history, current strength, and a free mo
 
 - ~~`get_standings`~~ — the correct command is `get_season_standings` (requires `season_id`).
 - ~~`get_live_scores`~~ — not available. Use `get_daily_schedule()` for today's matches.
-- ~~`get_team_squad`~~ / ~~`get_team_roster`~~ — `get_team_profile` does NOT return players. Use `get_season_leaders` for PL player IDs, then `get_player_profile`.
+- ~~`get_team_squad`~~ / ~~`get_team_roster`~~ — use `get_team_profile`: `data.players[]` is the current roster with ESPN athlete ids (see Gotchas). `get_season_leaders` + `get_player_profile` remain the path for career data.
 - ~~`get_transfers`~~ — the correct command is `get_season_transfers` (requires `season_id` + `tm_player_ids`).
 - ~~`get_match_results`~~ / ~~`get_match`~~ — use `get_event_summary` with an `event_id`.
 - ~~`get_player_stats`~~ — use `get_event_players_statistics` for match-level stats, or `get_player_profile` for career data.
@@ -223,8 +224,8 @@ Cause: These commands only work for Premier League; they silently return empty f
 Solution: Check the Data Coverage table in `references/api-reference.md`. For other leagues, use `get_event_players_statistics` for player data
 
 Error: `get_team_profile` returns no players
-Cause: This command does not return squad rosters — this is expected behavior
-Solution: For PL teams, use `get_season_leaders` to find player FPL IDs, then `get_player_profile(fpl_id="...")`
+Cause: ESPN has no roster for that team id in the given league (wrong `league_slug`, or a national team / youth side)
+Solution: Pass the `league_slug` the club plays in (e.g. `serie-a-brazil`); for match-day squads use `get_event_lineups`
 
 Error: Wrong season_id format
 Cause: Season ID must follow the `{league-slug}-{year}` format

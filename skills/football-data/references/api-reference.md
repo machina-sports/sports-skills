@@ -111,9 +111,11 @@ Search for a football player by name.
 Returns `data.results[]` with `tm_player_id`, `espn_id`, `name`, `team`, `competition`.
 
 ### get_team_profile
-Get basic team info (name, crest, venue). Does NOT return squad.
+Get team info (name, crest, venue) **and the current squad** from ESPN's roster endpoint.
 - `team_id` (str, required): ESPN team ID
 - `league_slug` (str, optional): League hint
+
+Returns `data.team`, `data.venue` and `data.players[]` (`id`/`espn_athlete_id`, `name`, `position` letter G/D/M/F, `shirt_number`, `age`, `nationality`). `data.manager` is always `{}` today: no manager lookup is performed.The roster is the club's current squad, not a historical one.
 
 ### get_daily_schedule
 Get all matches for a specific date across all leagues.
@@ -146,11 +148,14 @@ Returns `data.lineups[]` with team, formation, starting players, and bench.
 Get match team statistics.
 - `event_id` (str, required): Match/event ID
 
-Returns `data.teams[]` with ball_possession, shots_total, shots_on_target, fouls, corners.
+Returns `data.teams[]` with `statistics`: `ball_possession`, `shots_total`, `shots_on_target`, `shots_off_target` (derived), `shots_blocked`, `shot_pct`, `corner_kicks`, `fouls`, `offsides`, `yellow_cards`, `red_cards`, `passes_total`, `passes_accurate`, `pass_pct`, `long_balls_total`, `long_balls_accurate`, `crosses`, `crosses_accurate`, `tackles`, `tackles_effective`, `tackle_pct`, `interceptions`, `clearances`, `clearances_effective`, `penalty_kick_shots`, `penalty_kick_goals`, `goalkeeper_saves`. Values are strings as ESPN displays them. Team-level only: ESPN publishes no per-player passes, tackles or duels for soccer.
+
 
 ### get_event_timeline
 Get match timeline/key events (goals, cards, substitutions).
 - `event_id` (str, required): Match/event ID
+
+Event `type` values: `goal`, `penalty_goal`, `own_goal`, `penalty_missed` (missed or saved), `yellow_card`, `red_card`, `yellow_red_card`, `substitution` (with `player_in`/`player_out`), plus ESPN's period markers (`kickoff`, `halftime`, …). Count `goal` + `penalty_goal` + `own_goal` to reconcile with the score; for an own goal `team` is the side credited with the goal.
 
 ### get_team_schedule
 Get schedule for a specific team (past results + upcoming fixtures).
@@ -189,38 +194,12 @@ strength / fixture-difficulty control, not an official result.
 - `team_id_2` (str, optional): Second team ESPN ID → returns an Elo comparison
 - `date` (str, optional): YYYY-MM-DD snapshot for historical Elo (default today)
 - `league_slug` (str, optional): League hint; inferred from the teams when omitted
-- `max_seasons` (int, optional): Seasons of history for the local-Elo fallback only
-  (default 10, max 34); ignored while ClubElo is reachable
 
 Returns `data.teams[]` with `elo`, `rank`, `country`, `level`, `as_of`, `matched_as`,
 and a `resolved` flag. With two teams also returns `elo_difference` (team1 − team2)
 and `favorite`. Team names are matched to ClubElo's labels (country-scoped, reserve
 teams excluded); teams that cannot be confidently matched are reported, not guessed.
 Coverage: the same 11 European domestic leagues as `get_head_to_head`.
-
-**Local-Elo fallback.** When ClubElo is unreachable the command does not fail: it
-returns ratings computed here from the football-data.co.uk result CSVs (the same
-files head-to-head uses), with `source: "local-elo"`, a `method` string naming the
-parameters, and `fallback_reason`. Read `source` before comparing two responses.
-
-`date` is honoured, not ignored: the fallback rates the division **as it stood on
-that date** — both the seasons walked and the matches inside them stop there — so a
-2020 request is answered with 2020 ratings. Each entry's `as_of` is the last match
-actually counted, which is on or before the requested date. Clubs the provider has
-renamed (Beveren -> Waasland-Beveren) are rated as one club, not two.
-
-If football-data.co.uk is unreachable too, entries carry `reason:
-"no_results_available"` and the message says both sources are down — that is an
-outage, not a claim about the club or its name.
-
-The fallback's scale is **division-local and not comparable to ClubElo's** — only
-the gap between two ratings within one division carries meaning, so a comparison
-across divisions is refused (no `favorite`, no `elo_difference`) rather than
-guessed. Entries carry `division_rank` / `division_size` (among the division's
-CURRENT members; a since-relegated club is rated but unranked), `games` (check it
-— a promoted club may be rated off a handful of matches), and `div`. Two teams in
-one division also get `outcome_probabilities`: home/draw/away read empirically off
-that division's own history for the given Elo gap, with the `sample` it rests on.
 
 ### get_match_forecast
 ClubElo win/draw/loss + scoreline forecast for a team's upcoming fixtures (free CSV).
@@ -261,7 +240,9 @@ Get transfer history for specific players via Transfermarkt.
 ### get_player_season_stats
 Get player season stats via ESPN.
 - `player_id` (str, required): ESPN athlete ID
-- `league_slug` (str, optional): League slug hint
+- `league_slug` (str, optional): sports-skills league slug (`serie-a-brazil`, `premier-league`, …) or ESPN code (`bra.1`, `eng.1`). Defaults to the Premier League.
+
+The gamelog only carries the player's most recent matches (about five), across competitions; filter by `event_id` against a schedule when you need one competition.
 
 ### get_player_profile
 Get player profile via FPL and/or Transfermarkt.

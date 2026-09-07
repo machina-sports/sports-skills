@@ -403,14 +403,16 @@ def get_player_profile(
 
 
 def get_player_season_stats(*, player_id: str, league_slug: str | None = None) -> dict:
-    """Get player season gamelog with per-match stats.
+    """Get a player's recent gamelog (ESPN "Last 5 Matches") with per-match stats.
 
     Returns appearances, goals, assists, shots, shots on target, fouls,
-    offsides, and cards for each match in the current season.
+    offsides, and cards for each of the last ~5 matches the player played,
+    across competitions (league, cups, continental). It is not a season total.
 
     Args:
         player_id: ESPN athlete ID.
-        league_slug: ESPN league slug (e.g. "eng.1" for Premier League,
-            "esp.1" for La Liga). Defaults to "eng.1".
+        league_slug: sports-skills league slug (e.g. "serie-a-brazil",
+            "premier-league") or ESPN's own code ("bra.1", "eng.1").
+            Defaults to "eng.1".
     """
     return wrap(_get_player_season_stats(_params(player_id=player_id, league_slug=league_slug)))
