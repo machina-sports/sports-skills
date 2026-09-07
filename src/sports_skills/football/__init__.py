@@ -290,6 +290,7 @@ def get_team_strength(
     team_id_2: str | None = None,
     date: str | None = None,
     league_slug: str | None = None,
+    max_seasons: int | None = None,
 ) -> dict:
     """Get a team's ClubElo strength rating, or compare two teams' Elo.
 
@@ -303,6 +304,9 @@ def get_team_strength(
         team_id_2: Optional second team ESPN ID — returns an Elo comparison.
         date: Optional YYYY-MM-DD snapshot date (default today) for historical Elo.
         league_slug: Optional league hint; inferred from the teams when omitted.
+        max_seasons: Optional seasons of history for the local-Elo fallback used
+            when ClubElo is unreachable (default 10, max 34). Ignored while
+            ClubElo is reachable.
     """
     return wrap(
         _get_team_strength(
@@ -311,6 +315,7 @@ def get_team_strength(
                 team_id_2=team_id_2,
                 date=date,
                 league_slug=league_slug,
+                max_seasons=max_seasons,
             )
         )
     )

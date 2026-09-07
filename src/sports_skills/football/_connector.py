@@ -2979,14 +2979,18 @@ def _fduk_date_iso(s):
     return s
 
 
-def _fduk_season_codes(max_seasons):
+def _fduk_season_codes(max_seasons, as_of=None):
     """Return (season_code, is_current) newest-first, e.g. ('2526', True).
 
     Season codes are the football-data.co.uk `mmz4281` format: the last two
     digits of each of the two calendar years. Football starts in August, so
     before August the current season is the one that began the previous year.
+
+    `as_of` (a datetime) walks back from a past date instead of today, so a
+    historical request sees the seasons that had actually been played by then.
+    `is_current` is then relative to `as_of`, not to today.
     """
-    now = datetime.now()
+    now = as_of or datetime.now()
     base = now.year if now.month >= 8 else now.year - 1
     codes = []
     for i in range(max(1, max_seasons)):
@@ -3173,6 +3177,245 @@ def _fduk_head_to_head(div, name1, name2, max_seasons, slug=""):
             meetings.extend(_fduk_meetings_for_labels(text, label1, label2, slug))
         meetings.sort(key=lambda m: m["date"], reverse=True)
     return meetings, resolved
+
+
+# ============================================================
+# Local Elo (computed from football-data.co.uk results — no external service)
+# ============================================================
+#
+# ClubElo is a single point of failure: when api.clubelo.com is slow or down,
+# `get_team_strength` and `get_match_forecast` lose their only input. The
+# division-season CSVs already fetched for head-to-head carry every result of
+# every season, which is the same raw material ClubElo derives its ratings
+# from — so we can compute a rating ourselves and keep working offline of them.
+#
+# This is NOT a reimplementation of ClubElo and the numbers are not comparable
+# to theirs. Ratings are anchored per division and only the GAP between two of
+# them is meaningful: the update is zero-sum, but promoted clubs enter below par
+# and relegated clubs leave with their rating, so the pool mean drifts somewhat
+# under `_ELO_START` rather than sitting on it. A Bundesliga 1600 therefore says
+# nothing about a Premier League 1600, and cross-division comparisons are
+# refused rather than guessed.
+
+_ELO_START = 1500.0
+# Promoted clubs enter below the division mean — starting them at par would
+# hand a newcomer the average top-flight rating on day one.
+_ELO_NEWCOMER = 1435.0
+_ELO_K = 20.0
+_ELO_HOME_ADVANTAGE = 65.0
+# Between seasons, pull every rating back toward the mean: squads turn over and
+# the pool itself churns as clubs are promoted and relegated out of the CSV.
+_ELO_SEASON_REGRESSION = 0.85
+# Outcome calibration buckets, in Elo points of (home + home advantage) - away.
+_ELO_BUCKET = 50
+_ELO_BUCKET_MAX = 400
+# Below this many observations a bucket is too thin to quote empirically.
+_ELO_MIN_BUCKET_SAMPLE = 30
+
+
+def _fduk_canonical_labels():
+    """Map each provider label in a rename group to one representative.
+
+    football-data.co.uk renames a club between seasons (Beveren ->
+    Waasland-Beveren). Rating those as two clubs would split a single history
+    in half, so the Elo walk folds every label of a group onto one key. Only
+    `_FDUK_HISTORICAL_ALIASES` is used: those are identity-preserving renames,
+    unlike fuzzy matches, which must never merge same-city rivals.
+    """
+    canonical = {}
+    for labels in _FDUK_HISTORICAL_ALIASES.values():
+        # Deterministic representative, so ratings keys are stable per run.
+        representative = sorted(labels)[-1]
+        for label in labels:
+            canonical[label] = representative
+    return canonical
+
+
+def _elo_goal_multiplier(goal_diff):
+    """Weight a result by margin (World Football Elo's standard multiplier)."""
+    margin = abs(goal_diff)
+    if margin <= 1:
+        return 1.0
+    if margin == 2:
+        return 1.5
+    return (11.0 + margin) / 8.0
+
+
+def _elo_expected(rating_home, rating_away):
+    """Expected score for the home side, home advantage already applied."""
+    return 1.0 / (1.0 + 10.0 ** ((rating_away - rating_home) / 400.0))
+
+
+def _fduk_results_from_csv(text):
+    """Every played match in one division-season CSV as (date, home, away, hg, ag)."""
+    results = []
+    if not text:
+        return results
+    for row in csv.DictReader(io.StringIO(text)):
+        home = (row.get("HomeTeam") or "").strip()
+        away = (row.get("AwayTeam") or "").strip()
+        date = (row.get("Date") or "").strip()
+        if not home or not away or not date:
+            continue
+        hg, ag = _fduk_int(row.get("FTHG")), _fduk_int(row.get("FTAG"))
+        if hg is None or ag is None:
+            continue  # fixture not played / void row
+        results.append((_fduk_date_iso(date), home, away, hg, ag))
+    results.sort(key=lambda r: r[0])
+    return results
+
+
+def _local_elo_table(div, max_seasons=10, as_of_iso=None):
+    """Compute Elo ratings for one division from its recent season CSVs.
+
+    Walks the seasons oldest-first so ratings carry forward, regressing toward
+    the mean at each season boundary. Returns a dict with `ratings` (label ->
+    rating), `games` (label -> matches counted), `outcomes` (Elo-gap bucket ->
+    [home, draw, away] counts, used to quote win/draw/loss empirically),
+    `matches`, `seasons` and `as_of`. Cached — the walk costs one CSV fetch per
+    season, and only the current season's file changes.
+
+    `as_of_iso` (YYYY-MM-DD) rates the division AS IT STOOD on that date: both
+    the seasons walked and the matches inside them stop there. Without it the
+    table would answer a 2020 question with 2026 ratings.
+    """
+    today = datetime.now().strftime("%Y-%m-%d")
+    as_of_iso = as_of_iso or today
+    is_live = as_of_iso >= today
+    cache_key = f"local_elo:{div}:{max_seasons}:{as_of_iso}"
+    cached = _cache_get(cache_key)
+    if cached is not None:
+        return cached
+    horizon = None if is_live else datetime.strptime(as_of_iso, "%Y-%m-%d")
+    canonical = _fduk_canonical_labels()
+    ratings, games, outcomes = {}, {}, {}
+    matches, last_date = 0, ""
+    seasons_used = 0
+    current_labels = set()
+    for code, is_current in reversed(list(_fduk_season_codes(max_seasons, horizon))):
+        # A past season's file is static; only today's gains rows.
+        text = _fduk_fetch_season(div, code, is_current and is_live)
+        results = [
+            (date, canonical.get(home, home), canonical.get(away, away), hg, ag)
+            for date, home, away, hg, ag in _fduk_results_from_csv(text)
+            if date <= as_of_iso
+        ]
+        if not results:
+            continue
+        seasons_used += 1
+        # Only the season expected for the requested date defines membership.
+        # Prior-season ratings remain useful when that season is unavailable,
+        # but its clubs must not be presented as current.
+        if is_current:
+            current_labels = {r[1] for r in results} | {r[2] for r in results}
+        for label in ratings:
+            ratings[label] = _ELO_START + _ELO_SEASON_REGRESSION * (
+                ratings[label] - _ELO_START
+            )
+        for date, home, away, hg, ag in results:
+            rh = ratings.setdefault(home, _ELO_NEWCOMER)
+            ra = ratings.setdefault(away, _ELO_NEWCOMER)
+            gap = (rh + _ELO_HOME_ADVANTAGE) - ra
+            bucket = max(
+                -_ELO_BUCKET_MAX,
+                min(_ELO_BUCKET_MAX, int(round(gap / _ELO_BUCKET)) * _ELO_BUCKET),
+            )
+            tally = outcomes.setdefault(bucket, [0, 0, 0])
+            tally[0 if hg > ag else 1 if hg == ag else 2] += 1
+            expected = _elo_expected(rh + _ELO_HOME_ADVANTAGE, ra)
+            actual = 1.0 if hg > ag else 0.5 if hg == ag else 0.0
+            delta = _ELO_K * _elo_goal_multiplier(hg - ag) * (actual - expected)
+            ratings[home] = rh + delta
+            ratings[away] = ra - delta  # zero-sum: the division mean holds
+            games[home] = games.get(home, 0) + 1
+            games[away] = games.get(away, 0) + 1
+            matches += 1
+            last_date = max(last_date, date)
+    table = {
+        "ratings": {k: round(v, 1) for k, v in ratings.items()},
+        "games": games,
+        "outcomes": outcomes,
+        "matches": matches,
+        "seasons": seasons_used,
+        "as_of": last_date,
+        "div": div,
+        "current_labels": sorted(current_labels),
+    }
+    # The live table's CSV gains rows as matches are played; a historical one
+    # is settled and can be held far longer.
+    _cache_set(cache_key, table, ttl=3600 if is_live else 2592000)
+    return table
+
+
+def _local_elo_outcome_probs(gap, table):
+    """Empirical home/draw/away probabilities for an Elo gap, or None.
+
+    Read off the division's own history rather than assumed from the rating: a
+    league's draw rate is a property of the league, not of the Elo formula.
+    Pools neighbouring buckets until the sample is large enough to quote.
+    """
+    outcomes = table.get("outcomes") or {}
+    if not outcomes:
+        return None
+    center = max(
+        -_ELO_BUCKET_MAX,
+        min(_ELO_BUCKET_MAX, int(round(gap / _ELO_BUCKET)) * _ELO_BUCKET),
+    )
+    totals = [0, 0, 0]
+    for spread in range(0, (2 * _ELO_BUCKET_MAX // _ELO_BUCKET) + 1):
+        for bucket in {center - spread * _ELO_BUCKET, center + spread * _ELO_BUCKET}:
+            tally = outcomes.get(bucket)
+            if tally:
+                totals = [t + c for t, c in zip(totals, tally)]
+        if sum(totals) >= _ELO_MIN_BUCKET_SAMPLE:
+            break
+    n = sum(totals)
+    if n < _ELO_MIN_BUCKET_SAMPLE:
+        return None
+    return {
+        "home_win": round(totals[0] / n, 4),
+        "draw": round(totals[1] / n, 4),
+        "away_win": round(totals[2] / n, 4),
+        "sample": n,
+    }
+
+
+def _local_elo_entry(meta, max_seasons=10, as_of_iso=None):
+    """Build a local-Elo strength entry for one resolved ESPN team."""
+    name = meta.get("name", "")
+    slug = meta.get("slug")
+    div = LEAGUES.get(slug, {}).get("fduk")
+    if not div:
+        return {"name": name, "resolved": False, "reason": "league_not_covered"}, None
+    table = _local_elo_table(div, max_seasons, as_of_iso)
+    if not table["ratings"]:
+        return {"name": name, "resolved": False, "reason": "no_results_available"}, table
+    rated = set(table["ratings"])
+    # A renamed club is rated under one canonical label; prefer it directly so
+    # resolution does not depend on the old and new names matching fuzzily.
+    alias = _FDUK_HISTORICAL_ALIASES.get(_normalize_name(name), set()) & rated
+    if alias:
+        label, method = sorted(alias)[-1], "alias"
+    else:
+        label, method = _fduk_resolve_label(name, rated)
+    if not label:
+        return {"name": name, "resolved": False, "reason": method}, table
+    current = table.get("current_labels") or []
+    ranked = sorted(current, key=lambda lab: -table["ratings"].get(lab, _ELO_NEWCOMER))
+    entry = {
+        "name": name,
+        "resolved": True,
+        "matched_as": label,
+        "elo": table["ratings"][label],
+        # Rank is among the division's CURRENT members; a club that has since
+        # been relegated out of the window is rated but not ranked.
+        "division_rank": ranked.index(label) + 1 if label in ranked else None,
+        "division_size": len(ranked),
+        "games": table["games"].get(label, 0),
+        "as_of": table["as_of"],
+        "div": div,
+    }
+    return entry, table
 
 
 def _resolve_espn_team_meta(tid, league_hint=None):
@@ -3406,6 +3649,108 @@ def _clubelo_entry(meta, rows):
     }
 
 
+def _local_elo_strength(metas, date_iso, max_seasons):
+    """`get_team_strength` result built from local Elo instead of ClubElo.
+
+    Mirrors the ClubElo response shape so callers need no special case, but
+    always reports `source: "local-elo"` — the ratings are computed here, not
+    fetched, and the two scales must not be mixed. Because each division is
+    rated independently, a comparison across divisions is refused.
+    """
+    pairs = [_local_elo_entry(m, max_seasons, date_iso) for m in metas]
+    entries = [e for e, _ in pairs]
+    tables = [t for _, t in pairs]
+    result = {
+        "date": date_iso,
+        "teams": entries,
+        "source": "local-elo",
+        "method": (
+            f"Elo over the {max_seasons} football-data.co.uk seasons up to "
+            f"{date_iso} (K={_ELO_K:g}, home advantage {_ELO_HOME_ADVANTAGE:g}, "
+            f"season regression {_ELO_SEASON_REGRESSION:g})"
+        ),
+        "fallback_reason": "ClubElo ratings are temporarily unavailable.",
+    }
+    stale_tables = [
+        table
+        for table in tables
+        if table and table.get("ratings") and not table.get("current_labels")
+    ]
+    stale_notice = None
+    if stale_tables:
+        is_live = date_iso >= datetime.now().strftime("%Y-%m-%d")
+        period = (
+            "Current-season results"
+            if is_live
+            else f"Results for the season containing {date_iso}"
+        )
+        stale_notice = (
+            f"{period} are unavailable from football-data.co.uk, so these "
+            "retained prior-season ratings are stale; current division membership "
+            "and rank are not reported."
+        )
+    resolved = [e for e in entries if e["resolved"]]
+    if len(entries) == 2 and len(resolved) == 2:
+        if entries[0]["div"] != entries[1]["div"]:
+            result["message"] = (
+                f"{entries[0]['name']} and {entries[1]['name']} are rated in "
+                "different divisions. Local Elo is anchored per division, so the "
+                "two ratings are not comparable — no favourite is reported. "
+                "ClubElo's cross-league scale is the right tool here; retry when "
+                "it is reachable."
+            )
+            if stale_notice:
+                result["message"] = f"{stale_notice} {result['message']}"
+            return result
+        diff = round(entries[0]["elo"] - entries[1]["elo"], 1)
+        result["elo_difference"] = diff
+        result["favorite"] = (
+            entries[0]["name"] if diff > 0 else entries[1]["name"] if diff < 0 else "even"
+        )
+        # Probabilities are quoted with entries[0] at home, which is the only
+        # reading an Elo gap plus a home advantage supports.
+        probs = _local_elo_outcome_probs(diff + _ELO_HOME_ADVANTAGE, tables[0])
+        if probs:
+            result["outcome_probabilities"] = dict(
+                probs, note=f"{entries[0]['name']} at home, empirical for this Elo gap"
+            )
+    unresolved = [e for e in entries if not e["resolved"]]
+    if unresolved:
+        names = ", ".join(e["name"] for e in unresolved)
+        if all(e.get("reason") == "league_not_covered" for e in unresolved):
+            result["message"] = (
+                f"Local Elo does not cover {names}'s league — it is built from the "
+                f"football-data.co.uk divisions: {_FDUK_H2H_COVERAGE}."
+            )
+        elif all(e.get("reason") == "no_results_available" for e in unresolved):
+            # Both providers down at once. Say so plainly: this is an outage,
+            # not a statement about the clubs or their names.
+            result["message"] = (
+                "ClubElo was unavailable and no football-data.co.uk results could "
+                f"be fetched for {names}, so no rating could be computed at all. "
+                "Both sources are unreachable — retry later."
+            )
+        else:
+            result["message"] = (
+                f"Could not match {names} to a football-data.co.uk team label. This "
+                "is a name-resolution gap, not a statement about the club's "
+                "strength; a club promoted into the division mid-window may have "
+                "too little history to rate."
+            )
+    elif not result.get("message"):
+        result["message"] = (
+            "ClubElo was unavailable; these ratings are computed locally from "
+            "football-data.co.uk results played up to the requested date. The "
+            "scale is division-local and NOT comparable to ClubElo — only the gap "
+            "between two ratings in the same division is meaningful. Check "
+            "`games`: a recently promoted club may be rated off very little "
+            "history, and each entry's `as_of` is the last match actually counted."
+        )
+    if stale_notice:
+        result["message"] = f"{stale_notice} {result['message']}"
+    return result
+
+
 def get_team_strength(request_data):
     """Team strength (ClubElo Elo rating) for one team, or an Elo comparison of two.
 
@@ -3421,6 +3766,9 @@ def get_team_strength(request_data):
     date_iso = params.get("date") or ca.get("date", "") or datetime.now().strftime(
         "%Y-%m-%d"
     )
+    # Only consulted by the local-Elo fallback; ClubElo serves a dated snapshot.
+    max_seasons = _fduk_int(params.get("max_seasons") or ca.get("max_seasons")) or 10
+    max_seasons = max(1, min(max_seasons, 34))
     try:
         datetime.strptime(date_iso, "%Y-%m-%d")
     except (ValueError, TypeError):
@@ -3446,11 +3794,10 @@ def get_team_strength(request_data):
         metas.append(meta2)
     rows = list(csv.DictReader(io.StringIO(_clubelo_fetch_snapshot(date_iso))))
     if not rows:
-        return {
-            "teams": [],
-            "message": "ClubElo ratings are temporarily unavailable.",
-            "source": "clubelo",
-        }
+        # ClubElo unreachable — fall back to ratings computed from the
+        # football-data.co.uk results we already fetch. Clearly labelled: the
+        # scale is division-local and not comparable to ClubElo's.
+        return _local_elo_strength(metas, date_iso, max_seasons)
     entries = [_clubelo_entry(m, rows) for m in metas]
     result = {"date": date_iso, "teams": entries, "source": "clubelo"}
     if (

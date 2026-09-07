@@ -48,7 +48,7 @@ _REGISTRY = {
         },
         "get_team_strength": {
             "required": ["team_id"],
-            "optional": ["team_id_2", "date", "league_slug"],
+            "optional": ["team_id_2", "date", "league_slug", "max_seasons"],
         },
         "get_match_forecast": {
             "required": ["team_id"],
@@ -593,6 +593,7 @@ _INT_PARAMS = {
     "innings",
     "interval_seconds",
     "window_seconds",
+    "max_seasons",
 }
 
 # Int params that also accept documented string forms (see _parse_value).
