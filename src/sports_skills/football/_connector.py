@@ -1485,12 +1485,22 @@ def _espn_home_away_map(summary):
     return {c.get("id", ""): c.get("homeAway", "") for c in competitors}
 
 
+def _espn_league_code(league_slug):
+    """Return ESPN's league code for a sports-skills slug; pass ESPN codes through."""
+    if not league_slug:
+        return "eng.1"
+    league = LEAGUES.get(str(league_slug))
+    if league and league.get("espn"):
+        return league["espn"]
+    return str(league_slug)
+
+
 def _map_espn_event_type(text):
     """Map ESPN event type text to normalized type."""
     t = text.lower()
     if "own goal" in t:
         return "own_goal"
-    if "penalty" in t and "goal" in t:
+    if "penalty" in t and ("goal" in t or "scored" in t):
         return "penalty_goal"
     if "penalty" in t and ("miss" in t or "saved" in t):
         return "penalty_missed"
@@ -1518,7 +1528,41 @@ def _normalize_espn_summary_statistics(summary):
         team = team_data.get("team", {})
         team_id = team.get("id", "")
         stats_raw = team_data.get("statistics", [])
-        sd = {s.get("name", ""): s.get("displayValue", "0") for s in stats_raw}
+        # A present stat can carry ``displayValue: null``; normalise it to "0" so the
+        # derived fields below never see ``None``.
+        sd = {}
+        for s in stats_raw:
+            value = s.get("displayValue", "0")
+            sd[s.get("name", "")] = "0" if value is None else value
+
+        def pick(*names, default="0"):
+            # ESPN's soccer boxscore uses ``totalShots``/``accuratePasses``/``totalTackles``/
+            # ``blockedShots`` in every league we have seen; the older aliases are kept in
+            # case a feed still emits them.
+            for name in names:
+                if name in sd:
+                    return sd[name]
+            return default
+
+        def to_int(value):
+            try:
+                return int(float(str(value)))
+            except (TypeError, ValueError):
+                return None
+
+        shots_total = pick("totalShots", "shotsTotal")
+        shots_on_target = pick("shotsOnTarget")
+        shots_blocked = pick("blockedShots", "shotsBlocked")
+        shots_off_target = pick("shotsOffTarget", default=None)
+        if shots_off_target is None:
+            # ESPN's ``totalShots`` counts on-target + blocked + off-target attempts, so the
+            # off-target remainder must subtract both (eng.1 event 740629: 16 total, 4 on
+            # target, 5 blocked -> 7 off target).
+            total = to_int(shots_total)
+            if total is None:
+                shots_off_target = "0"
+            else:
+                shots_off_target = str(max(0, total - (to_int(shots_on_target) or 0) - (to_int(shots_blocked) or 0)))
         teams.append(
             {
                 "team": {
@@ -1528,22 +1572,34 @@ def _normalize_espn_summary_statistics(summary):
                 },
                 "qualifier": ha_map.get(team_id, ""),
                 "statistics": {
-                    "ball_possession": sd.get("possessionPct", "0"),
-                    "shots_total": sd.get("shotsTotal", "0"),
-                    "shots_on_target": sd.get("shotsOnTarget", "0"),
-                    "shots_off_target": sd.get("shotsOffTarget", "0"),
-                    "shots_blocked": sd.get("shotsBlocked", "0"),
-                    "corner_kicks": sd.get("wonCorners", "0"),
+                    "ball_possession": pick("possessionPct"),
+                    "shots_total": shots_total,
+                    "shots_on_target": shots_on_target,
+                    "shots_off_target": shots_off_target,
+                    "shots_blocked": shots_blocked,
+                    "shot_pct": pick("shotPct"),
+                    "corner_kicks": pick("wonCorners"),
                     "free_kicks": "0",
-                    "fouls": sd.get("foulsCommitted", "0"),
-                    "offsides": sd.get("offsides", "0"),
-                    "yellow_cards": sd.get("yellowCards", "0"),
-                    "red_cards": sd.get("redCards", "0"),
-                    "passes_total": sd.get("totalPasses", "0"),
-                    "passes_accurate": sd.get("completedPasses", "0"),
-                    "tackles": sd.get("tackles", "0"),
-                    "crosses": "0",
-                    "goalkeeper_saves": sd.get("saves", "0"),
+                    "fouls": pick("foulsCommitted"),
+                    "offsides": pick("offsides"),
+                    "yellow_cards": pick("yellowCards"),
+                    "red_cards": pick("redCards"),
+                    "passes_total": pick("totalPasses"),
+                    "passes_accurate": pick("accuratePasses", "completedPasses"),
+                    "pass_pct": pick("passPct"),
+                    "long_balls_total": pick("totalLongBalls"),
+                    "long_balls_accurate": pick("accurateLongBalls"),
+                    "crosses": pick("totalCrosses"),
+                    "crosses_accurate": pick("accurateCrosses"),
+                    "tackles": pick("totalTackles", "tackles"),
+                    "tackles_effective": pick("effectiveTackles"),
+                    "tackle_pct": pick("tacklePct"),
+                    "interceptions": pick("interceptions"),
+                    "clearances": pick("totalClearance"),
+                    "clearances_effective": pick("effectiveClearance"),
+                    "penalty_kick_shots": pick("penaltyKickShots"),
+                    "penalty_kick_goals": pick("penaltyKickGoals"),
+                    "goalkeeper_saves": pick("saves"),
                 },
             }
         )
@@ -4257,10 +4313,12 @@ def get_player_profile(request_data):
 
 
 def get_player_season_stats(request_data):
-    """Get player season gamelog with per-match stats via ESPN overview endpoint.
+    """Get a player's recent gamelog (ESPN "Last 5 Matches") via the overview endpoint.
 
     Returns appearances, goals, assists, shots, shots on target, fouls,
-    offsides, and cards for each match in the current season.
+    offsides, and cards for each of the last ~5 matches the player played,
+    across competitions. ``league_slug`` accepts the sports-skills slug
+    (``serie-a-brazil``) or ESPN's code (``bra.1``).
     """
     params = request_data.get("params", {})
     player_id = params.get("player_id") or params.get("command_attribute", {}).get(
@@ -4272,6 +4330,10 @@ def get_player_season_stats(request_data):
 
     if not player_id:
         return {"error": True, "message": "player_id is required (ESPN athlete ID)"}
+
+    # Every other command takes the sports-skills league slug (``serie-a-brazil``); the
+    # ESPN overview URL needs ESPN's own code (``bra.1``). Accept both.
+    league_slug = _espn_league_code(league_slug)
 
     cache_key = f"football_player_season:{player_id}:{league_slug}"
     cached = _cache_get(cache_key)

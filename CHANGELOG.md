@@ -1,3 +1,15 @@
+## [Unreleased]
+
+### Fixed
+- **football: scored penalties were labelled `red_card`.** `_map_espn_event_type` matched `"red"` inside ESPN's `"Penalty - Scored"` before the goal check, so every converted penalty left the timeline as a red card (in a full Brasileirão season, 50 of them) and never as a goal. They are now `penalty_goal`.
+- **football: `get_event_statistics` returned "0" for shots, passes, tackles and blocked shots.** The normalizer read `shotsTotal`/`completedPasses`/`tackles`/`shotsBlocked`, names ESPN's soccer boxscore does not emit (it uses `totalShots`, `accuratePasses`, `totalTackles`, `blockedShots` in every league checked). Both spellings are accepted now.
+- **football: `shots_off_target` is derived as total − on target − blocked** (ESPN's `totalShots` includes blocked attempts), and a `displayValue: null` no longer raises inside the normalizer.
+- **football: `get_player_season_stats` accepts the sports-skills league slug** (`serie-a-brazil` → `bra.1`) like every other command, instead of requiring ESPN's code.
+
+### Added
+- **football: richer team statistics** from the same boxscore: `interceptions`, `clearances`, `clearances_effective`, `tackles_effective`, `tackle_pct`, `crosses_accurate`, `long_balls_total`, `long_balls_accurate`, `pass_pct`, `shot_pct`, `penalty_kick_shots`, `penalty_kick_goals`; `shots_off_target` is derived when ESPN omits it.
+- **docs:** `get_team_profile` documents the squad it already returned; timeline event types and the gamelog window are documented.
+
 ## [0.33.0]
 
 ### Added

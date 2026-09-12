@@ -111,9 +111,11 @@ Search for a football player by name.
 Returns `data.results[]` with `tm_player_id`, `espn_id`, `name`, `team`, `competition`.
 
 ### get_team_profile
-Get basic team info (name, crest, venue). Does NOT return squad.
+Get team info (name, crest, venue) **and the current squad** from ESPN's roster endpoint.
 - `team_id` (str, required): ESPN team ID
 - `league_slug` (str, optional): League hint
+
+Returns `data.team`, `data.venue` and `data.players[]` (`id`/`espn_athlete_id`, `name`, `position` letter G/D/M/F, `shirt_number`, `age`, `nationality`). `data.manager` is always `{}` today: no manager lookup is performed. The roster is the club's current squad, not a historical one.
 
 ### get_daily_schedule
 Get all matches for a specific date across all leagues.
@@ -146,11 +148,14 @@ Returns `data.lineups[]` with team, formation, starting players, and bench.
 Get match team statistics.
 - `event_id` (str, required): Match/event ID
 
-Returns `data.teams[]` with ball_possession, shots_total, shots_on_target, fouls, corners.
+Returns `data.teams[]` with `statistics`: `ball_possession`, `shots_total`, `shots_on_target`, `shots_off_target` (derived), `shots_blocked`, `shot_pct`, `corner_kicks`, `fouls`, `offsides`, `yellow_cards`, `red_cards`, `passes_total`, `passes_accurate`, `pass_pct`, `long_balls_total`, `long_balls_accurate`, `crosses`, `crosses_accurate`, `tackles`, `tackles_effective`, `tackle_pct`, `interceptions`, `clearances`, `clearances_effective`, `penalty_kick_shots`, `penalty_kick_goals`, `goalkeeper_saves`. Values are strings as ESPN displays them. Team-level only: ESPN publishes no per-player passes, tackles or duels for soccer.
+
 
 ### get_event_timeline
 Get match timeline/key events (goals, cards, substitutions).
 - `event_id` (str, required): Match/event ID
+
+Event `type` values: `goal`, `penalty_goal`, `own_goal`, `penalty_missed` (missed or saved), `yellow_card`, `red_card`, `yellow_red_card`, `substitution` (with `player_in`/`player_out`), plus ESPN's period markers (`kickoff`, `halftime`, …). Count `goal` + `penalty_goal` + `own_goal` to reconcile with the score; for an own goal `team` is the side credited with the goal.
 
 ### get_team_schedule
 Get schedule for a specific team (past results + upcoming fixtures).
@@ -261,7 +266,9 @@ Get transfer history for specific players via Transfermarkt.
 ### get_player_season_stats
 Get player season stats via ESPN.
 - `player_id` (str, required): ESPN athlete ID
-- `league_slug` (str, optional): League slug hint
+- `league_slug` (str, optional): sports-skills league slug (`serie-a-brazil`, `premier-league`, …) or ESPN code (`bra.1`, `eng.1`). Defaults to the Premier League.
+
+The gamelog only carries the player's most recent matches (about five), across competitions; filter by `event_id` against a schedule when you need one competition.
 
 ### get_player_profile
 Get player profile via FPL and/or Transfermarkt.

@@ -23,13 +23,14 @@ These are the ONLY valid commands. Do not invent or guess command names:
 - `get_event_players_statistics`
 - `get_missing_players`
 - `get_season_transfers`
+- `get_player_season_stats`
 - `get_player_profile`
 
 ## Commands That DO NOT Exist (Commonly Hallucinated)
 
 - ~~`get_standings`~~ — the correct command is `get_season_standings` (requires `season_id`).
 - ~~`get_live_scores`~~ — not available. Use `get_daily_schedule()` for today's matches; status field shows "live" for in-progress games.
-- ~~`get_team_squad`~~ / ~~`get_team_roster`~~ — `get_team_profile` does NOT return players. Use `get_season_leaders` for PL player IDs, then `get_player_profile` for individual data.
+- ~~`get_team_squad`~~ / ~~`get_team_roster`~~ — use `get_team_profile`: `data.players[]` is the current roster with ESPN athlete IDs.
 - ~~`get_transfers`~~ — the correct command is `get_season_transfers` (requires `season_id` + `tm_player_ids`).
 - ~~`get_match_results`~~ / ~~`get_match`~~ — use `get_event_summary` with an `event_id`.
 - ~~`get_player_stats`~~ — use `get_event_players_statistics` for match-level stats, or `get_player_profile` for career data.
@@ -72,6 +73,8 @@ No parameters.
 ### get_team_profile
 - `team_id` (str, required): ESPN team ID
 - `league_slug` (str, optional): League hint
+
+Returns `data.team`, `data.venue`, and `data.players[]` for the current squad.
 
 ### get_daily_schedule
 - `date` (str, optional): Date in YYYY-MM-DD format. Defaults to today.
@@ -152,6 +155,16 @@ skills. Empty result carries an explanatory `message`.
 ### get_season_transfers
 - `season_id` (str, required): Season slug
 - `tm_player_ids` (list, required): Transfermarkt player IDs
+
+### get_player_season_stats
+- `player_id` (str, required): ESPN athlete ID
+- `league_slug` (str, optional): sports-skills league slug (for example,
+  `serie-a-brazil` or `premier-league`) or ESPN code (for example, `bra.1` or
+  `eng.1`). Defaults to the Premier League.
+
+Returns ESPN's "Last 5 Matches" gamelog across competitions, not a full-season
+total. Filter its `event_id` values against a schedule when you need matches from
+one competition.
 
 ### get_player_profile
 - `fpl_id` (str, optional): FPL player ID (PL players only)
