@@ -27,6 +27,7 @@ from sports_skills._espn_base import (
     normalize_injuries,
     normalize_odds,
     normalize_scoring_plays,
+    normalize_summary_odds,
     normalize_transactions,
 )
 
@@ -229,11 +230,14 @@ def _normalize_game_summary(summary_data):
     competitions = header.get("competitions", [{}])
     comp = competitions[0] if competitions else {}
 
-    # Basic game info
+    # Basic game info. start_time is the game's identity for cross-venue
+    # matching: prediction markets date a game, and the same two teams meet
+    # more than once a season.
     game_info = {
         "id": header.get("id", ""),
         "status": comp.get("status", {}).get("type", {}).get("name", ""),
         "status_detail": comp.get("status", {}).get("type", {}).get("shortDetail", ""),
+        "start_time": comp.get("date", ""),
         "venue": {
             "name": summary_data.get("gameInfo", {}).get("venue", {}).get("fullName", ""),
             "city": summary_data.get("gameInfo", {}).get("venue", {}).get("address", {}).get("city", ""),
@@ -298,6 +302,9 @@ def _normalize_game_summary(summary_data):
         "boxscore": box_teams,
         "scoring_plays": scoring_plays,
         "leaders": leaders,
+        # Summary odds live in pickcenter, not competitions[].odds — the
+        # markets helpers read this key and previously found nothing here.
+        "odds": normalize_summary_odds(summary_data),
     }
 
 
@@ -325,6 +332,35 @@ def _normalize_leaders(espn_data):
             "leaders": leaders_list,
         })
     return categories
+
+
+# ESPN's league id for the NFL, as it appears in a news category's `sportId`
+# and in its `uid` ("s:20~l:28~t:14").
+_NFL_LEAGUE_ID = 28
+
+
+def _article_team_ids(article):
+    """ESPN team IDs explicitly tagged on a news article.
+
+    Team identity lives in ``categories[]`` entries of ``type == "team"``, as
+    ``teamId`` or ``team.id`` — NOT the category's own ``id``, which is a
+    content id that collides with team ids. A league-wide story legitimately
+    tags every team it covers, so these tags are the only safe filter; a
+    headline mentioning a team is not a tag.
+    """
+    ids = set()
+    for category in article.get("categories") or []:
+        if not isinstance(category, dict) or category.get("type") != "team":
+            continue
+        sport_id = category.get("sportId")
+        uid = str(category.get("uid") or "")
+        if sport_id is not None and sport_id != _NFL_LEAGUE_ID and f"l:{_NFL_LEAGUE_ID}~" not in uid:
+            continue
+        team = category.get("team") if isinstance(category.get("team"), dict) else {}
+        for value in (category.get("teamId"), team.get("id")):
+            if value not in (None, ""):
+                ids.add(str(value))
+    return ids
 
 
 def _normalize_news(espn_data):
@@ -558,17 +594,49 @@ def get_leaders(request_data):
 
 
 def get_news(request_data):
-    """Get NFL news articles."""
+    """Get NFL news articles, optionally restricted to one team.
+
+    ``teams/<id>/news`` is not a news endpoint for the NFL — it answers ``{}``,
+    which normalizes to a perfectly ordinary "0 articles" and reads as "no news
+    about this team". The league feed takes the team as a query filter
+    (``/news?team=14``) and tags each article with the teams it covers.
+    """
     params = request_data.get("params", {})
     team_id = params.get("team_id")
+    team_id = str(team_id) if team_id not in (None, "") else None
 
-    resource = f"teams/{team_id}/news" if team_id else "news"
-    data = espn_request(SPORT_PATH, resource)
+    data = espn_request(SPORT_PATH, "news", params={"team": team_id} if team_id else None)
+    if not isinstance(data, dict):
+        return {"error": True, "message": "ESPN news returned an unexpected payload"}
     if data.get("error"):
         return data
 
-    articles = _normalize_news(data)
-    return {"articles": articles, "count": len(articles)}
+    raw_articles = data.get("articles")
+    if raw_articles is None:
+        return {
+            "error": True,
+            "message": (
+                "ESPN news response carried no 'articles' field — the endpoint did not serve "
+                "this request (an empty feed returns 'articles': [])."
+            ),
+        }
+    if not isinstance(raw_articles, list):
+        return {"error": True, "message": "ESPN news response had a non-list 'articles' field"}
+
+    matched = raw_articles
+    if team_id:
+        matched = [a for a in raw_articles if isinstance(a, dict) and team_id in _article_team_ids(a)]
+
+    articles = _normalize_news({"articles": matched})
+    result = {
+        "articles": articles,
+        "count": len(articles),
+        "total_articles": len(raw_articles),
+    }
+    if team_id:
+        result["team_id"] = team_id
+        result["filtered_by"] = "category team tags"
+    return result
 
 
 def get_schedule(request_data):

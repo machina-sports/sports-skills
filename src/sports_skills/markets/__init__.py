@@ -280,15 +280,24 @@ def evaluate_market(
     token_id: str | None = None,
     kalshi_ticker: str | None = None,
     outcome: int | None = None,
+    fee_per_contract: float | None = None,
 ) -> dict:
-    """All-in-one: ESPN odds + market price, devig, edge, Kelly.
+    """ESPN odds + an executable market ask → devig, fee-aware edge, Kelly.
+
+    Prices the side you name at the order book's ask plus your fee, on a
+    market verified to be this game's full-game winner market. A wrong-team
+    ticker, a derivative market or an empty book is refused, not swapped for
+    another bet.
 
     Args:
         sport: Sport key (nba, nfl, etc.).
         event_id: ESPN event ID.
-        token_id: Polymarket token ID (optional, for direct price lookup).
-        kalshi_ticker: Kalshi market ticker (optional, for direct price lookup).
+        token_id: Polymarket CLOB token ID for the chosen side (optional).
+        kalshi_ticker: Kalshi market ticker for the chosen side (optional).
         outcome: Which outcome to evaluate (0=home, 1=away, default: 0).
+        fee_per_contract: Taker fee in dollars per $1 contract. Required for
+            net edge and Kelly; without it the ask is still reported but the
+            net numbers are refused rather than assumed to be zero.
     """
     return _evaluate_market(
         _req(
@@ -297,5 +306,6 @@ def evaluate_market(
             token_id=token_id,
             kalshi_ticker=kalshi_ticker,
             outcome=outcome,
+            fee_per_contract=fee_per_contract,
         )
     )

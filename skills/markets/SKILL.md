@@ -71,14 +71,17 @@ Returns each game with ESPN info, DraftKings odds, matching Kalshi markets, and 
 
 1. Get the ESPN event ID: `get_sport_schedule --sport=nba`
 2. Compare odds: `compare_odds --sport=nba --event_id=<id>`
-3. If arbitrage detected, response includes allocation percentages and guaranteed ROI.
+3. If arbitrage detected, response includes allocation percentages and ROI — computed from **reference** prices (`price_basis: "reference"`), so confirm both legs on each venue's order book before trading it.
+4. `sources` and `completeness` say which venues actually priced this game; a provider error is reported as `error`, not as "no markets".
 
 ### Full Bet Evaluation
 
-1. `evaluate_market --sport=nba --event_id=<id>`
-2. Fetches ESPN odds and matching prediction market price
-3. Pipes through `betting.evaluate_bet`: devig → edge → Kelly
+1. `evaluate_market --sport=nba --event_id=<id> --outcome=0 --fee_per_contract=<dollars per $1 contract>`
+2. Verifies the market is this game's full-game winner market for the chosen side, then reads the **ask** off the order book
+3. Pipes ask + fee through `betting.evaluate_bet`: devig → edge → Kelly
 4. Returns fair probability, edge, EV, Kelly fraction, and recommendation
+
+Without `fee_per_contract` the ask is reported but `evaluation` is `null` — the net numbers are refused rather than assumed free. A ticker or `token_id` that names another team, another date, or a derivative (first-half, spread) market is refused, not substituted. Fees are not currently settable via the CLI; use the Python wrapper (`markets.evaluate_market(..., fee_per_contract=...)`).
 
 ### Same Game on Both Venues
 

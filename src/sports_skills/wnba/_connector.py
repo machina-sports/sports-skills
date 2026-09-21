@@ -26,6 +26,7 @@ from sports_skills._espn_base import (
     normalize_injuries,
     normalize_odds,
     normalize_scoring_plays,
+    normalize_summary_odds,
     normalize_transactions,
 )
 
@@ -226,6 +227,7 @@ def _normalize_game_summary(summary_data):
         "id": header.get("id", ""),
         "status": comp.get("status", {}).get("type", {}).get("name", ""),
         "status_detail": comp.get("status", {}).get("type", {}).get("shortDetail", ""),
+        "start_time": comp.get("date", ""),
         "venue": {
             "name": summary_data.get("gameInfo", {}).get("venue", {}).get("fullName", ""),
             "city": summary_data.get("gameInfo", {}).get("venue", {}).get("address", {}).get("city", ""),
@@ -288,6 +290,7 @@ def _normalize_game_summary(summary_data):
         "boxscore": box_teams,
         "scoring_plays": scoring_plays,
         "leaders": leaders,
+        "odds": normalize_summary_odds(summary_data),
     }
 
 

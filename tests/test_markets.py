@@ -597,6 +597,7 @@ class TestCompareOddsMocked:
         mock_mod.get_game_summary.return_value = {
             "status": True,
             "data": {
+                "game_info": {"start_time": "2026-01-15T00:30Z"},
                 "competitors": [
                     {"team": {"name": "Boston Celtics"}, "home_away": "home"},
                     {"team": {"name": "Los Angeles Lakers"}, "home_away": "away"},
@@ -611,6 +612,7 @@ class TestCompareOddsMocked:
                 "source": "polymarket",
                 "title": "Celtics vs. Lakers",
                 "market_id": "M1",
+                "slug": "nba-lal-bos-2026-01-15",
                 "sports_market_type": "moneyline",
                 "outcomes": [
                     {"token_id": "T1", "outcome": "Celtics", "price": 0.61},
@@ -621,6 +623,7 @@ class TestCompareOddsMocked:
                 "source": "polymarket",
                 "title": "Will there be a run scored in the first inning?",
                 "market_id": "M2",
+                "slug": "nba-lal-bos-2026-01-15-first-inning-run",
                 "sports_market_type": "",
                 "outcomes": [
                     {"token_id": "T3", "outcome": "Yes", "price": 0.5},
@@ -633,6 +636,7 @@ class TestCompareOddsMocked:
                 "source": "prophetx",
                 "event_id": 19742,
                 "title": "Lakers at Celtics",
+                "scheduled": "2026-01-15T00:30:00Z",
                 "markets": [
                     {
                         "market_key": "19742:219",
@@ -686,6 +690,7 @@ class TestCompareOddsMocked:
         mock_mod.get_game_summary.return_value = {
             "status": True,
             "data": {
+                "game_info": {"start_time": "2026-01-15T00:30Z"},
                 "competitors": [
                     {"team": {"name": "Home Team"}, "home_away": "home"},
                     {"team": {"name": "Away Team"}, "home_away": "away"},
@@ -698,6 +703,7 @@ class TestCompareOddsMocked:
         mock_poly.return_value = [
             {
                 "sports_market_type": "moneyline",
+                "slug": "nba-away-home-2026-01-15",
                 "outcomes": [
                     {"outcome": "Home Team", "price": 0.7},
                     {"outcome": "Away Team", "price": 0.4},
@@ -724,6 +730,7 @@ class TestCompareOddsMocked:
         mock_mod.get_game_summary.return_value = {
             "status": True,
             "data": {
+                "game_info": {"start_time": "2026-01-15T00:30Z"},
                 "competitors": [
                     {"team": {"name": "Boston Celtics"}, "home_away": "home"},
                     {"team": {"name": "Los Angeles Lakers"}, "home_away": "away"},
@@ -737,6 +744,7 @@ class TestCompareOddsMocked:
         mock_poly.return_value = [
             {
                 "market_id": "date-1",
+                "slug": "nba-lal-bos-2026-01-15",
                 "sports_market_type": "moneyline",
                 "outcomes": [
                     {"outcome": "Celtics", "price": 0.6},
@@ -745,6 +753,7 @@ class TestCompareOddsMocked:
             },
             {
                 "market_id": "date-2",
+                "slug": "nba-lal-bos-2026-01-14",
                 "sports_market_type": "moneyline",
                 "outcomes": [
                     {"outcome": "Celtics", "price": 0.65},
@@ -851,20 +860,35 @@ class TestCompareOddsMocked:
 
 
 class TestEvaluateMarketMocked:
-    @patch("sports_skills.markets._connector._search_polymarket")
-    @patch("sports_skills.markets._connector._load_sport_module")
-    def test_evaluate_with_market_search(self, mock_load, mock_poly_search):
-        mock_mod = MagicMock()
-        mock_mod.get_game_summary.return_value = {
+    """`evaluate_market` refuses a bet it cannot prove is the one you asked for.
+
+    These three cases used to assert the opposite. Each encoded a way the old
+    body substituted a different proposition for the requested one, and the
+    assertions below are the same scenarios with the correct answers.
+    """
+
+    @staticmethod
+    def _summary():
+        return {
             "status": True,
             "data": {
+                "game_info": {"start_time": "2026-03-02T00:30Z"},
                 "competitors": [
-                    {"team": {"name": "Boston Celtics"}, "home_away": "home"},
-                    {"team": {"name": "Los Angeles Lakers"}, "home_away": "away"},
+                    {"team": {"name": "Boston Celtics", "abbreviation": "BOS"}, "home_away": "home"},
+                    {"team": {"name": "Los Angeles Lakers", "abbreviation": "LAL"}, "home_away": "away"},
                 ],
                 "odds": {"home_odds": -150, "away_odds": 130},
             },
         }
+
+    @patch("sports_skills.markets._connector._search_polymarket")
+    @patch("sports_skills.markets._connector._load_sport_module")
+    def test_untyped_search_hit_is_not_priced_as_the_game_moneyline(self, mock_load, mock_poly_search):
+        # "Yes" @ 0.52 on an untyped one-sided market is not the Celtics'
+        # moneyline. Taking the first outcome of the first search hit priced a
+        # different proposition against this game's odds.
+        mock_mod = MagicMock()
+        mock_mod.get_game_summary.return_value = self._summary()
         mock_load.return_value = mock_mod
         mock_poly_search.return_value = [
             {
@@ -879,25 +903,18 @@ class TestEvaluateMarketMocked:
 
         result = evaluate_market({"params": {"sport": "nba", "event_id": "123"}})
         assert result["status"] is True
-        assert result["data"]["market_prob"] == 0.52
-        assert result["data"]["evaluation"] is not None
+        assert result["data"]["market"] is None
+        assert result["data"]["market_prob"] is None
+        assert result["data"]["evaluation"] is None
+        assert result["data"]["sources"]["polymarket"]["outcome"] == "unmatched"
 
     @patch("sports_skills.kalshi")
     @patch("sports_skills.markets._connector._load_sport_module")
-    def test_evaluate_kalshi_dollars_only_payload(self, mock_load, mock_kalshi):
-        # Raw get_market payloads post-migration carry only *_dollars fields;
-        # evaluate_market must still derive a usable market probability.
+    def test_ticker_that_names_no_game_is_refused(self, mock_load, mock_kalshi):
+        # "KX-TEST" identifies no matchup and no date, and yes_bid is the price
+        # someone will PAY you, not the ask you would buy at.
         mock_mod = MagicMock()
-        mock_mod.get_game_summary.return_value = {
-            "status": True,
-            "data": {
-                "competitors": [
-                    {"team": {"name": "Boston Celtics"}, "home_away": "home"},
-                    {"team": {"name": "Los Angeles Lakers"}, "home_away": "away"},
-                ],
-                "odds": {"home_odds": -150, "away_odds": 130},
-            },
-        }
+        mock_mod.get_game_summary.return_value = self._summary()
         mock_load.return_value = mock_mod
         mock_kalshi.get_market.return_value = {
             "status": True,
@@ -906,33 +923,22 @@ class TestEvaluateMarketMocked:
 
         result = evaluate_market({"params": {"sport": "nba", "event_id": "123", "kalshi_ticker": "KX-TEST"}})
 
-        assert result["status"] is True
-        assert result["data"]["market_prob"] == 0.16
-        assert result["data"]["market_source"] == "kalshi"
-        assert result["data"]["evaluation"] is not None
+        assert result["status"] is False
+        assert "KXNBAGAME" in result["message"]
+        mock_kalshi.get_market_orderbook.assert_not_called()
 
     @patch("sports_skills.markets._connector._search_polymarket")
     @patch("sports_skills.kalshi")
     @patch("sports_skills.markets._connector._load_sport_module")
-    def test_evaluate_kalshi_zero_price_falls_through_to_search(self, mock_load, mock_kalshi, mock_poly_search):
-        # A zero/missing Kalshi price must leave market_prob as None so the
-        # search fallback still runs (previously it was poisoned to 0.0).
+    def test_unusable_ticker_does_not_fall_through_to_another_market(
+        self, mock_load, mock_kalshi, mock_poly_search
+    ):
+        # A ticker the caller named explicitly is refused on its own terms.
+        # Silently searching up a substitute answered a question nobody asked.
         mock_mod = MagicMock()
-        mock_mod.get_game_summary.return_value = {
-            "status": True,
-            "data": {
-                "competitors": [
-                    {"team": {"name": "Boston Celtics"}, "home_away": "home"},
-                    {"team": {"name": "Los Angeles Lakers"}, "home_away": "away"},
-                ],
-                "odds": {"home_odds": -150, "away_odds": 130},
-            },
-        }
+        mock_mod.get_game_summary.return_value = self._summary()
         mock_load.return_value = mock_mod
-        mock_kalshi.get_market.return_value = {
-            "status": True,
-            "data": {"yes_bid_dollars": "0.0000"},
-        }
+        mock_kalshi.get_market.return_value = {"status": True, "data": {"yes_bid_dollars": "0.0000"}}
         mock_poly_search.return_value = [
             {
                 "source": "polymarket",
@@ -944,9 +950,8 @@ class TestEvaluateMarketMocked:
 
         result = evaluate_market({"params": {"sport": "nba", "event_id": "123", "kalshi_ticker": "KX-TEST"}})
 
-        assert result["status"] is True
-        assert result["data"]["market_prob"] == 0.52
-        assert result["data"]["market_source"] == "polymarket"
+        assert result["status"] is False
+        mock_poly_search.assert_not_called()
 
     @patch("sports_skills.markets._connector._load_sport_module")
     def test_evaluate_missing_odds(self, mock_load):
@@ -970,6 +975,79 @@ class TestEvaluateMarketMocked:
     def test_missing_event_id(self):
         result = evaluate_market({"params": {"sport": "nba"}})
         assert result["status"] is False
+
+
+class TestEvaluateMarketArgumentPropagation:
+    """A fee the caller passes has to survive the whole way to the connector.
+
+    `_req` drops None, which is what makes `fee_per_contract=0.0` ("I assert
+    this venue charges me nothing") different from omitting it ("I don't know
+    what it charges"). Dropping an explicit zero would silently turn the first
+    into the second and re-introduce the free-trade assumption.
+    """
+
+    @patch("sports_skills.markets._evaluate_market")
+    def test_explicit_zero_fee_reaches_the_connector(self, inner):
+        import sports_skills.markets as markets
+
+        inner.return_value = {"status": True, "data": {}, "message": ""}
+        markets.evaluate_market(sport="nfl", event_id="401872947", fee_per_contract=0.0, outcome=0)
+
+        params = inner.call_args[0][0]["params"]
+        assert params["fee_per_contract"] == 0.0
+        assert params["outcome"] == 0
+
+    @patch("sports_skills.markets._evaluate_market")
+    def test_omitted_fee_is_not_forwarded_as_zero(self, inner):
+        import sports_skills.markets as markets
+
+        inner.return_value = {"status": True, "data": {}, "message": ""}
+        markets.evaluate_market(sport="nfl", event_id="401872947")
+
+        params = inner.call_args[0][0]["params"]
+        assert "fee_per_contract" not in params
+        assert "outcome" not in params
+
+    def test_cli_exposes_the_fee_argument(self):
+        # The CLI is the primary agent surface: a parameter the Python wrapper
+        # accepts but the CLI rejects is invisible to half the callers.
+        from sports_skills.cli import _FLOAT_PARAMS, _REGISTRY
+
+        evaluate = _REGISTRY["markets"]["evaluate_market"]
+        assert "fee_per_contract" in evaluate["optional"]
+        assert "fee_per_contract" in _FLOAT_PARAMS
+
+    def test_cli_forwards_an_explicit_zero_fee_as_a_float(self, monkeypatch, capsys):
+        # The CLI hands parsed kwargs straight to the wrapper, so a fee that is
+        # not registered as a float param arrives as the string "0" — which is
+        # neither the explicit zero nor the omission the wrapper distinguishes.
+        import sports_skills.markets as markets
+        from sports_skills import cli
+
+        seen = {}
+
+        def fake_evaluate_market(**kwargs):
+            seen.update(kwargs)
+            return {"status": True, "data": {}, "message": ""}
+
+        monkeypatch.setattr(markets, "evaluate_market", fake_evaluate_market)
+        monkeypatch.setattr(
+            "sys.argv",
+            [
+                "sports-skills",
+                "markets",
+                "evaluate_market",
+                "--sport=nfl",
+                "--event_id=401872947",
+                "--fee_per_contract=0",
+            ],
+        )
+
+        cli.main()
+        capsys.readouterr()
+
+        assert seen["fee_per_contract"] == 0.0
+        assert isinstance(seen["fee_per_contract"], float)
 
 
 # ============================================================

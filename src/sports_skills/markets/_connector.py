@@ -304,22 +304,40 @@ def _fetch_all_schedules(sports: list[str], date: str | None) -> tuple[list[dict
 # ============================================================
 
 
-def _search_kalshi(entity: str, sport: str | None) -> list[dict]:
+def _note(report: dict | None, transport: str, detail: str = "") -> None:
+    """Record how a source search actually went, for callers that care.
+
+    The search helpers collapse "the provider is down", "the provider answered
+    an error" and "there are genuinely no markets" into an empty list. A caller
+    reporting per-source completeness cannot tell those apart afterwards, so an
+    optional ``report`` dict carries the transport outcome out of band —
+    existing callers that pass nothing are unaffected.
+    """
+    if report is not None:
+        report["transport"] = transport
+        report["detail"] = detail
+
+
+def _search_kalshi(entity: str, sport: str | None, report: dict | None = None) -> list[dict]:
     """Use kalshi.search_markets for sport-filtered search with fuzzy matching."""
     try:
         from sports_skills import kalshi
     except ImportError:
         logger.warning("kalshi module not available")
+        _note(report, "error", "kalshi module not available")
         return []
 
     try:
         result = kalshi.search_markets(sport=sport, query=entity)
     except Exception as exc:
         logger.warning("Kalshi search failed: %s", exc)
+        _note(report, "error", str(exc))
         return []
 
     if not result.get("status"):
+        _note(report, "error", result.get("message", "Kalshi search returned an error"))
         return []
+    _note(report, "ok")
 
     data = result.get("data", {})
     markets = data.get("markets", [])
@@ -351,12 +369,13 @@ def _search_kalshi(entity: str, sport: str | None) -> list[dict]:
     return list(events_map.values())
 
 
-def _search_polymarket(entity: str, sport: str | None = None) -> list[dict]:
+def _search_polymarket(entity: str, sport: str | None = None, report: dict | None = None) -> list[dict]:
     """Use polymarket.search_markets with sport filtering when available."""
     try:
         from sports_skills import polymarket
     except ImportError:
         logger.warning("polymarket module not available")
+        _note(report, "error", "polymarket module not available")
         return []
 
     try:
@@ -367,10 +386,13 @@ def _search_polymarket(entity: str, sport: str | None = None) -> list[dict]:
         result = polymarket.search_markets(**kwargs)
     except Exception as exc:
         logger.warning("Polymarket search failed: %s", exc)
+        _note(report, "error", str(exc))
         return []
 
     if not result.get("status"):
+        _note(report, "error", result.get("message", "Polymarket search returned an error"))
         return []
+    _note(report, "ok")
 
     data = result.get("data", {})
     markets = data.get("markets", [])
@@ -458,7 +480,7 @@ def _prophetx_outcome_odds(outcome: dict) -> dict | None:
     return None
 
 
-def _search_prophetx(entity: str, sport: str | None = None) -> list[dict]:
+def _search_prophetx(entity: str, sport: str | None = None, report: dict | None = None) -> list[dict]:
     """Use prophetx.search_markets for exchange market discovery.
 
     ProphetX's public API always exposes market structure (markets/lines/
@@ -470,6 +492,7 @@ def _search_prophetx(entity: str, sport: str | None = None) -> list[dict]:
         from sports_skills import prophetx
     except ImportError:
         logger.warning("prophetx module not available")
+        _note(report, "error", "prophetx module not available")
         return []
 
     try:
@@ -479,10 +502,13 @@ def _search_prophetx(entity: str, sport: str | None = None) -> list[dict]:
         result = prophetx.search_markets(**kwargs)
     except Exception as exc:
         logger.warning("ProphetX search failed: %s", exc)
+        _note(report, "error", str(exc))
         return []
 
     if not result.get("status"):
+        _note(report, "error", result.get("message", "ProphetX search returned an error"))
         return []
+    _note(report, "ok")
 
     data = result.get("data", {})
     markets = data.get("markets", [])
@@ -570,6 +596,407 @@ def _normalize_price(price: float, source: str) -> dict:
         "decimal": data.get("decimal", 0.0),
         "source": source,
     }
+
+
+# ============================================================
+# 2E-bis. Executable prices, game identity, validated discovery
+# ============================================================
+
+# Prices you can actually transact at come from the top of an order book. A
+# last trade or a midpoint is neither side of that book: it is a reference.
+_REFERENCE_NOTE = "reference price (last trade / midpoint) — not an executable quote"
+
+_COMPARE_REFERENCE_NOTE = (
+    "Every price compared here is a reference price (sportsbook line, exchange last trade "
+    "or midpoint), not an executable quote — no size or fill is implied."
+)
+
+_ARB_REFERENCE_NOTE = (
+    "Built from reference prices (book odds, last/mid market prices), not from executable "
+    "quotes. Confirm both legs on each venue's order book before treating this as arbitrage."
+)
+
+
+def _finite(value):
+    """float(value) when it is a finite, non-negative real number, else None."""
+    if value is None or isinstance(value, bool):
+        return None
+    try:
+        number = float(value)
+    except (TypeError, ValueError):
+        return None
+    if number != number or number in (float("inf"), float("-inf")) or number < 0:
+        return None
+    return number
+
+
+def _book_levels(raw) -> list | None:
+    """``[(price, size)]`` from order-book levels; None if any level is junk."""
+    levels = []
+    for level in raw or []:
+        if not isinstance(level, (list, tuple)) or len(level) < 2:
+            return None
+        price, size = _finite(level[0]), _finite(level[1])
+        if price is None or size is None:
+            return None
+        levels.append((price, size))
+    return levels
+
+
+def _kalshi_yes_ask(orderbook: dict) -> tuple[dict | None, str]:
+    """Best executable YES ask and its depth, from a Kalshi order book.
+
+    Kalshi quotes BIDS on both sides of a binary market. Buying YES means
+    lifting the best NO bid, so the YES ask is ``1 - best_no_bid`` — the YES
+    column is what someone will PAY you, never what you pay. Levels arrive as
+    dollar strings under ``yes_dollars``/``no_dollars`` (``orderbook_fp``) and
+    as integer cents under the legacy ``yes``/``no`` keys.
+
+    Returns ``({"ask", "depth"}, "")`` or ``(None, reason)`` — no ask, no
+    depth, or an unreadable level all fail closed.
+    """
+    book = orderbook if isinstance(orderbook, dict) else {}
+    raw, scale = book.get("no_dollars"), 1.0
+    if raw is None:
+        raw, scale = book.get("no"), 0.01
+    if raw is None:
+        return None, "Kalshi order book has no ask: the 'no' bid side is absent"
+
+    levels = _book_levels(raw)
+    if levels is None:
+        return None, "Kalshi order book carries unreadable price/size levels"
+    priced = [(price * scale, size) for price, size in levels if 0 < price * scale < 1]
+    if not priced:
+        return None, "Kalshi order book has no ask: the 'no' bid side is empty"
+
+    price, size = max(priced, key=lambda level: level[0])
+    if size <= 0:
+        return None, "Kalshi best 'no' bid has zero depth"
+    return {"ask": round(1.0 - price, 4), "depth": size}, ""
+
+
+def _executable_ask(venue: str, identifier: str) -> tuple[dict | None, str]:
+    """Top-of-book ask and depth for one contract, or a refusal reason."""
+    if venue == "kalshi":
+        from sports_skills import kalshi
+
+        try:
+            result = kalshi.get_market_orderbook(ticker=identifier)
+        except Exception as exc:
+            return None, f"Kalshi order book fetch failed for {identifier}: {exc}"
+        if not result.get("status"):
+            return None, f"Kalshi order book fetch failed for {identifier}: {result.get('message', '')}"
+        top, reason = _kalshi_yes_ask((result.get("data") or {}).get("orderbook"))
+        if top is None:
+            return None, reason
+
+    elif venue == "polymarket":
+        from sports_skills import polymarket
+
+        try:
+            result = polymarket.get_order_book(token_id=identifier)
+        except Exception as exc:
+            return None, f"Polymarket order book fetch failed for {identifier}: {exc}"
+        if not result.get("status"):
+            return None, f"Polymarket order book fetch failed for {identifier}: {result.get('message', '')}"
+        data = result.get("data") or {}
+        asks = data.get("asks") or []
+        best = asks[0] if isinstance(asks, list) and asks and isinstance(asks[0], dict) else {}
+        price = _finite(best.get("price"))
+        if price is None:
+            price = _finite(data.get("best_ask"))
+        depth = _finite(best.get("size"))
+        if price is None or not 0 < price < 1:
+            return None, f"Polymarket book for {identifier} has no usable ask"
+        if depth is None or depth <= 0:
+            return None, f"Polymarket best ask for {identifier} has zero depth"
+        top = {"ask": round(price, 4), "depth": depth}
+
+    else:
+        return None, f"Unknown venue '{venue}'"
+
+    return {"venue": venue, "identifier": identifier, "source": "orderbook", **top}, ""
+
+
+def _normalized_espn_odds(summary_data: dict) -> dict | None:
+    """Home/away American moneyline from a sport module's game summary.
+
+    Three shapes reach here: the summary pickcenter normalization added for
+    NFL (``home_odds``/``away_odds`` + provider), the scoreboard
+    ``normalize_odds`` shape other sports return (``moneyline.home/away``), and
+    the flat pair callers already pass. Both sides always come from the same
+    shape — a half-filled pair returns None rather than half a market.
+    """
+    from sports_skills._espn_base import _american_odds
+
+    odds = summary_data.get("odds") if isinstance(summary_data, dict) else None
+    if not isinstance(odds, dict):
+        return None
+
+    home = _american_odds(odds.get("home_odds"))
+    away = _american_odds(odds.get("away_odds"))
+    line = odds.get("line") or "unlabeled"
+    if home is None or away is None:
+        moneyline = odds.get("moneyline")
+        if isinstance(moneyline, dict):
+            home = _american_odds(moneyline.get("home"))
+            away = _american_odds(moneyline.get("away"))
+            line = odds.get("line") or "close"
+    if home is None or away is None:
+        return None
+    return {
+        "home_odds": home,
+        "away_odds": away,
+        "provider": odds.get("provider", ""),
+        "line": line,
+        "captured_at": odds.get("captured_at"),
+    }
+
+
+def _team_nickname(team: dict) -> str:
+    """Mascot token for market search — both venues title games by mascot."""
+    name = str(team.get("name") or "").strip()
+    return name.rsplit(" ", 1)[-1] if name else ""
+
+
+def _calendar_days(start) -> set[str]:
+    """The calendar days a kickoff falls on, by UTC and by US venue clock.
+
+    Kalshi tickers carry the US venue day; Polymarket slugs and ProphetX
+    schedules carry the UTC day. A 00:15 UTC kickoff is "September 21" on one
+    and "September 22" on the other, so both are kept and either may match.
+    An absent or unparseable timestamp yields no days at all — which is what
+    makes it impossible to prove a dated market is this game.
+    """
+    if not start:
+        return set()
+    try:
+        moment = _parse_iso_utc(start)
+    except (ValueError, TypeError):
+        return set()
+
+    from zoneinfo import ZoneInfo
+
+    return {
+        moment.date().isoformat(),
+        moment.astimezone(ZoneInfo("America/New_York")).date().isoformat(),
+    }
+
+
+# Every cross-venue match is proven by team pair AND date. With no ESPN start
+# time the date leg is missing, and a repeat meeting of the same matchup would
+# validate exactly as well as this one — so nothing validates.
+_NO_DATE_REASON = (
+    "ESPN published no usable start time for this game, so no dated market can be "
+    "verified against it; refusing to compare markets on team names alone"
+)
+
+
+def _game_identity(summary_data: dict) -> dict | None:
+    """Teams, start time, and the calendar days each venue dates this game by.
+
+    Kalshi tickers carry the US venue day; Polymarket slugs carry the UTC day.
+    A 00:15 UTC kickoff is "September 21" on one venue and "September 22" on
+    the other, so both are kept and either may match.
+    """
+    home = away = None
+    for competitor in summary_data.get("competitors") or []:
+        team = competitor.get("team") or {}
+        entry = {
+            "name": team.get("name", ""),
+            "abbreviation": str(team.get("abbreviation", "")).upper(),
+            "nickname": _team_nickname(team),
+        }
+        if competitor.get("home_away") == "home":
+            home = entry
+        elif competitor.get("home_away") == "away":
+            away = entry
+    if not home or not away:
+        return None
+
+    start = str((summary_data.get("game_info") or {}).get("start_time") or "")
+    start_utc = None
+    if start:
+        try:
+            start_utc = _parse_iso_utc(start)
+        except (ValueError, TypeError):
+            start_utc = None
+
+    return {
+        "home": home,
+        "away": away,
+        "start": start,
+        "start_utc": start_utc,
+        "dates": _calendar_days(start),
+    }
+
+
+def _matchup_query(identity: dict) -> str:
+    """The search query both venues can match: '<away mascot> <home mascot>'.
+
+    Kalshi and Polymarket both require every query token to appear in a title,
+    and neither titles a game with ESPN display names — "New York Giants Los
+    Angeles Rams" matches nothing against "Giants vs. Rams". Mascots do.
+    """
+    away = identity["away"]["nickname"] or identity["away"]["name"]
+    home = identity["home"]["nickname"] or identity["home"]["name"]
+    return f"{away} {home}".strip()
+
+
+def _kalshi_event_date_pair(tail: str) -> tuple[str | None, str | None]:
+    """('YYYY-MM-DD', 'AWAYHOME') from a Kalshi game event ticker's tail."""
+    match = _KALSHI_EVENT_TAIL_RE.match(str(tail or ""))
+    if not match:
+        return None, None
+    yy, mon, dd, _hhmm, pair, _game_num = match.groups()
+    month = _TICKER_MONTHS.get(mon)
+    if month is None:
+        return None, pair
+    return f"20{yy}-{month:02d}-{int(dd):02d}", pair
+
+
+def _kalshi_ticker_identity(ticker: str, sport: str, identity: dict, side: str) -> str:
+    """Why this Kalshi ticker is NOT this game's `side` market — "" if it is.
+
+    Every leg is load-bearing: the series says full game rather than a
+    derivative, the team pair says this matchup, the embedded date says this
+    meeting of it, and the suffix says this side. A ticker that fails any of
+    them prices a different bet than the caller asked about.
+    """
+    ticker = str(ticker or "").strip().upper()
+    if not identity["dates"]:
+        return _NO_DATE_REASON
+    series = KALSHI_SERIES.get(sport)
+    if not series:
+        return f"No Kalshi game series is mapped for sport '{sport}'"
+
+    parts = ticker.split("-")
+    if len(parts) != 3 or parts[0] != f"{series}GAME":
+        return (
+            f"Kalshi ticker '{ticker}' is not a {series}GAME full-game winner market "
+            f"(expected {series}GAME-<date><teams>-<team>)"
+        )
+
+    date, pair = _kalshi_event_date_pair(parts[1])
+    if not pair:
+        return f"Kalshi ticker '{ticker}' does not name a dated matchup"
+
+    home_abbr = identity["home"]["abbreviation"]
+    away_abbr = identity["away"]["abbreviation"]
+    if pair not in (f"{away_abbr}{home_abbr}", f"{home_abbr}{away_abbr}"):
+        return f"Kalshi ticker '{ticker}' prices {pair}, not {away_abbr} @ {home_abbr}"
+
+    if not date:
+        return f"Kalshi ticker '{ticker}' carries no parseable event date"
+    if date not in identity["dates"]:
+        return (
+            f"Kalshi ticker '{ticker}' is dated {date}; this game is played "
+            f"{' / '.join(sorted(identity['dates']))}"
+        )
+
+    want = identity[side]["abbreviation"]
+    if parts[2] != want:
+        return f"Kalshi ticker '{ticker}' is the {parts[2]} side; {side} here is {want}"
+    return ""
+
+
+# A full-game Polymarket moneyline slug is exactly {league}-{away}-{home}-{date}.
+# Anything appended (-1h, -more-markets, prop suffixes) prices something else.
+_POLY_FULL_GAME_SLUG_RE = re.compile(r"^[a-z0-9]+-[a-z0-9]+-[a-z0-9]+-(\d{4}-\d{2}-\d{2})$")
+
+
+def _poly_side_outcome(market: dict, identity: dict, side: str) -> dict | None:
+    """The outcome of a two-way market that names `side`'s team, or None."""
+    outcomes = market.get("outcomes") or []
+    if len(outcomes) != 2:
+        return None
+    want = identity[side]["name"]
+    other = identity["away" if side == "home" else "home"]["name"]
+
+    found = None
+    for outcome in outcomes:
+        label = str(outcome.get("outcome") or "")
+        score = _match_score(label, want)
+        if score >= MATCH_THRESHOLD and score > _match_score(label, other):
+            if found is not None:
+                return None  # both labels claim the same team — unusable
+            found = outcome
+    return found
+
+
+def _poly_market_identity(market: dict, identity: dict, side: str) -> str:
+    """Why this Polymarket market is NOT this game's moneyline — "" if it is."""
+    title = market.get("title") or market.get("slug") or "market"
+    if not identity["dates"]:
+        return _NO_DATE_REASON
+    market_type = market.get("sports_market_type") or ""
+    if market_type != "moneyline":
+        return f"Polymarket '{title}' is a '{market_type or 'untyped'}' market, not the moneyline"
+
+    slug = str(market.get("slug") or "")
+    match = _POLY_FULL_GAME_SLUG_RE.match(slug)
+    if not match:
+        return f"Polymarket slug '{slug}' is not a full-game moneyline slug"
+
+    date = match.group(1)
+    if date not in identity["dates"]:
+        return (
+            f"Polymarket '{slug}' is dated {date}; this game is played "
+            f"{' / '.join(sorted(identity['dates']))}"
+        )
+
+    if _poly_side_outcome(market, identity, "home") is None or _poly_side_outcome(market, identity, "away") is None:
+        labels = ", ".join(str(o.get("outcome") or "?") for o in market.get("outcomes") or []) or "none"
+        return (
+            f"Polymarket '{title}' outcomes ({labels}) do not name "
+            f"{identity['away']['name']} and {identity['home']['name']}"
+        )
+    return ""
+
+
+def _find_poly_game_market(sport: str, identity: dict, side: str, report: dict) -> tuple[dict | None, str, bool]:
+    """One validated full-game moneyline for this exact game.
+
+    Returns ``(market, reason, refuse)``. ``refuse`` marks an answer the caller
+    must not paper over: several full-game candidates survived validation and
+    picking one would be a guess about which bet the caller meant.
+    """
+    transport: dict = {}
+    markets = _search_polymarket(_matchup_query(identity), sport, report=transport) or []
+    if transport.get("transport") == "error":
+        report.update({"outcome": "error", "detail": transport.get("detail", ""), "count": 0})
+        return None, f"Polymarket search failed: {transport.get('detail', '')}", False
+
+    report["count"] = len(markets)
+    if not markets:
+        report.update({"outcome": "empty", "detail": "Polymarket returned no markets for this matchup"})
+        return None, report["detail"], False
+
+    valid, rejected, seen = [], [], set()
+    for market in markets:
+        key = str(market.get("market_id") or market.get("slug") or id(market))
+        if key in seen:
+            continue
+        seen.add(key)
+        reason = _poly_market_identity(market, identity, side)
+        if reason:
+            rejected.append(reason)
+        else:
+            valid.append(market)
+
+    if not valid:
+        detail = "; ".join(rejected[:3])
+        report.update({"outcome": "unmatched", "detail": detail})
+        return None, detail, False
+
+    if len(valid) > 1:
+        slugs = ", ".join(str(m.get("slug") or m.get("market_id")) for m in valid)
+        detail = f"ambiguous full-game candidates: {slugs}"
+        report.update({"outcome": "unmatched", "detail": detail})
+        return None, f"Refusing {detail} — cannot tell which market you mean", True
+
+    report["outcome"] = "ok"
+    return valid[0], "", False
 
 
 # ============================================================
@@ -736,54 +1163,68 @@ def compare_odds(request_data: dict) -> dict:
 
     summary_data = summary.get("data", {})
 
-    # Extract competitors and odds
-    competitors = summary_data.get("competitors", [])
-    odds = summary_data.get("odds", {})
+    identity = _game_identity(summary_data)
+    if identity is None:
+        return _error(f"Could not determine home/away teams from the ESPN summary for {sport} event {event_id}")
+    home_team = identity["home"]["name"]
+    away_team = identity["away"]["name"]
 
-    home_team = ""
-    away_team = ""
-    for c in competitors:
-        team = c.get("team", {})
-        if c.get("home_away") == "home":
-            home_team = team.get("name", "")
-        else:
-            away_team = team.get("name", "")
-
-    search_query = f"{away_team} {home_team}" if away_team and home_team else ""
-
-    # Normalize ESPN odds
-    espn_home_odds = odds.get("home_odds")
-    espn_away_odds = odds.get("away_odds")
+    # ESPN odds: one provider's complete pair, or none at all.
+    book = _normalized_espn_odds(summary_data)
     espn_comparison = {}
-
-    if espn_home_odds is not None:
-        espn_comparison["home"] = _normalize_price(float(espn_home_odds), "espn")
+    if book:
+        espn_comparison["home"] = _normalize_price(float(book["home_odds"]), "espn")
         espn_comparison["home"]["team"] = home_team
-    if espn_away_odds is not None:
-        espn_comparison["away"] = _normalize_price(float(espn_away_odds), "espn")
+        espn_comparison["away"] = _normalize_price(float(book["away_odds"]), "espn")
         espn_comparison["away"]["team"] = away_team
+        espn_comparison["provider"] = book["provider"]
+        espn_comparison["line"] = book["line"]
+        espn_comparison["captured_at"] = book["captured_at"]
 
-    # Search prediction markets
+    # Per-source outcomes: a provider that errored, a provider with genuinely
+    # no markets, and a provider whose markets turned out to be another game
+    # are three different answers, and the caller has to be able to tell.
+    sources = {
+        "espn": {
+            "outcome": "ok" if book else "empty",
+            "detail": "" if book else "ESPN published no complete moneyline for this game",
+        }
+    }
+
+    # Search prediction markets with a query the venues can actually match.
     warnings = []
-    kalshi_matches = []
-    poly_matches = []
-    prophetx_matches = []
+    search_query = _matchup_query(identity)
+    found: dict[str, list] = {}
 
-    if search_query:
+    for name, search in (
+        ("kalshi", _search_kalshi),
+        ("polymarket", _search_polymarket),
+        ("prophetx", _search_prophetx),
+    ):
+        transport: dict = {}
         try:
-            kalshi_matches = _search_kalshi(search_query, sport)
+            results = search(search_query, sport, report=transport) or []
         except Exception as exc:
-            warnings.append(f"Kalshi search failed: {exc}")
+            results, transport = [], {"transport": "error", "detail": str(exc)}
+            warnings.append(f"{name} search failed: {exc}")
+        found[name] = results
+        if transport.get("transport") == "error":
+            outcome = "error"
+        elif not results:
+            outcome = "empty"
+        else:
+            # Provisional: upgraded to "ok" below if a price actually lands on
+            # one of this game's sides.
+            outcome = "unmatched"
+        sources[name] = {
+            "outcome": outcome,
+            "detail": transport.get("detail", ""),
+            "count": len(results),
+        }
 
-        try:
-            poly_matches = _search_polymarket(search_query, sport)
-        except Exception as exc:
-            warnings.append(f"Polymarket search failed: {exc}")
-
-        try:
-            prophetx_matches = _search_prophetx(search_query, sport)
-        except Exception as exc:
-            warnings.append(f"ProphetX search failed: {exc}")
+    kalshi_matches = found["kalshi"]
+    poly_matches = found["polymarket"]
+    prophetx_matches = found["prophetx"]
 
     # Check for arbitrage if we have matching market prices
     arb_check = None
@@ -811,11 +1252,30 @@ def compare_odds(request_data: dict) -> dict:
         side = "home" if scores["home"] >= scores["away"] else "away"
         return side if scores[side] >= MATCH_THRESHOLD else None
 
+    def _reject(venue: str, reason: str) -> None:
+        """Say why a searched market was not admitted, once, in the report."""
+        if not sources[venue]["detail"]:
+            sources[venue]["detail"] = reason
+
+    # Discovery and admission are separate: every raw hit is still reported
+    # below, but only a market proven to be THIS game's full-game moneyline —
+    # same matchup, same meeting of it — may price a side. A December repeat of
+    # this matchup is a different bet, and pooling it with September odds
+    # manufactures an arbitrage that does not exist.
+    poly_valid = []
+    for market in poly_matches:
+        reason = _poly_market_identity(market, identity, "home")
+        if reason:
+            _reject("polymarket", reason)
+        else:
+            poly_valid.append(market)
+
     # Only one complete game moneyline can join the pool. Separate dated
     # markets and binary contracts are not one mutually exclusive set.
-    poly_outcomes, poly_warning = _polymarket_arb_outcomes(poly_matches)
+    poly_outcomes, poly_warning = _polymarket_arb_outcomes(poly_valid)
     if poly_warning:
         warnings.append(poly_warning)
+        _reject("polymarket", poly_warning)
     for outcome in poly_outcomes:
         side = _side_for_label(outcome.get("outcome"))
         if side:
@@ -824,14 +1284,36 @@ def compare_odds(request_data: dict) -> dict:
             )
 
     # ProphetX exposes odds only when a public order book exists. Only the
-    # primary full-game moneyline joins the pool — derivative moneylines
-    # (1st-half, first-5-innings, ...) share the type but price a different
-    # proposition than the ESPN home/away odds.
+    # exact full-game "Moneyline" of a date-compatible event joins the pool:
+    # derivative moneylines (1st-half, first-5-innings, to-score-a-touchdown)
+    # share the type, and falling back to whichever came first prices a
+    # different proposition than the ESPN home/away odds.
     for px in prophetx_matches:
-        moneylines = [m for m in px.get("markets", []) if m.get("type") == "moneyline" and m.get("outcomes")]
-        if not moneylines:
+        if not _calendar_days(px.get("scheduled")) & identity["dates"]:
+            _reject(
+                "prophetx",
+                f"ProphetX event '{px.get('title') or px.get('event_id')}' is scheduled "
+                f"{px.get('scheduled') or 'at an unstated time'}; this game is played "
+                f"{' / '.join(sorted(identity['dates'])) or 'at an unstated time'}",
+            )
             continue
-        game_ml = next((m for m in moneylines if m.get("title") == "Moneyline"), moneylines[0])
+        game_ml = next(
+            (
+                m
+                for m in px.get("markets", [])
+                if m.get("type") == "moneyline"
+                and str(m.get("title") or "").strip() == "Moneyline"
+                and m.get("outcomes")
+            ),
+            None,
+        )
+        if game_ml is None:
+            _reject(
+                "prophetx",
+                f"ProphetX event '{px.get('title') or px.get('event_id')}' exposes no priced "
+                "full-game Moneyline (derivative moneylines price a different proposition)",
+            )
+            continue
         for outcome in game_ml.get("outcomes", []):
             prob = outcome.get("implied_probability") or 0
             side = _side_for_label(outcome.get("outcome"))
@@ -839,6 +1321,43 @@ def compare_odds(request_data: dict) -> dict:
                 side_prices[side].append(
                     (prob, f"prophetx_{outcome.get('outcome', '')}")
                 )
+
+    # Kalshi prices each side as its own contract, so both sides must validate
+    # as this game's full-game winner market before either becomes a reference
+    # leg — one contract alone is not a mutually exclusive pair. Prices arrive
+    # as cents (73) or dollars (0.73); `_normalize_price` reads both.
+    for event in kalshi_matches:
+        legs: dict[str, tuple] = {}
+        for market in event.get("markets") or []:
+            ticker = market.get("ticker", "")
+            rejections = []
+            for side in ("home", "away"):
+                reason = _kalshi_ticker_identity(ticker, sport, identity, side)
+                if reason:
+                    rejections.append(reason)
+                    continue
+                price = market.get("yes_price")
+                if not isinstance(price, (int, float)) or isinstance(price, bool):
+                    rejections.append(f"Kalshi ticker '{ticker}' carries no usable yes price")
+                    continue
+                probability = _normalize_price(float(price), "kalshi")["implied_probability"]
+                if not 0 < probability < 1:
+                    rejections.append(f"Kalshi ticker '{ticker}' quotes {price}, not a probability")
+                    continue
+                legs[side] = (probability, f"kalshi_{identity[side]['name']}")
+            # A ticker rejected for both sides priced neither; one rejection is
+            # only the other side of a market that did match.
+            if len(rejections) == 2:
+                _reject("kalshi", rejections[0])
+        if len(legs) == 2:
+            for side, leg in legs.items():
+                side_prices[side].append(leg)
+        elif legs:
+            _reject(
+                "kalshi",
+                f"Kalshi event '{event.get('event_ticker')}' priced only the "
+                f"{next(iter(legs))} side; half a market is not a comparison",
+            )
 
     all_probs = []
     all_labels = []
@@ -862,24 +1381,52 @@ def compare_odds(request_data: dict) -> dict:
             )
             if arb_result.get("status"):
                 arb_check = arb_result["data"]
+                # None of these legs is a quote anyone has committed to fill.
+                arb_check["price_basis"] = "reference"
+                arb_check["note"] = _ARB_REFERENCE_NOTE
         except Exception as exc:
             warnings.append(f"Arbitrage check failed: {exc}")
 
-    return _success_partial(
-        {
-            "sport": sport,
-            "event_id": event_id,
-            "home_team": home_team,
-            "away_team": away_team,
-            "espn_odds": espn_comparison,
-            "kalshi_markets": kalshi_matches,
-            "polymarket_markets": poly_matches,
-            "prophetx_markets": prophetx_matches,
-            "arbitrage_check": arb_check,
+    # A source counts as usable only if it actually priced one of this game's
+    # sides — transport success and a non-empty market list do not.
+    contributed = {label.split("_", 1)[0] for prices in side_prices.values() for _prob, label in prices}
+    for venue, prefix in (("polymarket", "poly"), ("prophetx", "prophetx"), ("kalshi", "kalshi")):
+        if prefix in contributed:
+            sources[venue]["outcome"] = "ok"
+
+    usable = [name for name, report in sources.items() if report["outcome"] == "ok"]
+    data = {
+        "sport": sport,
+        "event_id": event_id,
+        "home_team": home_team,
+        "away_team": away_team,
+        "start_time": identity["start"],
+        "espn_odds": espn_comparison,
+        "kalshi_markets": kalshi_matches,
+        "polymarket_markets": poly_matches,
+        "prophetx_markets": prophetx_matches,
+        "arbitrage_check": arb_check,
+        # Nothing compared here is a quote anyone has committed to fill.
+        "price_basis": "reference",
+        "price_basis_note": _COMPARE_REFERENCE_NOTE,
+        "sources": sources,
+        "completeness": {
+            "usable_sources": usable,
+            "attempted_sources": list(sources),
+            "complete": len(usable) == len(sources),
         },
-        warnings,
-        f"Odds comparison for {away_team} @ {home_team}.",
-    )
+    }
+    if warnings:
+        data["warnings"] = warnings
+
+    if not usable:
+        return _error(
+            f"No usable price data for {away_team} @ {home_team}: "
+            + "; ".join(f"{name} {report['outcome']}" for name, report in sources.items()),
+            data,
+        )
+
+    return _success_partial(data, warnings, f"Odds comparison for {away_team} @ {home_team}.")
 
 
 def _get_meta_sport_markets(sport: str, status: str, limit: int) -> dict:
@@ -1101,23 +1648,51 @@ def normalize_price(request_data: dict) -> dict:
 
 
 def evaluate_market(request_data: dict) -> dict:
-    """All-in-one: ESPN odds + market price, devig, edge, Kelly.
+    """ESPN reference odds + an executable market ask → fee-aware edge and Kelly.
 
-    Pipes to betting.evaluate_bet for the computation.
+    The evaluation buys at the ASK plus an explicit fee, for the side named by
+    ``outcome``, on a market proven to be this game's full-game winner market.
+    Each of those is a refusal point rather than a fallback: a wrong-team
+    ticker, a derivative market, an empty book or an unknown fee ends the
+    evaluation instead of quietly substituting a different bet — or a free one.
 
     Params:
         sport (str): Sport key (nba, nfl, etc.).
         event_id (str): ESPN event ID.
-        token_id (str): Polymarket token ID (optional).
-        kalshi_ticker (str): Kalshi market ticker (optional).
-        outcome (int): Which outcome to evaluate (0=home, 1=away, default: 0).
+        outcome (int): Side to evaluate — 0 = home (default), 1 = away.
+        token_id (str): Polymarket CLOB token ID for the chosen side. Verified
+            against the validated market; a token naming the other side or
+            another game is refused.
+        kalshi_ticker (str): Kalshi market ticker for the chosen side.
+        fee_per_contract (float): Taker fee in dollars per $1 contract.
+            Required for net edge/Kelly. Omit it and the executable ask is
+            still reported, but the net numbers are refused rather than
+            computed as if trading were free.
     """
     params = request_data.get("params", {})
     sport = str(params.get("sport") or "").lower()
     event_id = params.get("event_id", "")
     token_id = params.get("token_id")
     kalshi_ticker = params.get("kalshi_ticker")
-    outcome = int(params.get("outcome", 0))
+
+    # An explicit outcome=0 is a decision; an absent one is a default. The
+    # response says which, so a caller can tell a chosen home side from a
+    # defaulted one.
+    outcome_explicit = params.get("outcome") is not None
+    try:
+        outcome = int(params.get("outcome") or 0)
+    except (TypeError, ValueError):
+        return _error("outcome must be 0 (home) or 1 (away)")
+    if outcome not in (0, 1):
+        return _error("outcome must be 0 (home) or 1 (away)")
+    side = "home" if outcome == 0 else "away"
+    other_side = "away" if side == "home" else "home"
+
+    fee = params.get("fee_per_contract")
+    if fee is not None:
+        fee = _finite(fee)
+        if fee is None:
+            return _error("fee_per_contract must be a non-negative number of dollars per $1 contract")
 
     if not sport:
         return _error("sport is required")
@@ -1140,119 +1715,164 @@ def evaluate_market(request_data: dict) -> dict:
         return _error(f"ESPN returned error: {summary.get('message', 'unknown')}")
 
     summary_data = summary.get("data", {})
-    odds = summary_data.get("odds", {})
-    competitors = summary_data.get("competitors", [])
 
-    # Extract ESPN American odds
-    home_odds = odds.get("home_odds")
-    away_odds = odds.get("away_odds")
-
-    if home_odds is None or away_odds is None:
+    book = _normalized_espn_odds(summary_data)
+    if book is None:
         return _error("ESPN odds not available for this event")
 
-    book_odds_str = f"{home_odds},{away_odds}"
+    identity = _game_identity(summary_data)
+    if identity is None:
+        return _error(f"Could not determine home/away teams from the ESPN summary for {sport} event {event_id}")
 
-    # Get market probability from prediction market
-    market_prob = None
-    market_source = None
-    warnings = []
+    # Team pair alone does not identify a game: the same two teams meet again.
+    # Without a date there is no evidence that ties a dated contract to THIS
+    # event, and a warning attached to a number the caller can act on is not a
+    # refusal — so the evaluation ends here.
+    if not identity["dates"]:
+        return _error(_NO_DATE_REASON)
 
-    if token_id:
-        try:
-            from sports_skills import polymarket
+    warnings: list[str] = []
 
-            price_result = polymarket.get_market_prices(token_id=token_id)
-            if price_result.get("status"):
-                price_data = price_result.get("data", {})
-                market_prob = float(price_data.get("price", 0))
-                market_source = "polymarket"
-        except Exception as exc:
-            warnings.append(f"Polymarket price fetch failed: {exc}")
+    # --- Resolve the contract being evaluated -------------------------------
+    sources: dict[str, dict] = {}
+    market = None
 
-    if market_prob is None and kalshi_ticker:
-        try:
-            from sports_skills import kalshi
-            from sports_skills.kalshi._connector import _price_cents
-
-            market_result = kalshi.get_market(ticker=kalshi_ticker)
-            if market_result.get("status"):
-                market_data = market_result.get("data", {})
-                # Kalshi raw payloads migrated to *_dollars string fields;
-                # _price_cents reads either form and returns 0-100 cents.
-                # Leave market_prob as None on a zero/missing price so the
-                # search fallback below still runs.
-                yes_price = _price_cents(market_data, "yes_bid") or _price_cents(market_data, "last_price")
-                if yes_price:
-                    market_prob = float(yes_price) / 100.0
-                    market_source = "kalshi"
-        except Exception as exc:
-            warnings.append(f"Kalshi price fetch failed: {exc}")
-
-    if market_prob is None:
-        # Try to find market via search
-        home_team = ""
-        away_team = ""
-        for c in competitors:
-            team = c.get("team", {})
-            if c.get("home_away") == "home":
-                home_team = team.get("name", "")
-            else:
-                away_team = team.get("name", "")
-
-        search_query = f"{away_team} {home_team}" if away_team and home_team else ""
-
-        if search_query:
-            poly_matches = []
-            try:
-                poly_matches = _search_polymarket(search_query, sport)
-            except Exception as exc:
-                warnings.append(f"Polymarket search failed: {exc}")
-
-            for pm in poly_matches:
-                for oc in pm.get("outcomes", []):
-                    price = oc.get("price", 0)
-                    if 0 < price < 1:
-                        market_prob = price
-                        market_source = "polymarket"
-                        break
-                if market_prob is not None:
-                    break
-
-    if market_prob is None or not (0 < market_prob < 1):
-        return _success_partial(
-            {
-                "espn_odds": {"home": home_odds, "away": away_odds},
-                "market_prob": None,
-                "evaluation": None,
-            },
-            warnings,
-            "Could not find a matching prediction market price to evaluate against.",
-        )
-
-    # Use betting.evaluate_bet for the computation
-    from sports_skills.betting._calcs import evaluate_bet
-
-    eval_result = evaluate_bet(
-        {
-            "params": {
-                "book_odds": book_odds_str,
-                "market_prob": market_prob,
-                "book_format": "american",
-                "outcome": outcome,
+    if kalshi_ticker:
+        reason = _kalshi_ticker_identity(kalshi_ticker, sport, identity, side)
+        if reason:
+            return _error(reason)
+        market = {"venue": "kalshi", "identifier": str(kalshi_ticker).strip().upper()}
+        sources["kalshi"] = {"outcome": "ok", "detail": "explicit ticker validated against this game"}
+    else:
+        report: dict = {"outcome": "empty", "detail": ""}
+        candidate, reason, refuse = _find_poly_game_market(sport, identity, side, report)
+        sources["polymarket"] = report
+        if refuse:
+            return _error(reason)
+        if candidate is not None:
+            chosen = _poly_side_outcome(candidate, identity, side)
+            chosen_token = str((chosen or {}).get("token_id") or "")
+            if token_id and str(token_id) != chosen_token:
+                opposite = _poly_side_outcome(candidate, identity, other_side) or {}
+                if str(token_id) == str(opposite.get("token_id") or ""):
+                    return _error(
+                        f"token_id {token_id} is the {other_side} side of "
+                        f"'{candidate.get('slug') or candidate.get('title')}', but outcome={outcome} "
+                        f"selects the {side} team ({identity[side]['name']})"
+                    )
+                return _error(
+                    f"token_id {token_id} is not an outcome of the validated full-game moneyline "
+                    f"'{candidate.get('slug') or candidate.get('title')}' for "
+                    f"{identity['away']['name']} @ {identity['home']['name']}"
+                )
+            if not chosen_token:
+                return _error(
+                    f"Polymarket '{candidate.get('slug') or candidate.get('title')}' carries no CLOB token "
+                    f"for {identity[side]['name']}"
+                )
+            market = {
+                "venue": "polymarket",
+                "identifier": chosen_token,
+                "title": candidate.get("title", ""),
+                "slug": candidate.get("slug", ""),
             }
-        }
-    )
+        elif token_id:
+            # The caller named a token but nothing validated — never price it
+            # blind against this game's odds.
+            return _error(reason or f"Could not verify token_id {token_id} against this game")
 
-    return _success_partial(
-        {
-            "espn_odds": {"home": home_odds, "away": away_odds},
-            "market_prob": market_prob,
-            "market_source": market_source,
-            "evaluation": eval_result.get("data") if eval_result.get("status") else None,
+    # --- Executable price ---------------------------------------------------
+    if market is not None:
+        top, reason = _executable_ask(market["venue"], market["identifier"])
+        if top is None:
+            return _error(reason)
+        market.update({"ask": top["ask"], "depth": top["depth"], "source": top["source"]})
+
+    # --- Fee-aware evaluation ----------------------------------------------
+    evaluation = None
+    effective_cost = None
+    failed = False
+
+    if market is None:
+        message = (
+            f"No prediction market resolved for {identity['away']['name']} @ "
+            f"{identity['home']['name']}; nothing to evaluate."
+        )
+        fee_note = "no market to price"
+    elif fee is None:
+        message = (
+            f"Executable ask {market['ask']} on {market['venue']} for {identity[side]['name']}. "
+            "Pass fee_per_contract (dollars per $1 contract) for a net edge and Kelly — "
+            "refusing to price this trade as if it were free."
+        )
+        fee_note = "unknown: caller supplied no fee_per_contract, so net edge and Kelly are refused"
+    else:
+        effective_cost = round(market["ask"] + fee, 6)
+        if not 0 < effective_cost < 1:
+            failed = True
+            message = (
+                f"Effective cost {effective_cost} (ask {market['ask']} + fee {fee}) is not a tradable "
+                "price; refusing to evaluate."
+            )
+            effective_cost = None
+            fee_note = "explicit caller fee, applied additively to the ask"
+        else:
+            from sports_skills.betting._calcs import evaluate_bet
+
+            eval_result = evaluate_bet(
+                {
+                    "params": {
+                        # book_odds is ordered [home, away]; `outcome` indexes
+                        # the same sides, so the de-vigged fair probability and
+                        # the executable cost describe one proposition.
+                        "book_odds": f"{book['home_odds']},{book['away_odds']}",
+                        "market_prob": effective_cost,
+                        "book_format": "american",
+                        "outcome": outcome,
+                    }
+                }
+            )
+            if not eval_result.get("status"):
+                failed = True
+                message = eval_result.get("message", "Evaluation failed")
+            else:
+                evaluation = eval_result["data"]
+                message = eval_result.get("message", "")
+            fee_note = "explicit caller fee, applied additively to the ask"
+
+    data = {
+        "sport": sport,
+        "event_id": event_id,
+        "start_time": identity["start"],
+        "home_team": identity["home"]["name"],
+        "away_team": identity["away"]["name"],
+        "outcome": outcome,
+        "outcome_explicit": outcome_explicit,
+        "side": side,
+        "team": identity[side]["name"],
+        "espn_odds": {
+            "home": book["home_odds"],
+            "away": book["away_odds"],
+            "provider": book["provider"],
+            "line": book["line"],
+            "captured_at": book["captured_at"],
         },
-        warnings,
-        eval_result.get("message", ""),
-    )
+        "market": market,
+        "fee": {"known": fee is not None, "per_contract": fee, "note": fee_note},
+        # market_prob is the executable cost the evaluation actually used:
+        # ask + fee, never a midpoint or a last trade.
+        "effective_cost": effective_cost,
+        "market_prob": effective_cost,
+        "market_source": market["venue"] if market else None,
+        "evaluation": evaluation,
+        "sources": sources,
+    }
+    if warnings:
+        data["warnings"] = warnings
+
+    if failed:
+        return _error(message, data)
+    return _success(data, message)
 
 
 # ============================================================

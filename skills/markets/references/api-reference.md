@@ -10,7 +10,7 @@
 | `get_sport_markets` | sport | status, limit | Sport-filtered market listing on both platforms (uses sport code, not text query) |
 | `get_sport_schedule` | | sport, date | Unified ESPN schedule across one or all sports |
 | `normalize_price` | price, source | | Convert any source format to common {implied_prob, american, decimal} |
-| `evaluate_market` | sport, event_id | token_id, kalshi_ticker, outcome | ESPN odds + market price → devig → edge → Kelly |
+| `evaluate_market` | sport, event_id | token_id, kalshi_ticker, outcome, fee_per_contract | ESPN odds + executable ask → devig → fee-aware edge → Kelly |
 | `match_markets` | sport | date | Pair the same game across Kalshi and Polymarket (date + team-code join, fuzzy title fallback) |
 | `get_market_price` | venue, ticker (kalshi) or token_id (polymarket) | at_time | Live or point-in-time price — both sides as 0-1 probabilities, one shape for both venues |
 | `get_price_history` | venue, ticker (kalshi) or token_id (polymarket) | interval, start_time, end_time | {timestamp, price} series (0-1 yes probability) at 1m/1h/1d resolution |
@@ -18,6 +18,19 @@
 | `get_mock_tick` | mock_file_path | interval_seconds | Deterministic timeline slice from a static mock game file |
 | `get_plays_near_timestamp` | sport, timestamp | game_id, window_seconds, mock_file_path | Plays in the window [timestamp - window_seconds, timestamp] |
 | `resolve_game_market` | sport, event_id | status | Resolve one ESPN game to its Kalshi game-winner market (home side) |
+
+### `evaluate_market` notes
+
+- Prices the side named by `outcome` (0 = home, default; 1 = away) at the **ask** from the venue's order book, plus `fee_per_contract`. A bid, a last trade or a midpoint is a reference price, not what a purchase costs.
+- `fee_per_contract` is dollars per $1 contract. Without it the ask is still reported, but `evaluation` is `null` — the net edge and Kelly are refused rather than computed as if trading were free. Pass `0` to assert a zero-fee venue.
+- The market must be provably this game's full-game winner market: series/slug family, both teams, the right date, and the right side. A wrong-team ticker, a first-half or spread market, a repeat matchup on another date, or a `token_id` naming the other side is refused — never swapped for a different bet.
+- Fails closed on a missing ask or zero depth.
+- `market_prob` is the effective executable cost (ask + fee) the evaluation used. `sources` reports per-venue outcomes (`ok` / `empty` / `error` / `unmatched`).
+
+### `compare_odds` notes
+
+- `sources` gives a per-source outcome (`ok` / `empty` / `error` / `unmatched`) and `completeness` lists which sources actually priced this game's sides. A provider that errored is distinguishable from one with genuinely no markets. When nothing is usable the call fails instead of returning an empty success.
+- `arbitrage_check` is built from reference prices and is labelled `price_basis: "reference"`. Confirm both legs on each venue's order book before treating it as executable.
 
 ### `match_markets` notes
 

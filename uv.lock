@@ -4011,6 +4011,7 @@ f1 = [
 nfl = [
     { name = "nfl-data-py", marker = "python_full_version < '3.10'" },
     { name = "nflreadpy", marker = "python_full_version >= '3.10'" },
+    { name = "pandas", marker = "python_full_version >= '3.10'" },
     { name = "pyarrow", marker = "python_full_version >= '3.10'" },
 ]
 polymarket = [
@@ -4032,6 +4033,7 @@ requires-dist = [
     { name = "nfl-data-py", marker = "python_full_version < '3.10' and extra == 'nfl'", specifier = ">=0.3" },
     { name = "nflreadpy", marker = "python_full_version >= '3.10' and extra == 'all'", specifier = ">=0.1" },
     { name = "nflreadpy", marker = "python_full_version >= '3.10' and extra == 'nfl'", specifier = ">=0.1" },
+    { name = "pandas", marker = "python_full_version >= '3.10' and extra == 'nfl'", specifier = ">=2.0" },
     { name = "pandas", marker = "extra == 'all'", specifier = ">=2.0" },
     { name = "pandas", marker = "extra == 'dev'", specifier = ">=2.0" },
     { name = "pandas", marker = "extra == 'f1'", specifier = ">=2.0" },
