@@ -540,6 +540,97 @@ def normalize_odds(odds_list):
     return result
 
 
+def _american_odds(value):
+    """Parse an ESPN American price ("-298", "+240", -298) to a number."""
+    if value is None or isinstance(value, bool):
+        return None
+    if isinstance(value, (int, float)):
+        number = float(value)
+    else:
+        text = str(value).strip().replace("+", "")
+        if not text:
+            return None
+        try:
+            number = float(text)
+        except ValueError:
+            return None
+    if number != number or number in (float("inf"), float("-inf")) or number == 0:
+        return None
+    return int(number) if float(number).is_integer() else number
+
+
+def _dig(container, *keys):
+    """Walk optional nested containers; a missing or wrong-shaped level is None.
+
+    Every pickcenter container is optional and ESPN publishes the absent ones
+    as ``null`` rather than omitting them, so ``{"moneyline": null}`` and
+    ``{"moneyline": {"home": null}}`` are both ordinary payloads. Reading them
+    positionally would raise on a game that simply has no published line.
+    """
+    for key in keys:
+        if not isinstance(container, dict):
+            return None
+        container = container.get(key)
+    return container
+
+
+# Where a pickcenter entry carries a home/away moneyline pair, best first.
+# Closing/current lines beat the opening line, which only moves in when the
+# provider published nothing newer.
+_MONEYLINE_LEVELS = (
+    ("close", lambda e: (_dig(e, "moneyline", "home", "close", "odds"),
+                         _dig(e, "moneyline", "away", "close", "odds"))),
+    ("current", lambda e: (_dig(e, "homeTeamOdds", "moneyLine"),
+                           _dig(e, "awayTeamOdds", "moneyLine"))),
+    ("open", lambda e: (_dig(e, "moneyline", "home", "open", "odds"),
+                        _dig(e, "moneyline", "away", "open", "odds"))),
+)
+
+
+def normalize_summary_odds(summary_data):
+    """Home/away moneyline from an ESPN summary's ``pickcenter`` block.
+
+    Scoreboard events carry ``competitions[].odds``; the summary endpoint
+    carries ``pickcenter`` instead, which ``normalize_odds`` never sees. Both
+    sides always come from ONE provider entry — stitching a home price from one
+    bookmaker onto an away price from another fabricates a market that nobody
+    quotes. Providers are tried in ESPN's own ``priority`` order.
+
+    Returns ``{provider, provider_id, home_odds, away_odds, line, captured_at,
+    source}`` or ``None`` when no provider publishes a complete pair. ESPN
+    stamps pickcenter with no capture time, so ``captured_at`` is always None
+    rather than an invented "now".
+    """
+    entries = (summary_data or {}).get("pickcenter") or []
+    if not isinstance(entries, list):
+        return None
+
+    ordered = sorted(
+        (e for e in entries if isinstance(e, dict)),
+        key=lambda e: _american_odds(_dig(e, "provider", "priority")) or 99,
+    )
+    for entry in ordered:
+        for line, read in _MONEYLINE_LEVELS:
+            home, away = read(entry)
+            home_odds = _american_odds(home)
+            away_odds = _american_odds(away)
+            if home_odds is None or away_odds is None:
+                continue
+            provider = _dig(entry, "provider") or {}
+            if not isinstance(provider, dict):
+                provider = {}
+            return {
+                "provider": provider.get("name", ""),
+                "provider_id": str(provider.get("id", "")),
+                "home_odds": home_odds,
+                "away_odds": away_odds,
+                "line": line,
+                "captured_at": None,
+                "source": "espn_pickcenter",
+            }
+    return None
+
+
 def _resolve_athlete_ref(ref_url: str) -> dict:
     """Follow an ESPN athlete $ref URL and return name + athlete_id.
 

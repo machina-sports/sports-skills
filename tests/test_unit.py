@@ -1616,6 +1616,57 @@ class TestNFLverseFrameCoercion:
         df = pd.DataFrame({"week": [1]})
         assert _coerce_frame(df) is df
 
+    def test_coerce_frame_names_the_extra_when_pandas_is_missing(self):
+        # polars' to_pandas() raises a bare ModuleNotFoundError naming only
+        # 'pandas'. Agents get that string verbatim, so it has to say how to fix
+        # the install rather than leaving them to guess the extra.
+        import pytest
+
+        from sports_skills.nfl._nflverse import _coerce_frame
+
+        class _FrameWithoutPandas:
+            def to_pandas(self):
+                raise ModuleNotFoundError("No module named 'pandas'")
+
+        with pytest.raises(ImportError, match=r"sports-skills\[nfl\]"):
+            _coerce_frame(_FrameWithoutPandas())
+
+
+class TestNFLExtraDependencyClosure:
+    """``[nfl]`` must install everything ``_coerce_frame`` needs, on its own.
+
+    ``_coerce_frame`` calls ``.to_pandas()``, which needs pandas — declared
+    nowhere in the nfl extra, so ``pip install sports-skills[nfl]`` produced an
+    install where every ``get_nflverse_*`` call raised ModuleNotFoundError. The
+    dev extra ships pandas, which is exactly why no CI run saw it: these
+    assertions read the extra in isolation.
+    """
+
+    @staticmethod
+    def _extras():
+        import pathlib
+        import re
+
+        text = (pathlib.Path(__file__).resolve().parents[1] / "pyproject.toml").read_text()
+        return dict(re.findall(r"^([a-z0-9-]+) = \[(.*?)\]$", text, re.M | re.S))
+
+    def test_nfl_extra_declares_conversion_dependency_and_preserves_legacy_provider(self):
+        body = self._extras()["nfl"]
+        assert "pandas" in body, "the nfl extra ships no pandas; .to_pandas() cannot run"
+        # Declare nflreadpy's missing conversion dependency on 3.10+.
+        # Python 3.9 retains nfl-data-py's existing transitive pandas constraints;
+        # adding a project-wide pandas<2 marker conflicts with the other extras.
+        assert "\"pandas>=2.0; python_version >= '3.10'\"" in body
+        assert "\"nfl-data-py>=0.3; python_version < '3.10'\"" in body
+        assert "\"pandas<2; python_version < '3.10'\"" not in body
+
+    def test_nfl_extra_does_not_depend_on_dev_to_be_installable(self):
+        extras = self._extras()
+        assert "pandas" in extras["dev"]  # the masking source, still fine for CI
+        nfl_only = extras["nfl"]
+        for requirement in ("nflreadpy", "pyarrow", "pandas"):
+            assert requirement in nfl_only, f"{requirement} only reachable through another extra"
+
 
 class TestParamsContract:
     """Verify _params() returns a wrapped dict in all modules.

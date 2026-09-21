@@ -237,7 +237,7 @@ _REGISTRY = {
         "normalize_price": {"required": ["price", "source"]},
         "evaluate_market": {
             "required": ["sport", "event_id"],
-            "optional": ["token_id", "kalshi_ticker", "outcome"],
+            "optional": ["token_id", "kalshi_ticker", "outcome", "fee_per_contract"],
         },
         "match_markets": {"required": ["sport"], "optional": ["date"]},
         "get_market_price": {
@@ -613,6 +613,7 @@ _FLOAT_PARAMS = {
     "price",
     "bpi_a",
     "bpi_b",
+    "fee_per_contract",
 }
 
 # Params that should be parsed as list (comma-separated)

@@ -42,9 +42,21 @@ def _normalize_team(team: Any) -> str | None:
 
 
 def _coerce_frame(obj: Any):
-    """Return a pandas-like DataFrame from nflverse loaders."""
+    """Return a pandas-like DataFrame from nflverse loaders.
+
+    nflreadpy hands back polars frames whose ``to_pandas()`` needs pandas and
+    pyarrow. When either is absent the raised ModuleNotFoundError names only the
+    module, which reaches the agent verbatim and says nothing about the extra
+    that supplies it.
+    """
     if hasattr(obj, "to_pandas"):
-        return obj.to_pandas()
+        try:
+            return obj.to_pandas()
+        except ImportError as exc:
+            raise ImportError(
+                f"Converting the nflverse frame needs {exc.name or 'pandas'}, which this "
+                "environment does not have. Install with: pip install sports-skills[nfl]"
+            ) from exc
     return obj
 
 

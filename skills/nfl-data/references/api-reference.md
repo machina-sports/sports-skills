@@ -49,7 +49,12 @@ Returns `categories[]` with leader rankings per stat category.
 Get NFL news articles.
 - `team_id` (str, optional): Filter by team
 
-Returns `articles[]` with headline, description, published date, and link.
+Returns `articles[]` with headline, description, published date, and link, plus `count` and `total_articles`.
+
+With `team_id`, articles are matched on ESPN's own team tags (`categories[]` of type `team`), not on the headline text — a league-wide story that covers the team is included, and a story that merely names it is not. `total_articles` is the unfiltered count. A malformed or unserved response is an error, distinct from a genuine empty feed (`count: 0`).
+
+### get_game_summary odds
+`get_game_summary` now returns an `odds` block (home/away American moneyline, `provider`, `line` = close/current/open, `captured_at: null` — ESPN publishes no capture time) and `game_info.start_time`. Both sides always come from one bookmaker; `odds` is `null` when no provider published a complete pair.
 
 ### get_play_by_play
 Get full play-by-play data for a game.
