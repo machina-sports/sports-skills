@@ -158,6 +158,27 @@ Recommended agent policy (see the [Autonomous Agent Contract](#autonomous-agent-
 
 ---
 
+## Record & Replay
+
+Record a run once against live sources, then replay it later with zero network access — useful for evaluations, regression tests, and reproducible bug reports.
+
+```bash
+# 1. Record: fetch live and save every upstream response
+SPORTS_SKILLS_REPLAY=record SPORTS_SKILLS_REPLAY_DIR=./replays/2026-09-23 \
+  sports-skills nba get_scoreboard --date=2026-01-01
+
+# 2. Replay: serve only from the directory; nothing touches the network
+SPORTS_SKILLS_REPLAY=replay SPORTS_SKILLS_REPLAY_DIR=./replays/2026-09-23 \
+  sports-skills nba get_scoreboard --date=2026-01-01
+```
+
+- `off` (default) is the normal live behaviour. There is no default directory: `record` and `replay` require `SPORTS_SKILLS_REPLAY_DIR`.
+- A request that was never recorded returns an error with `replay_miss: true` instead of falling back to the network.
+- Entries are readable JSON keyed by method + URL (query order normalized), stored byte-for-byte with a SHA-256 integrity check.
+- Deterministic 4xx responses are recorded so fallback paths replay exactly. Transient failures (5xx, 429, timeouts) are never recorded.
+- Coverage: all ESPN-backed modules (NFL, NBA, WNBA, NHL, MLB, college, golf, tennis, cricket via ESPN) and football (ESPN, Understat, FPL, Transfermarkt). Modules with their own HTTP clients (Kalshi, Polymarket, ProphetX, esports, volleyball, metadata, XCTF, Cricsheet, openfootball) are not yet covered and still reach the network in replay mode.
+- Recorded payloads come from third-party sources and stay subject to their terms. Check them before sharing a replay directory.
+
 ## Architecture
 
 ```
