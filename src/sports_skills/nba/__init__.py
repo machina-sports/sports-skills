@@ -359,6 +359,10 @@ def get_nbastats_game_log(
     season: int | str | None = None,
     team: str | None = None,
     season_type: str | None = None,
+    sort_by: str | None = None,
+    descending: bool | None = None,
+    limit: int | None = None,
+    fields: str | None = None,
 ) -> dict:
     """Get the league-wide game log via the NBA Stats backend.
 
@@ -374,9 +378,25 @@ def get_nbastats_game_log(
         team: Optional team abbreviation filter. ESPN spellings ("GS", "NY",
             "NO", "SA", "UTAH", "WSH") are translated to NBA.com's.
         season_type: "regular" (default), "playoffs", "preseason", or "playin".
+        sort_by: Optional column to sort rows by, e.g. pts. Numeric-aware;
+            missing values sort last.
+        descending: Sort direction when sort_by is given. Defaults to true.
+        limit: Optional max rows to return, applied after sort_by.
+        fields: Optional comma-separated columns to keep, e.g. "game_date,matchup,wl,pts".
+            Always keeps game_id, game_date, team_abbreviation, matchup. Unknown names return the valid columns.
     """
     return wrap(
-        _get_nbastats_game_log(_params(season=season, team=team, season_type=season_type))
+        _get_nbastats_game_log(
+            _params(
+                season=season,
+                team=team,
+                season_type=season_type,
+                sort_by=sort_by,
+                descending=descending,
+                limit=limit,
+                fields=fields,
+            )
+        )
     )
 
 
@@ -408,6 +428,10 @@ def get_nbastats_team_stats(
     measure: str | None = None,
     per_mode: str | None = None,
     season_type: str | None = None,
+    sort_by: str | None = None,
+    descending: bool | None = None,
+    limit: int | None = None,
+    fields: str | None = None,
 ) -> dict:
     """Get league-wide team stats via the NBA Stats backend.
 
@@ -422,6 +446,12 @@ def get_nbastats_team_stats(
             "scoring", "opponent", or "defense".
         per_mode: "totals" (default), "per_game", or "per_36".
         season_type: "regular" (default), "playoffs", "preseason", or "playin".
+        sort_by: Optional column to sort rows by, e.g. pts. Numeric-aware;
+            missing values sort last.
+        descending: Sort direction when sort_by is given. Defaults to true.
+        limit: Optional max rows to return, applied after sort_by.
+        fields: Optional comma-separated columns to keep, e.g. "w,l,pts".
+            Always keeps team_id, team_name, team_abbreviation. Unknown names return the valid columns.
     """
     return wrap(
         _get_nbastats_team_stats(
@@ -431,6 +461,10 @@ def get_nbastats_team_stats(
                 measure=measure,
                 per_mode=per_mode,
                 season_type=season_type,
+                sort_by=sort_by,
+                descending=descending,
+                limit=limit,
+                fields=fields,
             )
         )
     )
@@ -442,7 +476,10 @@ def get_nbastats_shot_chart(
     player: str | None = None,
     season: int | str | None = None,
     season_type: str | None = None,
+    sort_by: str | None = None,
+    descending: bool | None = None,
     limit: int | None = None,
+    fields: str | None = None,
 ) -> dict:
     """Get a player's shot chart (court x/y per attempt) via the NBA Stats backend.
 
@@ -455,7 +492,12 @@ def get_nbastats_shot_chart(
         season: Season starting year (e.g. 2024) or NBA form ("2024-25").
             Defaults to the current season.
         season_type: "regular" (default), "playoffs", "preseason", or "playin".
-        limit: Maximum shots to return; truncation is flagged in the response.
+        sort_by: Optional column to sort rows by, e.g. shot_distance. Numeric-aware;
+            missing values sort last.
+        descending: Sort direction when sort_by is given. Defaults to true.
+        limit: Maximum shots to return, applied after sort_by; truncation is flagged in the response.
+        fields: Optional comma-separated columns to keep, e.g. "shot_distance,made".
+            Always keeps game_id, game_date, period. Unknown names return the valid columns.
     """
     return wrap(
         _get_nbastats_shot_chart(
@@ -464,7 +506,10 @@ def get_nbastats_shot_chart(
                 player=player,
                 season=season,
                 season_type=season_type,
+                sort_by=sort_by,
+                descending=descending,
                 limit=limit,
+                fields=fields,
             )
         )
     )

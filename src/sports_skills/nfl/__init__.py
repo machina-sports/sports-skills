@@ -246,7 +246,15 @@ def get_player_stats(
     )
 
 
-def get_nflverse_schedule(*, season: int | None = None, week: int | None = None) -> dict:
+def get_nflverse_schedule(
+    *,
+    season: int | None = None,
+    week: int | None = None,
+    sort_by: str | None = None,
+    descending: bool | None = None,
+    limit: int | None = None,
+    fields: str | None = None,
+) -> dict:
     """Get NFL schedule via nflverse backend.
 
     Each event carries ``espn_event_id``, the ESPN event ID for the same game —
@@ -257,12 +265,36 @@ def get_nflverse_schedule(*, season: int | None = None, week: int | None = None)
     Args:
         season: Season year. Defaults to current NFL season.
         week: Optional NFL week number.
+        sort_by: Optional column to sort rows by, e.g. total. Numeric-aware;
+            missing values sort last.
+        descending: Sort direction when sort_by is given. Defaults to true.
+        limit: Optional max rows to return, applied after sort_by.
+        fields: Optional comma-separated columns to keep, e.g. "total".
+            Always keeps game_id, week, away_team, home_team. Unknown names return the valid columns.
     """
-    return wrap(_get_nflverse_schedule(_params(season=season, week=week)))
+    return wrap(
+        _get_nflverse_schedule(
+            _params(
+                season=season,
+                week=week,
+                sort_by=sort_by,
+                descending=descending,
+                limit=limit,
+                fields=fields,
+            )
+        )
+    )
 
 
 def get_nflverse_weekly_rosters(
-    *, season: int | None = None, week: int | None = None, team: str | None = None
+    *,
+    season: int | None = None,
+    week: int | None = None,
+    team: str | None = None,
+    sort_by: str | None = None,
+    descending: bool | None = None,
+    limit: int | None = None,
+    fields: str | None = None,
 ) -> dict:
     """Get weekly NFL rosters via nflverse backend.
 
@@ -271,9 +303,25 @@ def get_nflverse_weekly_rosters(
         week: Optional NFL week number.
         team: Optional team abbreviation filter (e.g. "KC"). ESPN spellings
             ("LAR", "WSH") are translated to nflverse's ("LA", "WAS").
+        sort_by: Optional column to sort rows by, e.g. weight. Numeric-aware;
+            missing values sort last.
+        descending: Sort direction when sort_by is given. Defaults to true.
+        limit: Optional max rows to return, applied after sort_by.
+        fields: Optional comma-separated columns to keep, e.g. "weight".
+            Always keeps player_id, player_name, team, position. Unknown names return the valid columns.
     """
     return wrap(
-        _get_nflverse_weekly_rosters(_params(season=season, week=week, team=team))
+        _get_nflverse_weekly_rosters(
+            _params(
+                season=season,
+                week=week,
+                team=team,
+                sort_by=sort_by,
+                descending=descending,
+                limit=limit,
+                fields=fields,
+            )
+        )
     )
 
 
@@ -285,11 +333,16 @@ def get_nflverse_player_stats(
     position: str | None = None,
     week: int | None = None,
     summary_level: str | None = None,
+    sort_by: str | None = None,
+    descending: bool | None = None,
+    limit: int | None = None,
+    fields: str | None = None,
 ) -> dict:
     """Get NFL player stats via nflverse backend.
 
     Returns regular-season totals by default. Pass ``week`` (or
-    ``summary_level="week"``) for per-game rows.
+    ``summary_level="week"``) for per-game rows. Rows are wide (100+ stat
+    columns); use sort_by/limit/fields to get e.g. a week's passing leaders.
 
     Args:
         season: Season year. Defaults to current NFL season.
@@ -299,6 +352,12 @@ def get_nflverse_player_stats(
         position: Optional position filter.
         week: Optional NFL week number. Implies per-game rows.
         summary_level: One of "reg" (default), "post", "reg+post", or "week".
+        sort_by: Optional column to sort rows by, e.g. passing_yards. Numeric-aware;
+            missing values sort last.
+        descending: Sort direction when sort_by is given. Defaults to true.
+        limit: Optional max rows to return, applied after sort_by.
+        fields: Optional comma-separated columns to keep, e.g. "passing_yards,attempts".
+            Always keeps player_id, player_name, position, team, week. Unknown names return the valid columns.
     """
     return wrap(
         _get_nflverse_player_stats(
@@ -309,6 +368,10 @@ def get_nflverse_player_stats(
                 position=position,
                 week=week,
                 summary_level=summary_level,
+                sort_by=sort_by,
+                descending=descending,
+                limit=limit,
+                fields=fields,
             )
         )
     )
@@ -320,6 +383,10 @@ def get_nflverse_team_stats(
     team: str | None = None,
     week: int | None = None,
     summary_level: str | None = None,
+    sort_by: str | None = None,
+    descending: bool | None = None,
+    limit: int | None = None,
+    fields: str | None = None,
 ) -> dict:
     """Get NFL team stats via nflverse backend.
 
@@ -333,10 +400,25 @@ def get_nflverse_team_stats(
             are translated to their nflverse equivalents ("LA", "WAS").
         week: Optional NFL week number. Implies per-game rows.
         summary_level: One of "reg" (default), "post", "reg+post", or "week".
+        sort_by: Optional column to sort rows by, e.g. passing_yards. Numeric-aware;
+            missing values sort last.
+        descending: Sort direction when sort_by is given. Defaults to true.
+        limit: Optional max rows to return, applied after sort_by.
+        fields: Optional comma-separated columns to keep, e.g. "passing_yards,attempts".
+            Always keeps team, season, week, game_id. Unknown names return the valid columns.
     """
     return wrap(
         _get_nflverse_team_stats(
-            _params(season=season, team=team, week=week, summary_level=summary_level)
+            _params(
+                season=season,
+                team=team,
+                week=week,
+                summary_level=summary_level,
+                sort_by=sort_by,
+                descending=descending,
+                limit=limit,
+                fields=fields,
+            )
         )
     )
 
@@ -348,6 +430,9 @@ def get_nflverse_play_by_play(
     team: str | None = None,
     game_id: str | None = None,
     limit: int | None = None,
+    sort_by: str | None = None,
+    descending: bool | None = None,
+    fields: str | None = None,
 ) -> dict:
     """Get NFL play-by-play via nflverse backend.
 
@@ -356,10 +441,24 @@ def get_nflverse_play_by_play(
         week: Optional NFL week number.
         team: Optional team abbreviation filter.
         game_id: Optional nflverse game identifier.
-        limit: Optional max number of plays to return.
+        limit: Optional max number of plays to return, applied after sort_by.
+        sort_by: Optional column to sort plays by, e.g. epa. Numeric-aware;
+            missing values sort last.
+        descending: Sort direction when sort_by is given. Defaults to true.
+        fields: Optional comma-separated columns to keep, e.g. "desc,epa".
+            Always keeps play_id, game_id. Unknown names return the valid columns.
     """
     return wrap(
         _get_nflverse_play_by_play(
-            _params(season=season, week=week, team=team, game_id=game_id, limit=limit)
+            _params(
+                season=season,
+                week=week,
+                team=team,
+                game_id=game_id,
+                limit=limit,
+                sort_by=sort_by,
+                descending=descending,
+                fields=fields,
+            )
         )
     )

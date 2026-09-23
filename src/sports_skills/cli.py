@@ -20,6 +20,9 @@ import sys
 
 from sports_skills import _premium
 
+# Optional row-shaping params for wide/long endpoints (see sports_skills._shaping)
+_SHAPING = ["sort_by", "descending", "limit", "fields"]
+
 # Registry of modules → commands → functions (lazy-loaded)
 _REGISTRY = {
     "football": {
@@ -343,13 +346,13 @@ _REGISTRY = {
         "get_depth_chart": {"required": ["team_id"]},
         "get_team_stats": {"required": ["team_id"], "optional": ["season_year", "season_type"]},
         "get_player_stats": {"required": ["player_id"], "optional": ["season_year", "season_type"]},
-        "get_nflverse_schedule": {"optional": ["season", "week"]},
-        "get_nflverse_weekly_rosters": {"optional": ["season", "week", "team"]},
+        "get_nflverse_schedule": {"optional": ["season", "week", *_SHAPING]},
+        "get_nflverse_weekly_rosters": {"optional": ["season", "week", "team", *_SHAPING]},
         "get_nflverse_player_stats": {
-            "optional": ["season", "player_id", "team", "position", "week", "summary_level"]
+            "optional": ["season", "player_id", "team", "position", "week", "summary_level", *_SHAPING]
         },
-        "get_nflverse_team_stats": {"optional": ["season", "team", "week", "summary_level"]},
-        "get_nflverse_play_by_play": {"optional": ["season", "week", "team", "game_id", "limit"]},
+        "get_nflverse_team_stats": {"optional": ["season", "team", "week", "summary_level", *_SHAPING]},
+        "get_nflverse_play_by_play": {"optional": ["season", "week", "team", "game_id", *_SHAPING]},
     },
     "nba": {
         "get_scoreboard": {"optional": ["date"]},
@@ -374,13 +377,13 @@ _REGISTRY = {
         "get_live_playbyplay": {"required": ["game_id"], "optional": ["limit", "scoring_only"]},
         "get_player_live_stats": {"required": ["player_name"]},
         "find_nba_player": {"required": ["name"]},
-        "get_nbastats_game_log": {"optional": ["season", "team", "season_type"]},
+        "get_nbastats_game_log": {"optional": ["season", "team", "season_type", *_SHAPING]},
         "get_nbastats_player_career": {"optional": ["player_id", "player", "per_mode"]},
         "get_nbastats_team_stats": {
-            "optional": ["season", "team", "measure", "per_mode", "season_type"]
+            "optional": ["season", "team", "measure", "per_mode", "season_type", *_SHAPING]
         },
         "get_nbastats_shot_chart": {
-            "optional": ["player_id", "player", "season", "season_type", "limit"]
+            "optional": ["player_id", "player", "season", "season_type", *_SHAPING]
         },
         "get_nbastats_play_by_play": {"required": ["game_id"], "optional": ["limit"]},
         "get_nbastats_advanced_boxscore": {"required": ["game_id"]},
@@ -451,7 +454,7 @@ _REGISTRY = {
         "get_mlbstats_player_stats": {
             "optional": ["player_id", "player", "stat_type", "stat_group", "season"]
         },
-        "get_mlbstats_play_by_play": {"required": ["game_pk"], "optional": ["limit"]},
+        "get_mlbstats_play_by_play": {"required": ["game_pk"], "optional": list(_SHAPING)},
         "get_mlbstats_boxscore": {"required": ["game_pk"]},
         "get_mlbstats_standings": {"optional": ["season"]},
         "get_mlbstats_leaders": {
@@ -565,6 +568,7 @@ _BOOL_PARAMS = {
     "active",
     "closed",
     "ascending",
+    "descending",
     "with_nested_markets",
 }
 

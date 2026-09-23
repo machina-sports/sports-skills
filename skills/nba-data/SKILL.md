@@ -86,6 +86,33 @@ Derive the current year from the system prompt's date (e.g., `currentDate: 2026-
 
 See `references/api-reference.md` for full parameter lists and return shapes.
 
+## Shaping Long NBA Stats Results
+
+`get_nbastats_game_log`, `get_nbastats_team_stats` and `get_nbastats_shot_chart`
+accept `sort_by`, `descending`, `limit` and `fields`, so you can ask for the rows
+and columns you need instead of a full season:
+
+```bash
+# Miami's five highest-scoring games, four columns each
+sports-skills nba get_nbastats_game_log --season=2025 --team=MIA \
+  --sort_by=pts --limit=5 --fields=wl,pts
+```
+
+- `sort_by`: one column to sort by. Numbers (and numeric strings) sort numerically; missing values always go last.
+- `descending`: `true` (default) or `false`; only used with `sort_by`.
+- `limit`: positive integer, applied after sorting.
+- `fields`: comma-separated keep-list. The identity columns below and the `sort_by` column are always kept.
+- An unknown `sort_by`/`fields` column returns an error listing the valid columns.
+- With any of these set, the response adds `total_rows` (matching rows before `limit`) and `returned_rows`. With none set, output is unchanged. They are applied after the fetch, so they never change the upstream request or its replay entry.
+
+| Command | Always kept by `fields` |
+|---------|-------------------------|
+| `get_nbastats_game_log` | `game_id`, `game_date`, `team_abbreviation`, `matchup` |
+| `get_nbastats_team_stats` | `team_id`, `team_name`, `team_abbreviation` |
+| `get_nbastats_shot_chart` | `game_id`, `game_date`, `period` |
+
+Column names are NBA.com's, lowercased (`pts`, `fg3m`, `plus_minus`, `shot_distance`).
+
 ## Using ESPN and NBA Stats Together
 
 The `get_nbastats_*` commands read stats.nba.com — the analytics layer (advanced

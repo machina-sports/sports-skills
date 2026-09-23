@@ -134,6 +134,13 @@ recipe (game date + team abbreviations/names), team filters accept both sources'
 abbreviation spellings, and passing the wrong system's id returns a guided error rather
 than an upstream failure.
 
+Wide or long tables (nflverse player/team stats, rosters, schedules and play-by-play;
+NBA Stats game logs, team stats and shot charts; MLB Stats play-by-play) accept
+optional `sort_by`, `descending`, `limit` and `fields`, so an agent with a capped tool
+output can ask for, say, a week's top five passers instead of 4M characters of rows.
+They apply after the fetch (replay entries are unchanged) and add `total_rows` /
+`returned_rows` to the response; without them output is unchanged.
+
 Coverage still varies by league and source — each skill documents its own limits (e.g.
 [football data coverage](skills/football-data/references/data-coverage.md): xG is top-5
 leagues only, FPL stats are Premier League only).
