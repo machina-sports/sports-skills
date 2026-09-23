@@ -5,9 +5,53 @@ from datetime import datetime
 import fastf1
 import pandas as pd
 
+from sports_skills import _replay
+
 _CURRENT_YEAR = datetime.now().year
 
 fastf1.set_log_level("WARNING")
+
+
+def _frame(loader, args, live_load):
+    return _replay.frame("fastf1", loader, args, live_load, provider="fastf1")
+
+
+def _replay_failure(exc):
+    """Error shape for a replay miss/corruption, keeping the replay flag."""
+    error = {"status": False, "data": None, "message": exc.error["message"]}
+    for flag in ("replay_miss", "replay_error"):
+        if exc.error.get(flag):
+            error[flag] = True
+    return error
+
+
+def _event_schedule(year):
+    schedule = _frame("event_schedule", {"year": year}, lambda: fastf1.get_event_schedule(year))
+    if isinstance(schedule, fastf1.events.EventSchedule):
+        return schedule
+    return fastf1.events.EventSchedule(schedule)
+
+
+class _ReplayedSession:
+    """The parts of a FastF1 session this connector reads, rebuilt from a replay."""
+
+    def __init__(self, results, laps, info):
+        self.results = fastf1.core.SessionResults(results)
+        self.laps = None if laps is None else fastf1.core.Laps(laps)
+        self.info = {col: info[col].iloc[0] for col in info.columns}
+
+
+def _session_info(session):
+    """Session metadata reported by get_session_data."""
+    if isinstance(session, _ReplayedSession):
+        return session.info
+    return {
+        "session": str(session),
+        "event_name": getattr(session.event, "name", "Unknown Event"),
+        "event_date": str(getattr(session.event, "date", "Unknown Date")),
+        "session_type": getattr(session, "session_type", "Unknown Session Type"),
+        "track_name": getattr(session.event, "circuit_name", "Unknown Track"),
+    }
 
 
 def _format_timedelta(td):
@@ -47,7 +91,7 @@ def _safe_int(val, default=""):
 
 def _validate_event(year, event_name):
     """Validate that event_name matches an actual event. Returns the exact event name or raises ValueError."""
-    schedule = fastf1.get_event_schedule(year)
+    schedule = _event_schedule(year)
     real_events = schedule[schedule["EventFormat"] != "testing"]
     # Support "last" / "latest" to resolve to the final event on the calendar
     if event_name.lower().strip() in ("last", "latest", "last race", "most recent"):
@@ -77,10 +121,7 @@ def get_session_data(request_data):
         session_type = params.get("session_type", "Q")
 
         event = _validate_event(year, event)
-        session = fastf1.get_session(year, event, session_type)
-
-        # Optimize load: only load results, avoiding heavy telemetry and lap downloads/parsing
-        session.load(laps=False, telemetry=False, weather=False, messages=False)
+        session = _load_session_cached(year, event, session_type=session_type, results_only=True)
 
         results_list = []
         if session.results is not None and not session.results.empty:
@@ -108,11 +149,7 @@ def get_session_data(request_data):
                 results_list.append(result_data)
 
         result = {
-            "session": str(session),
-            "event_name": getattr(session.event, "name", "Unknown Event"),
-            "event_date": str(getattr(session.event, "date", "Unknown Date")),
-            "session_type": getattr(session, "session_type", "Unknown Session Type"),
-            "track_name": getattr(session.event, "circuit_name", "Unknown Track"),
+            **_session_info(session),
             "results": results_list,
         }
 
@@ -122,6 +159,8 @@ def get_session_data(request_data):
             "message": "Session data retrieved successfully",
         }
 
+    except _replay.ReplayFailure as e:
+        return _replay_failure(e)
     except Exception as e:
         return {
             "status": False,
@@ -139,13 +178,12 @@ def get_driver_info(request_data):
         driver = params.get("driver")
 
         # Get the schedule and find the last completed race
-        schedule = fastf1.get_event_schedule(year)
+        schedule = _event_schedule(year)
         races = schedule[schedule["EventFormat"] != "testing"]
 
         # Load the last race to get driver info from results
         last_race = races.iloc[-1]["EventName"]
-        session = fastf1.get_session(year, last_race, "R")
-        session.load(laps=False, telemetry=False, weather=False, messages=False)
+        session = _load_session_cached(year, last_race, results_only=True)
         results = session.results
 
         if driver:
@@ -204,6 +242,8 @@ def get_driver_info(request_data):
                 "message": f"Driver information for {year} retrieved successfully",
             }
 
+    except _replay.ReplayFailure as e:
+        return _replay_failure(e)
     except Exception as e:
         return {
             "status": False,
@@ -221,12 +261,11 @@ def get_team_info(request_data):
         team = params.get("team")
 
         # Get the schedule and find the last completed race
-        schedule = fastf1.get_event_schedule(year)
+        schedule = _event_schedule(year)
         races = schedule[schedule["EventFormat"] != "testing"]
 
         last_race = races.iloc[-1]["EventName"]
-        session = fastf1.get_session(year, last_race, "R")
-        session.load(laps=False, telemetry=False, weather=False, messages=False)
+        session = _load_session_cached(year, last_race, results_only=True)
         results = session.results
 
         # Extract unique teams
@@ -285,6 +324,8 @@ def get_team_info(request_data):
             "message": f"Team information for {year} retrieved successfully",
         }
 
+    except _replay.ReplayFailure as e:
+        return _replay_failure(e)
     except Exception as e:
         return {
             "status": False,
@@ -299,7 +340,7 @@ def get_race_schedule(request_data):
 
         year = params.get("year", 2023)
 
-        schedule = fastf1.get_event_schedule(year)
+        schedule = _event_schedule(year)
         events = []
 
         for _, row in schedule.iterrows():
@@ -320,6 +361,8 @@ def get_race_schedule(request_data):
             "message": f"Race schedule for {year} retrieved successfully",
         }
 
+    except _replay.ReplayFailure as e:
+        return _replay_failure(e)
     except Exception as e:
         return {
             "status": False,
@@ -338,8 +381,7 @@ def get_lap_data(request_data):
         driver = params.get("driver")
 
         event = _validate_event(year, event)
-        session = fastf1.get_session(year, event, session_type)
-        session.load(telemetry=False, weather=False, messages=False)
+        session = _load_session_cached(year, event, session_type=session_type, laps_only=True)
 
         if driver:
             laps = session.laps.pick_drivers(driver)
@@ -392,6 +434,8 @@ def get_lap_data(request_data):
             "message": "Lap data retrieved successfully",
         }
 
+    except _replay.ReplayFailure as e:
+        return _replay_failure(e)
     except Exception as e:
         return {
             "status": False,
@@ -402,28 +446,58 @@ def get_lap_data(request_data):
 
 def _get_completed_races(year):
     """Get list of completed race event names for a season."""
-    schedule = fastf1.get_event_schedule(year)
+    schedule = _event_schedule(year)
     races = schedule[schedule["EventFormat"] != "testing"]
     today = pd.Timestamp.now().normalize()
     races = races[races["EventDate"] < today]
     return races["EventName"].tolist()
 
 
-def _load_session_cached(year, event, *, results_only=False, laps_only=False):
-    """Load a race session. FastF1 handles its own caching.
+def _load_session_cached(year, event, *, results_only=False, laps_only=False, session_type="R"):
+    """Load a session (the race by default). FastF1 handles its own caching.
 
     results_only: load only results (no laps, telemetry, weather, messages)
     laps_only: load results + laps but skip telemetry/weather/messages
                (saves ~80% memory vs full load)
+
+    Under ``SPORTS_SKILLS_REPLAY`` the parts this connector reads (results, laps,
+    session metadata) are recorded as frames, and replay rebuilds them without
+    calling FastF1, so nothing touches the network.
     """
-    session = fastf1.get_session(year, event, "R")
-    if results_only:
-        session.load(laps=False, telemetry=False, weather=False, messages=False)
-    elif laps_only:
-        session.load(telemetry=False, weather=False, messages=False)
-    else:
-        session.load()
-    return session
+
+    def load():
+        session = fastf1.get_session(year, event, session_type)
+        if results_only:
+            session.load(laps=False, telemetry=False, weather=False, messages=False)
+        elif laps_only:
+            session.load(telemetry=False, weather=False, messages=False)
+        else:
+            session.load()
+        return session
+
+    if _replay.mode() == _replay.OFF:
+        return load()
+
+    live = []
+
+    def live_session():
+        if not live:
+            live.append(load())
+        return live[0]
+
+    args = {
+        "year": year,
+        "event": event,
+        "session_type": session_type,
+        "load": "results" if results_only else "laps" if laps_only else "full",
+    }
+    results = _frame("session_results", args, lambda: live_session().results)
+    laps = None if results_only else _frame("session_laps", args, lambda: live_session().laps)
+    info = _frame("session_info", args, lambda: pd.DataFrame([_session_info(live_session())]))
+    if live:
+        # Record mode: callers get the live session, exactly as when off.
+        return live[0]
+    return _ReplayedSession(results, laps, info)
 
 
 def get_pit_stops(request_data):
@@ -472,6 +546,8 @@ def get_pit_stops(request_data):
                                         "duration_seconds": round(duration, 3),
                                     }
                                 )
+            except _replay.ReplayFailure:
+                raise
             except Exception:
                 continue
 
@@ -520,6 +596,8 @@ def get_pit_stops(request_data):
             + " retrieved successfully",
         }
 
+    except _replay.ReplayFailure as e:
+        return _replay_failure(e)
     except Exception as e:
         return {
             "status": False,
@@ -576,6 +654,8 @@ def get_speed_data(request_data):
                             "lap": int(row["LapNumber"]),
                         }
                     )
+            except _replay.ReplayFailure:
+                raise
             except Exception:
                 continue
 
@@ -612,6 +692,8 @@ def get_speed_data(request_data):
             + " retrieved successfully",
         }
 
+    except _replay.ReplayFailure as e:
+        return _replay_failure(e)
     except Exception as e:
         return {
             "status": False,
@@ -669,6 +751,8 @@ def get_championship_standings(request_data):
                     if team not in team_points:
                         team_points[team] = 0
                     team_points[team] += pts
+            except _replay.ReplayFailure:
+                raise
             except Exception:
                 continue
 
@@ -708,6 +792,8 @@ def get_championship_standings(request_data):
             "message": f"Championship standings for {year} ({len(race_names)} races)",
         }
 
+    except _replay.ReplayFailure as e:
+        return _replay_failure(e)
     except Exception as e:
         return {
             "status": False,
@@ -832,6 +918,8 @@ def get_season_stats(request_data):
                                 driver_stats[drv]["top_speed_kmh"] = float(max_speed)
                                 driver_stats[drv]["top_speed_race"] = race_name
 
+            except _replay.ReplayFailure:
+                raise
             except Exception:
                 continue
 
@@ -866,6 +954,8 @@ def get_season_stats(request_data):
             "message": f"Season stats for {year} ({len(race_names)} races)",
         }
 
+    except _replay.ReplayFailure as e:
+        return _replay_failure(e)
     except Exception as e:
         return {
             "status": False,
@@ -1013,6 +1103,8 @@ def get_team_comparison(request_data):
 
                 per_race.append(race_entry)
 
+            except _replay.ReplayFailure:
+                raise
             except Exception:
                 continue
 
@@ -1075,6 +1167,8 @@ def get_team_comparison(request_data):
             + (f" {event}" if event else " (full season)"),
         }
 
+    except _replay.ReplayFailure as e:
+        return _replay_failure(e)
     except Exception as e:
         return {
             "status": False,
@@ -1256,17 +1350,18 @@ def get_driver_comparison(request_data):
                         }
                     )
 
+            except _replay.ReplayFailure:
+                raise
             except Exception as exc:
                 per_race.append({"race": race_name, "error": str(exc)})
                 continue
 
         if not driver_stats:
             # Help the agent by listing available drivers
-            schedule = fastf1.get_event_schedule(year)
+            schedule = _event_schedule(year)
             races = schedule[schedule["EventFormat"] != "testing"]
             last_race = races.iloc[-1]["EventName"]
-            session = fastf1.get_session(year, last_race, "R")
-            session.load(laps=False, telemetry=False, weather=False, messages=False)
+            session = _load_session_cached(year, last_race, results_only=True)
             abbrevs = session.results["Abbreviation"].tolist()
             return {
                 "status": False,
@@ -1327,6 +1422,8 @@ def get_driver_comparison(request_data):
             + (f" {event}" if event else " (full season)"),
         }
 
+    except _replay.ReplayFailure as e:
+        return _replay_failure(e)
     except Exception as e:
         return {
             "status": False,
@@ -1453,6 +1550,8 @@ def get_tire_analysis(request_data):
                             }
                         )
 
+            except _replay.ReplayFailure:
+                raise
             except Exception:
                 continue
 
@@ -1509,6 +1608,8 @@ def get_tire_analysis(request_data):
             + " retrieved successfully",
         }
 
+    except _replay.ReplayFailure as e:
+        return _replay_failure(e)
     except Exception as e:
         return {
             "status": False,
@@ -1525,8 +1626,7 @@ def get_race_results(request_data):
         event = params.get("event", "Monza")
 
         event = _validate_event(year, event)
-        session = fastf1.get_session(year, event, "R")
-        session.load(laps=False, telemetry=False, weather=False, messages=False)
+        session = _load_session_cached(year, event, results_only=True)
 
         results = session.results
 
@@ -1565,6 +1665,8 @@ def get_race_results(request_data):
             "message": f"Race results for {event} {year} retrieved successfully",
         }
 
+    except _replay.ReplayFailure as e:
+        return _replay_failure(e)
     except Exception as e:
         return {
             "status": False,
