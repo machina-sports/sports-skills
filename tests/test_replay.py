@@ -3,6 +3,7 @@
 import io
 import json
 import os
+import pathlib
 import urllib.error
 import urllib.request
 
@@ -261,3 +262,44 @@ def test_public_skill_call_replays_end_to_end(monkeypatch, tmp_path):
     _set_mode(monkeypatch, "replay", tmp_path)
 
     assert nba.get_scoreboard(request) == recorded
+
+
+def test_fill_serves_recorded_entries_and_records_only_missing_ones(monkeypatch, tmp_path):
+    body = b'{"x": 1}'
+    net = _FakeNetwork({"/a": body, "/b": b'{"y": 2}'})
+    monkeypatch.setattr(urllib.request, "urlopen", net)
+    _set_mode(monkeypatch, "record", tmp_path)
+    _espn_base._http_fetch("https://example.test/a")
+    path_a = _replay.entry_path(str(tmp_path), _replay.request_key("https://example.test/a"))
+    before = pathlib.Path(path_a).read_text(encoding="utf-8")
+
+    # fill: /a is recorded -> served from disk, no network; /b is new -> fetched and recorded.
+    net.calls.clear()
+    monkeypatch.setattr(urllib.request, "urlopen", net)
+    _set_mode(monkeypatch, "fill", tmp_path)
+    assert _espn_base._http_fetch("https://example.test/a") == (body, None)
+    assert _espn_base._http_fetch("https://example.test/b") == (b'{"y": 2}', None)
+    assert net.calls == ["https://example.test/b"]
+    assert pathlib.Path(path_a).read_text(encoding="utf-8") == before, "an existing entry is never rewritten"
+
+    # The newly filled entry now replays offline.
+    monkeypatch.setattr(urllib.request, "urlopen", _no_network)
+    _set_mode(monkeypatch, "replay", tmp_path)
+    assert _espn_base._http_fetch("https://example.test/b") == (b'{"y": 2}', None)
+
+
+def test_fill_does_not_overwrite_drifted_upstream_data(monkeypatch, tmp_path):
+    monkeypatch.setattr(urllib.request, "urlopen", _FakeNetwork({"/a": b'{"score": 118}'}))
+    _set_mode(monkeypatch, "record", tmp_path)
+    _espn_base._http_fetch("https://example.test/a")
+    # Upstream changes; fill keeps serving what was recorded (record would overwrite).
+    monkeypatch.setattr(urllib.request, "urlopen", _FakeNetwork({"/a": b'{"score": 121}'}))
+    _set_mode(monkeypatch, "fill", tmp_path)
+    assert _espn_base._http_fetch("https://example.test/a") == (b'{"score": 118}', None)
+
+
+def test_fill_requires_a_directory(monkeypatch):
+    monkeypatch.setattr(urllib.request, "urlopen", _no_network)
+    _set_mode(monkeypatch, "fill")
+    raw, err = _espn_base._http_fetch("https://example.test/a")
+    assert raw is None and err["replay_error"] is True

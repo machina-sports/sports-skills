@@ -180,6 +180,7 @@ SPORTS_SKILLS_REPLAY=replay SPORTS_SKILLS_REPLAY_DIR=./replays/2026-09-23 \
 ```
 
 - `off` (default) is the normal live behaviour. There is no default directory: `record` and `replay` require `SPORTS_SKILLS_REPLAY_DIR`.
+- `fill` serves what is recorded and fetches + records only what is missing, never rewriting existing entries (useful to grow a benchmark corpus without drift; `record` rewrites).
 - A request that was never recorded returns an error with `replay_miss: true` instead of falling back to the network.
 - Entries are readable JSON keyed by method + URL (query order normalized), stored byte-for-byte with a SHA-256 integrity check.
 - Deterministic 4xx responses are recorded so fallback paths replay exactly. Transient failures (5xx, 429, timeouts) are never recorded.

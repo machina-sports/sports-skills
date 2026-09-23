@@ -9,6 +9,7 @@ import inspect
 import io
 import json
 import os
+import pathlib
 import socket
 import sys
 import urllib.error
@@ -651,3 +652,24 @@ def test_polymarket_trading_client_is_not_routed_through_replay():
     from sports_skills.polymarket import _cli
 
     assert "_replay" not in inspect.getsource(_cli)
+
+
+@needs_parquet
+def test_frame_fill_serves_recorded_frames_and_records_only_missing(monkeypatch, tmp_path):
+    _set_mode(monkeypatch, "record", tmp_path)
+    recorded = _replay.frame("ns", "loader", {"season": 2024}, _frame)
+    parquet_path, _ = _replay.frame_paths(str(tmp_path), _replay.frame_key("ns", "loader", {"season": 2024}))
+    before = pathlib.Path(parquet_path).read_bytes()
+
+    _set_mode(monkeypatch, "fill", tmp_path)
+    served = _replay.frame("ns", "loader", {"season": 2024}, lambda: pytest.fail("live load for a recorded frame"))
+    pd.testing.assert_frame_equal(served, recorded)
+    assert pathlib.Path(parquet_path).read_bytes() == before, "an existing frame is never rewritten"
+
+    new = _replay.frame("ns", "loader", {"season": 2025}, _frame)
+    pd.testing.assert_frame_equal(new, _frame())
+    _set_mode(monkeypatch, "replay", tmp_path)
+    pd.testing.assert_frame_equal(
+        _replay.frame("ns", "loader", {"season": 2025}, lambda: pytest.fail("live")),
+        _replay.frame("ns", "loader", {"season": 2024}, lambda: pytest.fail("live")),
+    )
