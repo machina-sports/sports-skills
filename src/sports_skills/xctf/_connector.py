@@ -14,7 +14,7 @@ import urllib.error
 import urllib.request
 from html import unescape
 
-import feedparser
+from sports_skills import _feeds, _replay
 
 _BASE = "https://www.tfrrs.org"
 _UA = (
@@ -46,6 +46,16 @@ def _fetch(url: str) -> str | dict:
     if cached and (now - cached[0]) < _CACHE_TTL:
         return cached[1]
 
+    raw, err = _replay.fetch(url, lambda: _live_fetch(url))
+    if err is not None:
+        return _public_error(err, url)
+    html = raw.decode("utf-8", errors="replace")
+    _cache[url] = (time.monotonic(), html)
+    return html
+
+
+def _live_fetch(url: str):
+    """Live GET for ``_replay.fetch``: (data_bytes, None) or (None, error_dict)."""
     _throttle()
     req = urllib.request.Request(
         url,
@@ -56,15 +66,30 @@ def _fetch(url: str) -> str | dict:
     )
     try:
         with urllib.request.urlopen(req, timeout=15) as resp:
-            html = resp.read().decode("utf-8", errors="replace")
-        _cache[url] = (time.monotonic(), html)
-        return html
+            return resp.read(), None
     except urllib.error.HTTPError as e:
-        return {"error": True, "message": f"HTTP {e.code}: {e.reason}", "url": url}
+        # status_code lets _replay record the 4xx; _public_error drops it again.
+        return None, {"error": True, "status_code": e.code, "message": f"HTTP {e.code}: {e.reason}"}
     except urllib.error.URLError as e:
-        return {"error": True, "message": f"Connection error: {e.reason}"}
+        return None, {"error": True, "message": f"Connection error: {e.reason}"}
     except Exception as e:
-        return {"error": True, "message": str(e)}
+        return None, {"error": True, "message": str(e)}
+
+
+def _public_error(err: dict, url: str) -> dict:
+    """This module's error shape, keeping replay flags."""
+    error = {"error": True, "message": err.get("message", "")}
+    if "status_code" in err:
+        error["url"] = url  # HTTP errors have always carried the URL
+    for flag in ("replay_miss", "replay_error"):
+        if err.get(flag):
+            error[flag] = True
+    return error
+
+
+def _is_replay_failure(result) -> bool:
+    """A replay miss/corruption must fail a multi-page call, not be skipped."""
+    return isinstance(result, dict) and bool(result.get("replay_miss") or result.get("replay_error"))
 
 
 def _strip_tags(value: str) -> str:
@@ -298,6 +323,8 @@ def search_athlete(*, name: str, school: str = "") -> dict:
         for slug, _ in _gender_slugs(school):
             url = f"{_BASE}/teams/{sport}/{slug}.html"
             result = _fetch(url)
+            if _is_replay_failure(result):
+                return result
             if isinstance(result, dict):
                 continue
 
@@ -382,6 +409,8 @@ def get_team_roster(*, school: str, sport: str = "both") -> dict:
             url = f"{_BASE}/teams/{sp}/{slug}.html"
             attempted += 1
             result = _fetch(url)
+            if _is_replay_failure(result):
+                return result
             if isinstance(result, dict):
                 failures.append(f"{sp}/{slug}: {result.get('message', 'fetch failed')}")
                 continue
@@ -608,6 +637,8 @@ def get_meet_results(*, meet_id: str, slug: str) -> dict:
     for gender, code in (("women", "f"), ("men", "m")):
         comp_url = f"{_BASE}/results/{meet_id}/{code}/{slug}"
         comp_html = _fetch(comp_url)
+        if _is_replay_failure(comp_html):
+            return comp_html
         if isinstance(comp_html, dict):
             continue
         events.extend(_parse_compiled_results(comp_html, gender))
@@ -628,7 +659,9 @@ _STRIDER_FEED = "https://www.thestridereport.com/blog-feed.xml"
 
 def get_news(*, limit: int | None = None) -> dict:
     """Fetch recent articles from The Stride Report RSS feed."""
-    feed = feedparser.parse(_STRIDER_FEED)
+    feed, err = _feeds.parse(_STRIDER_FEED)
+    if err is not None:
+        return _public_error(err, _STRIDER_FEED)
     if feed.bozo and not feed.entries:
         return {"error": True, "message": f"Failed to fetch Stride Report feed: {feed.bozo_exception}"}
 

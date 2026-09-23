@@ -29,6 +29,9 @@ What gets recorded:
 Transient failures (5xx, 429, timeouts, connection errors) are never recorded:
 freezing a flaky failure into a fixture would make it look like real data. A
 replay of such a request is a miss, which surfaces the gap instead of hiding it.
+The same goes for a success-status body a provider uses to signal throttling
+(Leaguepedia's in-body ``ratelimited``): callers flag it via ``fetch``'s
+``recordable`` predicate.
 
 Providers read through a library rather than ``_http_fetch`` (nflverse, FastF1)
 are recorded one level up, at the connector's loader: ``frame`` stores the
@@ -232,12 +235,14 @@ def _replay(directory, url):
     return raw, None
 
 
-def fetch(url, live_fetch):
+def fetch(url, live_fetch, recordable=None):
     """Serve ``url`` according to the active replay mode.
 
     ``live_fetch`` is a zero-argument callable performing the real request and
     returning ``(data_bytes, None)`` or ``(None, error_dict)`` — the contract of
     the modules' ``_http_fetch`` helpers. It is never called in replay mode.
+    ``recordable``, if given, is called with a successful body in record mode;
+    returning False skips recording it (a transient failure behind HTTP 200).
     """
     active = mode()
     if active is None:
@@ -253,7 +258,8 @@ def fetch(url, live_fetch):
         return _replay(directory, url)
 
     raw, err = live_fetch()
-    _record(directory, url, raw, err)
+    if err is not None or recordable is None or recordable(raw):
+        _record(directory, url, raw, err)
     return raw, err
 
 

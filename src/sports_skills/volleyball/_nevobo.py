@@ -14,7 +14,7 @@ import time
 import urllib.error
 import urllib.request
 
-import feedparser
+from sports_skills import _feeds, _replay
 
 _BASE = "https://api.nevobo.nl"
 
@@ -53,6 +53,19 @@ def _hydra_request(path, params=None):
     if cached and (now - cached[0]) < _CACHE_TTL:
         return cached[1]
 
+    raw, err = _replay.fetch(url, lambda: _live_hydra_fetch(url))
+    if err is not None:
+        return _public_error(err)
+    try:
+        data = json.loads(raw.decode())
+    except Exception as e:
+        return {"error": True, "message": str(e)}
+    _cache[url] = (time.monotonic(), data)
+    return data
+
+
+def _live_hydra_fetch(url):
+    """Live GET for ``_replay.fetch``: (data_bytes, None) or (None, error_dict)."""
     _throttle()
     req = urllib.request.Request(url, headers={
         "Accept": "application/ld+json",
@@ -60,15 +73,29 @@ def _hydra_request(path, params=None):
     })
     try:
         with urllib.request.urlopen(req, timeout=15) as resp:
-            data = json.loads(resp.read().decode())
-        _cache[url] = (time.monotonic(), data)
-        return data
+            return resp.read(), None
     except urllib.error.HTTPError as e:
-        return {"error": True, "message": f"HTTP {e.code}: {e.reason}"}
+        # status_code lets _replay record the 4xx; _public_error drops it again.
+        return None, {"error": True, "status_code": e.code, "message": f"HTTP {e.code}: {e.reason}"}
     except urllib.error.URLError as e:
-        return {"error": True, "message": f"Connection error: {e.reason}"}
+        return None, {"error": True, "message": f"Connection error: {e.reason}"}
     except Exception as e:
-        return {"error": True, "message": str(e)}
+        return None, {"error": True, "message": str(e)}
+
+
+def _raise_replay_failure(data):
+    """Poule resolution falls back silently on errors; a replay gap must not."""
+    if isinstance(data, dict) and (data.get("replay_miss") or data.get("replay_error")):
+        raise _replay.ReplayFailure(data)
+
+
+def _public_error(err):
+    """This module's error shape (no status_code), keeping replay flags."""
+    error = {"error": True, "message": err.get("message", "")}
+    for flag in ("replay_miss", "replay_error"):
+        if err.get(flag):
+            error[flag] = True
+    return error
 
 
 _POULE_CODE_RE = re.compile(r"^nationale-competitie-([a-z0-9]+)-\d+$")
@@ -102,6 +129,7 @@ def resolve_poule_path(competition_family, poule_code, fallback=None):
         return fallback
 
     data = _hydra_request("/competitie/poules", {"competitie": competition, "itemsPerPage": 100})
+    _raise_replay_failure(data)
     if isinstance(data, dict) and data.get("error"):
         return fallback
     for item in (data or {}).get("hydra:member", []):
@@ -121,6 +149,7 @@ def _find_national_competition(family):
         data = _hydra_request(
             "/competitie/competities", {"itemsPerPage": 30, "page": page}
         )
+        _raise_replay_failure(data)
         if isinstance(data, dict) and data.get("error"):
             return None
         members = (data or {}).get("hydra:member", [])
@@ -140,9 +169,12 @@ def _find_national_competition(family):
 def _rss_request(export_path):
     """Fetch and parse an RSS export feed."""
     url = f"{_BASE}/export/{export_path}"
-    _throttle()
+    if _replay.mode() != _replay.REPLAY:
+        _throttle()
     try:
-        feed = feedparser.parse(url)
+        feed, err = _feeds.parse(url)
+        if err is not None:
+            return _public_error(err)
         if hasattr(feed, "status") and feed.status >= 400:
             return {"error": True, "message": f"HTTP {feed.status}"}
         if feed.bozo and not feed.entries:

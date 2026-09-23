@@ -3,7 +3,23 @@ import urllib.parse
 from datetime import datetime
 from email.utils import parsedate_to_datetime
 
-import feedparser
+from sports_skills import _feeds
+
+
+def _fetch_error(err):
+    """Error for a record/replay fetch failure, in this module's shape.
+
+    HTTP errors read exactly as feedparser's own status check reports them.
+    """
+    if "status_code" in err:
+        message = f"Failed to fetch feed. HTTP Status: {err['status_code']}"
+    else:
+        message = err.get("message", "Failed to fetch feed")
+    error = {"status": False, "message": message}
+    for flag in ("replay_miss", "replay_error"):
+        if err.get(flag):
+            error[flag] = True
+    return error
 
 
 def fetch_feed(request_data):
@@ -121,7 +137,9 @@ def fetch_feed(request_data):
             }
 
     try:
-        feed = feedparser.parse(url)
+        feed, err = _feeds.parse(url)
+        if err is not None:
+            return _fetch_error(err)
 
         # Check if the feed was fetched successfully
         if hasattr(feed, "status") and feed.status >= 400:
@@ -281,7 +299,9 @@ def fetch_items(request_data):
             }
 
     try:
-        feed = feedparser.parse(url)
+        feed, err = _feeds.parse(url)
+        if err is not None:
+            return _fetch_error(err)
 
         # Check if the feed was fetched successfully
         if hasattr(feed, "status") and feed.status >= 400:

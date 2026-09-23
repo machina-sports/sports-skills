@@ -1,4 +1,7 @@
-"""Record/replay for nflverse, FastF1, Kalshi and Polymarket.
+"""Record/replay for providers that bypass the shared ``_http_fetch``.
+
+nflverse, FastF1, Kalshi, Polymarket, OpenDota/Leaguepedia, Cricsheet, Nevobo,
+TFRRS/The Stride Report, TheSportsDB, ProphetX, openfootball and Google News.
 
 Each provider is recorded against a fake upstream, then replayed with sockets
 blocked; the public tool function must return the identical result.
@@ -14,14 +17,53 @@ import socket
 import sys
 import urllib.error
 import urllib.request
+import zipfile
 
+import feedparser
 import pandas as pd
 import pytest
 
-from sports_skills import _replay, kalshi, nfl, polymarket
+from sports_skills import (
+    _espn_base,
+    _replay,
+    cricket,
+    esports,
+    football,
+    kalshi,
+    metadata,
+    news,
+    nfl,
+    polymarket,
+    prophetx,
+    volleyball,
+    xctf,
+)
+from sports_skills.esports import _connector as esports_conn
+from sports_skills.football import _connector as football_conn
 from sports_skills.kalshi import _connector as kalshi_conn
+from sports_skills.metadata import _connector as metadata_conn
 from sports_skills.nfl import _nflverse
 from sports_skills.polymarket import _connector as polymarket_conn
+from sports_skills.prophetx import _connector as prophetx_conn
+from sports_skills.volleyball import _nevobo
+from sports_skills.xctf import _connector as xctf_conn
+
+_CACHES = (
+    kalshi_conn._cache,
+    polymarket_conn._cache,
+    esports_conn._cache,
+    metadata_conn._cache,
+    prophetx_conn._cache,
+    _nevobo._cache,
+    xctf_conn._cache,
+    football_conn._cache,
+    _espn_base._cache,
+)
+
+
+def _clear_caches():
+    for cache in _CACHES:
+        cache.clear()
 
 
 class _FakeResponse:
@@ -74,16 +116,43 @@ def no_sockets(monkeypatch):
 
 
 @pytest.fixture(autouse=True)
-def _isolate(monkeypatch):
+def _isolate(monkeypatch, tmp_path_factory):
     monkeypatch.delenv(_replay.MODE_ENV, raising=False)
     monkeypatch.delenv(_replay.DIR_ENV, raising=False)
-    monkeypatch.setattr(kalshi_conn._RateLimiter, "acquire", lambda _self: None)
-    monkeypatch.setattr(polymarket_conn._RateLimiter, "acquire", lambda _self: None)
-    kalshi_conn._cache.clear()
-    polymarket_conn._cache.clear()
+    # Cricsheet keeps an on-disk cache; never share the user's.
+    monkeypatch.setenv("XDG_CACHE_HOME", str(tmp_path_factory.mktemp("xdg")))
+    _allow_waits(monkeypatch)
+    _clear_caches()
     yield
-    kalshi_conn._cache.clear()
-    polymarket_conn._cache.clear()
+    _clear_caches()
+
+
+_WAITS = (
+    (kalshi_conn._RateLimiter, "acquire"),
+    (polymarket_conn._RateLimiter, "acquire"),
+    (esports_conn._RateLimiter, "acquire"),
+    (metadata_conn._RateLimiter, "acquire"),
+    (prophetx_conn._RateLimiter, "acquire"),
+    (football_conn._RateLimiter, "acquire"),
+    (_espn_base.RateLimiter, "acquire"),
+    (_nevobo, "_throttle"),
+    (xctf_conn, "_throttle"),
+)
+
+
+def _allow_waits(monkeypatch):
+    for owner, name in _WAITS:
+        monkeypatch.setattr(owner, name, lambda *a, **k: None)
+
+
+def _refuse_waits(monkeypatch):
+    """Replay must not wait on a rate limiter or throttle."""
+
+    def refuse(*args, **kwargs):
+        raise AssertionError("rate-limit wait during replay")
+
+    for owner, name in _WAITS:
+        monkeypatch.setattr(owner, name, refuse)
 
 
 def _set_mode(monkeypatch, mode, directory=None):
@@ -94,8 +163,7 @@ def _set_mode(monkeypatch, mode, directory=None):
 
 def _replay_mode(monkeypatch, directory):
     """Switch to replay and drop the in-process caches, as a fresh run would."""
-    kalshi_conn._cache.clear()
-    polymarket_conn._cache.clear()
+    _clear_caches()
     _set_mode(monkeypatch, "replay", directory)
 
 
@@ -673,3 +741,378 @@ def test_frame_fill_serves_recorded_frames_and_records_only_missing(monkeypatch,
         _replay.frame("ns", "loader", {"season": 2025}, lambda: pytest.fail("live")),
         _replay.frame("ns", "loader", {"season": 2024}, lambda: pytest.fail("live")),
     )
+
+
+# ============================================================
+# Long-tail providers (own urllib / feedparser / zip downloads)
+# ============================================================
+
+
+def _rss(*titles):
+    items = "".join(
+        f"<item><title>{t}</title><link>https://example.test/{i}</link>"
+        f"<description>1. Team {t}, wedstr: 14, punten: 40&lt;br /&gt;2. Other, wedstr: 14, punten: 30</description>"
+        f"<pubDate>Mon, 21 Sep 2026 10:00:00 GMT</pubDate></item>"
+        for i, t in enumerate(titles)
+    )
+    return f'<?xml version="1.0"?><rss version="2.0"><channel><title>Feed</title>{items}</channel></rss>'.encode()
+
+
+def _cricsheet_zip():
+    buffer = io.BytesIO()
+    with zipfile.ZipFile(buffer, "w") as zf:
+        for match_id, date in (("1001", "2024-04-01"), ("1002", "2024-04-03")):
+            info = {
+                "dates": [date],
+                "teams": ["Mumbai Indians", "Chennai Super Kings"],
+                "season": "2024",
+                "venue": "Wankhede",
+                "outcome": {"winner": "Mumbai Indians"},
+            }
+            zf.writestr(f"{match_id}.json", json.dumps({"info": info, "innings": []}))
+    return buffer.getvalue()
+
+
+_NEVOBO_ROUTES = {
+    "/competitie/poules": json.dumps(
+        {
+            "hydra:member": [
+                {"@id": "/competitie/poules/nationale-competitie/competitie-eredivisie/nationale-competitie-eh-12"}
+            ]
+        }
+    ).encode(),
+    "/competitie/competities": json.dumps(
+        {"hydra:member": [{"@id": "/competitie/competities/nationale-competitie/competitie-eredivisie"}]}
+    ).encode(),
+    "stand.rss": _rss("Standen"),
+}
+
+_PROPHETX_ROUTES = {
+    "/v1/tournaments/1/events": json.dumps({"data": [{"id": 11, "name": "A v B", "scheduled": "2026-09-23T18:00:00Z"}]}).encode(),
+    "/v1/tournaments/2/events": json.dumps({"data": [{"id": 22, "name": "C v D", "scheduled": "2026-09-23T19:00:00Z"}]}).encode(),
+    "/v1/tournaments": json.dumps(
+        {
+            "data": {
+                "tournaments": [
+                    {"id": 1, "name": "NFL", "sport": {"id": 16, "name": "American Football"}},
+                    {"id": 2, "name": "NCAAF", "sport": {"id": 16, "name": "American Football"}},
+                ]
+            }
+        }
+    ).encode(),
+}
+
+_OPENFOOTBALL = json.dumps(
+    {
+        "matches": [
+            {"date": "2019-08-09", "team1": "Liverpool", "team2": "Norwich", "score": {"ft": [4, 1]}},
+            {"date": "2019-08-10", "team1": "West Ham", "team2": "Man City", "score": {"ft": [0, 5]}},
+        ]
+    }
+).encode()
+
+_FOOTBALL_ROUTES = {"/standings": b"{}", "raw.githubusercontent.com/openfootball": _OPENFOOTBALL}
+
+_TFRRS_PROFILE = (
+    b"<html><h3 class='panel-title'>Jane Hedengren</h3>"
+    b"<table><tr><td>1500</td><td>4:05.12</td></tr></table></html>"
+)
+
+# (id, routes, public call) — each call exercises one provider end to end.
+_LONGTAIL = [
+    (
+        "opendota",
+        {"/proMatches": json.dumps([{"match_id": 1, "radiant_name": "OG", "dire_name": "Liquid"}]).encode()},
+        lambda: esports.get_pro_matches(limit=5),
+    ),
+    (
+        "leaguepedia",
+        {
+            "lol.fandom.com": json.dumps(
+                {"cargoquery": [{"title": {"Name": "LCK 2026", "DateStart": "2026-01-14", "DateStart__precision": "0"}}]}
+            ).encode()
+        },
+        lambda: esports.lol_cargo_query(tables="Tournaments", fields="Name,DateStart", limit=5),
+    ),
+    ("cricsheet", {"ipl_json.zip": _cricsheet_zip()}, lambda: cricket.get_matches(competition="ipl", season=2024)),
+    ("nevobo", _NEVOBO_ROUTES, lambda: volleyball.get_standings(competition_id="nevobo-eredivisie-heren")),
+    (
+        "tfrrs",
+        {"/athletes/": _TFRRS_PROFILE},
+        lambda: xctf.get_athlete_profile(athlete_id="9230145", school="BYU", name="Jane_Hedengren"),
+    ),
+    ("stride", {"blog-feed.xml": _rss("Pre-Nats preview", "Week 3 rankings")}, lambda: xctf.get_news(limit=5)),
+    (
+        "thesportsdb",
+        {"searchteams.php": json.dumps({"teams": [{"idTeam": "133604", "strTeam": "Arsenal"}]}).encode()},
+        lambda: metadata.search_teams(query="Arsenal"),
+    ),
+    ("prophetx", _PROPHETX_ROUTES, lambda: prophetx.get_tournaments(limit=10)),
+    ("openfootball", _FOOTBALL_ROUTES, lambda: football.get_season_standings(season_id="premier-league-2019")),
+    ("google-news", {"news.google.com": _rss("Arsenal win", "Saka injury")}, lambda: news.fetch_feed(query="arsenal")),
+]
+
+_LONGTAIL_IDS = [case[0] for case in _LONGTAIL]
+
+
+def _record_longtail(monkeypatch, tmp_path, routes, call):
+    net = _FakeNetwork(routes)
+    monkeypatch.setattr(urllib.request, "urlopen", net)
+    _set_mode(monkeypatch, "record", tmp_path)
+    recorded = call()
+    assert net.calls
+    return recorded, net
+
+
+def _replay_longtail(monkeypatch, tmp_path, call):
+    monkeypatch.setattr(urllib.request, "urlopen", _no_urlopen)
+    _refuse_waits(monkeypatch)
+    _replay_mode(monkeypatch, tmp_path)
+    return call()
+
+
+@pytest.mark.parametrize(("name", "routes", "call"), _LONGTAIL, ids=_LONGTAIL_IDS)
+def test_longtail_replays_public_call_without_network(monkeypatch, tmp_path, no_sockets, name, routes, call):
+    recorded, net = _record_longtail(monkeypatch, tmp_path, routes, call)
+    assert recorded["status"] is True, recorded
+    assert recorded["data"], recorded
+    assert len(list(tmp_path.rglob("*.json"))) == len(set(net.calls))
+
+    assert _replay_longtail(monkeypatch, tmp_path, call) == recorded
+
+
+@pytest.mark.parametrize(("name", "routes", "call"), _LONGTAIL, ids=_LONGTAIL_IDS)
+def test_longtail_replay_miss_fails_closed(monkeypatch, tmp_path, no_sockets, name, routes, call):
+    result = _replay_longtail(monkeypatch, tmp_path, call)
+
+    assert result["status"] is False and result["replay_miss"] is True, result
+    assert "Replay miss" in result["message"]
+
+
+def test_cricsheet_zip_is_recorded_as_base64_and_skips_the_disk_cache(monkeypatch, tmp_path, no_sockets):
+    """The zip is binary; replay must serve the recording, not a cached download."""
+    call = lambda: cricket.get_matches(competition="ipl")  # noqa: E731
+    recorded, _ = _record_longtail(monkeypatch, tmp_path, {"ipl_json.zip": _cricsheet_zip()}, call)
+    (entry,) = tmp_path.rglob("*.json")
+    assert json.loads(entry.read_text())["body_encoding"] == "base64"
+    # A fresh live-cache copy with different content must not leak into replay.
+    cache = os.path.join(os.environ["XDG_CACHE_HOME"], "sports-skills", "cricsheet", "ipl_json.zip")
+    with zipfile.ZipFile(cache, "w") as zf:
+        zf.writestr("9999.json", json.dumps({"info": {"dates": ["2030-01-01"]}}))
+
+    replayed = _replay_longtail(monkeypatch, tmp_path, call)
+
+    assert replayed == recorded and replayed["data"]["count"] == 2
+
+
+def _drop_entry(directory, url):
+    os.unlink(_replay.entry_path(str(directory), _replay.request_key(url)))
+
+
+def test_prophetx_scan_does_not_skip_a_missing_page(monkeypatch, tmp_path, no_sockets):
+    """Composite scans skip a failing tournament; a replay miss must fail the call,
+    or the answer would silently come back shorter than the recording."""
+    call = lambda: prophetx.get_todays_events()  # noqa: E731
+    recorded, net = _record_longtail(monkeypatch, tmp_path, _PROPHETX_ROUTES, call)
+    assert recorded["status"] is True
+    (missing,) = [url for url in net.calls if "/v1/tournaments/2/events" in url]
+    _drop_entry(tmp_path, missing)
+
+    result = _replay_longtail(monkeypatch, tmp_path, call)
+
+    assert result["status"] is False and result["replay_miss"] is True
+
+
+def test_xctf_meet_does_not_skip_a_missing_compiled_page(monkeypatch, tmp_path, no_sockets):
+    call = lambda: xctf.get_meet_results(meet_id="95890", slug="BU_Dual")  # noqa: E731
+    recorded, net = _record_longtail(monkeypatch, tmp_path, {"/results/": b"<h3 class='panel-title'>BU Dual</h3>"}, call)
+    assert recorded["status"] is True
+    _drop_entry(tmp_path, f"{xctf_conn._BASE}/results/95890/m/BU_Dual")
+
+    result = _replay_longtail(monkeypatch, tmp_path, call)
+
+    assert result["status"] is False and result["replay_miss"] is True
+
+
+def test_openfootball_miss_is_not_reported_as_no_data(monkeypatch, tmp_path, no_sockets):
+    """openfootball is a silent fallback (None = no file); a replay gap must not
+    turn into a "No standings found" answer."""
+    call = lambda: football.get_season_standings(season_id="premier-league-2019")  # noqa: E731
+    _, net = _record_longtail(monkeypatch, tmp_path, _FOOTBALL_ROUTES, call)
+    (of_url,) = [url for url in net.calls if "openfootball" in url]
+    _drop_entry(tmp_path, of_url)
+
+    result = _replay_longtail(monkeypatch, tmp_path, call)
+
+    assert result["status"] is False and result["replay_miss"] is True
+
+
+def test_openfootball_missing_file_replays_as_no_data(monkeypatch, tmp_path, no_sockets):
+    """A 404 is a deterministic answer ("no file for this season") and replays as one."""
+    call = lambda: football.get_season_standings(season_id="premier-league-2019")  # noqa: E731
+    recorded, _ = _record_longtail(monkeypatch, tmp_path, {"/standings": b"{}"}, call)
+    assert recorded["data"]["standings"] == []
+
+    assert _replay_longtail(monkeypatch, tmp_path, call) == recorded
+
+
+def test_nevobo_poule_resolution_miss_fails_closed(monkeypatch, tmp_path, no_sockets):
+    """Poule resolution falls back to a configured path on errors; a replay miss
+    there must surface rather than silently use the fallback."""
+    call = lambda: volleyball.get_standings(competition_id="nevobo-eredivisie-heren")  # noqa: E731
+    _, net = _record_longtail(monkeypatch, tmp_path, _NEVOBO_ROUTES, call)
+    (poules_url,) = [url for url in net.calls if "/competitie/poules" in url and "stand.rss" not in url]
+    _drop_entry(tmp_path, poules_url)
+
+    result = _replay_longtail(monkeypatch, tmp_path, call)
+
+    assert result["status"] is False and result["replay_miss"] is True
+
+
+def test_nevobo_competitions_miss_is_not_a_partial_success(monkeypatch, tmp_path, no_sockets):
+    result = _replay_longtail(monkeypatch, tmp_path, lambda: volleyball.get_competitions())
+
+    assert result["status"] is False and result["replay_miss"] is True
+
+
+@pytest.mark.parametrize(
+    ("routes", "call"),
+    [
+        ({"searchteams.php": 404}, lambda: metadata.search_teams(query="Nope")),
+        ({"/athletes/": 404}, lambda: xctf.get_athlete_profile(athlete_id="1", school="X", name="Y")),
+        ({"/v1/tournaments": 404}, lambda: prophetx.get_tournaments()),
+        ({"/matches/": 404}, lambda: esports.get_match(match_id="1")),
+        ({"ipl_json.zip": 404}, lambda: cricket.get_matches(competition="ipl")),
+        ({"stand.rss": 404, **{k: v for k, v in _NEVOBO_ROUTES.items() if k != "stand.rss"}},
+         lambda: volleyball.get_standings(competition_id="nevobo-eredivisie-heren")),
+        ({"news.google.com": 404}, lambda: news.fetch_feed(query="x")),
+    ],
+    ids=["thesportsdb", "tfrrs", "prophetx", "opendota", "cricsheet", "nevobo-rss", "google-news"],
+)
+def test_longtail_deterministic_error_replays(monkeypatch, tmp_path, no_sockets, routes, call):
+    recorded, _ = _record_longtail(monkeypatch, tmp_path, routes, call)
+    assert recorded["status"] is False
+    assert not recorded.get("replay_miss")
+
+    assert _replay_longtail(monkeypatch, tmp_path, call) == recorded
+
+
+@pytest.mark.parametrize(
+    ("name", "routes", "call"),
+    [case for case in _LONGTAIL if case[0] not in ("nevobo", "stride", "google-news")],
+    ids=[i for i in _LONGTAIL_IDS if i not in ("nevobo", "stride", "google-news")],
+)
+def test_longtail_off_mode_is_live_and_writes_nothing(monkeypatch, tmp_path, name, routes, call):
+    net = _FakeNetwork(routes)
+    monkeypatch.setattr(urllib.request, "urlopen", net)
+    monkeypatch.setenv(_replay.DIR_ENV, str(tmp_path))
+    off = call()
+    assert net.calls
+    assert list(tmp_path.iterdir()) == []
+
+    _clear_caches()
+    _set_mode(monkeypatch, "record", tmp_path)
+    assert call() == off
+
+
+@pytest.mark.parametrize(
+    ("routes", "call", "body"),
+    [
+        (_NEVOBO_ROUTES, lambda: volleyball.get_standings(competition_id="nevobo-eredivisie-heren"), _rss("Standen")),
+        ({}, lambda: xctf.get_news(limit=5), _rss("Pre-Nats preview")),
+        ({}, lambda: news.fetch_feed(query="arsenal"), _rss("Arsenal win")),
+    ],
+    ids=["nevobo", "stride", "google-news"],
+)
+def test_feeds_off_mode_still_lets_feedparser_fetch(monkeypatch, tmp_path, routes, call, body):
+    """Off mode hands feedparser the URL, exactly as before; record parses bytes."""
+    real_parse = feedparser.parse
+    seen = []
+
+    def spy(source, *args, **kwargs):
+        seen.append(source)
+        return real_parse(body if isinstance(source, str) else source, *args, **kwargs)
+
+    monkeypatch.setattr(feedparser, "parse", spy)
+    monkeypatch.setattr(urllib.request, "urlopen", _FakeNetwork(routes))
+    monkeypatch.setenv(_replay.DIR_ENV, str(tmp_path))
+    off = call()
+    assert off["status"] is True, off
+    assert seen and all(isinstance(s, str) and s.startswith("https://") for s in seen)
+    assert list(tmp_path.iterdir()) == []
+
+    _clear_caches()
+    seen.clear()
+    feed_routes = {**routes, "stand.rss": body, "blog-feed.xml": body, "news.google.com": body}
+    monkeypatch.setattr(urllib.request, "urlopen", _FakeNetwork(feed_routes))
+    _set_mode(monkeypatch, "record", tmp_path)
+    assert call() == off
+    assert seen and all(isinstance(s, bytes) for s in seen)
+
+
+def test_news_local_feed_is_not_routed_through_replay(monkeypatch, tmp_path, no_sockets):
+    """A local file is not network; replay mode still reads it directly."""
+    feed_file = tmp_path / "feed.xml"
+    feed_file.write_bytes(_rss("Local item"))
+    _replay_mode(monkeypatch, tmp_path / "replay")
+
+    result = news.fetch_items(url=str(feed_file))
+
+    assert result["status"] is True and result["data"]["items"][0]["title"] == "Local item"
+
+
+def test_metadata_off_mode_error_shape_is_unchanged(monkeypatch, tmp_path):
+    """status_code is added only so _replay can record a 4xx; callers never see it."""
+    monkeypatch.setattr(urllib.request, "urlopen", _FakeNetwork({"searchteams.php": 404}))
+
+    assert metadata_conn._http_fetch(f"{metadata_conn.BASE_URL}/searchteams.php?t=x") == {
+        "error": True,
+        "message": "HTTP 404: err",
+    }
+
+
+def test_leaguepedia_in_body_throttle_is_not_recorded(monkeypatch, tmp_path, no_sockets):
+    """Leaguepedia throttles with HTTP 200 + {"error": {"code": "ratelimited"}}.
+    That is transient: recording it would freeze an outage into the fixture."""
+    throttled = json.dumps({"error": {"code": "ratelimited", "info": "You've exceeded your rate limit."}}).encode()
+    call = lambda: esports.get_lol_tournaments(limit=3)  # noqa: E731
+    recorded, _ = _record_longtail(monkeypatch, tmp_path, {"lol.fandom.com": throttled}, call)
+    assert recorded["status"] is False and "rate limit" in recorded["message"]
+    assert not any(tmp_path.rglob("*.json"))
+
+    result = _replay_longtail(monkeypatch, tmp_path, call)
+
+    assert result["status"] is False and result["replay_miss"] is True
+
+
+def test_leaguepedia_in_body_cargo_error_is_still_recorded(monkeypatch, tmp_path, no_sockets):
+    """A bad-field error is deterministic, so it records and replays like data."""
+    bad_field = json.dumps({"error": {"code": "internal_api_error_MWException", "info": "No field named X"}}).encode()
+    call = lambda: esports.lol_cargo_query(tables="Tournaments", fields="X")  # noqa: E731
+    recorded, _ = _record_longtail(monkeypatch, tmp_path, {"lol.fandom.com": bad_field}, call)
+
+    assert _replay_longtail(monkeypatch, tmp_path, call) == recorded
+
+
+@pytest.mark.parametrize(("name", "routes", "call"), _LONGTAIL, ids=_LONGTAIL_IDS)
+def test_longtail_fill_serves_recorded_without_network(monkeypatch, tmp_path, no_sockets, name, routes, call):
+    recorded, _ = _record_longtail(monkeypatch, tmp_path, routes, call)
+    entries = {p: p.read_bytes() for p in tmp_path.rglob("*.json")}
+
+    monkeypatch.setattr(urllib.request, "urlopen", _no_urlopen)
+    _clear_caches()
+    _set_mode(monkeypatch, "fill", tmp_path)
+
+    assert call() == recorded
+    assert {p: p.read_bytes() for p in tmp_path.rglob("*.json")} == entries
+
+
+def test_leaguepedia_throttle_is_not_recorded_in_fill_mode(monkeypatch, tmp_path, no_sockets):
+    throttled = json.dumps({"error": {"code": "ratelimited", "info": "You've exceeded your rate limit."}}).encode()
+    monkeypatch.setattr(urllib.request, "urlopen", _FakeNetwork({"lol.fandom.com": throttled}))
+    _set_mode(monkeypatch, "fill", tmp_path)
+
+    result = esports.get_lol_tournaments(limit=3)
+
+    assert result["status"] is False and "rate limit" in result["message"]
+    assert not any(tmp_path.rglob("*.json"))

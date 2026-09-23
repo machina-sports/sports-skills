@@ -36,6 +36,8 @@ import urllib.parse
 import urllib.request
 from datetime import datetime, timezone
 
+from sports_skills import _replay
+
 # ============================================================
 # Configuration
 # ============================================================
@@ -200,6 +202,27 @@ def _request(endpoint, params=None, ttl=60):
         if clean:
             url += "?" + urllib.parse.urlencode(clean, doseq=True)
 
+    raw, err = _http_fetch(url)
+    if err is not None:
+        return err
+    try:
+        data = json.loads(raw.decode())
+    except (ValueError, UnicodeDecodeError) as parse_err:
+        return {"error": True, "message": f"Malformed JSON from upstream: {parse_err}"}
+    _cache_set(cache_key, data, ttl=ttl)
+    return data
+
+
+def _http_fetch(url):
+    """Public GET honouring ``SPORTS_SKILLS_REPLAY`` (see ``_replay``).
+
+    Returns (data_bytes, None) or (None, error_dict). In replay mode no network
+    call, rate-limit wait, or retry happens.
+    """
+    return _replay.fetch(url, lambda: _live_http_fetch(url))
+
+
+def _live_http_fetch(url):
     last_error = None
     for attempt in range(_MAX_RETRIES + 1):
         _rate_limiter.acquire()
@@ -209,12 +232,7 @@ def _request(endpoint, params=None, ttl=60):
 
         try:
             with urllib.request.urlopen(req, timeout=30) as resp:
-                try:
-                    data = json.loads(resp.read().decode())
-                except (ValueError, UnicodeDecodeError) as parse_err:
-                    return {"error": True, "message": f"Malformed JSON from upstream: {parse_err}"}
-                _cache_set(cache_key, data, ttl=ttl)
-                return data
+                return resp.read(), None
         except urllib.error.HTTPError as e:
             body = ""
             try:
@@ -232,18 +250,18 @@ def _request(endpoint, params=None, ttl=60):
             if e.code == 403:
                 # WAF/blocked: fail closed immediately, do not hammer.
                 last_error["message"] = f"Access blocked upstream (403). Not retrying. {message}"
-                return last_error
+                return None, last_error
             if e.code not in _RETRYABLE_STATUSES or attempt == _MAX_RETRIES:
-                return last_error
+                return None, last_error
             retry_after = e.headers.get("Retry-After") if e.headers else None
             _backoff(attempt, retry_after)
         except Exception as e:
             last_error = {"error": True, "message": str(e)}
             if attempt == _MAX_RETRIES:
-                return last_error
+                return None, last_error
             _backoff(attempt, None)
 
-    return last_error or {"error": True, "message": "Request failed"}
+    return None, last_error or {"error": True, "message": "Request failed"}
 
 
 def _backoff(attempt, retry_after):
@@ -274,8 +292,19 @@ def _check_error(response):
     if isinstance(response, dict) and response.get("error"):
         code = response.get("status_code", "unknown")
         msg = response.get("message", "Unknown error")
-        return _error(f"API error ({code}): {msg}")
+        error = _error(f"API error ({code}): {msg}")
+        # Keep replay_miss/replay_error visible in the public error shape.
+        for flag in ("replay_miss", "replay_error"):
+            if response.get(flag):
+                error[flag] = True
+        return error
     return None
+
+
+def _is_replay_failure(err):
+    """A replay miss/corruption must fail the whole call: skipping it like a
+    flaky page would return a silently shorter result than the recording."""
+    return bool(err) and bool(err.get("replay_miss") or err.get("replay_error"))
 
 
 def _unwrap(response, key):
@@ -528,7 +557,7 @@ def _fetch_tournaments_paged(max_items, ttl=600):
         response = _request("/v1/tournaments", params=params, ttl=ttl)
         err = _check_error(response)
         if err:
-            if tournaments:
+            if tournaments and not _is_replay_failure(err):
                 return tournaments, cursor, None
             return [], None, err
         page, cursor = _unwrap(response, "tournaments")
@@ -555,7 +584,7 @@ def _fetch_events_paged(tournament_id, max_items, ttl=60):
         response = _request(f"/v1/tournaments/{tournament_id}/events", params=params, ttl=ttl)
         err = _check_error(response)
         if err:
-            if events:
+            if events and not _is_replay_failure(err):
                 return events, None
             return [], err
         page, cursor = _unwrap(response, "events")
@@ -577,6 +606,8 @@ def _fetch_event_markets(event_id, api_version="v1", ttl=30):
     version = "v2" if str(api_version).lower() == "v2" else "v1"
     response = _request(f"/{version}/events/{event_id}/markets", ttl=ttl)
     err = _check_error(response)
+    if _is_replay_failure(err):
+        return None, version, err
     markets = None
     if not err:
         markets, _ = _unwrap(response, "markets")
@@ -855,6 +886,8 @@ def search_markets(request_data):
         first_error = None
         for tournament in tournaments:
             events, err = _fetch_events_paged(tournament["id"], _PAGE_LIMIT)
+            if _is_replay_failure(err):
+                return err
             if err:
                 first_error = first_error or err
                 continue
@@ -886,6 +919,8 @@ def search_markets(request_data):
         markets = []
         for event in selected_events:
             event_markets, used_version, err = _fetch_event_markets(event["id"], api_version)
+            if _is_replay_failure(err):
+                return err
             if err:
                 continue
             for market in event_markets:
@@ -947,6 +982,8 @@ def get_todays_events(request_data):
         scanned = 0
         for tournament in tournaments:
             events, err = _fetch_events_paged(tournament["id"], _PAGE_LIMIT)
+            if _is_replay_failure(err):
+                return err
             if err:
                 first_error = first_error or err
                 continue

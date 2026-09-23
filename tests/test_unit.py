@@ -1439,7 +1439,7 @@ class TestNewsQueryDefaults:
             captured["url"] = url
             return self._fake_feed()
 
-        monkeypatch.setattr("sports_skills.news._connector.feedparser.parse", _fake_parse)
+        monkeypatch.setattr("sports_skills._feeds.feedparser.parse", _fake_parse)
 
         result = fetch_items(query="Corinthians", limit=1)
         assert result["status"] is True
@@ -1456,7 +1456,7 @@ class TestNewsQueryDefaults:
             captured["url"] = url
             return self._fake_feed()
 
-        monkeypatch.setattr("sports_skills.news._connector.feedparser.parse", _fake_parse)
+        monkeypatch.setattr("sports_skills._feeds.feedparser.parse", _fake_parse)
 
         result = fetch_feed(query="NBA")
         assert result["status"] is True
@@ -1812,7 +1812,7 @@ class TestXctfGetNews:
         from sports_skills.xctf._connector import get_news
 
         monkeypatch.setattr(
-            "sports_skills.xctf._connector.feedparser.parse",
+            "sports_skills._feeds.feedparser.parse",
             lambda url: self._fake_feed(),
         )
 
@@ -1840,7 +1840,7 @@ class TestXctfGetNews:
         from sports_skills.xctf._connector import get_news
 
         monkeypatch.setattr(
-            "sports_skills.xctf._connector.feedparser.parse",
+            "sports_skills._feeds.feedparser.parse",
             lambda url: self._fake_feed(entries=entries),
         )
 
@@ -1857,7 +1857,7 @@ class TestXctfGetNews:
         from sports_skills.xctf._connector import get_news
 
         monkeypatch.setattr(
-            "sports_skills.xctf._connector.feedparser.parse",
+            "sports_skills._feeds.feedparser.parse",
             lambda url: _BrokenFeed(),
         )
 
@@ -1880,7 +1880,7 @@ class TestXctfGetNews:
         from sports_skills.xctf._connector import get_news
 
         monkeypatch.setattr(
-            "sports_skills.xctf._connector.feedparser.parse",
+            "sports_skills._feeds.feedparser.parse",
             lambda url: self._fake_feed(entries=entries),
         )
 
