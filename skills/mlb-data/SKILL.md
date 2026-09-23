@@ -68,6 +68,7 @@ Derive the active season from the system prompt's date — not just the calendar
 | `get_schedule` | Schedule for a specific date or season |
 | `get_injuries` | Injury reports across all teams |
 | `get_transactions` | Recent transactions |
+| `get_futures` | Futures/odds markets |
 | `get_depth_chart` | Depth chart for a team |
 | `get_team_stats` | Team statistical profile |
 | `get_player_stats` | Player statistical profile |
@@ -144,6 +145,12 @@ Actions:
 1. Derive season year from `currentDate`
 2. Call `get_player_stats(player_id="39832", season_year=<derived_year>)`
 Result: Season stats by category (batting, pitching) with value, rank, and per-game averages
+
+Example 7: World Series odds
+User says: "Who's favored to win the World Series?"
+Actions:
+1. Call `get_futures(limit=10)`
+Result: Top World Series contenders with odds values
 
 ## Commands that DO NOT exist — never call these
 
