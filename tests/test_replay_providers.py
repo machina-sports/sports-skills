@@ -1105,3 +1105,14 @@ def test_longtail_fill_serves_recorded_without_network(monkeypatch, tmp_path, no
 
     assert call() == recorded
     assert {p: p.read_bytes() for p in tmp_path.rglob("*.json")} == entries
+
+
+def test_leaguepedia_throttle_is_not_recorded_in_fill_mode(monkeypatch, tmp_path, no_sockets):
+    throttled = json.dumps({"error": {"code": "ratelimited", "info": "You've exceeded your rate limit."}}).encode()
+    monkeypatch.setattr(urllib.request, "urlopen", _FakeNetwork({"lol.fandom.com": throttled}))
+    _set_mode(monkeypatch, "fill", tmp_path)
+
+    result = esports.get_lol_tournaments(limit=3)
+
+    assert result["status"] is False and "rate limit" in result["message"]
+    assert not any(tmp_path.rglob("*.json"))
