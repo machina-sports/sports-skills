@@ -52,7 +52,8 @@ cbb = []
 golf = []
 polymarket = ["py-clob-client-v2>=1.0.1"]
 all = ["fastf1>=3.0", "pandas>=2.0", "nflreadpy>=0.1; python_version >= '3.10'", "pyarrow>=14; python_version >= '3.10'", "nfl-data-py>=0.3; python_version < '3.10'", "py-clob-client-v2>=1.0.1"]
-dev = ["ruff>=0.9", "pytest>=8.0", "fastf1>=3.0", "pandas>=2.0"]
+# pyarrow: record/replay stores library-loaded frames (nflverse, FastF1) as Parquet.
+dev = ["ruff>=0.9", "pytest>=8.0", "fastf1>=3.0", "pandas>=2.0", "pyarrow>=14"]
 site = ["jinja2>=3.1", "pyyaml>=6.0"]
 
 [project.scripts]
