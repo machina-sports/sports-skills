@@ -1,4 +1,4 @@
-"""Record/replay for upstream HTTP fetches.
+"""Record/replay for upstream HTTP fetches and library-loaded data frames.
 
 Lets a run be recorded once against live sources and replayed later with zero
 network access, so evaluations and bug reports are reproducible.
@@ -26,6 +26,12 @@ Transient failures (5xx, 429, timeouts, connection errors) are never recorded:
 freezing a flaky failure into a fixture would make it look like real data. A
 replay of such a request is a miss, which surfaces the gap instead of hiding it.
 
+Providers read through a library rather than ``_http_fetch`` (nflverse, FastF1)
+are recorded one level up, at the connector's loader: ``frame`` stores the
+returned DataFrame as Parquet next to a JSON sidecar holding its SHA-256, keyed
+by (namespace, loader, args). A loader that raises is not recorded. Parquet needs
+pandas and pyarrow; without them ``record``/``replay`` of a frame is an error.
+
 Recorded payloads come from third-party sources and remain subject to their
 terms of use. Check those terms before sharing or publishing a replay directory.
 """
@@ -35,6 +41,7 @@ from __future__ import annotations
 import base64
 import datetime
 import hashlib
+import io
 import json
 import logging
 import os
@@ -54,6 +61,7 @@ REPLAY = "replay"
 _MODES = (OFF, RECORD, REPLAY)
 
 ENTRY_SCHEMA_VERSION = 1
+FRAME_SCHEMA_VERSION = 1
 
 _NON_RECORDABLE_CODES = {429}
 
@@ -118,11 +126,20 @@ def _decode_body(entry):
 
 def _write_entry(directory, key, entry):
     path = entry_path(directory, key)
+    _atomic_write(
+        path,
+        lambda handle: handle.write(
+            json.dumps(entry, ensure_ascii=False, indent=1, sort_keys=True).encode("utf-8")
+        ),
+    )
+
+
+def _atomic_write(path, write):
     os.makedirs(os.path.dirname(path), exist_ok=True)
     fd, tmp_path = tempfile.mkstemp(dir=os.path.dirname(path), suffix=".tmp")
     try:
-        with os.fdopen(fd, "w", encoding="utf-8") as handle:
-            json.dump(entry, handle, ensure_ascii=False, indent=1, sort_keys=True)
+        with os.fdopen(fd, "wb") as handle:
+            write(handle)
         os.replace(tmp_path, path)
     except Exception:
         try:
@@ -233,3 +250,164 @@ def fetch(url, live_fetch):
     raw, err = live_fetch()
     _record(directory, url, raw, err)
     return raw, err
+
+
+# ============================================================
+# Library-loaded frames (nflverse, FastF1)
+# ============================================================
+
+
+class ReplayFailure(Exception):
+    """A frame could not be served under the active mode.
+
+    ``error`` is the same error dict ``fetch`` returns (``replay_miss`` or
+    ``replay_error``), so connectors can hand it back in their normal shape.
+    """
+
+    def __init__(self, error):
+        super().__init__(error["message"])
+        self.error = error
+
+
+def frame_key(namespace, loader, args):
+    canonical = json.dumps(
+        {"namespace": namespace, "loader": loader, "args": args},
+        sort_keys=True,
+        separators=(",", ":"),
+    )
+    return hashlib.sha256(canonical.encode("utf-8")).hexdigest()
+
+
+def frame_paths(directory, key):
+    """``(parquet_path, sidecar_path)`` for a frame entry."""
+    base = os.path.join(directory, key[:2], key)
+    return f"{base}.parquet", f"{base}.json"
+
+
+def _frame_error(message):
+    return ReplayFailure({"error": True, "replay_error": True, "message": message})
+
+
+def _require_parquet():
+    try:
+        import pandas
+        import pyarrow  # noqa: F401
+    except ImportError as exc:
+        raise _frame_error(
+            f"{MODE_ENV}={mode()} of library-loaded data stores Parquet and needs "
+            f"{exc.name or 'pyarrow'}, which this environment does not have. "
+            "Install with: pip install pandas pyarrow"
+        ) from None
+    return pandas
+
+
+def _describe(namespace, loader, args):
+    return f"{namespace}.{loader}({json.dumps(args, sort_keys=True)})"
+
+
+def _record_frame(pandas, directory, namespace, loader, args, df, provider):
+    try:
+        buffer = io.BytesIO()
+        pandas.DataFrame(df).to_parquet(buffer, engine="pyarrow")
+        raw = buffer.getvalue()
+        restored = pandas.read_parquet(io.BytesIO(raw), engine="pyarrow")
+    except Exception as exc:  # noqa: BLE001 — recording is best-effort, like HTTP
+        logger.warning("Could not store %s as Parquet: %s", _describe(namespace, loader, args), exc)
+        return
+    # Parquet cannot hold every pandas value exactly (e.g. an object column of
+    # timestamps in mixed time zones). Name those columns instead of hiding it.
+    inexact = [str(col) for col in df.columns if col not in restored.columns or not df[col].equals(restored[col])]
+    if not df.index.equals(restored.index):
+        inexact.append("<index>")
+    if inexact:
+        logger.warning("%s: columns not stored exactly: %s", _describe(namespace, loader, args), inexact)
+    provider_version = None
+    if provider:
+        try:
+            provider_version = _pkg_version(provider)
+        except PackageNotFoundError:
+            pass
+    sidecar = {
+        "schema_version": FRAME_SCHEMA_VERSION,
+        "namespace": namespace,
+        "loader": loader,
+        "args": args,
+        "recorded_at": datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
+        "sports_skills_version": _package_version(),
+        "provider": provider,
+        "provider_version": provider_version,
+        "rows": int(len(df)),
+        "columns": int(len(df.columns)),
+        "inexact_columns": inexact,
+        "parquet_sha256": hashlib.sha256(raw).hexdigest(),
+    }
+    parquet_path, sidecar_path = frame_paths(directory, frame_key(namespace, loader, args))
+    try:
+        # Parquet first: a sidecar only ever points at a complete file.
+        _atomic_write(parquet_path, lambda handle: handle.write(raw))
+        _atomic_write(
+            sidecar_path,
+            lambda handle: handle.write(json.dumps(sidecar, indent=1, sort_keys=True).encode("utf-8")),
+        )
+    except OSError as exc:
+        logger.warning("Could not record %s to %s: %s", _describe(namespace, loader, args), directory, exc)
+
+
+def _replay_frame(pandas, directory, namespace, loader, args):
+    parquet_path, sidecar_path = frame_paths(directory, frame_key(namespace, loader, args))
+    try:
+        with open(sidecar_path, encoding="utf-8") as handle:
+            sidecar = json.load(handle)
+    except FileNotFoundError:
+        raise ReplayFailure(
+            {
+                "error": True,
+                "replay_miss": True,
+                "message": (
+                    f"Replay miss: no recorded data for {_describe(namespace, loader, args)}. "
+                    f"Record it with {MODE_ENV}=record, or run with {MODE_ENV}=off."
+                ),
+            }
+        ) from None
+    except (OSError, ValueError) as exc:
+        raise _frame_error(f"Unreadable replay entry {sidecar_path}: {exc}") from None
+    try:
+        with open(parquet_path, "rb") as handle:
+            raw = handle.read()
+    except OSError as exc:
+        raise _frame_error(f"Unreadable replay entry {parquet_path}: {exc}") from None
+    if hashlib.sha256(raw).hexdigest() != sidecar.get("parquet_sha256"):
+        raise _frame_error(f"Replay entry {parquet_path} failed its integrity check")
+    try:
+        return pandas.read_parquet(io.BytesIO(raw), engine="pyarrow")
+    except Exception as exc:  # noqa: BLE001 — any decode failure is a corrupt entry
+        raise _frame_error(f"Corrupt replay entry {parquet_path}: {exc}") from None
+
+
+def frame(namespace, loader, args, live_load, provider=None):
+    """Serve a loader's DataFrame according to the active replay mode.
+
+    ``live_load`` is a zero-argument callable returning a pandas DataFrame; it is
+    never called in replay mode. ``args`` (JSON-serializable) identify the call
+    within ``namespace``/``loader``. ``provider`` names the installed library the
+    data came from, for the sidecar only. Off and record modes return the live
+    frame unchanged; replay returns a plain ``pandas.DataFrame``. Raises
+    ``ReplayFailure`` on a miss, a corrupt entry, or a configuration problem.
+    """
+    active = mode()
+    if active is None:
+        raise _frame_error(f"Invalid {MODE_ENV} value {os.environ.get(MODE_ENV)!r}; use one of: {', '.join(_MODES)}.")
+    if active == OFF:
+        return live_load()
+
+    directory = replay_dir()
+    if not directory:
+        raise _frame_error(f"{MODE_ENV}={active} requires {DIR_ENV} to be set.")
+    pandas = _require_parquet()
+
+    if active == REPLAY:
+        return _replay_frame(pandas, directory, namespace, loader, args)
+
+    df = live_load()
+    _record_frame(pandas, directory, namespace, loader, args, df, provider)
+    return df

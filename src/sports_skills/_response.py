@@ -38,6 +38,9 @@ def wrap(result):
         wrapped = error(result.get("message", "Unknown error"))
         if "status_code" in result:
             wrapped["status_code"] = result["status_code"]
+        for flag in ("replay_miss", "replay_error"):
+            if result.get(flag):
+                wrapped[flag] = True
         if _premium.UPGRADE_MARKER in result:
             wrapped[_premium.UPGRADE_MARKER] = result[_premium.UPGRADE_MARKER]
         return _premium.attach(wrapped)

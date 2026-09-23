@@ -8,10 +8,13 @@ compatibility. Returns plain normalized dicts that are wrapped by
 from __future__ import annotations
 
 import functools
+import inspect
 import logging
 from collections.abc import Mapping, Sequence
 from datetime import datetime
 from typing import Any
+
+from sports_skills import _replay
 
 logger = logging.getLogger("sports_skills.nfl._nflverse")
 
@@ -146,6 +149,8 @@ def _guard(fn):
     def wrapper(request_data: dict[str, Any]) -> dict[str, Any]:
         try:
             return fn(request_data)
+        except _replay.ReplayFailure as exc:
+            return dict(exc.error)
         except _NflverseUnavailable as exc:
             return {"error": True, "message": str(exc)}
         except ImportError as exc:
@@ -239,18 +244,46 @@ def _load_provider():
         ) from exc
 
 
+def _replayable(loader):
+    """Route a ``_load_*`` loader through ``SPORTS_SKILLS_REPLAY``.
+
+    The frame is keyed by the loader and its data arguments (season, summary
+    level), not by the backend, so a recording made with nflreadpy replays on a
+    Python that only has nfl_data_py. The backend is noted in the sidecar.
+    """
+    signature = inspect.signature(loader)
+    name = loader.__name__[len("_load_"):]
+
+    @functools.wraps(loader)
+    def wrapper(provider_name: str, provider: Any, *args: Any):
+        bound = signature.bind(provider_name, provider, *args)
+        key_args = {k: v for k, v in bound.arguments.items() if k not in ("provider_name", "provider")}
+        return _replay.frame(
+            "nflverse",
+            name,
+            key_args,
+            lambda: loader(provider_name, provider, *args),
+            provider=provider_name,
+        )
+
+    return wrapper
+
+
+@_replayable
 def _load_schedules(provider_name: str, provider: Any, season: int):
     if provider_name == "nflreadpy":
         return _coerce_frame(provider.load_schedules([season]))
     return _coerce_frame(provider.import_schedules([season]))
 
 
+@_replayable
 def _load_weekly_rosters(provider_name: str, provider: Any, season: int):
     if provider_name == "nflreadpy":
         return _coerce_frame(provider.load_rosters_weekly([season]))
     return _coerce_frame(provider.import_weekly_rosters([season]))
 
 
+@_replayable
 def _load_player_stats(provider_name: str, provider: Any, season: int, summary_level: str):
     if provider_name == "nflreadpy":
         try:
@@ -274,6 +307,7 @@ def _load_player_stats(provider_name: str, provider: Any, season: int, summary_l
     return df
 
 
+@_replayable
 def _load_team_stats(provider_name: str, provider: Any, season: int, summary_level: str):
     if provider_name == "nflreadpy":
         try:
@@ -290,6 +324,7 @@ def _load_team_stats(provider_name: str, provider: Any, season: int, summary_lev
     )
 
 
+@_replayable
 def _load_pbp(provider_name: str, provider: Any, season: int):
     if provider_name == "nflreadpy":
         return _coerce_frame(provider.load_pbp([season]))

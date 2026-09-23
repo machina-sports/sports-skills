@@ -13,6 +13,7 @@ import urllib.error
 import urllib.parse
 import urllib.request
 
+from sports_skills import _replay
 from sports_skills._espn_base import _summarize_http_error
 
 # ============================================================
@@ -94,31 +95,50 @@ def _request(endpoint, params=None, ttl=120):
     if cached is not None:
         return cached
 
-    _rate_limiter.acquire()
     url = f"{BASE_URL}{endpoint}"
     if params:
         clean = {k: v for k, v in params.items() if v is not None and v != ""}
         if clean:
             url += "?" + urllib.parse.urlencode(clean, doseq=True)
 
+    raw, err = _http_fetch(url)
+    if err is not None:
+        return err
+    try:
+        data = json.loads(raw.decode())
+    except Exception as e:
+        return {"error": True, "message": str(e)}
+    _cache_set(cache_key, data, ttl=ttl)
+    return data
+
+
+def _http_fetch(url):
+    """GET honouring ``SPORTS_SKILLS_REPLAY`` (see ``_replay``).
+
+    Returns (data_bytes, None) or (None, error_dict). In replay mode no network
+    call or rate-limit wait happens.
+    """
+    return _replay.fetch(url, lambda: _live_http_fetch(url))
+
+
+def _live_http_fetch(url):
+    _rate_limiter.acquire()
     req = urllib.request.Request(url)
     req.add_header("User-Agent", _USER_AGENT)
     req.add_header("Accept", "application/json")
 
     try:
         with urllib.request.urlopen(req, timeout=30) as resp:
-            data = json.loads(resp.read().decode())
-            _cache_set(cache_key, data, ttl=ttl)
-            return data
+            return resp.read(), None
     except urllib.error.HTTPError as e:
         body = e.read().decode() if e.fp else ""
-        return {
+        return None, {
             "error": True,
             "status_code": e.code,
             "message": _summarize_http_error(e.code, url, body),
         }
     except Exception as e:
-        return {"error": True, "message": str(e)}
+        return None, {"error": True, "message": str(e)}
 
 
 # ============================================================
@@ -142,7 +162,12 @@ def _check_error(response):
         if not msg.startswith("HTTP "):
             code = response.get("status_code", "unknown")
             msg = f"API error ({code}): {msg}"
-        return _error(msg)
+        error = _error(msg)
+        # Keep replay_miss/replay_error visible in the public error shape.
+        for flag in ("replay_miss", "replay_error"):
+            if response.get(flag):
+                error[flag] = True
+        return error
     return None
 
 

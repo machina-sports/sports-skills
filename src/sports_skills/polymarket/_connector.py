@@ -6,6 +6,8 @@ import urllib.error
 import urllib.parse
 import urllib.request
 
+from sports_skills import _replay
+
 # ============================================================
 # Configuration
 # ============================================================
@@ -101,27 +103,13 @@ def _gamma_request(endpoint, params=None, ttl=120):
     if cached is not None:
         return cached
 
-    _gamma_rate_limiter.acquire()
     url = f"{GAMMA_BASE_URL}{endpoint}"
     if params:
         clean_params = {k: v for k, v in params.items() if v is not None and v != ""}
         if clean_params:
             url += "?" + urllib.parse.urlencode(clean_params, doseq=True)
 
-    req = urllib.request.Request(url)
-    req.add_header("User-Agent", _USER_AGENT)
-    req.add_header("Accept", "application/json")
-
-    try:
-        with urllib.request.urlopen(req, timeout=30) as resp:
-            data = json.loads(resp.read().decode())
-            _cache_set(cache_key, data, ttl=ttl)
-            return data
-    except urllib.error.HTTPError as e:
-        body = e.read().decode() if e.fp else ""
-        return {"error": True, "status_code": e.code, "message": body}
-    except Exception as e:
-        return {"error": True, "message": str(e)}
+    return _get_json(url, _gamma_rate_limiter, cache_key, ttl)
 
 
 def _clob_request(endpoint, params=None, ttl=30):
@@ -131,27 +119,51 @@ def _clob_request(endpoint, params=None, ttl=30):
     if cached is not None:
         return cached
 
-    _clob_rate_limiter.acquire()
     url = f"{CLOB_BASE_URL}{endpoint}"
     if params:
         clean_params = {k: v for k, v in params.items() if v is not None and v != ""}
         if clean_params:
             url += "?" + urllib.parse.urlencode(clean_params, doseq=True)
 
+    return _get_json(url, _clob_rate_limiter, cache_key, ttl)
+
+
+def _get_json(url, rate_limiter, cache_key, ttl):
+    raw, err = _http_fetch(url, rate_limiter)
+    if err is not None:
+        return err
+    try:
+        data = json.loads(raw.decode())
+    except Exception as e:
+        return {"error": True, "message": str(e)}
+    _cache_set(cache_key, data, ttl=ttl)
+    return data
+
+
+def _http_fetch(url, rate_limiter):
+    """Public GET honouring ``SPORTS_SKILLS_REPLAY`` (see ``_replay``).
+
+    Returns (data_bytes, None) or (None, error_dict). In replay mode no network
+    call or rate-limit wait happens. Authenticated trading calls go through
+    ``_cli`` / py_clob_client_v2 and are never recorded or replayed.
+    """
+    return _replay.fetch(url, lambda: _live_http_fetch(url, rate_limiter))
+
+
+def _live_http_fetch(url, rate_limiter):
+    rate_limiter.acquire()
     req = urllib.request.Request(url)
     req.add_header("User-Agent", _USER_AGENT)
     req.add_header("Accept", "application/json")
 
     try:
         with urllib.request.urlopen(req, timeout=30) as resp:
-            data = json.loads(resp.read().decode())
-            _cache_set(cache_key, data, ttl=ttl)
-            return data
+            return resp.read(), None
     except urllib.error.HTTPError as e:
         body = e.read().decode() if e.fp else ""
-        return {"error": True, "status_code": e.code, "message": body}
+        return None, {"error": True, "status_code": e.code, "message": body}
     except Exception as e:
-        return {"error": True, "message": str(e)}
+        return None, {"error": True, "message": str(e)}
 
 
 # ============================================================
@@ -172,7 +184,12 @@ def _check_error(response):
     if isinstance(response, dict) and response.get("error"):
         code = response.get("status_code", "unknown")
         msg = response.get("message", "Unknown error")
-        return _error(f"API error ({code}): {msg}")
+        error = _error(f"API error ({code}): {msg}")
+        # Keep replay_miss/replay_error visible in the public error shape.
+        for flag in ("replay_miss", "replay_error"):
+            if response.get(flag):
+                error[flag] = True
+        return error
     return None
 
 
