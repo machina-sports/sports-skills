@@ -23,6 +23,8 @@ import urllib.request
 from importlib.metadata import PackageNotFoundError
 from importlib.metadata import version as _pkg_version
 
+from sports_skills import _replay
+
 logger = logging.getLogger("sports_skills._espn_base")
 
 
@@ -210,6 +212,34 @@ def _is_retryable(exc):
 
 
 def _http_fetch(
+    url,
+    headers=None,
+    rate_limiter=None,
+    timeout=30,
+    max_retries=_MAX_RETRIES,
+    decode_gzip=False,
+    ssl_context=None,
+):
+    """HTTP fetch honouring ``SPORTS_SKILLS_REPLAY`` (see ``_replay``).
+
+    Returns (data_bytes, None) on success or (None, error_dict) on failure.
+    In replay mode no network call, rate-limit wait, or retry happens.
+    """
+    return _replay.fetch(
+        url,
+        lambda: _live_http_fetch(
+            url,
+            headers=headers,
+            rate_limiter=rate_limiter,
+            timeout=timeout,
+            max_retries=max_retries,
+            decode_gzip=decode_gzip,
+            ssl_context=ssl_context,
+        ),
+    )
+
+
+def _live_http_fetch(
     url,
     headers=None,
     rate_limiter=None,

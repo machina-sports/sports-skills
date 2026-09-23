@@ -7,6 +7,7 @@
 - **football: `get_player_season_stats` accepts the sports-skills league slug** (`serie-a-brazil` → `bra.1`) like every other command, instead of requiring ESPN's code.
 
 ### Added
+- **Record/replay for reproducible runs.** `SPORTS_SKILLS_REPLAY=record` saves every upstream response to `SPORTS_SKILLS_REPLAY_DIR`; `SPORTS_SKILLS_REPLAY=replay` serves only from that directory with no network, rate-limit wait, or retry, and returns a `replay_miss` error for anything never recorded. Successful bodies are stored byte-for-byte with a SHA-256 integrity check; deterministic 4xx errors are recorded so fallbacks (e.g. the ESPN mirror host) replay exactly; transient failures (5xx, 429, timeouts) are never recorded. Covers every request made through the shared ESPN `_http_fetch` and the football `_http_fetch` (ESPN soccer, Understat, FPL, Transfermarkt). Default `off` leaves behaviour unchanged.
 - **football: richer team statistics** from the same boxscore: `interceptions`, `clearances`, `clearances_effective`, `tackles_effective`, `tackle_pct`, `crosses_accurate`, `long_balls_total`, `long_balls_accurate`, `pass_pct`, `shot_pct`, `penalty_kick_shots`, `penalty_kick_goals`; `shots_off_target` is derived when ESPN omits it.
 - **docs:** `get_team_profile` documents the squad it already returned; timeline event types and the gamelog window are documented.
 
