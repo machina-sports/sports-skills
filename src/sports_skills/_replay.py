@@ -10,6 +10,10 @@ Controlled by two environment variables, read on every call:
     ``record`` — fetch live, then save each response to the replay directory.
     ``replay`` — serve responses only from the replay directory. A request that
     was never recorded returns an error instead of touching the network.
+    ``fill`` — serve a response from the directory when it is recorded, and
+    otherwise fetch live and record it. Existing entries are never rewritten, so
+    a corpus can grow (e.g. with the calls an agent makes) without its recorded
+    data drifting.
 
 ``SPORTS_SKILLS_REPLAY_DIR``
     Directory holding recorded responses. Required for ``record`` and
@@ -58,7 +62,8 @@ DIR_ENV = "SPORTS_SKILLS_REPLAY_DIR"
 OFF = "off"
 RECORD = "record"
 REPLAY = "replay"
-_MODES = (OFF, RECORD, REPLAY)
+FILL = "fill"
+_MODES = (OFF, RECORD, REPLAY, FILL)
 
 ENTRY_SCHEMA_VERSION = 1
 FRAME_SCHEMA_VERSION = 1
@@ -244,7 +249,7 @@ def fetch(url, live_fetch):
     if not directory:
         return _config_error(f"{MODE_ENV}={active} requires {DIR_ENV} to be set.")
 
-    if active == REPLAY:
+    if active == REPLAY or (active == FILL and os.path.exists(entry_path(directory, request_key(url)))):
         return _replay(directory, url)
 
     raw, err = live_fetch()
@@ -405,7 +410,7 @@ def frame(namespace, loader, args, live_load, provider=None):
         raise _frame_error(f"{MODE_ENV}={active} requires {DIR_ENV} to be set.")
     pandas = _require_parquet()
 
-    if active == REPLAY:
+    if active == REPLAY or (active == FILL and os.path.exists(frame_paths(directory, frame_key(namespace, loader, args))[0])):
         return _replay_frame(pandas, directory, namespace, loader, args)
 
     df = live_load()
