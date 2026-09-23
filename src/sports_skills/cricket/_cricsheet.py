@@ -12,9 +12,11 @@ import json
 import logging
 import os
 import time
+import urllib.error
 import urllib.request
 import zipfile
 
+from sports_skills import _replay
 from sports_skills._espn_base import _USER_AGENT
 
 logger = logging.getLogger("sports_skills.cricket")
@@ -69,15 +71,49 @@ def _cache_dir():
     return path
 
 
-def _download(url, dest):
-    """Download url to dest atomically (write to .tmp, then rename)."""
+def _download_bytes(url):
     req = urllib.request.Request(url, headers={"User-Agent": _USER_AGENT})
     with urllib.request.urlopen(req, timeout=120) as resp:
-        data = resp.read()
+        return resp.read()
+
+
+def _write_file(dest, data):
+    """Write data to dest atomically (write to .tmp, then rename)."""
     tmp = dest + ".tmp"
     with open(tmp, "wb") as f:
         f.write(data)
     os.replace(tmp, dest)
+
+
+def _download(url, dest):
+    """Download url to dest atomically."""
+    _write_file(dest, _download_bytes(url))
+
+
+def _live_fetch(url):
+    """Download url for ``_replay.fetch``: (data_bytes, None) or (None, error_dict)."""
+    try:
+        return _download_bytes(url), None
+    except urllib.error.HTTPError as e:
+        return None, {"error": True, "status_code": e.code, "message": f"Cricsheet download failed: {e}"}
+    except Exception as e:  # noqa: BLE001 — any failure is an error result
+        return None, {"error": True, "message": f"Cricsheet download failed: {e}"}
+
+
+def _fetch_replayable(url, filename):
+    """``_fetch_file`` under ``SPORTS_SKILLS_REPLAY=record|replay``.
+
+    The on-disk TTL cache and stale fallback are bypassed so every call is
+    recorded (record) or served only from the replay directory (replay). The
+    bytes go to a separate ``.replay`` file so the live cache is never
+    overwritten with replayed data.
+    """
+    raw, err = _replay.fetch(url, lambda: _live_fetch(url))
+    if err is not None:
+        return None, False, err
+    path = os.path.join(_cache_dir(), filename + ".replay")
+    _write_file(path, raw)
+    return path, False, None
 
 
 def _fetch_file(url, filename, ttl):
@@ -86,6 +122,8 @@ def _fetch_file(url, filename, ttl):
     Returns (path, stale, error): on download failure with a stale copy
     present, serves the stale copy with stale=True instead of erroring.
     """
+    if _replay.mode() != _replay.OFF:
+        return _fetch_replayable(url, filename)
     path = os.path.join(_cache_dir(), filename)
     if os.path.exists(path) and (time.time() - os.path.getmtime(path)) < ttl:
         return path, False, None

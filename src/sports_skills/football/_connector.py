@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import csv
+import functools
 import gzip
 import io
 import json
@@ -942,15 +943,47 @@ def _openfootball_fetch(slug, year):
     cached = _cache_get(cache_key)
     if cached is not None:
         return cached if cached else None
+    raw, err = _replay.fetch(url, lambda: _live_openfootball_fetch(url))
+    if err is not None:
+        if err.get("replay_miss") or err.get("replay_error"):
+            # Callers treat None as "no openfootball file" and answer anyway;
+            # a replay gap must fail the command instead (_replay_fails_closed).
+            raise _replay.ReplayFailure(err)
+        _cache_set(cache_key, "", ttl=300)
+        return None
     try:
-        req = urllib.request.Request(url, headers={"User-Agent": "sports-skills/0.2"})
-        with urllib.request.urlopen(req, timeout=10) as resp:
-            data = json.loads(resp.read().decode("utf-8"))
-        _cache_set(cache_key, data, ttl=3600)
-        return data
+        data = json.loads(raw.decode("utf-8"))
     except Exception:
         _cache_set(cache_key, "", ttl=300)
         return None
+    _cache_set(cache_key, data, ttl=3600)
+    return data
+
+
+def _live_openfootball_fetch(url):
+    """Live GET for ``_replay.fetch``: (data_bytes, None) or (None, error_dict)."""
+    try:
+        req = urllib.request.Request(url, headers={"User-Agent": "sports-skills/0.2"})
+        with urllib.request.urlopen(req, timeout=10) as resp:
+            return resp.read(), None
+    except urllib.error.HTTPError as e:
+        return None, {"error": True, "status_code": e.code, "message": f"HTTP {e.code}"}
+    except Exception as e:
+        return None, {"error": True, "message": str(e)}
+
+
+def _replay_fails_closed(fn):
+    """Return a replay miss/corruption raised by ``_openfootball_fetch`` as the
+    command's error instead of letting it escape."""
+
+    @functools.wraps(fn)
+    def wrapper(request_data):
+        try:
+            return fn(request_data)
+        except _replay.ReplayFailure as exc:
+            return exc.error
+
+    return wrapper
 
 
 
@@ -2477,6 +2510,7 @@ def get_competition_seasons(request_data):
     return {"competition": comp_info, "seasons": seasons}
 
 
+@_replay_fails_closed
 def get_season_schedule(request_data):
     """Get full season match schedule."""
     params = request_data.get("params", {})
@@ -2559,6 +2593,7 @@ def get_season_schedule(request_data):
     }
 
 
+@_replay_fails_closed
 def get_season_standings(request_data):
     """Get season standings."""
     params = request_data.get("params", {})
@@ -2625,6 +2660,7 @@ def get_season_leaders(request_data):
     }
 
 
+@_replay_fails_closed
 def get_season_teams(request_data):
     """Get teams in a season."""
     params = request_data.get("params", {})
@@ -2664,6 +2700,7 @@ def get_season_teams(request_data):
     return {"teams": []}
 
 
+@_replay_fails_closed
 def search_team(request_data):
     """Search for a team by name across all leagues (or a specific one)."""
     params = request_data.get("params", {})
@@ -2704,6 +2741,8 @@ def search_team(request_data):
                 }
             }
         )
+        if teams_data.get("replay_miss") or teams_data.get("replay_error"):
+            return teams_data
         for team in teams_data.get("teams", []):
             team_name = team.get("name", "")
             if _teams_match(query, team_name):
@@ -2781,6 +2820,7 @@ def get_team_profile(request_data):
     return result
 
 
+@_replay_fails_closed
 def get_daily_schedule(request_data):
     """Get all matches for a specific date across all leagues."""
     params = request_data.get("params", {})

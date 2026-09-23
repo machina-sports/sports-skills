@@ -6,6 +6,7 @@ No API keys required. Zero config.
 
 from __future__ import annotations
 
+from sports_skills import _replay
 from sports_skills._response import error, wrap
 from sports_skills.volleyball import _nevobo
 
@@ -129,6 +130,8 @@ def get_competitions() -> dict:
     ]
 
     api_comps = _nevobo.get_competitions()
+    if isinstance(api_comps, dict) and (api_comps.get("replay_miss") or api_comps.get("replay_error")):
+        return wrap(api_comps)
     if isinstance(api_comps, dict) and api_comps.get("error"):
         return wrap({
             "configured_leagues": configured,
@@ -151,7 +154,11 @@ def get_standings(*, competition_id: str) -> dict:
     league, err = _get_league(competition_id)
     if err:
         return err
-    result = _nevobo.get_poule_standings(_poule_path(league))
+    try:
+        poule_path = _poule_path(league)
+    except _replay.ReplayFailure as exc:
+        return wrap(exc.error)
+    result = _nevobo.get_poule_standings(poule_path)
     if isinstance(result, dict) and result.get("error"):
         return wrap(result)
     result["competition_id"] = competition_id
@@ -168,7 +175,11 @@ def get_schedule(*, competition_id: str) -> dict:
     league, err = _get_league(competition_id)
     if err:
         return err
-    result = _nevobo.get_poule_schedule(_poule_path(league))
+    try:
+        poule_path = _poule_path(league)
+    except _replay.ReplayFailure as exc:
+        return wrap(exc.error)
+    result = _nevobo.get_poule_schedule(poule_path)
     if isinstance(result, dict) and result.get("error"):
         return wrap(result)
     result["competition_id"] = competition_id
@@ -185,7 +196,11 @@ def get_results(*, competition_id: str) -> dict:
     league, err = _get_league(competition_id)
     if err:
         return err
-    result = _nevobo.get_poule_results(_poule_path(league))
+    try:
+        poule_path = _poule_path(league)
+    except _replay.ReplayFailure as exc:
+        return wrap(exc.error)
+    result = _nevobo.get_poule_results(poule_path)
     if isinstance(result, dict) and result.get("error"):
         return wrap(result)
     result["competition_id"] = competition_id

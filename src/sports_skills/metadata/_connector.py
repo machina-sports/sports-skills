@@ -12,6 +12,8 @@ import urllib.error
 import urllib.parse
 import urllib.request
 
+from sports_skills import _replay
+
 logger = logging.getLogger("sports_skills.metadata")
 
 # ============================================================
@@ -88,34 +90,52 @@ _limiter = _RateLimiter()
 
 
 def _http_fetch(url, retries=2):
-    """Fetch JSON from a URL with retry logic."""
-    _limiter.acquire()
+    """Fetch JSON from a URL with retry logic, honouring ``SPORTS_SKILLS_REPLAY``.
+
+    In replay mode no network call, rate-limit wait, or retry happens.
+    """
+    if _replay.mode() != _replay.REPLAY:
+        _limiter.acquire()
 
     cached = _cache_get(url)
     if cached is not None:
         return cached
 
+    raw, err = _replay.fetch(url, lambda: _live_http_fetch(url, retries))
+    if err is not None:
+        # This module's error shape has no status_code; keep the replay flags.
+        error = {"error": True, "message": err.get("message", "")}
+        for flag in ("replay_miss", "replay_error"):
+            if err.get(flag):
+                error[flag] = True
+        return error
+    data = json.loads(raw.decode("utf-8"))
+    _cache_set(url, data)
+    return data
+
+
+def _live_http_fetch(url, retries):
+    """Live GET for ``_replay.fetch``: (data_bytes, None) or (None, error_dict)."""
     last_err = None
     for attempt in range(retries + 1):
         try:
             req = urllib.request.Request(url, headers={"User-Agent": _USER_AGENT})
             with urllib.request.urlopen(req, timeout=15) as resp:
-                data = json.loads(resp.read().decode("utf-8"))
-                _cache_set(url, data)
-                return data
+                return resp.read(), None
         except urllib.error.HTTPError as e:
             if e.code == 429 or e.code >= 500:
                 last_err = e
                 time.sleep(min(2 ** attempt, 4))
                 continue
-            return {"error": True, "message": f"HTTP {e.code}: {e.reason}"}
+            # status_code lets _replay record the 4xx; _http_fetch drops it again.
+            return None, {"error": True, "status_code": e.code, "message": f"HTTP {e.code}: {e.reason}"}
         except (urllib.error.URLError, TimeoutError, OSError) as e:
             last_err = e
             if attempt < retries:
                 time.sleep(min(2 ** attempt, 4))
                 continue
 
-    return {"error": True, "message": f"Request failed after {retries + 1} attempts: {last_err}"}
+    return None, {"error": True, "message": f"Request failed after {retries + 1} attempts: {last_err}"}
 
 
 # ============================================================

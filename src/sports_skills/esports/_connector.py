@@ -21,6 +21,8 @@ import urllib.error
 import urllib.parse
 import urllib.request
 
+from sports_skills import _replay
+
 OPENDOTA_BASE = "https://api.opendota.com/api"
 LEAGUEPEDIA_URL = "https://lol.fandom.com/api.php"
 
@@ -129,24 +131,43 @@ def _safe_float(value, default=None):
 # ============================================================
 
 
-def _http_get_json(url, rate_limiter, ttl):
+def _http_get_json(url, rate_limiter, ttl, recordable=None):
     cached = _cache_get(url)
     if cached is not None:
         return cached
+    raw, err = _http_fetch(url, rate_limiter, recordable)
+    if err is not None:
+        return err
+    try:
+        data = json.loads(raw.decode())
+    except Exception as e:
+        return {"error": True, "message": str(e)}
+    _cache_set(url, data, ttl=ttl)
+    return data
+
+
+def _http_fetch(url, rate_limiter, recordable=None):
+    """GET honouring ``SPORTS_SKILLS_REPLAY`` (see ``_replay``).
+
+    Returns (data_bytes, None) or (None, error_dict). In replay mode no network
+    call or rate-limit wait happens.
+    """
+    return _replay.fetch(url, lambda: _live_http_fetch(url, rate_limiter), recordable)
+
+
+def _live_http_fetch(url, rate_limiter):
     rate_limiter.acquire()
     req = urllib.request.Request(url)
     req.add_header("User-Agent", _USER_AGENT)
     req.add_header("Accept", "application/json")
     try:
         with urllib.request.urlopen(req, timeout=30) as resp:
-            data = json.loads(resp.read().decode())
-            _cache_set(url, data, ttl=ttl)
-            return data
+            return resp.read(), None
     except urllib.error.HTTPError as e:
         body = e.read().decode() if e.fp else ""
-        return {"error": True, "status_code": e.code, "message": body}
+        return None, {"error": True, "status_code": e.code, "message": body}
     except Exception as e:
-        return {"error": True, "message": str(e)}
+        return None, {"error": True, "message": str(e)}
 
 
 def _opendota_get(path, params=None, ttl=300):
@@ -161,13 +182,29 @@ def _opendota_get(path, params=None, ttl=300):
 def _leaguepedia_get(params, ttl=1800):
     query = {"action": "cargoquery", "format": "json", **params}
     url = f"{LEAGUEPEDIA_URL}?" + urllib.parse.urlencode(query, doseq=True)
-    return _http_get_json(url, _leaguepedia_rl, ttl)
+    return _http_get_json(url, _leaguepedia_rl, ttl, recordable=_not_throttled)
+
+
+def _not_throttled(raw):
+    """False for Leaguepedia's HTTP-200 throttle body, which must not be recorded."""
+    if b"ratelimited" not in raw:
+        return True
+    try:
+        error = json.loads(raw.decode()).get("error")
+    except Exception:
+        return True
+    return not (isinstance(error, dict) and error.get("code") == "ratelimited")
 
 
 def _http_error(response):
     if isinstance(response, dict) and response.get("error") is True:
         code = response.get("status_code", "?")
-        return _error(f"HTTP error ({code}): {str(response.get('message', ''))[:200]}")
+        error = _error(f"HTTP error ({code}): {str(response.get('message', ''))[:200]}")
+        # Keep replay_miss/replay_error visible in the public error shape.
+        for flag in ("replay_miss", "replay_error"):
+            if response.get(flag):
+                error[flag] = True
+        return error
     return None
 
 
