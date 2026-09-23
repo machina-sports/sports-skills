@@ -28,6 +28,7 @@ from sports_skills._espn_base import (
     _cache_set,
     _http_fetch,
 )
+from sports_skills._shaping import ShapingError, parse_limit, shape_rows
 
 logger = logging.getLogger("sports_skills.mlb._stats")
 
@@ -36,6 +37,9 @@ _API_BASE = "https://statsapi.mlb.com/api/v1"
 _mlb_rate_limiter = RateLimiter(max_tokens=2, refill_rate=2.0)
 
 _TIMEOUT = 15
+
+# Columns ``fields`` always keeps, so a trimmed play still says what it describes.
+_PBP_IDENTITY = ("inning", "half", "batter", "pitcher")
 
 # ESPN and MLB disagree on two team abbreviations. Both spellings are accepted
 # everywhere a team filter exists; rows carry both systems so results can be
@@ -78,7 +82,7 @@ def _guard(fn):
     def wrapper(request_data: dict[str, Any]) -> dict[str, Any]:
         try:
             return fn(request_data)
-        except _MlbStatsError as exc:
+        except (_MlbStatsError, ShapingError) as exc:
             return {"error": True, "message": str(exc)}
         except Exception as exc:  # noqa: BLE001 — surface, never crash the agent
             logger.debug("mlb-stats call failed", exc_info=True)
@@ -376,8 +380,9 @@ def get_mlbstats_play_by_play(request_data: dict[str, Any]) -> dict[str, Any]:
     data = _request(f"game/{game_pk}/playByPlay", None)
     all_plays = data.get("allPlays", [])
     total = len(all_plays)
-    if limit is not None:
-        all_plays = all_plays[: int(limit)]
+    # Without a sort, truncate before building the pitch lists.
+    if limit is not None and params.get("sort_by") is None:
+        all_plays = all_plays[: parse_limit(limit)]
 
     plays = []
     for p in all_plays:
@@ -418,12 +423,14 @@ def get_mlbstats_play_by_play(request_data: dict[str, Any]) -> dict[str, Any]:
             }
         )
 
+    plays, shaping = shape_rows(plays, params, identity=_PBP_IDENTITY, total_rows=total)
     result = {
         "provider": "mlb-stats",
         "game_pk": game_pk,
         "plays": plays,
         "count": len(plays),
         "copyright": data.get("copyright"),
+        **shaping,
     }
     if limit is not None and total > len(plays):
         result["truncated"] = True

@@ -100,6 +100,34 @@ Derive the current year from the system prompt's date (e.g., `currentDate: 2026-
 
 See `references/api-reference.md` for full parameter lists and return shapes.
 
+## Shaping Wide nflverse Results
+
+nflverse tables are wide: one week of `get_nflverse_player_stats` is ~960 rows with
+100+ stat columns (millions of characters). Every `get_nflverse_*` command accepts
+`sort_by`, `descending`, `limit` and `fields` so you can ask for just the rows you need:
+
+```bash
+# Week 5 passing leaders, 5 rows, 2 stat columns
+sports-skills nfl get_nflverse_player_stats --season=2025 --week=5 --position=QB \
+  --sort_by=passing_yards --limit=5 --fields=passing_yards,attempts
+```
+
+- `sort_by`: one column to sort by. Numbers (and numeric strings) sort numerically; missing values always go last.
+- `descending`: `true` (default) or `false`; only used with `sort_by`.
+- `limit`: positive integer, applied after sorting.
+- `fields`: comma-separated keep-list. The identity columns below and the `sort_by` column are always kept.
+- An unknown `sort_by`/`fields` column returns an error listing the valid columns.
+- With any of these set, the response adds `total_rows` (matching rows before `limit`) and `returned_rows`. With none set, output is unchanged. They are applied after the fetch, so they never change the upstream request or its replay entry.
+- Stat columns inside `stats` (e.g. `passing_yards`) are addressable directly; `fields` keeps `stats` as an object holding only the selected keys.
+
+| Command | Always kept by `fields` |
+|---------|-------------------------|
+| `get_nflverse_player_stats` | `player_id`, `player_name`, `position`, `team`, `week` |
+| `get_nflverse_team_stats` | `team`, `season`, `week`, `game_id` |
+| `get_nflverse_play_by_play` | `play_id`, `game_id` |
+| `get_nflverse_weekly_rosters` | `player_id`, `player_name`, `team`, `position` |
+| `get_nflverse_schedule` | `game_id`, `week`, `away_team`, `home_team` |
+
 ## Using ESPN and nflverse Together
 
 The two backends use different identifier systems. `get_nflverse_schedule` is the

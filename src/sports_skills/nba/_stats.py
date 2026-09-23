@@ -28,6 +28,7 @@ from sports_skills._espn_base import (
     _http_fetch,
 )
 from sports_skills._premium import UPGRADE_MARKER
+from sports_skills._shaping import ShapingError, shape_rows
 
 logger = logging.getLogger("sports_skills.nba._stats")
 
@@ -110,7 +111,7 @@ def _guard(fn):
                 "message": str(exc),
                 UPGRADE_MARKER: "rate_limited",
             }
-        except _NbaStatsError as exc:
+        except (_NbaStatsError, ShapingError) as exc:
             return {"error": True, "message": str(exc)}
         except Exception as exc:  # noqa: BLE001 — surface, never crash the agent
             logger.debug("nba-stats call failed", exc_info=True)
@@ -120,6 +121,12 @@ def _guard(fn):
             }
 
     return wrapper
+
+
+# Columns ``fields`` always keeps, so a trimmed row still says what it describes.
+_GAME_LOG_IDENTITY = ("game_id", "game_date", "team_abbreviation", "matchup")
+_TEAM_STATS_IDENTITY = ("team_id", "team_name", "team_abbreviation")
+_SHOT_IDENTITY = ("game_id", "game_date", "period")
 
 
 def _current_season_year() -> int:
@@ -384,6 +391,8 @@ def get_nbastats_game_log(request_data: dict[str, Any]) -> dict[str, Any]:
     if team is not None:
         rows = [r for r in rows if str(r.get("team_abbreviation", "")).upper() == team]
     _with_espn_abbreviation(rows)
+    total = len(rows)
+    rows, shaping = shape_rows(rows, params, identity=_GAME_LOG_IDENTITY)
 
     result = {
         "provider": "nba-stats",
@@ -392,8 +401,9 @@ def get_nbastats_game_log(request_data: dict[str, Any]) -> dict[str, Any]:
         "team": team,
         "games": rows,
         "count": len(rows),
+        **shaping,
     }
-    warnings = _team_warnings(team, raw_team, len(rows))
+    warnings = _team_warnings(team, raw_team, total)
     if warnings:
         result["warnings"] = warnings
     return result
@@ -489,6 +499,8 @@ def get_nbastats_team_stats(request_data: dict[str, Any]) -> dict[str, Any]:
         if abbr:
             row.setdefault("team_abbreviation", abbr)
     _with_espn_abbreviation(rows)
+    total = len(rows)
+    rows, shaping = shape_rows(rows, params, identity=_TEAM_STATS_IDENTITY)
 
     result = {
         "provider": "nba-stats",
@@ -499,8 +511,9 @@ def get_nbastats_team_stats(request_data: dict[str, Any]) -> dict[str, Any]:
         "team": team,
         "teams": rows,
         "count": len(rows),
+        **shaping,
     }
-    warnings = _team_warnings(team, raw_team, len(rows))
+    warnings = _team_warnings(team, raw_team, total)
     if warnings:
         result["warnings"] = warnings
     return result
@@ -579,8 +592,6 @@ def get_nbastats_shot_chart(request_data: dict[str, Any]) -> dict[str, Any]:
     )
     rows = _records(data, "Shot_Chart_Detail")
     total = len(rows)
-    if limit is not None:
-        rows = rows[: int(limit)]
 
     shots = [
         {
@@ -600,6 +611,7 @@ def get_nbastats_shot_chart(request_data: dict[str, Any]) -> dict[str, Any]:
         }
         for r in rows
     ]
+    shots, shaping = shape_rows(shots, params, identity=_SHOT_IDENTITY)
     result = {
         "provider": "nba-stats",
         "player_id": person_id,
@@ -608,6 +620,7 @@ def get_nbastats_shot_chart(request_data: dict[str, Any]) -> dict[str, Any]:
         "season_type": season_type,
         "shots": shots,
         "count": len(shots),
+        **shaping,
     }
     if limit is not None and total > len(shots):
         result["truncated"] = True

@@ -81,6 +81,23 @@ Derive the active season from the system prompt's date — not just the calendar
 
 See `references/api-reference.md` for full parameter lists and return shapes.
 
+## Shaping Play-by-Play Results
+
+`get_mlbstats_play_by_play` accepts `sort_by`, `descending`, `limit` and `fields`.
+`fields` is the quickest way to drop the per-pitch lists when you only need the
+at-bat outcomes:
+
+```bash
+sports-skills mlb get_mlbstats_play_by_play --game_pk=775296 --fields=event,rbi
+```
+
+- `sort_by`: one column to sort by. Numbers (and numeric strings) sort numerically; missing values always go last.
+- `descending`: `true` (default) or `false`; only used with `sort_by`.
+- `limit`: positive integer, applied after sorting.
+- `fields`: comma-separated keep-list. `inning`, `half`, `batter`, `pitcher` and the `sort_by` column are always kept.
+- An unknown `sort_by`/`fields` column returns an error listing the valid columns.
+- With any of these set, the response adds `total_rows` (matching rows before `limit`) and `returned_rows`. With none set, output is unchanged. They are applied after the fetch, so they never change the upstream request or its replay entry.
+
 ## Using ESPN and the MLB Stats API Together
 
 The `get_mlbstats_*` commands read statsapi.mlb.com — MLB's own open API. It

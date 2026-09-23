@@ -119,6 +119,10 @@ Returns `categories[]` with detailed stats including value, rank, and per-game a
 Get schedules/results through the nflverse backend.
 - `season` (int, optional): Season year
 - `week` (int, optional): NFL week filter
+- `sort_by` (str, optional): Column to sort by, e.g. `total`. Numeric-aware; missing values last
+- `descending` (bool, optional): Sort direction with `sort_by`; default `true`
+- `limit` (int, optional): Max rows to return, applied after `sort_by`
+- `fields` (str, optional): Comma-separated columns to keep; always keeps `game_id`, `week`, `away_team`, `home_team`
 
 Returns `events[]` with `game_id`, teams, scores, date/time, line fields, and location.
 
@@ -133,6 +137,10 @@ Get weekly roster snapshots through the nflverse backend.
 - `season` (int, optional): Season year
 - `week` (int, optional): NFL week filter
 - `team` (str, optional): Team abbreviation filter (e.g. `KC`)
+- `sort_by` (str, optional): Column to sort by, e.g. `weight`. Numeric-aware; missing values last
+- `descending` (bool, optional): Sort direction with `sort_by`; default `true`
+- `limit` (int, optional): Max rows to return, applied after `sort_by`
+- `fields` (str, optional): Comma-separated columns to keep; always keeps `player_id`, `player_name`, `team`, `position`
 
 Returns `players[]` with normalized roster fields: team, player_id, player_name, position, jersey_number, status, college, and experience fields when available.
 
@@ -144,6 +152,10 @@ Get normalized nflverse player stat rows. **Returns regular-season totals by def
 - `position` (str, optional): Position filter
 - `week` (int, optional): NFL week filter. Implies per-game rows.
 - `summary_level` (str, optional): `reg` (default), `post`, `reg+post`, or `week`
+- `sort_by` (str, optional): Column to sort by, e.g. `passing_yards`. Numeric-aware; missing values last
+- `descending` (bool, optional): Sort direction with `sort_by`; default `true`
+- `limit` (int, optional): Max rows to return, applied after `sort_by`
+- `fields` (str, optional): Comma-separated columns to keep; always keeps `player_id`, `player_name`, `position`, `team`, `week`
 
 Returns `players[]`, each with identity fields (`player_id`, `player_name`, `position`, `team`) plus a `stats` object containing backend columns (completions, passing_yards, passing_tds, rushing_yards, etc.). Season aggregates include `games`; only `summary_level="week"` rows carry `week`, `game_id`, and `opponent_team`.
 
@@ -153,6 +165,10 @@ Get normalized nflverse team stat rows. **Returns regular-season totals by defau
 - `team` (str, optional): Team abbreviation filter
 - `week` (int, optional): NFL week filter. Implies per-game rows.
 - `summary_level` (str, optional): `reg` (default), `post`, `reg+post`, or `week`
+- `sort_by` (str, optional): Column to sort by, e.g. `passing_yards`. Numeric-aware; missing values last
+- `descending` (bool, optional): Sort direction with `sort_by`; default `true`
+- `limit` (int, optional): Max rows to return, applied after `sort_by`
+- `fields` (str, optional): Comma-separated columns to keep; always keeps `team`, `season`, `week`, `game_id`
 
 Returns `teams[]`, each with team/season context plus a `stats` object containing backend columns. Requires the `nflreadpy` backend (Python 3.10+); on `nfl_data_py` this returns an explanatory error, because that backend has no team-stat table.
 
@@ -162,11 +178,15 @@ Get normalized nflverse play-by-play rows.
 - `week` (int, optional): Week filter
 - `team` (str, optional): Team abbreviation filter
 - `game_id` (str, optional): nflverse game identifier
-- `limit` (int, optional): Max rows to return
+- `limit` (int, optional): Max rows to return, applied after `sort_by`
+- `sort_by` (str, optional): Column to sort by, e.g. `epa`. Numeric-aware; missing values last
+- `descending` (bool, optional): Sort direction with `sort_by`; default `true`
+- `fields` (str, optional): Comma-separated columns to keep; always keeps `play_id`, `game_id`
 
 Returns `plays[]` with game/play identifiers, quarter/clock, teams, down/distance, description, EPA, WP/WPA, and score state.
 
 Notes:
+- `sort_by`/`limit`/`fields` apply after the fetch. When any is set the response adds `total_rows` (before `limit`) and `returned_rows`; an unknown column returns an error listing the valid ones. Stat columns inside `stats` are addressable by name.
 - The nflverse backend requires the `[nfl]` optional extra: `pip install sports-skills[nfl]`. On Python 3.10+ this installs `nflreadpy` (preferred); on Python 3.9 it installs `nfl_data_py`, which cannot serve `get_nflverse_team_stats`.
 - These commands keep `nfl-data` as the user-facing skill while exposing table-style datasets under the same module.
 - The ESPN-backed commands (e.g. `get_scoreboard`, `get_standings`) work with zero extra dependencies. The nflverse commands provide deeper historical/analytical data (seasonal aggregates, EPA, win probability per play) but require the optional install.

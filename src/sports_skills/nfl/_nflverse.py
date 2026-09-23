@@ -15,6 +15,7 @@ from datetime import datetime
 from typing import Any
 
 from sports_skills import _replay
+from sports_skills._shaping import ShapingError, parse_limit, shape_rows
 
 logger = logging.getLogger("sports_skills.nfl._nflverse")
 
@@ -29,6 +30,14 @@ _DEFAULT_SUMMARY_LEVEL = "reg"
 # (OAK/LV, SD/LAC, STL/LA) are deliberately absent — nflverse uses the
 # era-correct abbreviation, so mapping them would corrupt historical queries.
 _TEAM_ALIASES = {"LAR": "LA", "WSH": "WAS"}
+
+
+# Columns ``fields`` always keeps, so a trimmed row still says what it describes.
+_SCHEDULE_IDENTITY = ("game_id", "week", "away_team", "home_team")
+_ROSTER_IDENTITY = ("player_id", "player_name", "team", "position")
+_PLAYER_STATS_IDENTITY = ("player_id", "player_name", "position", "team", "week")
+_TEAM_STATS_IDENTITY = ("team", "season", "week", "game_id")
+_PBP_IDENTITY = ("play_id", "game_id")
 
 
 def _current_season() -> int:
@@ -151,7 +160,7 @@ def _guard(fn):
             return fn(request_data)
         except _replay.ReplayFailure as exc:
             return dict(exc.error)
-        except _NflverseUnavailable as exc:
+        except (_NflverseUnavailable, ShapingError) as exc:
             return {"error": True, "message": str(exc)}
         except ImportError as exc:
             return {"error": True, "message": str(exc)}
@@ -503,6 +512,7 @@ def get_nflverse_schedule(request_data: dict[str, Any]) -> dict[str, Any]:
         df = df[df["week"] == week]
 
     events = [_normalize_schedule_row(row) for row in _records(df)]
+    events, shaping = shape_rows(events, params, identity=_SCHEDULE_IDENTITY)
     result = {
         "provider": "nflverse",
         "provider_impl": provider_name,
@@ -510,6 +520,7 @@ def get_nflverse_schedule(request_data: dict[str, Any]) -> dict[str, Any]:
         "week": week,
         "events": events,
         "count": len(events),
+        **shaping,
     }
     if note:
         result["warnings"] = [note]
@@ -534,6 +545,8 @@ def get_nflverse_weekly_rosters(request_data: dict[str, Any]) -> dict[str, Any]:
     df, matched = _filter_team(df, team, "team", "recent_team", "team_abbr")
 
     rosters = [_normalize_roster_row(row) for row in _records(df)]
+    total = len(rosters)
+    rosters, shaping = shape_rows(rosters, params, identity=_ROSTER_IDENTITY)
     result = {
         "provider": "nflverse",
         "provider_impl": provider_name,
@@ -542,8 +555,9 @@ def get_nflverse_weekly_rosters(request_data: dict[str, Any]) -> dict[str, Any]:
         "team": team,
         "players": rosters,
         "count": len(rosters),
+        **shaping,
     }
-    warnings = ([note] if note else []) + _team_warnings(team, raw_team, matched, len(rosters))
+    warnings = ([note] if note else []) + _team_warnings(team, raw_team, matched, total)
     if warnings:
         result["warnings"] = warnings
     return result
@@ -579,6 +593,8 @@ def get_nflverse_player_stats(request_data: dict[str, Any]) -> dict[str, Any]:
         df = df[df["position"].astype(str).str.upper() == str(position).upper()]
 
     stats = [_normalize_player_stats_row(row) for row in _records(df)]
+    total = len(stats)
+    stats, shaping = shape_rows(stats, params, identity=_PLAYER_STATS_IDENTITY, nested="stats")
     result = {
         "provider": "nflverse",
         "provider_impl": provider_name,
@@ -590,8 +606,9 @@ def get_nflverse_player_stats(request_data: dict[str, Any]) -> dict[str, Any]:
         "position": position,
         "players": stats,
         "count": len(stats),
+        **shaping,
     }
-    warnings = ([note] if note else []) + _team_warnings(team, raw_team, matched, len(stats))
+    warnings = ([note] if note else []) + _team_warnings(team, raw_team, matched, total)
     if warnings:
         result["warnings"] = warnings
     return result
@@ -618,6 +635,8 @@ def get_nflverse_team_stats(request_data: dict[str, Any]) -> dict[str, Any]:
         df = df[df["week"] == week]
 
     teams = [_normalize_team_stats_row(row) for row in _records(df)]
+    total = len(teams)
+    teams, shaping = shape_rows(teams, params, identity=_TEAM_STATS_IDENTITY, nested="stats")
     result = {
         "provider": "nflverse",
         "provider_impl": provider_name,
@@ -627,8 +646,9 @@ def get_nflverse_team_stats(request_data: dict[str, Any]) -> dict[str, Any]:
         "week": week,
         "teams": teams,
         "count": len(teams),
+        **shaping,
     }
-    warnings = ([note] if note else []) + _team_warnings(team, raw_team, matched, len(teams))
+    warnings = ([note] if note else []) + _team_warnings(team, raw_team, matched, total)
     if warnings:
         result["warnings"] = warnings
     return result
@@ -643,6 +663,7 @@ def get_nflverse_play_by_play(request_data: dict[str, Any]) -> dict[str, Any]:
     team = _normalize_team(raw_team)
     game_id = params.get("game_id")
     limit = params.get("limit")
+    sort_by = params.get("sort_by")
 
     provider_name, provider = _load_provider()
     df, season, note = _load_with_season_fallback(
@@ -666,10 +687,13 @@ def get_nflverse_play_by_play(request_data: dict[str, Any]) -> dict[str, Any]:
             if col in df.columns:
                 df = df[df[col].astype(str) == str(game_id)]
                 break
-    if limit is not None:
-        df = df.head(int(limit))
+    total = len(df)
+    # Without a sort, truncate before normalizing: a season is ~50k plays.
+    if limit is not None and sort_by is None:
+        df = df.head(parse_limit(limit))
 
     plays = [_normalize_pbp_row(row) for row in _records(df)]
+    plays, shaping = shape_rows(plays, params, identity=_PBP_IDENTITY, total_rows=total)
     result = {
         "provider": "nflverse",
         "provider_impl": provider_name,
@@ -679,6 +703,7 @@ def get_nflverse_play_by_play(request_data: dict[str, Any]) -> dict[str, Any]:
         "game_id": game_id,
         "plays": plays,
         "count": len(plays),
+        **shaping,
     }
     # `limit` truncates silently otherwise — say so rather than implying the game
     # only had this many plays.

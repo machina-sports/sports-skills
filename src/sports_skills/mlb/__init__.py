@@ -317,7 +317,14 @@ def get_mlbstats_player_stats(
     )
 
 
-def get_mlbstats_play_by_play(*, game_pk: str, limit: int | None = None) -> dict:
+def get_mlbstats_play_by_play(
+    *,
+    game_pk: str,
+    sort_by: str | None = None,
+    descending: bool | None = None,
+    limit: int | None = None,
+    fields: str | None = None,
+) -> dict:
     """Get pitch-level play-by-play via the MLB Stats API.
 
     Every pitch carries velocity, spin rate, and plate coordinates; balls in
@@ -327,9 +334,24 @@ def get_mlbstats_play_by_play(*, game_pk: str, limit: int | None = None) -> dict
     Args:
         game_pk: MLB game id from get_mlbstats_schedule (e.g. "775296").
             Not an ESPN event id.
-        limit: Maximum plays to return; truncation is flagged in the response.
+        sort_by: Optional column to sort rows by, e.g. rbi. Numeric-aware;
+            missing values sort last.
+        descending: Sort direction when sort_by is given. Defaults to true.
+        limit: Maximum plays to return, applied after sort_by; truncation is flagged in the response.
+        fields: Optional comma-separated columns to keep, e.g. "event,rbi".
+            Always keeps inning, half, batter, pitcher. Unknown names return the valid columns.
     """
-    return wrap(_get_mlbstats_play_by_play(_params(game_pk=game_pk, limit=limit)))
+    return wrap(
+        _get_mlbstats_play_by_play(
+            _params(
+                game_pk=game_pk,
+                sort_by=sort_by,
+                descending=descending,
+                limit=limit,
+                fields=fields,
+            )
+        )
+    )
 
 
 def get_mlbstats_boxscore(*, game_pk: str) -> dict:
