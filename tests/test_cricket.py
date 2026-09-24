@@ -569,6 +569,14 @@ class TestGetGameSummary:
         result = _espn.get_game_summary({"params": {"series_id": "8048"}})
         assert result["error"] is True
 
+    def test_failed_summary_says_what_series_id_is(self, monkeypatch):
+        monkeypatch.setattr(_espn, "espn_summary", lambda *a, **kw: None)
+        result = _espn.get_game_summary({"params": {"series_id": "1527674", "event_id": "1535465"}})
+        assert result["error"] is True
+        assert "not a match id" in result["message"]
+        assert "8048" in result["message"] and "get_series" in result["message"]
+        assert "1535465" in result["message"] and "1527674" in result["message"]
+
 
 class TestGetNews:
     def test_normalizes_articles(self, monkeypatch):

@@ -200,7 +200,17 @@ def get_game_summary(request_data):
         return {"error": True, "message": "event_id is required — see get_scoreboard"}
     data = espn_summary(f"cricket/{series_id}", str(event_id))
     if data is None:
-        return {"error": True, "message": "ESPN summary request failed"}
+        # Agents read a bare "request failed" as "try another series_id" and
+        # walked through match-like numbers (Sports Agent Bench v1).
+        return {
+            "error": True,
+            "message": (
+                f"ESPN returned no summary for event {event_id} in series {series_id}. "
+                "series_id is the series (league) id, not a match id: e.g. 8048 for the IPL. "
+                "Get it from get_series or from the scoreboard entry of the match. "
+                "If the ids are right, ESPN may be unavailable; retry later."
+            ),
+        }
     if isinstance(data, dict) and data.get("error"):
         return data
     return {

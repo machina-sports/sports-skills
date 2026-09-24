@@ -1,6 +1,7 @@
 ## [Unreleased]
 
 ### Fixed
+- **cricket: `get_game_summary` says what `series_id` is when ESPN returns nothing.** The bare "ESPN summary request failed" led agents to try match-like numbers as `series_id` (up to 10 guesses for one IPL final in Sports Agent Bench v1). The error now names both ids, says `series_id` is the series (league) id (e.g. 8048 for the IPL), not a match id, and points to `get_series`.
 - **football: scored penalties were labelled `red_card`.** `_map_espn_event_type` matched `"red"` inside ESPN's `"Penalty - Scored"` before the goal check, so every converted penalty left the timeline as a red card (in a full Brasileirão season, 50 of them) and never as a goal. They are now `penalty_goal`.
 - **football: `get_event_statistics` returned "0" for shots, passes, tackles and blocked shots.** The normalizer read `shotsTotal`/`completedPasses`/`tackles`/`shotsBlocked`, names ESPN's soccer boxscore does not emit (it uses `totalShots`, `accuratePasses`, `totalTackles`, `blockedShots` in every league checked). Both spellings are accepted now.
 - **football: `shots_off_target` is derived as total − on target − blocked** (ESPN's `totalShots` includes blocked attempts), and a `displayValue: null` no longer raises inside the normalizer.
