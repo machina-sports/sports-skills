@@ -1092,6 +1092,29 @@ class TestNormalizeFutures:
         assert result["futures"][0]["name"] == "Cy Young"
 
 
+class TestMlbFutures:
+    """MLB was the only one of the four major pro leagues without get_futures."""
+
+    def test_requests_mlb_futures_and_normalizes(self, monkeypatch):
+        from sports_skills.mlb import _connector as mc
+
+        calls = []
+        books = [{"athlete": {}, "team": {"displayName": "Dodgers"}, "value": "+350"}]
+        payload = {"items": [{"id": "1", "name": "World Series Winner", "futures": [{"books": books}]}]}
+
+        def fake(sport, path, *a, **k):
+            calls.append((sport, path))
+            return payload
+
+        monkeypatch.setattr(mc, "espn_core_request", fake)
+        out = mc.get_futures({"params": {"season_year": 2026}})
+
+        assert calls == [("baseball/mlb", "seasons/2026/futures")]
+        assert out["season_year"] == 2026
+        assert out["futures"][0]["name"] == "World Series Winner"
+        assert out["futures"][0]["entries"][0]["value"] == "+350"
+
+
 class TestNormalizeDepthChart:
     """Tests for normalize_depth_chart shared normalizer."""
 
