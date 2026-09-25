@@ -363,6 +363,71 @@ def espn_request(sport_path, resource="scoreboard", params=None, max_retries=_MA
     return err
 
 
+#: ``season_type`` values accepted by team schedules -> ESPN ``seasontype`` codes.
+_SCHEDULE_SEASON_TYPES = {
+    "preseason": ("1",),
+    "1": ("1",),
+    "regular": ("2",),
+    "2": ("2",),
+    "postseason": ("3",),
+    "playoffs": ("3",),
+    "3": ("3",),
+    "playin": ("5",),
+    "play-in": ("5",),
+    "5": ("5",),
+}
+
+
+def espn_team_schedule(sport_path, team_id, season=None, season_type=None, all_types=("2", "3")):
+    """ESPN team schedule, optionally for a given season type.
+
+    ESPN's ``teams/{id}/schedule`` returns regular-season games only unless
+    ``seasontype=3`` is sent, so playoff/bowl/tournament games are missed.
+    ``season_type`` is ``regular``, ``postseason`` (alias ``playoffs``),
+    ``preseason``, ``playin`` (NBA play-in, ESPN type 5), ``all`` (the
+    ``all_types`` codes, merged in date order) or an ESPN code 1/2/3/5.
+    Omitted, the request is unchanged (no ``seasontype``). Returns the raw ESPN
+    payload with ``events`` merged across season types, or an error dict.
+    """
+    params = {}
+    if season:
+        params["season"] = season
+    if season_type is None or season_type == "":
+        codes = (None,)
+    else:
+        key = str(season_type).strip().lower()
+        codes = tuple(all_types) if key == "all" else _SCHEDULE_SEASON_TYPES.get(key)
+        if codes is None:
+            return {
+                "error": True,
+                "message": (
+                    f"Unknown season_type '{season_type}'. Use one of: "
+                    "regular, postseason, preseason, playin, all (or ESPN codes 1, 2, 3, 5)."
+                ),
+            }
+    merged = None
+    seen = set()
+    for code in codes:
+        req = dict(params)
+        if code:
+            req["seasontype"] = code
+        data = espn_request(sport_path, f"teams/{team_id}/schedule", req or None)
+        if data.get("error"):
+            return data
+        if merged is None:
+            merged = dict(data)
+            merged["events"] = []
+        for event in data.get("events", []):
+            key = event.get("id")
+            if key is not None and key in seen:
+                continue
+            seen.add(key)
+            merged["events"].append(event)
+    if len(codes) > 1:
+        merged["events"].sort(key=lambda e: e.get("date") or "")
+    return merged
+
+
 def espn_web_request(sport_path, resource, params=None):
     """ESPN web API (standings, season lists). Different host from site API.
 

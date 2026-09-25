@@ -141,14 +141,16 @@ def get_team_roster(*, team_id: str) -> dict:
     return wrap(_get_team_roster(_params(team_id=team_id)))
 
 
-def get_team_schedule(*, team_id: str, season: int | None = None) -> dict:
+def get_team_schedule(*, team_id: str, season: int | None = None, season_type: str | None = None) -> dict:
     """Get schedule for a specific NBA team.
 
     Args:
         team_id: ESPN team ID.
         season: Season year. Defaults to current.
+        season_type: "regular", "postseason" (alias "playoffs"), "playin", "preseason", or
+            "all" (regular + play-in + playoffs). Omitted, ESPN's default (regular season) is returned.
     """
-    return wrap(_get_team_schedule(_params(team_id=team_id, season=season)))
+    return wrap(_get_team_schedule(_params(team_id=team_id, season=season, season_type=season_type)))
 
 
 def get_game_summary(*, event_id: str) -> dict:
@@ -377,7 +379,8 @@ def get_nbastats_game_log(
             Defaults to the current season.
         team: Optional team abbreviation filter. ESPN spellings ("GS", "NY",
             "NO", "SA", "UTAH", "WSH") are translated to NBA.com's.
-        season_type: "regular" (default), "playoffs", "preseason", or "playin".
+        season_type: "regular" (default), "playoffs", "preseason", or "playin". Also accepts
+            stats.nba.com spellings ("Regular Season", "Playoffs", "PlayIn") and 2/4/5.
         sort_by: Optional column to sort rows by, e.g. pts. Numeric-aware;
             missing values sort last.
         descending: Sort direction when sort_by is given. Defaults to true.
@@ -445,7 +448,8 @@ def get_nbastats_team_stats(
         measure: "base" (default), "advanced", "four_factors", "misc",
             "scoring", "opponent", or "defense".
         per_mode: "totals" (default), "per_game", or "per_36".
-        season_type: "regular" (default), "playoffs", "preseason", or "playin".
+        season_type: "regular" (default), "playoffs", "preseason", or "playin". Also accepts
+            stats.nba.com spellings ("Regular Season", "Playoffs", "PlayIn") and 2/4/5.
         sort_by: Optional column to sort rows by, e.g. pts. Numeric-aware;
             missing values sort last.
         descending: Sort direction when sort_by is given. Defaults to true.
@@ -491,7 +495,8 @@ def get_nbastats_shot_chart(
         player: Player name to resolve instead of player_id.
         season: Season starting year (e.g. 2024) or NBA form ("2024-25").
             Defaults to the current season.
-        season_type: "regular" (default), "playoffs", "preseason", or "playin".
+        season_type: "regular" (default), "playoffs", "preseason", or "playin". Also accepts
+            stats.nba.com spellings ("Regular Season", "Playoffs", "PlayIn") and 2/4/5.
         sort_by: Optional column to sort rows by, e.g. shot_distance. Numeric-aware;
             missing values sort last.
         descending: Sort direction when sort_by is given. Defaults to true.

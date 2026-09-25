@@ -101,6 +101,39 @@ class TestLookup:
             _stats._lookup(_stats._SEASON_TYPES, "bogus", "regular", "season_type")
 
 
+class TestSeasonTypeAliases:
+    @pytest.mark.parametrize(
+        ("value", "expected"),
+        [
+            (None, "Regular Season"),
+            ("regular", "Regular Season"),
+            ("Regular Season", "Regular Season"),
+            ("2", "Regular Season"),
+            (2, "Regular Season"),
+            ("Playoffs", "Playoffs"),
+            ("playoff", "Playoffs"),
+            ("postseason", "Playoffs"),
+            ("4", "Playoffs"),
+            ("PlayIn", "PlayIn"),
+            ("Play-In", "PlayIn"),
+            ("play in", "PlayIn"),
+            ("5", "PlayIn"),
+            ("Pre Season", "Pre Season"),
+            ("preseason", "Pre Season"),
+        ],
+    )
+    def test_common_forms_are_mapped(self, value, expected):
+        assert _stats._season_type(value) == expected
+
+    def test_unknown_still_lists_canonical_values(self):
+        with pytest.raises(_stats._NbaStatsError, match="playin, playoffs, preseason, regular"):
+            _stats._season_type("3")
+
+    def test_alias_reaches_upstream(self, offline):
+        _stats.get_nbastats_game_log({"params": {"season": 2024, "season_type": "Regular Season"}})
+        assert offline[-1][1]["SeasonType"] == "Regular Season"
+
+
 # ── name matching ─────────────────────────────────────────────
 
 

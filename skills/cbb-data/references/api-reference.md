@@ -32,6 +32,7 @@ Returns `athletes[]` with name, position, jersey number, height, weight.
 Get schedule for a specific college basketball team.
 - `team_id` (str, required): ESPN team ID.
 - `season` (int, optional): Season year. Defaults to current.
+- `season_type` (str, optional): `regular`, `postseason` (alias `playoffs`), `preseason`, or `all` (regular + postseason). Omitted, ESPN returns the regular season only, so NCAA-tournament (and NIT/CBI) games need `postseason` or `all`.
 
 Returns `events[]` with opponent, date, score (if played), and venue.
 

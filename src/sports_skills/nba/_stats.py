@@ -76,6 +76,25 @@ _SEASON_TYPES = {
     "playin": "PlayIn",
 }
 
+# Other spellings agents send for season_type (normalized like _lookup keys),
+# including stats.nba.com's own values and its game-id type digits
+# (1 preseason, 2 regular, 4 playoffs, 5 play-in).
+_SEASON_TYPE_ALIASES = {
+    "regular_season": "regular",
+    "reg": "regular",
+    "2": "regular",
+    "playoff": "playoffs",
+    "postseason": "playoffs",
+    "post_season": "playoffs",
+    "4": "playoffs",
+    "pre_season": "preseason",
+    "1": "preseason",
+    "play_in": "playin",
+    "playin_tournament": "playin",
+    "play_in_tournament": "playin",
+    "5": "playin",
+}
+
 _MEASURE_TYPES = {
     "base": "Base",
     "advanced": "Advanced",
@@ -196,6 +215,14 @@ def _lookup(mapping: Mapping[str, str], value: Any, default: str, what: str) -> 
     if key not in mapping:
         raise _NbaStatsError(f"Invalid {what} {value!r}. Valid values: {', '.join(sorted(mapping))}")
     return mapping[key]
+
+
+def _season_type(value: Any) -> str:
+    """season_type -> stats.nba.com SeasonType, accepting common aliases."""
+    if value is not None:
+        key = str(value).strip().lower().replace(" ", "_").replace("-", "_")
+        value = _SEASON_TYPE_ALIASES.get(key, value)
+    return _lookup(_SEASON_TYPES, value, "regular", "season_type")
 
 
 class _NbaStatsThrottled(_NbaStatsError):
@@ -369,7 +396,7 @@ def find_nba_player(request_data: dict[str, Any]) -> dict[str, Any]:
 def get_nbastats_game_log(request_data: dict[str, Any]) -> dict[str, Any]:
     params = request_data.get("params", {})
     season = _season_str(params.get("season"))
-    season_type = _lookup(_SEASON_TYPES, params.get("season_type"), "regular", "season_type")
+    season_type = _season_type(params.get("season_type"))
     raw_team = params.get("team")
     team = _normalize_team(raw_team)
 
@@ -438,7 +465,7 @@ def get_nbastats_player_career(request_data: dict[str, Any]) -> dict[str, Any]:
 def get_nbastats_team_stats(request_data: dict[str, Any]) -> dict[str, Any]:
     params = request_data.get("params", {})
     season = _season_str(params.get("season"))
-    season_type = _lookup(_SEASON_TYPES, params.get("season_type"), "regular", "season_type")
+    season_type = _season_type(params.get("season_type"))
     measure = _lookup(_MEASURE_TYPES, params.get("measure"), "base", "measure")
     per_mode = _lookup(_PER_MODES, params.get("per_mode"), "totals", "per_mode")
     raw_team = params.get("team")
@@ -550,7 +577,7 @@ def _name_to_abbr(name: Any) -> str | None:
 def get_nbastats_shot_chart(request_data: dict[str, Any]) -> dict[str, Any]:
     params = request_data.get("params", {})
     season = _season_str(params.get("season"))
-    season_type = _lookup(_SEASON_TYPES, params.get("season_type"), "regular", "season_type")
+    season_type = _season_type(params.get("season_type"))
     person_id, display = _resolve_player(params.get("player_id"), params.get("player"))
     limit = params.get("limit")
 

@@ -16,7 +16,7 @@ Returns `data` as a **list** of team objects. Fields: `team_name`, `team_color`,
 
 ## get_championship_standings
 
-Returns `data.driver_standings[]` with fields: `position`, `driver_code`, `full_name`, `team`, `points`, `wins`, `podiums`.
+Returns `data.driver_standings[]` with fields: `position`, `driver_code`, `full_name`, `team`, `points`, `sprint_points`, `wins`, `podiums`. `points` includes sprint points (`sprint_points` is the sprint share); `wins`/`podiums`/`races` count Grands Prix only.
 
 Returns `data.constructor_standings[]` with fields: `position`, `team`, `points`, `wins`.
 
@@ -30,7 +30,7 @@ Returns detailed session data including lap times, sector times, and speed trap 
 
 ## get_lap_data
 
-Returns lap-by-lap timing data with lap numbers, lap times, sector times, and compound information.
+Returns lap-by-lap timing data with lap numbers, lap times, sector times, and compound information. `is_pit_in_lap` / `is_pit_out_lap` mark pit laps; those laps (and laps rebuilt from sectors) have `is_accurate: false`.
 
 ## get_pit_stops
 
@@ -42,7 +42,7 @@ Returns speed trap data with intermediate speeds, speed trap values, and finish 
 
 ## get_season_stats
 
-Returns aggregated season statistics: fastest laps, top speeds, points, wins, and podiums per driver/team.
+Returns aggregated season statistics: fastest laps, top speeds, points, wins, and podiums per driver/team. `points` includes sprint points; `sprint_points` is the sprint share.
 
 ## get_team_comparison
 

@@ -18,6 +18,7 @@ from sports_skills._espn_base import (
     espn_core_request,
     espn_request,
     espn_summary,
+    espn_team_schedule,
     espn_web_request,
     fetch_season,
     normalize_boxscore,
@@ -477,11 +478,9 @@ def get_team_schedule(request_data):
     if not team_id:
         return {"error": True, "message": "team_id is required"}
 
-    espn_params = {}
-    if season:
-        espn_params["season"] = season
-
-    data = espn_request(SPORT_PATH, f"teams/{team_id}/schedule", espn_params or None)
+    data = espn_team_schedule(
+        SPORT_PATH, team_id, season, params.get("season_type"), all_types=("2", "5", "3")
+    )
     if data.get("error"):
         return data
 

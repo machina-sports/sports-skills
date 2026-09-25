@@ -316,6 +316,43 @@ def get_nhlstats_schedule(request_data: dict[str, Any]) -> dict[str, Any]:
     }
 
 
+def _with_nhl_totals(seasons: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Add a combined ``team: "TOTAL"`` NHL row after each season/game type split across teams.
+
+    A player traded mid-season has one NHL row per team. The total sums the
+    counting stats (integers); rate stats (percentages, averages, TOI strings)
+    are left out rather than guessed.
+    """
+    groups: dict[tuple[str, Any], list[dict[str, Any]]] = {}
+    for row in seasons:
+        if row["is_nhl"]:
+            groups.setdefault((row["season"], row["game_type"]), []).append(row)
+    out = []
+    for row in seasons:
+        out.append(row)
+        group = groups.get((row["season"], row["game_type"])) if row["is_nhl"] else None
+        if not group or len(group) < 2 or row is not group[-1]:
+            continue
+        totals: dict[str, int] = {}
+        for part in group:
+            for k, v in part["stats"].items():
+                if k != "sequence" and isinstance(v, int) and not isinstance(v, bool):
+                    totals[k] = totals.get(k, 0) + v
+        out.append(
+            {
+                "season": row["season"],
+                "league": "NHL",
+                "is_nhl": True,
+                "is_total": True,
+                "team": "TOTAL",
+                "teams": [part["team"] for part in group],
+                "game_type": row["game_type"],
+                "stats": totals,
+            }
+        )
+    return out
+
+
 @_guard
 def get_nhlstats_player_stats(request_data: dict[str, Any]) -> dict[str, Any]:
     params = request_data.get("params", {})
@@ -328,6 +365,8 @@ def get_nhlstats_player_stats(request_data: dict[str, Any]) -> dict[str, Any]:
             {
                 "season": str(row.get("season", "")),
                 "league": row.get("leagueAbbrev"),
+                "is_nhl": row.get("leagueAbbrev") == "NHL",
+                "is_total": False,
                 "team": _default(row.get("teamName")),
                 "game_type": row.get("gameTypeId"),
                 "stats": {
@@ -337,6 +376,7 @@ def get_nhlstats_player_stats(request_data: dict[str, Any]) -> dict[str, Any]:
                 },
             }
         )
+    seasons = _with_nhl_totals(seasons)
     career = (data.get("careerTotals") or {}).get("regularSeason") or {}
     row = {
         "provider": "nhl-stats",

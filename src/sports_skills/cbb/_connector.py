@@ -15,6 +15,7 @@ from sports_skills._espn_base import (
     espn_fitt_request,
     espn_request,
     espn_summary,
+    espn_team_schedule,
     espn_web_request,
     fetch_season,
     normalize_boxscore,
@@ -105,8 +106,12 @@ def _normalize_standings_entries(standings_data):
     entries = []
     for entry in standings_data.get("entries", []):
         team = entry.get("team", {})
-        stats = {s["name"]: s.get("displayValue", s.get("value", ""))
-                 for s in entry.get("stats", [])}
+        # ESPN lists the season totals first, then repeats the same stat names
+        # for each split (home, away, vs. conference, vs. ranked). Keep the
+        # first occurrence so the fields are season totals, not the last split.
+        stats = {}
+        for s in entry.get("stats", []):
+            stats.setdefault(s["name"], s.get("displayValue", s.get("value", "")))
         entries.append({
             "team": {
                 "id": str(team.get("id", "")),
@@ -494,12 +499,7 @@ def get_team_schedule(request_data):
     if not team_id:
         return {"error": True, "message": "team_id is required"}
 
-    espn_params = {}
-    if season:
-        espn_params["season"] = season
-
-    resource = f"teams/{team_id}/schedule"
-    data = espn_request(SPORT_PATH, resource, espn_params or None)
+    data = espn_team_schedule(SPORT_PATH, team_id, season, params.get("season_type"))
     if data.get("error"):
         return data
 
