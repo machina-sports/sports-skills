@@ -100,8 +100,10 @@ Original Six era. The two sources use unrelated id systems:
   unrelated. Resolve names with `find_nhl_player`; ASCII spellings match
   accented names ("stutzle" finds "Tim Stützle").
 - **Career rows span leagues.** `get_nhlstats_player_stats` returns every
-  league a player appeared in, each row labelled with `league` — filter to
-  `NHL` before summing career numbers.
+  league a player appeared in, each row labelled with `league` and `is_nhl` —
+  filter to `is_nhl` before summing career numbers. A player traded mid-season
+  has one NHL row per team plus a `team: "TOTAL"` row (`is_total: true`,
+  counting stats summed, rate stats omitted); skip `is_total` rows when summing.
 - **Seasons.** Pass the starting year (`season=2024` means 2024-25). The NHL
   form (`"20242025"`) is also accepted.
 

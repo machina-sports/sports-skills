@@ -29,6 +29,7 @@ Returns `athletes[]` with name, position, jersey number, height, weight, experie
 Get schedule for a specific team.
 - `team_id` (str, required): ESPN team ID
 - `season` (int, optional): Season year
+- `season_type` (str, optional): `regular`, `postseason` (alias `playoffs`), `playin`, `preseason`, or `all` (regular + play-in + playoffs). Omitted, ESPN returns the regular season only, so playoff and play-in games need `postseason`/`playin` or `all`.
 
 Returns `events[]` with opponent, date, score (if played), and venue.
 

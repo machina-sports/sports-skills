@@ -126,14 +126,16 @@ def get_team_roster(*, team_id: str) -> dict:
     return wrap(_get_team_roster(_params(team_id=team_id)))
 
 
-def get_team_schedule(*, team_id: str, season: int | None = None) -> dict:
+def get_team_schedule(*, team_id: str, season: int | None = None, season_type: str | None = None) -> dict:
     """Get schedule for a specific college basketball team.
 
     Args:
         team_id: ESPN team ID.
         season: Season year. Defaults to current.
+        season_type: "regular", "postseason" (alias "playoffs"), "preseason", or "all"
+            (regular + postseason). Omitted, ESPN's default (regular season) is returned.
     """
-    return wrap(_get_team_schedule(_params(team_id=team_id, season=season)))
+    return wrap(_get_team_schedule(_params(team_id=team_id, season=season, season_type=season_type)))
 
 
 def get_game_summary(*, event_id: str) -> dict:

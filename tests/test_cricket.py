@@ -569,6 +569,33 @@ class TestGetGameSummary:
         result = _espn.get_game_summary({"params": {"series_id": "8048"}})
         assert result["error"] is True
 
+    def test_series_id_is_resolved_from_an_active_event(self, monkeypatch):
+        header = {"sports": [{"leagues": [
+            {"id": 8052, "name": "County Championship Division One", "events": [{"id": "1513391"}]},
+            {"id": 8048, "name": "Indian Premier League", "events": [{"id": "1535465"}]},
+        ]}]}
+        captured = {}
+
+        def fake_summary(sport_path, event_id, **kw):
+            captured["sport_path"] = sport_path
+            return SUMMARY_PAYLOAD
+
+        monkeypatch.setattr(_espn, "_header_request", lambda: header)
+        monkeypatch.setattr(_espn, "espn_summary", fake_summary)
+        result = _espn.get_game_summary({"params": {"event_id": "1535465"}})
+        assert captured["sport_path"] == "cricket/8048"
+        assert result["series_id"] == "8048"
+
+    def test_unresolvable_event_keeps_the_series_id_hint(self, monkeypatch):
+        monkeypatch.setattr(_espn, "_header_request", lambda: {"sports": [{"leagues": []}]})
+        monkeypatch.setattr(
+            _espn, "espn_summary", lambda *a, **kw: pytest.fail("no summary without a series")
+        )
+        result = _espn.get_game_summary({"params": {"event_id": "1473511"}})
+        assert result["error"] is True
+        assert "not a match id" in result["message"] and "8048" in result["message"]
+        assert "1473511" in result["message"] and "get_series" in result["message"]
+
     def test_failed_summary_says_what_series_id_is(self, monkeypatch):
         monkeypatch.setattr(_espn, "espn_summary", lambda *a, **kw: None)
         result = _espn.get_game_summary({"params": {"series_id": "1527674", "event_id": "1535465"}})

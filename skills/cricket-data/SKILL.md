@@ -57,7 +57,7 @@ Agents can run `scripts/validate_params.sh` to pre-validate `--competition`, `--
 | `get_series` | — | List currently-active cricket series with ESPN series IDs and live events |
 | `get_scoreboard` | `series_id` (opt `date`) | Matches + scores + status for a series |
 | `get_standings` | `series_id` | Points table for a series (empty for most bilateral tours) |
-| `get_game_summary` | `series_id`, `event_id` | Match detail: rosters, leaders, matchcards, venue info |
+| `get_game_summary` | `event_id`, `series_id` (optional for active series) | Match detail: rosters, leaders, matchcards, venue info |
 | `get_news` | `series_id` | News articles for a series |
 
 ### Cricsheet backend (historical, ODC-BY 1.0)

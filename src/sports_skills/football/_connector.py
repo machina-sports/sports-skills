@@ -2277,6 +2277,13 @@ def _build_missing_players_from_fpl(bootstrap, season_id):
     return {"season_id": season_id, "teams": teams}
 
 
+def _fpl_season_year(bootstrap):
+    """Start year of the season FPL's bootstrap describes (GW1 deadline), or None."""
+    events = (bootstrap or {}).get("events") or []
+    deadline = str((events[0] or {}).get("deadline_time") or "") if events else ""
+    return int(deadline[:4]) if deadline[:4].isdigit() else None
+
+
 def _build_leaders_from_fpl(bootstrap):
     """Build top scorers list from FPL bootstrap (sorted by goals desc)."""
     team_map = _build_fpl_team_map(bootstrap)
@@ -2650,6 +2657,17 @@ def get_season_leaders(request_data):
     # FPL (PL only)
     if league.get("fpl"):
         bootstrap = _get_fpl_bootstrap()
+        fpl_year = _fpl_season_year(bootstrap)
+        if bootstrap and year and fpl_year and year != fpl_year:
+            # FPL only carries the season in progress; serving it for another
+            # season_id would silently answer the wrong season.
+            return {
+                "leaders": [],
+                "message": (
+                    f"Season leaders come from FPL, which only has the current Premier League "
+                    f"season ({slug}-{fpl_year}); none available for {slug}-{year}."
+                ),
+            }
         if bootstrap:
             leaders = _build_leaders_from_fpl(bootstrap)
             if leaders:
@@ -3039,7 +3057,13 @@ def get_team_schedule(request_data):
             fixture_params,
             max_retries=probe_retries,
         )
-        if not fixture_data.get("error"):
+        # fixture=true ignores `season` and returns the current season's
+        # fixtures, so a past season_year would get next season's games mixed in.
+        fixture_season = (fixture_data.get("requestedSeason") or {}).get("year")
+        wrong_season = bool(
+            season_year and fixture_season and str(fixture_season) != str(season_year)
+        )
+        if not fixture_data.get("error") and not wrong_season:
             fixture_events = fixture_data.get("events", [])
             # Merge, dedup by event ID
             seen_ids = {e.get("id", "") for e in events_raw}

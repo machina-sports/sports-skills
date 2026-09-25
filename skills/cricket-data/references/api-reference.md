@@ -48,8 +48,8 @@ Returns:
 
 ### get_game_summary
 Full match detail. Fields are passed through largely as ESPN returns them.
-- `series_id` (str, required).
 - `event_id` (str, required): from `get_scoreboard` or `get_series`.
+- `series_id` (str, optional): resolved from the event when the match is in a currently-active series (as listed by `get_series`); required for older matches.
 
 Returns: `event_id`, `series_id`, `header`, `game_info`, `notes[]`, `rosters[]`, `leaders[]`, `matchcards`, `article`.
 

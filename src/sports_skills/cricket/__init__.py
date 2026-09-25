@@ -47,12 +47,13 @@ def get_standings(*, series_id: str) -> dict:
     return wrap(_espn.get_standings(_params(series_id=series_id)))
 
 
-def get_game_summary(*, series_id: str, event_id: str) -> dict:
+def get_game_summary(*, event_id: str, series_id: str | None = None) -> dict:
     """Get match detail: rosters, leaders, matchcards, venue info.
 
     Args:
-        series_id: ESPN series ID. Discover via get_series.
         event_id: ESPN event ID from get_scoreboard or get_series.
+        series_id: ESPN series ID. Discover via get_series. Optional: resolved from
+            the event when the match is in a currently-active series.
     """
     return wrap(_espn.get_game_summary(_params(series_id=series_id, event_id=event_id)))
 

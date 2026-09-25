@@ -113,6 +113,10 @@ and schedules back to 1901. The two sources use unrelated id systems:
 - **Player ids.** MLB person ids (`660271`) and ESPN athlete ids are unrelated.
   Resolve names with `find_mlb_player`; ASCII spellings match accented names
   ("acuna" finds "Ronald Acuña Jr.").
+- **Postponed games repeat.** A postponed or suspended game is listed twice
+  under one `game_pk` in `get_mlbstats_schedule`: the original date has
+  `rescheduled: true` (and `rescheduled_to`), the make-up has
+  `rescheduled_from`. Drop `rescheduled` rows when counting games.
 - **Leaders come grouped.** A category like `homeRuns` exists for hitting,
   catching, and pitching (home runs *allowed*); rows are labelled with
   `stat_group` — pass `stat_group=` to get just one.

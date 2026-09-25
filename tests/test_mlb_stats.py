@@ -168,6 +168,35 @@ class TestSchedule:
         assert path == "schedule"
         assert params["gameType"] == "W"
 
+    def test_postponed_game_rows_are_marked(self, monkeypatch):
+        """NYY 2024, gamePk 746656: postponed 04-12, played 04-13 (live payload, trimmed)."""
+
+        def game(date, state, detailed, score=None, **extra):
+            return {
+                "gamePk": 746656, "gameDate": date, "gameType": "R",
+                "status": {"codedGameState": state, "detailedState": detailed},
+                "teams": {"away": {"team": {"name": "Cleveland Guardians"}},
+                          "home": {"team": {"name": "New York Yankees"}, "score": score}},
+                **extra,
+            }
+
+        payload = {"dates": [
+            {"games": [game("2024-04-12T23:10:00Z", "D", "Postponed",
+                            rescheduleDate="2024-04-13T16:10:00Z", rescheduleGameDate="2024-04-13")]},
+            {"games": [game("2024-04-13T16:10:00Z", "F", "Final", score=2,
+                            rescheduledFrom="2024-04-12T23:10:00Z", rescheduledFromDate="2024-04-12")]},
+        ]}
+        monkeypatch.setattr(
+            _stats, "_request",
+            lambda path, params=None, ttl=600: payload if path == "schedule" else _fixture(path),
+        )
+        out = _stats.get_mlbstats_schedule({"params": {"season": 2024, "team": "NYY"}})
+        postponed, makeup = out["games"]
+        assert postponed["game_pk"] == makeup["game_pk"] == "746656"
+        assert postponed["rescheduled"] is True and postponed["rescheduled_to"] == "2024-04-13"
+        assert makeup["rescheduled"] is False and makeup["rescheduled_from"] == "2024-04-12"
+        assert [g["home_score"] for g in out["games"] if not g["rescheduled"]] == [2]
+
     def test_invalid_game_type_lists_valid(self, offline):
         out = _stats.get_mlbstats_schedule(
             {"params": {"season": 2024, "team": "NYY", "game_type": "finals"}}

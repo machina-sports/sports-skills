@@ -12,6 +12,7 @@ from sports_skills._espn_base import (
     espn_core_request,
     espn_request,
     espn_summary,
+    espn_team_schedule,
     espn_web_request,
     fetch_season,
     normalize_boxscore,
@@ -101,13 +102,35 @@ def _normalize_event(espn_event):
     }
 
 
+def _parse_record(record):
+    """``"12-2"`` / ``"8-3-1"`` -> ``("12", "2")``; None when not a record."""
+    parts = str(record or "").split("-")
+    if len(parts) < 2 or not all(p.strip().isdigit() for p in parts):
+        return None
+    return parts[0].strip(), parts[1].strip()
+
+
+def _win_pct(overall):
+    if not overall:
+        return "0"
+    wins, losses = int(overall[0]), int(overall[1])
+    games = wins + losses
+    return f"{wins / games:.3f}" if games else "0"
+
+
 def _normalize_standings_entries(standings_data):
     """Parse entries from an ESPN standings block."""
     entries = []
     for entry in standings_data.get("entries", []):
         team = entry.get("team", {})
-        stats = {s["name"]: s.get("displayValue", s.get("value", ""))
-                 for s in entry.get("stats", [])}
+        # ESPN lists the season totals first, then repeats the same stat names
+        # for each split (home, away, vs. conference, vs. ranked). Keep the
+        # first occurrence so the fields are season totals, not the last split.
+        stats = {}
+        for s in entry.get("stats", []):
+            stats.setdefault(s["name"], s.get("displayValue", s.get("value", "")))
+        # CFB has no top-level losses/winPercent; the overall record ("12-2") does.
+        overall = _parse_record(stats.get("overall"))
         entries.append({
             "team": {
                 "id": str(team.get("id", "")),
@@ -115,9 +138,9 @@ def _normalize_standings_entries(standings_data):
                 "abbreviation": team.get("abbreviation", ""),
                 "logo": team.get("logos", [{}])[0].get("href", "") if team.get("logos") else "",
             },
-            "wins": stats.get("wins", "0"),
-            "losses": stats.get("losses", "0"),
-            "win_pct": stats.get("winPercent", stats.get("winPct", "0")),
+            "wins": stats.get("wins", overall[0] if overall else "0"),
+            "losses": stats.get("losses", overall[1] if overall else "0"),
+            "win_pct": stats.get("winPercent", stats.get("winPct", _win_pct(overall))),
             "points_for": stats.get("pointsFor", "0"),
             "points_against": stats.get("pointsAgainst", "0"),
             "streak": stats.get("streak", ""),
@@ -475,12 +498,7 @@ def get_team_schedule(request_data):
     if not team_id:
         return {"error": True, "message": "team_id is required"}
 
-    espn_params = {}
-    if season:
-        espn_params["season"] = season
-
-    resource = f"teams/{team_id}/schedule"
-    data = espn_request(SPORT_PATH, resource, espn_params or None)
+    data = espn_team_schedule(SPORT_PATH, team_id, season, params.get("season_type"))
     if data.get("error"):
         return data
 

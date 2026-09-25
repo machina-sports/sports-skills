@@ -6,8 +6,10 @@ Uses stdlib only (urllib, json, threading). No API key purchase required.
 
 import json
 import logging
+import re
 import threading
 import time
+import unicodedata
 import urllib.error
 import urllib.parse
 import urllib.request
@@ -250,6 +252,39 @@ def get_team_logo(request_data):
     return {"error": True, "message": f"No team found for '{team_name}'"}
 
 
+def _name_tokens(name):
+    """Lowercased, accent- and punctuation-free word set; "saint" folds to "st"."""
+    text = unicodedata.normalize("NFKD", str(name or "")).encode("ascii", "ignore").decode()
+    words = re.sub(r"[^a-z0-9]+", " ", text.lower()).split()
+    return frozenset("st" if w == "saint" else w for w in words)
+
+
+def _team_names(team):
+    names = [team.get("strTeam"), team.get("strTeamShort")]
+    names += (team.get("strTeamAlternate") or "").split(",")
+    return [n for n in (_name_tokens(n) for n in names) if n]
+
+
+def _best_team_match(query, teams):
+    """The result whose name matches the query, or None.
+
+    TheSportsDB's search is fuzzy and, on the free key, returns a single best
+    guess: "St. Louis Cardinals" comes back as "Louisville". An exact name (or
+    alternate) wins; otherwise a name whose words all appear in the query or
+    vice versa ("Real Madrid CF" / "Real Madrid"). Anything looser is rejected.
+    """
+    wanted = _name_tokens(query)
+    if not wanted:
+        return None
+    for t in teams:
+        if wanted in _team_names(t):
+            return t
+    for t in teams:
+        if any(wanted <= names or names <= wanted for names in _team_names(t)):
+            return t
+    return None
+
+
 def get_team_info(request_data):
     """Get detailed team information.
 
@@ -270,7 +305,17 @@ def get_team_info(request_data):
     if not teams:
         return {"error": True, "message": f"No team found for '{team_name}'"}
 
-    t = teams[0]
+    t = _best_team_match(team_name, teams)
+    if t is None:
+        found = ", ".join(f"'{c.get('strTeam')}' ({c.get('strSport')})" for c in teams)
+        return {
+            "error": True,
+            "message": (
+                f"No team named '{team_name}' found. TheSportsDB's closest result(s): {found}, "
+                "which do not match the requested name. Try the team's full official name "
+                "or search_teams."
+            ),
+        }
     return {
         "team_id": t.get("idTeam"),
         "name": t.get("strTeam"),

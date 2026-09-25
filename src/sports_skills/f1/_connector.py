@@ -412,12 +412,19 @@ def get_lap_data(request_data):
                     lap_time = reconstructed
                     is_accurate = False
 
+            is_pit_in_lap = pd.notna(lap.get("PitInTime"))
+            is_pit_out_lap = pd.notna(lap.get("PitOutTime"))
+            if is_pit_in_lap or is_pit_out_lap:
+                is_accurate = False
+
             lap_data = {
                 "driver": lap.get("Driver", ""),
                 "team": lap.get("Team", ""),
                 "lap_number": _safe_int(lap.get("LapNumber")),
                 "lap_time": _format_timedelta(lap_time),
                 "is_accurate": is_accurate,
+                "is_pit_in_lap": bool(is_pit_in_lap),
+                "is_pit_out_lap": bool(is_pit_out_lap),
                 "sector_1_time": _format_timedelta(s1),
                 "sector_2_time": _format_timedelta(s2),
                 "sector_3_time": _format_timedelta(s3),
@@ -451,6 +458,39 @@ def _get_completed_races(year):
     today = pd.Timestamp.now().normalize()
     races = races[races["EventDate"] < today]
     return races["EventName"].tolist()
+
+
+def _get_completed_sprints(year):
+    """Event names of completed sprint weekends (EventFormat sprint*) in a season."""
+    schedule = _event_schedule(year)
+    sprints = schedule[schedule["EventFormat"].astype(str).str.startswith("sprint")]
+    today = pd.Timestamp.now().normalize()
+    sprints = sprints[sprints["EventDate"] < today]
+    return sprints["EventName"].tolist()
+
+
+def _season_sprint_points(year):
+    """Sprint points per driver code for a season.
+
+    Returns ``{driver_code: {"points", "full_name", "team"}}``. Sprint results are
+    a separate FastF1 session ("S"), so race results alone miss these points.
+    """
+    drivers = {}
+    for event in _get_completed_sprints(year):
+        try:
+            results = _load_session_cached(year, event, results_only=True, session_type="S").results
+        except _replay.ReplayFailure:
+            raise
+        except Exception:
+            continue
+        for _, row in results.iterrows():
+            drv = row.get("Abbreviation", "")
+            pts = float(row.get("Points", 0)) if pd.notna(row.get("Points")) else 0
+            entry = drivers.setdefault(
+                drv, {"points": 0, "full_name": row.get("FullName", ""), "team": row.get("TeamName", "")}
+            )
+            entry["points"] += pts
+    return drivers
 
 
 def _load_session_cached(year, event, *, results_only=False, laps_only=False, session_type="R"):
@@ -756,6 +796,22 @@ def get_championship_standings(request_data):
             except Exception:
                 continue
 
+        sprint_points = _season_sprint_points(year)
+        for drv, sp in sprint_points.items():
+            if drv not in driver_points:
+                driver_points[drv] = 0
+                driver_info[drv] = {
+                    "driver_code": drv,
+                    "full_name": sp["full_name"],
+                    "team": sp["team"],
+                    "wins": 0,
+                    "podiums": 0,
+                    "races": 0,
+                }
+            driver_points[drv] += sp["points"]
+            team = sp["team"]
+            team_points[team] = team_points.get(team, 0) + sp["points"]
+
         # Sort drivers by points
         driver_standings = []
         for i, (drv, pts) in enumerate(
@@ -769,6 +825,7 @@ def get_championship_standings(request_data):
                     "full_name": info["full_name"],
                     "team": info["team"],
                     "points": pts,
+                    "sprint_points": sprint_points.get(drv, {}).get("points", 0),
                     "wins": info["wins"],
                     "podiums": info["podiums"],
                     "races": info["races"],
@@ -845,6 +902,7 @@ def get_season_stats(request_data):
                             "full_name": row.get("FullName", ""),
                             "team": team,
                             "points": 0,
+                            "sprint_points": 0,
                             "wins": 0,
                             "podiums": 0,
                             "poles": 0,
@@ -922,6 +980,12 @@ def get_season_stats(request_data):
                 raise
             except Exception:
                 continue
+
+        for drv, sp in _season_sprint_points(year).items():
+            if drv not in driver_stats:
+                continue
+            driver_stats[drv]["points"] += sp["points"]
+            driver_stats[drv]["sprint_points"] += sp["points"]
 
         # Format output
         driver_list = []

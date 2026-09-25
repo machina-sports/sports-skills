@@ -284,6 +284,12 @@ def _normalize_game(game: dict[str, Any]) -> dict[str, Any]:
         "away_score": away.get("score"),
         "home_score": home.get("score"),
         "venue": (game.get("venue") or {}).get("name"),
+        # A postponed or suspended game is listed twice under one gamePk: once
+        # on the original date (moved away, no final score) and once on the
+        # make-up/resumption date. ``rescheduled`` marks the superseded row.
+        "rescheduled": bool(game.get("rescheduleDate") or game.get("resumeDate")),
+        "rescheduled_to": game.get("rescheduleGameDate") or game.get("resumeGameDate"),
+        "rescheduled_from": game.get("rescheduledFromDate") or game.get("resumedFromDate"),
     }
     return row
 

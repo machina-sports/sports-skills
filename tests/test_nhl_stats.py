@@ -191,6 +191,48 @@ class TestPlayerStats:
         assert out["career_totals"]["gamesPlayed"] > 0
         assert out["player"].startswith("Connor")
 
+    def test_non_nhl_rows_are_flagged(self, offline):
+        out = _stats.get_nhlstats_player_stats({"params": {"player_id": "8478402"}})
+        for row in out["seasons"]:
+            assert row["is_nhl"] is (row["league"] == "NHL")
+        assert any(not row["is_nhl"] for row in out["seasons"])
+
+    def test_traded_player_gets_a_combined_nhl_row(self, monkeypatch):
+        """Rantanen 2024-25 (COL -> CAR -> DAL), trimmed from the live landing payload."""
+
+        def row(team, gp, goals, points, league="NHL", game_type=2, seq=1):
+            return {
+                "season": 20242025, "leagueAbbrev": league, "gameTypeId": game_type,
+                "teamName": {"default": team}, "sequence": seq, "gamesPlayed": gp,
+                "goals": goals, "points": points, "shootingPctg": 0.15, "avgToi": "19:07",
+            }
+
+        landing = {
+            "playerId": 8478420, "firstName": {"default": "Mikko"}, "lastName": {"default": "Rantanen"},
+            "seasonTotals": [
+                row("Colorado Avalanche", 49, 25, 63),
+                row("Carolina Hurricanes", 13, 2, 6, seq=2),
+                row("Dallas Stars", 20, 5, 18, seq=3),
+                row("Finland", 3, 1, 1, league="4 Nations", seq=44),
+                row("Dallas Stars", 18, 9, 22, game_type=3),
+            ],
+        }
+        monkeypatch.setattr(_stats, "_request", lambda url, ttl=600: landing)
+        out = _stats.get_nhlstats_player_stats({"params": {"player_id": "8478420"}})
+
+        totals = [r for r in out["seasons"] if r["is_total"]]
+        assert len(totals) == 1  # one playoff team, so no playoff total
+        total = totals[0]
+        assert total["team"] == "TOTAL" and total["is_nhl"] and total["game_type"] == 2
+        assert total["teams"] == ["Colorado Avalanche", "Carolina Hurricanes", "Dallas Stars"]
+        assert total["stats"] == {"gamesPlayed": 82, "goals": 32, "points": 87}
+        # Placed right after the last NHL regular-season row; 4 Nations row not summed.
+        assert [r["team"] for r in out["seasons"]][:4] == [
+            "Colorado Avalanche", "Carolina Hurricanes", "Dallas Stars", "TOTAL",
+        ]
+        four_nations = next(r for r in out["seasons"] if r["league"] == "4 Nations")
+        assert four_nations["is_nhl"] is False
+
 
 # ── play-by-play ─────────────────────────────────────────────
 

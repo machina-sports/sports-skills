@@ -189,15 +189,45 @@ def get_standings(request_data):
     return {"series_id": series_id, "standings": standings, "count": len(standings)}
 
 
+def _series_for_event(event_id):
+    """Series id of an event listed in ESPN's active-series header, or None.
+
+    The header only lists current series, so older matches do not resolve.
+    """
+    data = _header_request()
+    if data.get("error"):
+        return None
+    for sport in data.get("sports", []):
+        for lg in sport.get("leagues", []):
+            if any(str(e.get("id", "")) == str(event_id) for e in lg.get("events", [])):
+                return str(lg.get("id", "")) or None
+    return None
+
+
 def get_game_summary(request_data):
-    """Match detail: rosters, leaders, matchcards, game info, header."""
+    """Match detail: rosters, leaders, matchcards, game info, header.
+
+    ``series_id`` is optional: when omitted it is resolved from the event,
+    which works for matches in ESPN's currently-active series.
+    """
     params = request_data.get("params", {})
-    series_id, err = _validate_series_id(params.get("series_id"))
-    if err:
-        return err
     event_id = params.get("event_id")
     if not event_id:
         return {"error": True, "message": "event_id is required — see get_scoreboard"}
+    if params.get("series_id"):
+        series_id = str(params["series_id"]).strip()
+    else:
+        series_id = _series_for_event(event_id)
+        if not series_id:
+            return {
+                "error": True,
+                "message": (
+                    f"series_id is required for event {event_id}: it is not in a currently-active "
+                    "series, so it could not be resolved. series_id is the series (league) id, "
+                    "not a match id: e.g. 8048 for the IPL. Get it from get_series or from the "
+                    "scoreboard entry of the match."
+                ),
+            }
     data = espn_summary(f"cricket/{series_id}", str(event_id))
     if data is None:
         # Agents read a bare "request failed" as "try another series_id" and
