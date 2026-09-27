@@ -2714,6 +2714,24 @@ class TestOpenfootballScoreShapes:
         )
         assert ev["status"] == "not_started"
 
+    def test_standings_survive_mixed_shapes(self):
+        from unittest.mock import patch
+
+        from sports_skills.football import _connector as fc
+
+        data = {
+            "matches": [
+                {"team1": "A", "team2": "B", "score": {"ft": [2, 0]}},
+                {"team1": "A", "team2": "B", "score": [1, 1]},   # bare list — crashed before
+                {"team1": "A", "team2": "B"},                     # unplayed
+            ]
+        }
+        with patch.object(fc, "_openfootball_fetch", return_value=data):
+            table = fc._openfootball_get_standings("premier-league", "2025")
+        a = next(t for t in table if t["team"]["name"] == "A")
+        assert a["played"] == 2
+        assert a["points"] == 4  # one win, one draw
+
 
 class TestOpenfootballKickoffUtc:
     """openfootball times are the league's local time with no offset (#152)."""
@@ -2754,24 +2772,6 @@ class TestOpenfootballKickoffUtc:
 
     def test_date_only_match_has_no_timestamp(self):
         assert self._start("premier-league", "2025-08-16", "") == ("2025-08-16", None)
-
-    def test_standings_survive_mixed_shapes(self):
-        from unittest.mock import patch
-
-        from sports_skills.football import _connector as fc
-
-        data = {
-            "matches": [
-                {"team1": "A", "team2": "B", "score": {"ft": [2, 0]}},
-                {"team1": "A", "team2": "B", "score": [1, 1]},   # bare list — crashed before
-                {"team1": "A", "team2": "B"},                     # unplayed
-            ]
-        }
-        with patch.object(fc, "_openfootball_fetch", return_value=data):
-            table = fc._openfootball_get_standings("premier-league", "2025")
-        a = next(t for t in table if t["team"]["name"] == "A")
-        assert a["played"] == 2
-        assert a["points"] == 4  # one win, one draw
 
 
 class TestSeasonEmptyExplained:

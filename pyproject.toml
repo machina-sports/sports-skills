@@ -29,6 +29,7 @@ classifiers = [
 ]
 dependencies = [
     "feedparser>=6.0",
+    "tzdata; sys_platform == 'win32'",
 ]
 
 [project.urls]
