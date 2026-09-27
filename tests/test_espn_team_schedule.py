@@ -1,5 +1,7 @@
 """ESPN team schedules can include postseason games (NBA playoffs, bowls, NCAA tournament)."""
 
+import importlib
+
 import pytest
 
 from sports_skills import _espn_base, cbb, cfb, nba
@@ -71,3 +73,44 @@ def test_unknown_season_type_is_an_error(fake_espn):
     assert result["status"] is False
     assert "season_type" in result["message"]
     assert fake_espn == []
+
+
+# teams/{id}/schedule sends each competitor's score as an object, the
+# scoreboard as a string (#151).
+def _schedule_event(home_score, away_score):
+    return {
+        "id": "401772971",
+        "date": "2025-09-07T17:00Z",
+        "name": "Las Vegas Raiders at New England Patriots",
+        "competitions": [
+            {
+                "date": "2025-09-07T17:00Z",
+                "status": {"type": {"name": "STATUS_FINAL", "shortDetail": "Final"}},
+                "competitors": [
+                    {"homeAway": "home", "team": {"id": "17"}, "score": home_score, "winner": False},
+                    {"homeAway": "away", "team": {"id": "13"}, "score": away_score, "winner": True},
+                ],
+            }
+        ],
+    }
+
+
+_ESPN_LEAGUES = ["nfl", "nba", "wnba", "mlb", "nhl", "cfb", "cbb"]
+
+
+@pytest.mark.parametrize("league", _ESPN_LEAGUES)
+def test_schedule_score_object_is_unwrapped_to_string(league):
+    connector = importlib.import_module(f"sports_skills.{league}._connector")
+    event = _schedule_event(
+        {"value": 13.0, "displayValue": "13"},
+        {"value": 20.0, "displayValue": "20"},
+    )
+    scores = [c["score"] for c in connector._normalize_event(event)["competitors"]]
+    assert scores == ["13", "20"]
+
+
+@pytest.mark.parametrize("league", _ESPN_LEAGUES)
+def test_scoreboard_score_string_is_unchanged(league):
+    connector = importlib.import_module(f"sports_skills.{league}._connector")
+    scores = [c["score"] for c in connector._normalize_event(_schedule_event("13", "20"))["competitors"]]
+    assert scores == ["13", "20"]

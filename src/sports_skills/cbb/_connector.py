@@ -22,6 +22,7 @@ from sports_skills._espn_base import (
     normalize_core_stats,
     normalize_futures,
     normalize_odds,
+    normalize_score,
     normalize_scoring_plays,
     normalize_summary_odds,
 )
@@ -65,7 +66,7 @@ def _normalize_event(espn_event):
                 "conference_id": team.get("conferenceId", ""),
             },
             "home_away": c.get("homeAway", ""),
-            "score": c.get("score", "0"),
+            "score": normalize_score(c.get("score", "0")),
             "period_scores": [int(p.get("value", 0)) for p in linescores],
             "record": records[0].get("summary", "") if records else "",
             "winner": c.get("winner", False),
