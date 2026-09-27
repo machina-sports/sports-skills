@@ -4041,6 +4041,7 @@ version = "0.33.0"
 source = { editable = "." }
 dependencies = [
     { name = "feedparser" },
+    { name = "tzdata", marker = "sys_platform == 'win32'" },
 ]
 
 [package.optional-dependencies]
@@ -4105,6 +4106,7 @@ requires-dist = [
     { name = "pytest", marker = "extra == 'dev'", specifier = ">=8.0" },
     { name = "pyyaml", marker = "extra == 'site'", specifier = ">=6.0" },
     { name = "ruff", marker = "extra == 'dev'", specifier = ">=0.9" },
+    { name = "tzdata", marker = "sys_platform == 'win32'" },
 ]
 provides-extras = ["f1", "nfl", "nba", "wnba", "nhl", "mlb", "tennis", "cfb", "cbb", "golf", "polymarket", "all", "dev", "site"]
 

@@ -203,6 +203,35 @@ class TestSchedule:
         )
         assert out["error"] is True and "worldseries" in out["message"]
 
+    def test_rows_carry_start_time_and_local_date(self, offline):
+        """CWS opening day 2024: gameDate 2024-03-28T20:10:00Z, officialDate 2024-03-28."""
+        out = _stats.get_mlbstats_schedule({"params": {"season": 2024, "team": "CHW"}})
+        row = out["games"][0]
+        assert row["start_time"] == "2024-03-28T20:10:00Z"
+        assert row["start_ts"] == 1711656600
+        assert row["local_date"] == "2024-03-28"
+        assert row["game_date"] == "2024-03-28"
+
+    def test_west_coast_night_game_keeps_local_date(self, monkeypatch):
+        """COL @ SF 2025-09-26 7:15 PM PDT, gamePk 776166 (live payload, trimmed).
+
+        ``game_date`` stays the UTC date, as before; ``local_date`` is MLB's
+        ``officialDate``.
+        """
+        payload = {"dates": [{"games": [{
+            "gamePk": 776166, "gameDate": "2025-09-27T02:15:00Z", "officialDate": "2025-09-26",
+            "gameType": "R", "status": {"detailedState": "Final"},
+            "teams": {"away": {"team": {"name": "Colorado Rockies"}, "score": 3},
+                      "home": {"team": {"name": "San Francisco Giants"}, "score": 6}},
+            "venue": {"name": "Oracle Park"},
+        }]}]}
+        monkeypatch.setattr(_stats, "_request", lambda path, params=None, ttl=600: payload)
+        (row,) = _stats.get_mlbstats_schedule({"params": {"date": "2025-09-26"}})["games"]
+        assert row["game_date"] == "2025-09-27"
+        assert row["local_date"] == "2025-09-26"
+        assert row["start_time"] == "2025-09-27T02:15:00Z"
+        assert row["start_ts"] == 1758939300
+
 
 # ── player stats ─────────────────────────────────────────────
 

@@ -27,6 +27,7 @@ from sports_skills._espn_base import (
     _cache_get,
     _cache_set,
     _http_fetch,
+    epoch_seconds,
 )
 from sports_skills._shaping import ShapingError, parse_limit, shape_rows
 
@@ -276,7 +277,12 @@ def _normalize_game(game: dict[str, Any]) -> dict[str, Any]:
     away, home = game.get("teams", {}).get("away", {}), game.get("teams", {}).get("home", {})
     row = {
         "game_pk": str(game.get("gamePk", "")),
+        # game_date is the UTC date of first pitch (kept as it was); a night
+        # game out West lands a day later. local_date is MLB's officialDate.
         "game_date": str(game.get("gameDate", ""))[:10],
+        "local_date": game.get("officialDate"),
+        "start_time": game.get("gameDate"),
+        "start_ts": epoch_seconds(game.get("gameDate")),
         "game_type": game.get("gameType"),
         "status": (game.get("status") or {}).get("detailedState"),
         "away_team": (away.get("team") or {}).get("name"),

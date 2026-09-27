@@ -28,6 +28,7 @@ from sports_skills._espn_base import (
     _cache_get,
     _cache_set,
     _http_fetch,
+    epoch_seconds,
 )
 
 logger = logging.getLogger("sports_skills.nhl._stats")
@@ -263,6 +264,10 @@ def _normalize_score_game(game: dict[str, Any]) -> dict[str, Any]:
     row = {
         "game_id": str(game.get("id", "")),
         "game_date": game.get("gameDate"),
+        "start_time": game.get("startTimeUTC"),
+        "start_ts": epoch_seconds(game.get("startTimeUTC")),
+        "venue_timezone": game.get("venueTimezone"),
+        "venue_utc_offset": game.get("venueUTCOffset"),
         "season": str(game.get("season", "")),
         "game_type": game.get("gameType"),
         "status": game.get("gameState"),

@@ -2733,6 +2733,47 @@ class TestOpenfootballScoreShapes:
         assert a["points"] == 4  # one win, one draw
 
 
+class TestOpenfootballKickoffUtc:
+    """openfootball times are the league's local time with no offset (#152)."""
+
+    @staticmethod
+    def _start(slug, date, time):
+        from sports_skills.football._connector import _normalize_openfootball_match
+
+        ev = _normalize_openfootball_match({"date": date, "time": time, "team1": "A", "team2": "B"}, slug, "2025")
+        return ev["start_time"], ev["start_ts"]
+
+    def test_bst_kickoff_is_converted_to_utc(self):
+        """Liverpool v Bournemouth, 2025-08-15 20:00 BST (en.1 2025-26, matchday 1)."""
+        assert self._start("premier-league", "2025-08-15", "20:00") == ("2025-08-15T19:00:00Z", 1755284400)
+
+    def test_gmt_kickoff_is_already_utc(self):
+        assert self._start("premier-league", "2025-12-20", "15:00") == ("2025-12-20T15:00:00Z", 1766242800)
+
+    def test_mls_times_are_us_eastern(self):
+        """LAFC v Minnesota, 2025-02-22 16:45 in the file; ESPN has 21:45Z."""
+        assert self._start("mls", "2025-02-22", "16:45") == ("2025-02-22T21:45:00Z", 1740260700)
+
+    def test_every_openfootball_league_has_a_zone(self):
+        from zoneinfo import ZoneInfo
+
+        from sports_skills.football._connector import LEAGUES
+
+        for slug, league in LEAGUES.items():
+            if league.get("openfootball"):
+                assert ZoneInfo(league["openfootball"]["timezone"]), slug
+
+    def test_unknown_zone_is_not_labelled_utc(self, monkeypatch):
+        from sports_skills.football import _connector as fc
+
+        league = dict(fc.LEAGUES["premier-league"], openfootball={"file": "en.1", "season_format": "aug"})
+        monkeypatch.setitem(fc.LEAGUES, "premier-league", league)
+        assert self._start("premier-league", "2025-08-15", "20:00") == ("2025-08-15T20:00:00", None)
+
+    def test_date_only_match_has_no_timestamp(self):
+        assert self._start("premier-league", "2025-08-16", "") == ("2025-08-16", None)
+
+
 class TestSeasonEmptyExplained:
     """A season neither source can serve must say so, not return a bare
     empty success indistinguishable from an empty table."""
