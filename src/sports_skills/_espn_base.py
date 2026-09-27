@@ -793,6 +793,24 @@ def _current_year():
     return datetime.datetime.utcnow().year
 
 
+def fill_team_divisions(groups, division_data):
+    """Set ``division`` on each standings entry from a ``level=3`` standings payload.
+
+    ESPN's default standings are conference tables with no division; with
+    ``level=3`` each conference nests its divisions. Only the entries change,
+    so the groups keep their conference shape and order. A team missing from
+    ``division_data`` (or an error dict) gets its group's division, else ``""``.
+    """
+    divisions = {}
+    for conference in division_data.get("children", []):
+        for division in conference.get("children", []):
+            for entry in division.get("standings", {}).get("entries", []):
+                divisions[str(entry.get("team", {}).get("id", ""))] = division.get("name", "")
+    for group in groups:
+        for entry in group["entries"]:
+            entry["division"] = group.get("division") or divisions.get(entry["team"]["id"], "")
+
+
 def fetch_season(loader, season_year, explicit):
     """Fetch a season-scoped resource, stepping back a year for an implied season.
 

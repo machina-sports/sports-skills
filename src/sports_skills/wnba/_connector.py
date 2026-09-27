@@ -353,11 +353,8 @@ def get_standings(request_data):
     espn_params = {}
     if season:
         espn_params["season"] = season
-    # level=3 asks for division children, as the other ESPN leagues do. The
-    # WNBA has no divisions, so ESPN returns the conference tables either way.
-    espn_params["level"] = 3
 
-    data = espn_web_request(SPORT_PATH, "standings", espn_params)
+    data = espn_web_request(SPORT_PATH, "standings", espn_params or None)
     if data.get("error"):
         return data
 
