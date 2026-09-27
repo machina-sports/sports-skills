@@ -108,3 +108,32 @@ def test_pit_in_and_out_laps_are_not_accurate(fake_fastf1):
     assert laps[11]["is_pit_out_lap"] is True and laps[11]["is_accurate"] is False
     assert laps[12]["is_accurate"] is True
     assert laps[12]["is_pit_in_lap"] is False and laps[12]["is_pit_out_lap"] is False
+
+
+def test_team_comparison_includes_sprint_points(fake_fastf1):
+    result = f1.get_team_comparison({"params": {"year": 2026, "team1": "McLaren", "team2": "Ferrari"}})
+    assert result["status"] is True, result
+    mclaren = result["data"]["team1"]
+    assert mclaren["points"] == 25 + 18 + 25 + 18 + 8 + 7
+    assert mclaren["sprint_points"] == 8 + 7
+    assert result["data"]["team2"]["sprint_points"] == 0
+
+
+def test_driver_comparison_includes_sprint_points(fake_fastf1):
+    result = f1.get_driver_comparison({"params": {"year": 2026, "driver1": "NOR", "driver2": "PIA"}})
+    assert result["status"] is True, result
+    drivers = {d["driver_code"]: d for d in result["data"]["drivers"]}
+    assert drivers["NOR"]["points"] == 25 + 25 + 8
+    assert drivers["NOR"]["sprint_points"] == 8
+    assert drivers["PIA"]["sprint_points"] == 7
+    assert drivers["NOR"]["races"] == 2
+
+
+def test_single_event_comparison_counts_only_that_weekends_sprint(fake_fastf1):
+    result = f1.get_driver_comparison(
+        {"params": {"year": 2026, "driver1": "NOR", "driver2": "PIA", "event": "Japanese Grand Prix"}}
+    )
+    assert result["status"] is True, result
+    drivers = {d["driver_code"]: d for d in result["data"]["drivers"]}
+    assert drivers["NOR"]["points"] == 25
+    assert drivers["NOR"]["sprint_points"] == 0

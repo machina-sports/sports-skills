@@ -46,3 +46,26 @@ def test_exact_name_beats_earlier_loose_result(search):
 def test_close_names_still_match(search, query, team):
     search["teams"] = [team]
     assert md.get_team_info({"params": {"team_name": query}})["name"] == team["strTeam"]
+
+
+def test_team_logo_rejects_loose_match(search):
+    search["teams"] = [_team("Louisville", "American Football", "Louisville Cardinals")]
+    result = md.get_team_logo({"params": {"team_name": "St. Louis Cardinals", "sport": "Baseball"}})
+    assert result["error"] is True
+    assert "Louisville" in result["message"] and "St. Louis Cardinals" in result["message"]
+
+
+def test_team_logo_prefers_close_match_in_sport(search):
+    search["teams"] = [
+        _team("Louisville", "American Football", "Louisville Cardinals"),
+        _team("Arizona Cardinals", "American Football", "Cardinals", "ARI"),
+        _team("St. Louis Cardinals", "Baseball", "Cardinals", "STL"),
+    ]
+    result = md.get_team_logo({"params": {"team_name": "St Louis Cardinals", "sport": "Baseball"}})
+    assert result["team_name"] == "St. Louis Cardinals"
+
+
+def test_team_logo_close_match_in_other_sport_still_returned(search):
+    search["teams"] = [_team("Arsenal", "Soccer", "Arsenal FC")]
+    result = md.get_team_logo({"params": {"team_name": "Arsenal", "sport": "Basketball"}})
+    assert result["team_name"] == "Arsenal"

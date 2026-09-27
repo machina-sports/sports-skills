@@ -469,14 +469,16 @@ def _get_completed_sprints(year):
     return sprints["EventName"].tolist()
 
 
-def _season_sprint_points(year):
-    """Sprint points per driver code for a season.
+def _season_sprint_points(year, events=None):
+    """Sprint points per driver code for a season (or only the given ``events``).
 
     Returns ``{driver_code: {"points", "full_name", "team"}}``. Sprint results are
     a separate FastF1 session ("S"), so race results alone miss these points.
     """
     drivers = {}
     for event in _get_completed_sprints(year):
+        if events is not None and event not in events:
+            continue
         try:
             results = _load_session_cached(year, event, results_only=True, session_type="S").results
         except _replay.ReplayFailure:
@@ -1048,6 +1050,7 @@ def get_team_comparison(request_data):
 
         t1_stats = {
             "points": 0,
+            "sprint_points": 0,
             "wins": 0,
             "podiums": 0,
             "poles": 0,
@@ -1064,6 +1067,7 @@ def get_team_comparison(request_data):
         }
         t2_stats = {
             "points": 0,
+            "sprint_points": 0,
             "wins": 0,
             "podiums": 0,
             "poles": 0,
@@ -1172,6 +1176,12 @@ def get_team_comparison(request_data):
             except Exception:
                 continue
 
+        for sp in _season_sprint_points(year, race_names).values():
+            for stats, query in [(t1_stats, team1), (t2_stats, team2)]:
+                if _match_team(sp["team"], query):
+                    stats["points"] += sp["points"]
+                    stats["sprint_points"] += sp["points"]
+
         def _build_summary(stats):
             avg_quali = (
                 round(sum(stats["quali_positions"]) / len(stats["quali_positions"]), 1)
@@ -1192,6 +1202,7 @@ def get_team_comparison(request_data):
                 "team": stats["team_name"],
                 "drivers": sorted(stats["drivers"]),
                 "points": stats["points"],
+                "sprint_points": stats["sprint_points"],
                 "wins": stats["wins"],
                 "podiums": stats["podiums"],
                 "poles": stats["poles"],
@@ -1316,6 +1327,7 @@ def get_driver_comparison(request_data):
                             "full_name": row.get("FullName", ""),
                             "team": row.get("TeamName", ""),
                             "points": 0,
+                            "sprint_points": 0,
                             "wins": 0,
                             "podiums": 0,
                             "races": 0,
@@ -1434,6 +1446,11 @@ def get_driver_comparison(request_data):
                 f"Available drivers: {', '.join(abbrevs)}",
             }
 
+        for drv, sp in _season_sprint_points(year, race_names).items():
+            if drv in driver_stats:
+                driver_stats[drv]["points"] += sp["points"]
+                driver_stats[drv]["sprint_points"] += sp["points"]
+
         # Build driver summaries
         driver_summaries = []
         for drv, ds in sorted(
@@ -1462,6 +1479,7 @@ def get_driver_comparison(request_data):
                     "full_name": ds["full_name"],
                     "team": ds["team"],
                     "points": ds["points"],
+                    "sprint_points": ds["sprint_points"],
                     "wins": ds["wins"],
                     "podiums": ds["podiums"],
                     "races": ds["races"],

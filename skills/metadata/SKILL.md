@@ -41,7 +41,7 @@ metadata.search_players(query="LeBron")
 
 CRITICAL: Before calling any metadata command, verify:
 - Team names use the **full official name** — especially for NBA (e.g., `"Los Angeles Lakers"`, **not** `"Lakers"`).
-- For `get_team_logo`, the `sport` parameter defaults to `"Soccer"`. Pass `sport="Basketball"`, `"American Football"`, `"Baseball"`, `"Ice Hockey"`, `"Motorsport"`, or `"Cricket"` when the team is not a soccer team — otherwise the lookup falls back to "first result regardless of sport," which may return the wrong team.
+- For `get_team_logo`, the `sport` parameter defaults to `"Soccer"`. Pass `sport="Basketball"`, `"American Football"`, `"Baseball"`, `"Ice Hockey"`, `"Motorsport"`, or `"Cricket"` when the team is not a soccer team — otherwise the lookup falls back to a close name match in any sport. If no result is close to the requested name, it returns an error listing what TheSportsDB offered.
 - Player searches use just the player name (e.g., `"Messi"`, `"LeBron James"`, `"Tiger Woods"`).
 
 ## Coverage
@@ -130,6 +130,10 @@ If a command is not listed in the Commands table above, it does not exist.
 Error: `get_team_logo` returns the wrong team
 Cause: A short or ambiguous team name (e.g., "Lakers", "Arsenal") matched a different sport first
 Solution: Pass an explicit `sport` parameter and use the team's full official name
+
+Error: `get_team_logo` / `get_team_info` say "No team named ... found"
+Cause: TheSportsDB's free search returned only teams whose names are not close to the query (e.g. "St. Louis Cardinals" -> "Louisville")
+Solution: Use the team's full official name, or `search_teams --query=<partial>` to find it
 
 Error: `get_player_photo` returns null / empty
 Cause: Player not in TheSportsDB, or the name spelling differs (e.g., "Cristiano Ronaldo" vs "Ronaldo")
