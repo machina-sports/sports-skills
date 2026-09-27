@@ -412,7 +412,9 @@ def get_standings(request_data):
     groups = _normalize_standings(data)
     # The conference tables above leave "division" empty; a level=3 request
     # names each team's division. Groups and their order are unchanged.
-    division_data = espn_web_request(SPORT_PATH, "standings", {**espn_params, "level": 3})
+    division_data = espn_web_request(
+        SPORT_PATH, "standings", {**espn_params, "level": 3}, timeout=10, max_retries=0
+    )
     fill_team_divisions(groups, division_data)
     return {
         "groups": groups,

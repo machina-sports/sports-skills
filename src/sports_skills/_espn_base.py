@@ -428,13 +428,15 @@ def espn_team_schedule(sport_path, team_id, season=None, season_type=None, all_t
     return merged
 
 
-def espn_web_request(sport_path, resource, params=None):
+def espn_web_request(sport_path, resource, params=None, *, timeout=30, max_retries=_MAX_RETRIES):
     """ESPN web API (standings, season lists). Different host from site API.
 
     Args:
         sport_path: e.g. "football/nfl", "basketball/nba"
         resource: API resource, e.g. "standings"
         params: Optional query parameters dict.
+        timeout: Seconds per attempt.
+        max_retries: Retries on transient errors; 0 for an optional extra request.
     """
     cache_key = f"espn_web:{sport_path}:{resource}:{json.dumps(params or {}, sort_keys=True)}"
     cached = _cache_get(cache_key)
@@ -444,7 +446,9 @@ def espn_web_request(sport_path, resource, params=None):
     if params:
         url += "?" + urllib.parse.urlencode(params)
     headers = {"User-Agent": _USER_AGENT}
-    raw, err = _http_fetch(url, headers=headers, rate_limiter=_espn_rate_limiter)
+    raw, err = _http_fetch(
+        url, headers=headers, rate_limiter=_espn_rate_limiter, timeout=timeout, max_retries=max_retries
+    )
     if err:
         return err
     try:

@@ -27,7 +27,7 @@ def nfl_standings(monkeypatch):
     connector = _connector("nfl")
     calls = []
 
-    def fake_web_request(sport_path, resource, params=None):
+    def fake_web_request(sport_path, resource, params=None, **kwargs):
         calls.append(params)
         return DIVISIONS if (params or {}).get("level") == 3 else CONFERENCES
 
@@ -76,7 +76,7 @@ def test_patriots_row(nfl_standings):
 def test_division_request_failure_keeps_standings(monkeypatch, league):
     connector = _connector(league)
 
-    def fake_web_request(sport_path, resource, params=None):
+    def fake_web_request(sport_path, resource, params=None, **kwargs):
         if (params or {}).get("level") == 3:
             return {"error": True, "message": "HTTP 503"}
         return CONFERENCES
@@ -87,12 +87,29 @@ def test_division_request_failure_keeps_standings(monkeypatch, league):
     assert {e["division"] for g in groups for e in g["entries"]} == {""}
 
 
+@pytest.mark.parametrize("league", _DIVISION_LEAGUES)
+def test_division_request_fails_fast(monkeypatch, league):
+    """The division names are optional, so their request never retries or waits long."""
+    connector = _connector(league)
+    options = {}
+
+    def fake_web_request(sport_path, resource, params=None, **kwargs):
+        if (params or {}).get("level") == 3:
+            options.update(kwargs)
+            return DIVISIONS
+        return CONFERENCES
+
+    monkeypatch.setattr(connector, "espn_web_request", fake_web_request)
+    connector.get_standings({"params": {"season": 2025}})
+    assert options == {"timeout": 10, "max_retries": 0}
+
+
 def test_wnba_sends_one_request(monkeypatch):
     """The WNBA has no divisions, so no level=3 request."""
     connector = _connector("wnba")
     calls = []
 
-    def fake_web_request(sport_path, resource, params=None):
+    def fake_web_request(sport_path, resource, params=None, **kwargs):
         calls.append(params)
         return {"children": []}
 
