@@ -112,13 +112,14 @@ def _normalize_standings_entries(standings_data):
             "streak": stats.get("streak", ""),
             "home_record": stats.get("Home", stats.get("homeRecord", "")),
             "away_record": stats.get("Road", stats.get("awayRecord", "")),
-            "conference_record": stats.get("vsConf", stats.get("conferenceRecord", "")),
+            "conference_record": stats.get("vsConf", stats.get("conferenceRecord", stats.get("vs. Conf.", ""))),
             "division_record": stats.get("vsDiv", stats.get("divisionRecord", "")),
             "last_ten": stats.get("L10", stats.get("last10Record", "")),
             "points_per_game": stats.get("avgPointsFor", stats.get("pointsFor", "")),
             "opp_points_per_game": stats.get("avgPointsAgainst", stats.get("pointsAgainst", "")),
             "diff": stats.get("differential", stats.get("diff", "")),
             "playoff_seed": stats.get("playoffSeed", ""),
+            "clinch": stats.get("clincher", ""),
         })
     return entries
 
@@ -352,8 +353,11 @@ def get_standings(request_data):
     espn_params = {}
     if season:
         espn_params["season"] = season
+    # level=3 asks for division children, as the other ESPN leagues do. The
+    # WNBA has no divisions, so ESPN returns the conference tables either way.
+    espn_params["level"] = 3
 
-    data = espn_web_request(SPORT_PATH, "standings", espn_params or None)
+    data = espn_web_request(SPORT_PATH, "standings", espn_params)
     if data.get("error"):
         return data
 

@@ -142,8 +142,9 @@ def _normalize_standings_entries(standings_data):
             "points_against": stats.get("pointsAgainst", "0"),
             "streak": stats.get("streak", ""),
             "division_record": stats.get("divisionRecord", ""),
-            "conference_record": stats.get("conferenceRecord", ""),
+            "conference_record": stats.get("conferenceRecord", stats.get("vs. Conf.", "")),
             "playoff_seed": stats.get("playoffSeed", ""),
+            "clinch": stats.get("clincher", ""),
         })
     return entries
 
@@ -432,8 +433,11 @@ def get_standings(request_data):
     espn_params = {}
     if season:
         espn_params["season"] = season
+    # level=3 returns each conference's divisions as children; without it
+    # ESPN sends conference tables only and "division" is empty.
+    espn_params["level"] = 3
 
-    data = espn_web_request(SPORT_PATH, "standings", espn_params or None)
+    data = espn_web_request(SPORT_PATH, "standings", espn_params)
     if data.get("error"):
         return data
 
