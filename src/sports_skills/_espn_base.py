@@ -428,13 +428,15 @@ def espn_team_schedule(sport_path, team_id, season=None, season_type=None, all_t
     return merged
 
 
-def espn_web_request(sport_path, resource, params=None):
+def espn_web_request(sport_path, resource, params=None, *, timeout=30, max_retries=_MAX_RETRIES):
     """ESPN web API (standings, season lists). Different host from site API.
 
     Args:
         sport_path: e.g. "football/nfl", "basketball/nba"
         resource: API resource, e.g. "standings"
         params: Optional query parameters dict.
+        timeout: Seconds per attempt.
+        max_retries: Retries on transient errors; 0 for an optional extra request.
     """
     cache_key = f"espn_web:{sport_path}:{resource}:{json.dumps(params or {}, sort_keys=True)}"
     cached = _cache_get(cache_key)
@@ -444,7 +446,9 @@ def espn_web_request(sport_path, resource, params=None):
     if params:
         url += "?" + urllib.parse.urlencode(params)
     headers = {"User-Agent": _USER_AGENT}
-    raw, err = _http_fetch(url, headers=headers, rate_limiter=_espn_rate_limiter)
+    raw, err = _http_fetch(
+        url, headers=headers, rate_limiter=_espn_rate_limiter, timeout=timeout, max_retries=max_retries
+    )
     if err:
         return err
     try:
@@ -530,6 +534,17 @@ def espn_summary(sport_path, event_id, max_retries=_MAX_RETRIES):
 # ============================================================
 # Athlete $ref resolver (shared across NHL, MLB, WNBA, NBA)
 # ============================================================
+
+def normalize_score(score):
+    """Competitor score as ESPN's string.
+
+    Scoreboards send ``"27"``; ``teams/{id}/schedule`` sends
+    ``{"value": 27.0, "displayValue": "27"}``. Both come back as ``"27"``.
+    """
+    if isinstance(score, dict):
+        return score.get("displayValue", "0")
+    return score
+
 
 def normalize_odds(odds_list):
     """Normalize ESPN odds data from a competition into a structured format.
@@ -807,6 +822,24 @@ def epoch_seconds(iso):
 def _current_year():
     """Return the current year (UTC)."""
     return datetime.datetime.utcnow().year
+
+
+def fill_team_divisions(groups, division_data):
+    """Set ``division`` on each standings entry from a ``level=3`` standings payload.
+
+    ESPN's default standings are conference tables with no division; with
+    ``level=3`` each conference nests its divisions. Only the entries change,
+    so the groups keep their conference shape and order. A team missing from
+    ``division_data`` (or an error dict) gets its group's division, else ``""``.
+    """
+    divisions = {}
+    for conference in division_data.get("children", []):
+        for division in conference.get("children", []):
+            for entry in division.get("standings", {}).get("entries", []):
+                divisions[str(entry.get("team", {}).get("id", ""))] = division.get("name", "")
+    for group in groups:
+        for entry in group["entries"]:
+            entry["division"] = group.get("division") or divisions.get(entry["team"]["id"], "")
 
 
 def fetch_season(loader, season_year, explicit):
