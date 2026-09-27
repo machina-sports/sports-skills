@@ -446,6 +446,7 @@ _REGISTRY = {
         "get_schedule": {"optional": ["date", "season"]},
         "get_injuries": {},
         "get_transactions": {"optional": ["limit"]},
+        "get_futures": {"optional": ["limit", "season_year"]},
         "get_depth_chart": {"required": ["team_id"]},
         "get_team_stats": {"required": ["team_id"], "optional": ["season_year", "season_type"]},
         "get_player_stats": {"required": ["player_id"], "optional": ["season_year", "season_type"]},

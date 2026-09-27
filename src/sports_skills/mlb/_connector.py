@@ -23,6 +23,7 @@ from sports_skills._espn_base import (
     normalize_boxscore,
     normalize_core_stats,
     normalize_depth_chart,
+    normalize_futures,
     normalize_injuries,
     normalize_odds,
     normalize_scoring_plays,
@@ -632,7 +633,7 @@ def get_win_probability(request_data):
 
 
 # ============================================================
-# Injuries, Transactions, Depth Charts, Stats
+# Injuries, Transactions, Futures, Depth Charts, Stats
 # ============================================================
 
 
@@ -652,6 +653,26 @@ def get_transactions(request_data=None):
     if data.get("error"):
         return data
     return normalize_transactions(data)
+
+
+def get_futures(request_data=None):
+    """Get MLB futures odds (e.g. World Series winner, league pennants)."""
+    params = (request_data or {}).get("params", {})
+    limit = params.get("limit", 10)
+    requested_season = params.get("season_year")
+    season_year = requested_season or _current_year()
+    data, season_year, season_note = fetch_season(
+        lambda yr: espn_core_request(SPORT_PATH, f"seasons/{yr}/futures"),
+        season_year,
+        requested_season is not None,
+    )
+    if data.get("error"):
+        return data
+    result = normalize_futures(data, limit=limit)
+    if season_note:
+        result["warnings"] = [season_note]
+    result["season_year"] = season_year
+    return result
 
 
 def get_depth_chart(request_data):

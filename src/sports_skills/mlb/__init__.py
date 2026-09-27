@@ -10,6 +10,9 @@ from sports_skills.mlb._connector import (
     get_depth_chart as _get_depth_chart,
 )
 from sports_skills.mlb._connector import (
+    get_futures as _get_futures,
+)
+from sports_skills.mlb._connector import (
     get_game_summary as _get_game_summary,
 )
 from sports_skills.mlb._connector import (
@@ -191,6 +194,16 @@ def get_transactions(*, limit: int | None = None) -> dict:
         limit: Max number of transactions. Defaults to 50.
     """
     return wrap(_get_transactions(_params(limit=limit)))
+
+
+def get_futures(*, limit: int | None = None, season_year: int | None = None) -> dict:
+    """Get MLB futures odds (World Series winner, league pennants, etc.).
+
+    Args:
+        limit: Max entries per futures market. Defaults to 10.
+        season_year: Season year. Defaults to current.
+    """
+    return wrap(_get_futures(_params(limit=limit, season_year=season_year)))
 
 
 def get_depth_chart(*, team_id: str) -> dict:
