@@ -113,13 +113,14 @@ def _normalize_standings_entries(standings_data):
             "streak": stats.get("streak", ""),
             "home_record": stats.get("Home", stats.get("homeRecord", "")),
             "away_record": stats.get("Road", stats.get("awayRecord", "")),
-            "conference_record": stats.get("vsConf", stats.get("conferenceRecord", "")),
+            "conference_record": stats.get("vsConf", stats.get("conferenceRecord", stats.get("vs. Conf.", ""))),
             "division_record": stats.get("vsDiv", stats.get("divisionRecord", "")),
             "last_ten": stats.get("L10", stats.get("last10Record", "")),
             "points_per_game": stats.get("avgPointsFor", stats.get("pointsFor", "")),
             "opp_points_per_game": stats.get("avgPointsAgainst", stats.get("pointsAgainst", "")),
             "diff": stats.get("differential", stats.get("diff", "")),
             "playoff_seed": stats.get("playoffSeed", ""),
+            "clinch": stats.get("clincher", ""),
         })
     return entries
 

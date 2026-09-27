@@ -20,6 +20,7 @@ from sports_skills._espn_base import (
     espn_summary,
     espn_web_request,
     fetch_season,
+    fill_team_divisions,
     normalize_boxscore,
     normalize_core_stats,
     normalize_depth_chart,
@@ -119,6 +120,7 @@ def _normalize_standings_entries(standings_data):
             "away_record": stats.get("Road", stats.get("awayRecord", "")),
             "last_ten": stats.get("L10", stats.get("last10Record", "")),
             "playoff_seed": stats.get("playoffSeed", ""),
+            "clinch": stats.get("clincher", ""),
         })
     return entries
 
@@ -364,6 +366,12 @@ def get_standings(request_data):
         return data
 
     groups = _normalize_standings(data)
+    # The conference tables above leave "division" empty; a level=3 request
+    # names each team's division. Groups and their order are unchanged.
+    division_data = espn_web_request(
+        SPORT_PATH, "standings", {**espn_params, "level": 3}, timeout=10, max_retries=0
+    )
+    fill_team_divisions(groups, division_data)
     return {
         "groups": groups,
         # Prefer the requested season: ESPN's envelope reports the *current*
