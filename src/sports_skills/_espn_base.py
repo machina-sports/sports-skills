@@ -788,6 +788,22 @@ CORE_LEAGUE_MAP = {
 }
 
 
+def epoch_seconds(iso):
+    """Epoch seconds for an ISO-8601 instant with an offset (``"2025-09-27T02:15:00Z"``).
+
+    ``None`` when the value is empty, unparseable or has no offset.
+    """
+    if not iso:
+        return None
+    try:
+        instant = datetime.datetime.fromisoformat(str(iso).replace("Z", "+00:00"))
+    except ValueError:
+        return None
+    if instant.tzinfo is None:
+        return None
+    return int(instant.timestamp())
+
+
 def _current_year():
     """Return the current year (UTC)."""
     return datetime.datetime.utcnow().year

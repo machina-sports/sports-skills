@@ -158,6 +158,23 @@ class TestSchedule:
         assert {"game_id", "game_date", "away_abbreviation", "home_abbreviation"} <= set(g)
         assert re.fullmatch(r"\d{10}", g["game_id"])
 
+    def test_rows_carry_start_time_and_venue_zone(self, offline):
+        """2024 Final game 7, EDM at FLA: 8 PM EDT on 06-24 is 00:00Z on 06-25."""
+        (g,) = _stats.get_nhlstats_schedule({"params": {"date": "2024-06-24"}})["games"]
+        assert g["game_date"] == "2024-06-24"
+        assert g["start_time"] == "2024-06-25T00:00:00Z"
+        assert g["start_ts"] == 1719273600
+        assert g["venue_timezone"] == "US/Eastern"
+        assert g["venue_utc_offset"] == "-04:00"
+
+    def test_team_schedule_rows_carry_each_venue_zone(self, offline):
+        games = _stats.get_nhlstats_schedule({"params": {"season": 2024, "team": "TB"}})["games"]
+        at_nashville = next(g for g in games if g["game_id"] == "2024010057")
+        assert at_nashville["venue_timezone"] == "US/Central"
+        assert at_nashville["venue_utc_offset"] == "-05:00"
+        assert games[0]["start_time"] == "2024-09-24T23:00:00Z"
+        assert games[0]["start_ts"] == 1727218800
+
     def test_team_season_rows_carry_both_abbreviations(self, offline):
         out = _stats.get_nhlstats_schedule({"params": {"season": 2024, "team": "TB"}})
         assert out["count"] > 0

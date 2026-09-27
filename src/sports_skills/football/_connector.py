@@ -12,7 +12,8 @@ import time
 import urllib.error
 import urllib.parse
 import urllib.request
-from datetime import datetime
+from datetime import datetime, timezone
+from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 from sports_skills import _replay
 from sports_skills._espn_base import (
@@ -39,7 +40,7 @@ LEAGUES = {
         "understat": "EPL",
         "fpl": True,
         "transfermarkt": "premier-league",
-        "openfootball": {"file": "en.1", "season_format": "aug"},
+        "openfootball": {"file": "en.1", "season_format": "aug", "timezone": "Europe/London"},
         "name": "Premier League",
         "country": "England",
     },
@@ -50,7 +51,7 @@ LEAGUES = {
         "understat": "La_Liga",
         "fpl": None,
         "transfermarkt": "laliga",
-        "openfootball": {"file": "es.1", "season_format": "aug"},
+        "openfootball": {"file": "es.1", "season_format": "aug", "timezone": "Europe/Madrid"},
         "name": "La Liga",
         "country": "Spain",
     },
@@ -61,7 +62,7 @@ LEAGUES = {
         "understat": "Bundesliga",
         "fpl": None,
         "transfermarkt": "1-bundesliga",
-        "openfootball": {"file": "de.1", "season_format": "aug"},
+        "openfootball": {"file": "de.1", "season_format": "aug", "timezone": "Europe/Berlin"},
         "name": "Bundesliga",
         "country": "Germany",
     },
@@ -72,7 +73,7 @@ LEAGUES = {
         "understat": "Serie_A",
         "fpl": None,
         "transfermarkt": "serie-a",
-        "openfootball": {"file": "it.1", "season_format": "aug"},
+        "openfootball": {"file": "it.1", "season_format": "aug", "timezone": "Europe/Rome"},
         "name": "Serie A",
         "country": "Italy",
     },
@@ -83,7 +84,7 @@ LEAGUES = {
         "understat": "Ligue_1",
         "fpl": None,
         "transfermarkt": "ligue-1",
-        "openfootball": {"file": "fr.1", "season_format": "aug"},
+        "openfootball": {"file": "fr.1", "season_format": "aug", "timezone": "Europe/Paris"},
         "name": "Ligue 1",
         "country": "France",
     },
@@ -94,7 +95,7 @@ LEAGUES = {
         "understat": None,
         "fpl": None,
         "transfermarkt": "championship",
-        "openfootball": {"file": "en.2", "season_format": "aug"},
+        "openfootball": {"file": "en.2", "season_format": "aug", "timezone": "Europe/London"},
         "name": "Championship",
         "country": "England",
     },
@@ -105,7 +106,7 @@ LEAGUES = {
         "understat": None,
         "fpl": None,
         "transfermarkt": "eredivisie",
-        "openfootball": {"file": "nl.1", "season_format": "aug"},
+        "openfootball": {"file": "nl.1", "season_format": "aug", "timezone": "Europe/Amsterdam"},
         "name": "Eredivisie",
         "country": "Netherlands",
     },
@@ -116,7 +117,7 @@ LEAGUES = {
         "understat": None,
         "fpl": None,
         "transfermarkt": "primeira-liga",
-        "openfootball": {"file": "pt.1", "season_format": "aug"},
+        "openfootball": {"file": "pt.1", "season_format": "aug", "timezone": "Europe/Lisbon"},
         "name": "Primeira Liga",
         "country": "Portugal",
     },
@@ -125,7 +126,7 @@ LEAGUES = {
         "understat": None,
         "fpl": None,
         "transfermarkt": "campeonato-brasileiro-serie-a",
-        "openfootball": {"file": "br.1", "season_format": "jan"},
+        "openfootball": {"file": "br.1", "season_format": "jan", "timezone": "America/Sao_Paulo"},
         "name": "Serie A Brazil",
         "country": "Brazil",
     },
@@ -134,7 +135,7 @@ LEAGUES = {
         "understat": None,
         "fpl": None,
         "transfermarkt": "major-league-soccer",
-        "openfootball": {"file": "mls", "season_format": "jan"},
+        "openfootball": {"file": "mls", "season_format": "jan", "timezone": "America/New_York"},
         "name": "MLS",
         "country": "USA",
     },
@@ -1005,6 +1006,28 @@ def _openfootball_ft(match):
     return ft if isinstance(ft, list) else []
 
 
+def _openfootball_start(date_str, time_str, tz_name):
+    """Return ``(start_time, start_ts)`` for an openfootball date and kickoff time.
+
+    openfootball gives the kickoff in the league's local time with no offset
+    (checked against ESPN: capital-city time for each European league and
+    Brazil, US Eastern for MLS). ``tz_name`` is that zone, from the league's
+    ``openfootball`` config. Without a usable zone the local time is returned
+    with no ``Z``, since it isn't UTC, and no timestamp.
+    """
+    if not (date_str and time_str):
+        return date_str, None
+    try:
+        local = datetime.strptime(f"{date_str} {time_str}", "%Y-%m-%d %H:%M")
+        zone = ZoneInfo(tz_name) if tz_name else None
+    except (ValueError, ZoneInfoNotFoundError):
+        zone = None
+    if zone is None:
+        return f"{date_str}T{time_str}:00", None
+    instant = local.replace(tzinfo=zone).astimezone(timezone.utc)
+    return instant.strftime("%Y-%m-%dT%H:%M:%SZ"), int(instant.timestamp())
+
+
 def _normalize_openfootball_match(match, slug, year):
     """Normalize an openfootball match to Machina event format."""
     league = LEAGUES.get(slug, {})
@@ -1013,11 +1036,13 @@ def _normalize_openfootball_match(match, slug, year):
     status = "closed" if has_score else "not_started"
     date_str = match.get("date", "")
     time_str = match.get("time", "")
-    start_time = f"{date_str}T{time_str}:00Z" if date_str and time_str else date_str
+    tz_name = (league.get("openfootball") or {}).get("timezone")
+    start_time, start_ts = _openfootball_start(date_str, time_str, tz_name)
     return {
         "id": "",
         "status": status,
         "start_time": start_time,
+        "start_ts": start_ts,
         "matchday": None,
         "round": "",
         "round_name": match.get("round", ""),
