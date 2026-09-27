@@ -229,27 +229,20 @@ def get_team_logo(request_data):
         return data
 
     teams = data.get("teams") or []
-    for t in teams:
-        if sport and t.get("strSport", "").lower() != sport.lower():
-            continue
-        return {
-            "team_id": t.get("idTeam"),
-            "team_name": t.get("strTeam"),
-            "sport": t.get("strSport"),
-            "logo_url": t.get("strBadge"),
-        }
+    if not teams:
+        return {"error": True, "message": f"No team found for '{team_name}'"}
 
-    # Fallback: return first result regardless of sport filter
-    if teams:
-        t = teams[0]
-        return {
-            "team_id": t.get("idTeam"),
-            "team_name": t.get("strTeam"),
-            "sport": t.get("strSport"),
-            "logo_url": t.get("strBadge"),
-        }
-
-    return {"error": True, "message": f"No team found for '{team_name}'"}
+    # Prefer a match in the requested sport, then fall back to any sport.
+    in_sport = [t for t in teams if not sport or t.get("strSport", "").lower() == sport.lower()]
+    t = _best_team_match(team_name, in_sport) or _best_team_match(team_name, teams)
+    if t is None:
+        return _no_close_team(team_name, teams)
+    return {
+        "team_id": t.get("idTeam"),
+        "team_name": t.get("strTeam"),
+        "sport": t.get("strSport"),
+        "logo_url": t.get("strBadge"),
+    }
 
 
 def _name_tokens(name):
@@ -285,6 +278,18 @@ def _best_team_match(query, teams):
     return None
 
 
+def _no_close_team(team_name, teams):
+    found = ", ".join(f"'{c.get('strTeam')}' ({c.get('strSport')})" for c in teams)
+    return {
+        "error": True,
+        "message": (
+            f"No team named '{team_name}' found. TheSportsDB's closest result(s): {found}, "
+            "which do not match the requested name. Try the team's full official name "
+            "or search_teams."
+        ),
+    }
+
+
 def get_team_info(request_data):
     """Get detailed team information.
 
@@ -307,15 +312,7 @@ def get_team_info(request_data):
 
     t = _best_team_match(team_name, teams)
     if t is None:
-        found = ", ".join(f"'{c.get('strTeam')}' ({c.get('strSport')})" for c in teams)
-        return {
-            "error": True,
-            "message": (
-                f"No team named '{team_name}' found. TheSportsDB's closest result(s): {found}, "
-                "which do not match the requested name. Try the team's full official name "
-                "or search_teams."
-            ),
-        }
+        return _no_close_team(team_name, teams)
     return {
         "team_id": t.get("idTeam"),
         "name": t.get("strTeam"),
