@@ -535,6 +535,17 @@ def espn_summary(sport_path, event_id, max_retries=_MAX_RETRIES):
 # Athlete $ref resolver (shared across NHL, MLB, WNBA, NBA)
 # ============================================================
 
+def normalize_score(score):
+    """Competitor score as ESPN's string.
+
+    Scoreboards send ``"27"``; ``teams/{id}/schedule`` sends
+    ``{"value": 27.0, "displayValue": "27"}``. Both come back as ``"27"``.
+    """
+    if isinstance(score, dict):
+        return score.get("displayValue", "0")
+    return score
+
+
 def normalize_odds(odds_list):
     """Normalize ESPN odds data from a competition into a structured format.
 
