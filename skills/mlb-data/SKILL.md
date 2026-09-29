@@ -118,6 +118,12 @@ and schedules back to 1901. The two sources use unrelated id systems:
   under one `game_pk` in `get_mlbstats_schedule`: the original date has
   `rescheduled: true` (and `rescheduled_to`), the make-up has
   `rescheduled_from`. Drop `rescheduled` rows when counting games.
+- **Schedule times.** `start_time` is UTC; `venue_timezone` is the ballpark's
+  IANA zone (e.g. `America/New_York`, `null` if MLB omits it) and `local_date`
+  is MLB's official (local) date.
+- **Postseason `game_type` filters by date.** `game_type="worldseries"` with a
+  date outside the World Series returns no games plus a `warnings` entry; drop
+  `game_type`, or pass `team` + `season` with it to list the round's dates.
 - **Leaders come grouped.** A category like `homeRuns` exists for hitting,
   catching, and pitching (home runs *allowed*); rows are labelled with
   `stat_group` — pass `stat_group=` to get just one.

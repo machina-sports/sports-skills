@@ -131,6 +131,7 @@ two sources use unrelated id systems:
   ("jokic" finds "Nikola Jokić").
 - **Seasons.** Pass the starting year (`season=2024` means 2024-25). The NBA form
   (`"2024-25"`) is also accepted.
+- **Dates.** `game_date` is `YYYY-MM-DD` in game logs and shot charts alike.
 
 stats.nba.com throttles by client and volume: heavy bursts (and many
 datacenter/cloud IPs) get silently tarpitted rather than refused. The commands

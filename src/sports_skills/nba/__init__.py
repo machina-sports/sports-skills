@@ -17,6 +17,8 @@ No API keys required. Zero config.
 
 from __future__ import annotations
 
+import re
+
 from sports_skills._response import wrap
 from sports_skills.nba._cdn import (
     get_live_boxscore as _get_live_boxscore,
@@ -83,6 +85,9 @@ from sports_skills.nba._connector import (
 )
 from sports_skills.nba._stats import (
     find_nba_player as _find_nba_player,
+)
+from sports_skills.nba._stats import (
+    get_nba_game_matchup as _get_nba_game_matchup,
 )
 from sports_skills.nba._stats import (
     get_nbastats_advanced_boxscore as _get_nbastats_advanced_boxscore,
@@ -292,17 +297,52 @@ def get_live_boxscore(*, game_id: str) -> dict:
     ESPN game summary if CDN is unavailable.
 
     Args:
-        game_id: NBA game ID (e.g. "0022400001"). For ESPN fallback,
-                 this is converted to event_id format.
+        game_id: NBA game ID (e.g. "0022400001"). For the ESPN fallback it is
+                 mapped to the ESPN event id (via stats.nba.com and the ESPN
+                 scoreboard); if that fails, an error says so.
     """
+    cdn_message = "no box score returned"
     try:
         result = _get_live_boxscore(_params(game_id=game_id))
         if result and result.get("game_info"):
             return wrap(result)
-    except Exception:
-        pass
-    # Fallback to ESPN - game_id format differs, try direct
-    return get_game_summary(event_id=game_id)
+        cdn_message = (result or {}).get("message") or cdn_message
+    except Exception as exc:
+        cdn_message = f"{type(exc).__name__}: {exc}"
+    return _espn_fallback(game_id, cdn_message, "get_game_summary", lambda eid: get_game_summary(event_id=eid))
+
+
+def _espn_fallback(game_id, cdn_message, espn_command, espn_call):
+    """cdn.nba.com failed: call ESPN with the game's ESPN event id, never the NBA id.
+
+    NBA ids ("0022400001") and ESPN event ids ("401703370") share nothing, so
+    the NBA id is mapped via stats.nba.com (game date + teams) and the ESPN
+    scoreboard for that date. If that fails, say so instead of guessing.
+    """
+    text = str(game_id).strip()
+    if re.fullmatch(r"4\d{8}", text):  # already an ESPN event id
+        return espn_call(text)
+    matchup = _get_nba_game_matchup(_params(game_id=text))
+    if matchup.get("error"):
+        reason = matchup.get("message")
+    else:
+        date, away, home = matchup["date"], matchup["away"], matchup["home"]
+        board = _get_scoreboard(_params(date=date))
+        reason = board.get("message") if board.get("error") else f"no ESPN event for {away} @ {home} on {date}"
+        for event in board.get("events") or []:
+            sides = {c.get("home_away"): (c.get("team") or {}).get("abbreviation") for c in event.get("competitors") or []}
+            if sides.get("away") == away and sides.get("home") == home and event.get("id"):
+                return espn_call(str(event["id"]))
+    return wrap(
+        {
+            "error": True,
+            "message": (
+                f"cdn.nba.com is unavailable ({cdn_message}), and NBA game id {text!r} could not be "
+                f"mapped to an ESPN event id for the ESPN fallback: {reason}. Find the ESPN event id "
+                f"with get_scoreboard(date=YYYY-MM-DD) and call {espn_command}(event_id=...)."
+            ),
+        }
+    )
 
 
 def get_live_playbyplay(*, game_id: str, limit: int = 25, scoring_only: bool = False) -> dict:
@@ -316,14 +356,15 @@ def get_live_playbyplay(*, game_id: str, limit: int = 25, scoring_only: bool = F
         limit: Maximum plays to return (default 25).
         scoring_only: Only return scoring plays (default False).
     """
+    cdn_message = "no plays returned"
     try:
         result = _get_live_playbyplay(_params(game_id=game_id, limit=limit, scoring_only=scoring_only))
         if result and result.get("actions"):
             return wrap(result)
-    except Exception:
-        pass
-    # Fallback to ESPN
-    return get_play_by_play(event_id=game_id)
+        cdn_message = (result or {}).get("message") or cdn_message
+    except Exception as exc:
+        cdn_message = f"{type(exc).__name__}: {exc}"
+    return _espn_fallback(game_id, cdn_message, "get_play_by_play", lambda eid: get_play_by_play(event_id=eid))
 
 
 def get_player_live_stats(*, player_name: str) -> dict:

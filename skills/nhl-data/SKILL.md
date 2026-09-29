@@ -106,6 +106,14 @@ Original Six era. The two sources use unrelated id systems:
   counting stats summed, rate stats omitted); skip `is_total` rows when summing.
 - **Seasons.** Pass the starting year (`season=2024` means 2024-25). The NHL
   form (`"20242025"`) is also accepted.
+- **How a final was decided.** `status` is the NHL's game state (`OFF`/`FINAL`
+  for any final). `decided_by` on schedule rows and box scores is `REG`, `OT`
+  or `SO` (`null` until final). Shootout scores follow the official result:
+  the winner is credited one goal (a 1-1 game won in the shootout is 2-1).
+- **Blocked shots.** In `get_nhlstats_play_by_play`, `team_id` and `player` on
+  a `blocked-shot` row are the shooter's (the NHL's event owner); the box
+  score's `blockedShots` credits the defender, given as `blocking_player` and
+  `blocking_team_id`. Count blocks by `blocking_team_id`.
 
 ## Examples
 

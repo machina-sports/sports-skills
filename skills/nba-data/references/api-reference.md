@@ -119,7 +119,11 @@ Returns today's games with live status and scores.
 Get a real-time NBA box score from NBA CDN, with ESPN as a fallback.
 - `game_id` (str, required): NBA game ID, for example `0022400001`.
 
-Returns game information and the current player box score.
+Returns game information and the current player box score. If cdn.nba.com fails
+(it often answers HTTP 403), the NBA game id is mapped to its ESPN event id
+(game date and teams from stats.nba.com, then the ESPN scoreboard for that date)
+and the ESPN game summary is returned. If the mapping fails, the error says why
+and names the ESPN command to call. `get_live_playbyplay` falls back the same way.
 
 ### get_live_playbyplay
 Get real-time NBA play-by-play with the most recent plays first.

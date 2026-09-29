@@ -1,0 +1,27 @@
+{
+  "meta": {
+    "version": 1,
+    "request": "http://nba.cloud/games/0022400001/boxscoresummary?Format=json",
+    "time": "2026-07-06T17:11:24.1124Z"
+  },
+  "boxScoreSummary": {
+    "gameId": "0022400001",
+    "gameCode": "20241112/ATLBOS",
+    "gameStatus": 3,
+    "gameStatusText": "Final",
+    "gameTimeUTC": "2024-11-13T00:00:00Z",
+    "gameEt": "2024-11-12T19:00:00Z",
+    "homeTeam": {
+      "teamId": 1610612738,
+      "teamName": "Celtics",
+      "teamCity": "Boston",
+      "teamTricode": "BOS"
+    },
+    "awayTeam": {
+      "teamId": 1610612737,
+      "teamName": "Hawks",
+      "teamCity": "Atlanta",
+      "teamTricode": "ATL"
+    }
+  }
+}
