@@ -253,6 +253,13 @@ class TestTeamStats:
                 assert all(_stats._name_to_abbr(r.get("team_name")) == abbr for r in out["teams"])
         assert got_any, "fixture holds 8 teams; at least one should match"
 
+    def test_per_36_sends_the_value_stats_nba_accepts(self, offline):
+        """#160: "Per36Minutes" got HTTP 400 from leaguedashteamstats and
+        playercareerstats (checked live 2026-09-29); "Per36" is accepted."""
+        _stats.get_nbastats_team_stats({"params": {"season": 2024, "per_mode": "per_36"}})
+        _stats.get_nbastats_player_career({"params": {"player_id": "2544", "per_mode": "per_36"}})
+        assert [params["PerMode"] for _, params in offline] == ["Per36", "Per36"]
+
     def test_every_franchise_name_is_mapped(self):
         assert len(_stats._TEAM_NAMES) == 30
         assert len(set(_stats._TEAM_NAMES.values())) == 30
@@ -264,6 +271,13 @@ class TestShotChart:
         shot = out["shots"][0]
         assert {"loc_x", "loc_y", "made", "shot_distance", "period"} <= set(shot)
         assert isinstance(shot["made"], bool)
+
+    def test_game_date_matches_game_log_format(self, offline):
+        """#160: shotchartdetail sends GAME_DATE "20241122"; game logs use "2024-10-22"."""
+        out = _stats.get_nbastats_shot_chart({"params": {"player_id": "203999", "season": 2024}})
+        assert out["shots"][0]["game_date"] == "2024-11-22"
+        log = _stats.get_nbastats_game_log({"params": {"season": 2024}})
+        assert log["games"][0]["game_date"] == "2024-10-22"
 
     def test_limit_flags_truncation(self, offline):
         out = _stats.get_nbastats_shot_chart(
@@ -411,3 +425,72 @@ class TestHeaders:
     def test_no_brotli_advertised(self):
         """The stdlib can only decode gzip."""
         assert "br" not in _stats._STATS_HEADERS["Accept-Encoding"].split(", ")
+
+
+# ── live box score: ESPN fallback when cdn.nba.com refuses ─────────────
+
+
+class TestLiveFallbackMapsToEspnEventId:
+    """#160: on a cdn.nba.com 403 the ESPN fallback was called with the NBA game
+    id, which ESPN cannot resolve. ATL @ BOS 2024-11-12: NBA 0022400001 is ESPN
+    401703370 (stats.nba.com boxscoresummaryv3 and ESPN scoreboard, trimmed)."""
+
+    CDN_403 = {"error": True, "status_code": 403, "message": "HTTP 403 from cdn.nba.com — Access Denied"}
+
+    @pytest.fixture
+    def fallback(self, monkeypatch):
+        import sports_skills.nba as nba
+        from sports_skills.nba import _connector
+
+        board = json.loads((FIXTURES.parent / "nba_espn_scoreboard_20241112.json").read_text())
+        espn_calls, summaries = [], []
+
+        def fake_espn(sport, resource, params=None):
+            espn_calls.append((resource, params))
+            return board if resource == "scoreboard" else {"error": True, "message": "unexpected"}
+
+        def record(result):
+            return lambda rd: summaries.append(rd["params"]) or result
+
+        monkeypatch.setattr(nba, "_get_live_boxscore", lambda rd: dict(self.CDN_403))
+        monkeypatch.setattr(nba, "_get_live_playbyplay", lambda rd: dict(self.CDN_403))
+        monkeypatch.setattr(_stats, "_request", lambda endpoint, params, ttl=600: _fixture(endpoint))
+        monkeypatch.setattr(_connector, "espn_request", fake_espn)
+        monkeypatch.setattr(nba, "_get_game_summary", record({"game_info": {}}))
+        monkeypatch.setattr(nba, "_get_play_by_play", record({"plays": []}))
+        return nba, espn_calls, summaries
+
+    def test_boxscore_fallback_uses_the_espn_event_id(self, fallback):
+        nba, espn_calls, summaries = fallback
+        out = nba.get_live_boxscore(game_id="0022400001")
+        assert out["status"] is True
+        assert espn_calls == [("scoreboard", {"dates": "20241112"})]
+        assert summaries == [{"event_id": "401703370"}]
+
+    def test_playbyplay_fallback_uses_the_espn_event_id(self, fallback):
+        nba, _, summaries = fallback
+        nba.get_live_playbyplay(game_id="0022400001")
+        assert summaries == [{"event_id": "401703370"}]
+
+    def test_espn_event_id_passes_straight_through(self, fallback):
+        nba, espn_calls, summaries = fallback
+        nba.get_live_boxscore(game_id="401703370")
+        assert espn_calls == [] and summaries == [{"event_id": "401703370"}]
+
+    def test_unmapped_game_is_a_clear_error(self, fallback, monkeypatch):
+        nba, _, summaries = fallback
+        monkeypatch.setattr(_stats, "_request", lambda endpoint, params, ttl=600: {"boxScoreSummary": {}})
+        out = nba.get_live_boxscore(game_id="0022400001")
+        assert out["status"] is False and summaries == []
+        assert "HTTP 403" in out["message"]
+        assert "could not be mapped to an ESPN event id" in out["message"]
+        assert "get_game_summary(event_id=" in out["message"]
+
+    def test_no_matching_espn_event_is_a_clear_error(self, fallback, monkeypatch):
+        nba, _, summaries = fallback
+        summary = _fixture("boxscoresummaryv3")
+        summary["boxScoreSummary"]["awayTeam"]["teamTricode"] = "LAL"
+        monkeypatch.setattr(_stats, "_request", lambda endpoint, params, ttl=600: summary)
+        out = nba.get_live_boxscore(game_id="0022400001")
+        assert out["status"] is False and summaries == []
+        assert "no ESPN event for LAL @ BOS on 2024-11-12" in out["message"]
