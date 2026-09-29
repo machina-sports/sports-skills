@@ -6,6 +6,8 @@ No API keys required. Zero config.
 
 from __future__ import annotations
 
+import re
+
 from sports_skills import _replay
 from sports_skills._response import error, wrap
 from sports_skills.volleyball import _nevobo
@@ -114,6 +116,31 @@ def _poule_path(league):
     )
 
 
+def _season_error(season):
+    """Return an error if `season` is not the one Nevobo serves, else None.
+
+    Nevobo lists earlier seasons' competitions, but their poules can no longer be
+    queried (HTTP 400) and their RSS exports return 404, so only the current
+    season's standings, schedule and results exist upstream.
+    """
+    if season is None or season == "":
+        return None
+    wanted = str(season).strip()
+    if re.fullmatch(r"\d{4}", wanted):
+        wanted = f"{wanted}-{int(wanted) + 1}"
+    if not re.fullmatch(r"\d{4}-\d{4}", wanted):
+        return error(f"Invalid season '{season}'. Use a start year (2026) or a range (2026-2027).")
+    current = _nevobo.current_season()
+    if current is None:
+        return error("Could not determine Nevobo's current season; try again without 'season'.")
+    if wanted != current:
+        return error(
+            f"Season {wanted} is not available: Nevobo only serves the current season "
+            f"({current}). Past-season poules and RSS exports are removed upstream."
+        )
+    return None
+
+
 # ---------------------------------------------------------------------------
 # Public API
 # ---------------------------------------------------------------------------
@@ -145,16 +172,21 @@ def get_competitions() -> dict:
     })
 
 
-def get_standings(*, competition_id: str) -> dict:
+def get_standings(*, competition_id: str, season: str | int | None = None) -> dict:
     """Get standings for a volleyball competition.
 
     Args:
         competition_id: League identifier (e.g. "nevobo-eredivisie-heren").
+        season: Optional season ("2026-2027" or start year 2026). Nevobo only
+            serves the current season; any other value returns an error.
     """
     league, err = _get_league(competition_id)
     if err:
         return err
     try:
+        err = _season_error(season)
+        if err:
+            return err
         poule_path = _poule_path(league)
     except _replay.ReplayFailure as exc:
         return wrap(exc.error)
@@ -166,16 +198,21 @@ def get_standings(*, competition_id: str) -> dict:
     return wrap(result)
 
 
-def get_schedule(*, competition_id: str) -> dict:
+def get_schedule(*, competition_id: str, season: str | int | None = None) -> dict:
     """Get upcoming match schedule for a volleyball competition.
 
     Args:
         competition_id: League identifier (e.g. "nevobo-eredivisie-dames").
+        season: Optional season ("2026-2027" or start year 2026). Nevobo only
+            serves the current season; any other value returns an error.
     """
     league, err = _get_league(competition_id)
     if err:
         return err
     try:
+        err = _season_error(season)
+        if err:
+            return err
         poule_path = _poule_path(league)
     except _replay.ReplayFailure as exc:
         return wrap(exc.error)
@@ -187,16 +224,21 @@ def get_schedule(*, competition_id: str) -> dict:
     return wrap(result)
 
 
-def get_results(*, competition_id: str) -> dict:
+def get_results(*, competition_id: str, season: str | int | None = None) -> dict:
     """Get match results for a volleyball competition.
 
     Args:
         competition_id: League identifier (e.g. "nevobo-eredivisie-heren").
+        season: Optional season ("2026-2027" or start year 2026). Nevobo only
+            serves the current season; any other value returns an error.
     """
     league, err = _get_league(competition_id)
     if err:
         return err
     try:
+        err = _season_error(season)
+        if err:
+            return err
         poule_path = _poule_path(league)
     except _replay.ReplayFailure as exc:
         return wrap(exc.error)

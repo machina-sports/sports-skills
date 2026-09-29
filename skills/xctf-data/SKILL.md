@@ -112,7 +112,9 @@ User says: "Show me the results from the Stanford Invitational"
 Actions:
 1. Find the meet on tfrrs.org and copy the meet_id and slug from the URL (e.g. tfrrs.org/results/95890/Stanford_Invitational)
 2. Call `get_meet_results(meet_id="95890", slug="Stanford_Invitational")`
-Result: All event results and team scores from the meet
+Result: All event results and team scores from the meet. Each result has `place`, `name`, `year`, `team`, `marks` (the recorded mark, e.g. `["9.72"]`, or `["DNF"]`) and `score` (team points, `null` at unscored meets); `wind`, `conversion` (imperial mark) and relay `athletes` appear when the event has them.
+
+For a cross-country meet (URL like tfrrs.org/results/xc/28714/Gans_Creek_Classic) pass `sport="xc"`: `get_meet_results(meet_id="28714", slug="Gans_Creek_Classic", sport="xc")`. XC `team_scores` are keyed by race name. XC ids use a separate range, so an XC id without `sport="xc"` returns an unrelated track meet (flagged in `warnings`).
 
 Example 6: Get the latest XC/TF news
 User says: "What's the latest college track news?"
@@ -153,7 +155,7 @@ The athlete's profile page may be very new or structured differently. Check the 
 The athlete is likely graduated or transferred. See Example 3 above for how to handle this.
 
 **`get_meet_results` returns no events**
-The `meet_id` or `slug` may be incorrect. Copy both directly from the meet's TFRRS URL.
+The `meet_id` or `slug` may be incorrect. Copy both directly from the meet's TFRRS URL. If the URL contains `/results/xc/`, pass `sport="xc"`.
 
 **`get_news` fails or returns no articles**
 The Stride Report RSS feed may be temporarily unavailable. Try again later.

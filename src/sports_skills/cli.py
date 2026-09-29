@@ -196,7 +196,7 @@ _REGISTRY = {
         "get_sports_config": {},
     },
     "esports": {
-        "get_pro_matches": {"optional": ["limit"]},
+        "get_pro_matches": {"optional": ["limit", "less_than_match_id"]},
         "get_leagues": {"optional": ["tier", "limit"]},
         "get_pro_teams": {"optional": ["limit"]},
         "get_match": {"required": ["match_id"]},
@@ -543,9 +543,9 @@ _REGISTRY = {
     },
     "volleyball": {
         "get_competitions": {},
-        "get_standings": {"required": ["competition_id"]},
-        "get_schedule": {"required": ["competition_id"]},
-        "get_results": {"required": ["competition_id"]},
+        "get_standings": {"required": ["competition_id"], "optional": ["season"]},
+        "get_schedule": {"required": ["competition_id"], "optional": ["season"]},
+        "get_results": {"required": ["competition_id"], "optional": ["season"]},
         "get_clubs": {"optional": ["competition_id", "limit"]},
         "get_club_schedule": {"required": ["club_id"]},
         "get_club_results": {"required": ["club_id"]},
@@ -557,7 +557,7 @@ _REGISTRY = {
         "search_athlete": {"required": ["name", "school"]},
         "get_athlete_profile": {"required": ["athlete_id", "school", "name"]},
         "get_team_roster": {"required": ["school"], "optional": ["sport"]},
-        "get_meet_results": {"required": ["meet_id", "slug"]},
+        "get_meet_results": {"required": ["meet_id", "slug"], "optional": ["sport"]},
         "get_news": {"optional": ["limit"]},
     },
 }

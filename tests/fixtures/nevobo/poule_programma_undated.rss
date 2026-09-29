@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom" xmlns:nevobo="https://www.api.nevobo.nl/rss/">
+  <channel>
+    <title>RSS feed Nederlandse Volleybalbond</title>
+    <link>https://api.nevobo.nl/export/poule/nationale-competitie/competitie-seniorencompetitie-4/nationale-competitie-tbd-2/programma.rss</link>
+    <description>Wedstrijdprogramma van de Nederlandse volleybalcompetitie, georganiseerd door de Nederlandse Volleybalbond</description>
+    <lastBuildDate>Tue, 29 Sep 2026 23:12:33 +0200</lastBuildDate>
+    <atom:link href="https://api.nevobo.nl/export/poule/nationale-competitie/competitie-seniorencompetitie-4/nationale-competitie-tbd-2/programma.rss" rel="self" type="text/xml"/>
+    <item>
+      <title><![CDATA[: VCN DS 2 - Sport Pride US DS 1]]></title>
+      <link>https://api.nevobo.nl/permalink/wedstrijd/2068551</link>
+      <guid>https://api.nevobo.nl/permalink/wedstrijd/2068551</guid>
+      <description><![CDATA[Wedstrijd: 9000TBD   BI, Datum: , Speellocatie: Oostgaarde, Dakotaweg 261, 2905AB  Capelle aan den IJssel]]></description>
+      <pubDate/>
+      <nevobo:status>gepland</nevobo:status>
+    </item><item>
+      <title><![CDATA[3 okt 15:30: VV Utrecht DS 2 - Kalinko DS 1]]></title>
+      <link>https://api.nevobo.nl/permalink/wedstrijd/1964583</link>
+      <guid>https://api.nevobo.nl/permalink/wedstrijd/1964583</guid>
+      <description><![CDATA[Wedstrijd: 9000TBD   FD, Datum: zaterdag 3 oktober, 15:30, Speellocatie: Galgenwaard Sportcentrum, Herculesplein 341, 3584AA  Utrecht]]></description>
+      <pubDate>Sat, 03 Oct 2026 15:30:00 +0200</pubDate>
+      <nevobo:status>gepland</nevobo:status>
+    </item>
+  </channel>
+</rss>

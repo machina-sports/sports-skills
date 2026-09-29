@@ -31,17 +31,19 @@ def _req(**kwargs):
     return {"params": {k: v for k, v in kwargs.items() if v is not None}}
 
 
-def get_pro_matches(*, limit: int = 20) -> dict:
-    """Recent professional Dota 2 matches (OpenDota).
+def get_pro_matches(*, limit: int = 20, less_than_match_id: str | int | None = None) -> dict:
+    """Recent professional Dota 2 matches (OpenDota), newest first.
 
     Args:
         limit: Max matches to return (default: 20, max: 100).
+        less_than_match_id: Page back to older matches — pass the previous
+            response's ``next_less_than_match_id``. OpenDota has no date filter.
     """
-    return _get_pro_matches(_req(limit=limit))
+    return _get_pro_matches(_req(limit=limit, less_than_match_id=less_than_match_id))
 
 
 def get_leagues(*, tier: str | None = None, limit: int = 50) -> dict:
-    """Dota 2 leagues / tournaments (OpenDota).
+    """Dota 2 leagues / tournaments (OpenDota), newest first.
 
     Args:
         tier: Filter by tier — 'premium', 'professional', or 'excluded' (default: all).
