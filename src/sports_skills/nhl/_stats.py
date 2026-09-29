@@ -30,6 +30,7 @@ from sports_skills._espn_base import (
     _http_fetch,
     epoch_seconds,
 )
+from sports_skills._shaping import ShapingError, shape_rows
 
 logger = logging.getLogger("sports_skills.nhl._stats")
 
@@ -71,6 +72,15 @@ _SEASON_TYPES = {"regular": 2, "playoffs": 3}
 _SKATER_CATEGORIES = ("goals", "assists", "points", "plusMinus", "penaltyMins", "toi", "faceoffLeaders")
 _GOALIE_CATEGORIES = ("wins", "shutouts", "savePctg", "goalsAgainstAverage")
 
+# Columns ``fields`` always keeps, so a trimmed row still says what it describes.
+_GAME_LOG_IDENTITY = ("game_id", "game_date", "team_abbreviation", "opponent")
+
+# Game-log keys that become row columns rather than part of the ``stats`` bag.
+_GAME_LOG_META = (
+    "gameId", "gameDate", "teamAbbrev", "homeRoadFlag", "opponentAbbrev",
+    "commonName", "opponentCommonName",
+)
+
 
 class _NhlStatsError(Exception):
     """A request cannot be built or served as asked."""
@@ -88,7 +98,7 @@ def _guard(fn):
     def wrapper(request_data: dict[str, Any]) -> dict[str, Any]:
         try:
             return fn(request_data)
-        except _NhlStatsError as exc:
+        except (_NhlStatsError, ShapingError) as exc:
             return {"error": True, "message": str(exc)}
         except Exception as exc:  # noqa: BLE001 — surface, never crash the agent
             logger.debug("nhl-stats call failed", exc_info=True)
@@ -399,6 +409,77 @@ def get_nhlstats_player_stats(request_data: dict[str, Any]) -> dict[str, Any]:
     }
     _annotate_abbrs(row, data.get("currentTeamAbbrev"))
     return row
+
+
+@_guard
+def get_nhlstats_player_game_log(request_data: dict[str, Any]) -> dict[str, Any]:
+    params = request_data.get("params", {})
+    person_id = _resolve_player(params.get("player_id"), params.get("player"))
+    season = _season_str(params.get("season"))
+    type_key = str(params.get("season_type") or "regular").strip().lower()
+    if type_key not in _SEASON_TYPES:
+        raise _NhlStatsError(
+            f"Invalid season_type {params.get('season_type')!r}. Valid values: regular, playoffs"
+        )
+
+    data = _request(f"{_API_BASE}/player/{person_id}/game-log/{season}/{_SEASON_TYPES[type_key]}")
+    log = sorted(data.get("gameLog") or [], key=lambda g: (str(g.get("gameDate")), g.get("gameId") or 0))
+
+    # The game log carries no score, so results come from each team's schedule
+    # (one cached request per team the player played for that season).
+    warnings = []
+    finals: dict[int, dict[str, Any]] = {}
+    for team in sorted({str(g["teamAbbrev"]) for g in log if g.get("teamAbbrev")}):
+        try:
+            schedule = _request(f"{_API_BASE}/club-schedule-season/{team}/{season}")
+        except _NhlStatsError as exc:
+            warnings.append(f"no results for {team} games: its schedule could not be read ({exc})")
+            continue
+        for game in schedule.get("games", []):
+            if game.get("gameState") in ("OFF", "FINAL"):
+                finals[game.get("id")] = game
+
+    games = []
+    for g in log:
+        home = g.get("homeRoadFlag") == "H"
+        row = {
+            "game_id": str(g.get("gameId", "")),
+            "game_date": g.get("gameDate"),
+            "opponent": g.get("opponentAbbrev"),
+            "home_away": {"H": "home", "R": "away"}.get(g.get("homeRoadFlag")),
+            "result": None,
+            "decided_by": None,
+            "team_score": None,
+            "opponent_score": None,
+        }
+        final = finals.get(g.get("gameId"))
+        if final:
+            ours = (final.get("homeTeam") if home else final.get("awayTeam")) or {}
+            theirs = (final.get("awayTeam") if home else final.get("homeTeam")) or {}
+            if ours.get("score") is not None and theirs.get("score") is not None:
+                row["team_score"], row["opponent_score"] = ours["score"], theirs["score"]
+                row["result"] = "W" if ours["score"] > theirs["score"] else "L"
+                row["decided_by"] = (final.get("gameOutcome") or {}).get("lastPeriodType")
+        _annotate_abbrs(row, g.get("teamAbbrev"))
+        row["stats"] = {k: v for k, v in g.items() if k not in _GAME_LOG_META}
+        games.append(row)
+
+    total = len(games)
+    games, shaping = shape_rows(games, params, identity=_GAME_LOG_IDENTITY, nested="stats")
+    result = {
+        "provider": "nhl-stats",
+        "player_id": person_id,
+        "season": season,
+        "season_type": type_key,
+        "games": games,
+        "count": len(games),
+        **shaping,
+    }
+    if not total:
+        warnings.append(f"no {type_key} games for player {person_id} in {season}")
+    if warnings:
+        result["warnings"] = warnings
+    return result
 
 
 @_guard

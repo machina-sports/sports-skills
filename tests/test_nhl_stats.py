@@ -273,6 +273,97 @@ class TestPlayerStats:
         assert four_nations["is_nhl"] is False
 
 
+class TestPlayerGameLog:
+    """#150: /v1/player/{id}/game-log/{season}/{type}, results joined from the team schedule."""
+
+    def test_request_path(self, offline):
+        _stats.get_nhlstats_player_game_log({"params": {"player_id": "8478402", "season": 2025}})
+        assert offline[0].endswith("/v1/player/8478402/game-log/20252026/2")
+        assert offline[1].endswith("/v1/club-schedule-season/EDM/20252026")
+        assert len(offline) == 2
+
+    def test_skater_rows(self, offline):
+        out = _stats.get_nhlstats_player_game_log({"params": {"player_id": "8478402", "season": 2025}})
+        assert out["count"] == 5 and out["season_type"] == "regular"
+        dates = [g["game_date"] for g in out["games"]]
+        assert dates == sorted(dates), "oldest first"
+        last = out["games"][-1]
+        assert {k: v for k, v in last.items() if k != "stats"} == {
+            "game_id": "2025021311",
+            "game_date": "2026-04-16",
+            "opponent": "VAN",
+            "home_away": "home",
+            "result": "W",
+            "decided_by": "REG",
+            "team_score": 6,
+            "opponent_score": 1,
+            "team_abbreviation": "EDM",
+            "team_abbreviation_espn": "EDM",
+        }
+        assert last["stats"]["assists"] == 4 and last["stats"]["toi"] == "18:16"
+        assert "opponentAbbrev" not in last["stats"]
+
+    def test_overtime_and_shootout_losses(self, offline):
+        out = _stats.get_nhlstats_player_game_log({"params": {"player_id": "8478402", "season": 2025}})
+        by_id = {g["game_id"]: g for g in out["games"]}
+        so = by_id["2025021289"]  # COL 2-1 at EDM in a shootout
+        assert (so["result"], so["decided_by"], so["team_score"], so["opponent_score"]) == ("L", "SO", 1, 2)
+        ot = by_id["2025021241"]  # EDM 5-6 at UTA in overtime
+        assert (ot["home_away"], ot["result"], ot["decided_by"]) == ("away", "L", "OT")
+
+    def test_goalie_rows(self, offline):
+        out = _stats.get_nhlstats_player_game_log({"params": {"player_id": "8479361", "season": 2025}})
+        first = out["games"][0]  # 2026-04-04 TOR 6-7 at LAK in overtime
+        assert (first["team_abbreviation"], first["opponent"], first["result"]) == ("TOR", "LAK", "L")
+        assert first["stats"]["decision"] == "O" and "savePctg" in first["stats"]
+
+    def test_playoffs_type(self, offline):
+        _stats.get_nhlstats_player_game_log(
+            {"params": {"player_id": "8478402", "season": "20252026", "season_type": "playoffs"}}
+        )
+        assert offline[0].endswith("/game-log/20252026/3")
+
+    def test_player_name_is_resolved(self, offline):
+        _stats.get_nhlstats_player_game_log({"params": {"player": "Stutzle", "season": 2025}})
+        assert "/search/player?" in offline[0]
+        assert offline[1].endswith("/v1/player/8482116/game-log/20252026/2")
+
+    def test_shaping(self, offline):
+        out = _stats.get_nhlstats_player_game_log(
+            {"params": {"player_id": "8478402", "season": 2025, "sort_by": "points", "limit": 1, "fields": "result"}}
+        )
+        assert out["total_rows"] == 5 and out["returned_rows"] == 1
+        top = out["games"][0]
+        assert set(top) == {"game_id", "game_date", "team_abbreviation", "opponent", "result", "stats"}
+        assert top["game_id"] == "2025021246" and top["stats"] == {"points": 5}  # 3G 2A at SJS
+
+    def test_schedule_failure_keeps_the_log(self, monkeypatch):
+        log = json.loads((FIXTURES / "player_8478402_game_log_20252026_2.json").read_text())
+
+        def fake_request(url, ttl=600):
+            if "club-schedule-season" in url:
+                raise _stats._NhlStatsError("HTTP 503")
+            return log
+
+        monkeypatch.setattr(_stats, "_request", fake_request)
+        out = _stats.get_nhlstats_player_game_log({"params": {"player_id": "8478402", "season": 2025}})
+        assert out["count"] == 5 and all(g["result"] is None for g in out["games"])
+        assert "EDM" in out["warnings"][0] and "HTTP 503" in out["warnings"][0]
+
+    def test_empty_season_warns(self, monkeypatch):
+        monkeypatch.setattr(_stats, "_request", lambda url, ttl=600: {"gameLog": []})
+        out = _stats.get_nhlstats_player_game_log({"params": {"player_id": "8478402", "season": 1999}})
+        assert out["count"] == 0 and "no regular games" in out["warnings"][0]
+
+    def test_bad_season_type_is_reported(self, offline):
+        out = _stats.get_nhlstats_player_game_log({"params": {"player_id": "8478402", "season_type": "post"}})
+        assert out["error"] is True and "regular, playoffs" in out["message"]
+
+    def test_missing_player_is_reported(self, offline):
+        out = _stats.get_nhlstats_player_game_log({"params": {}})
+        assert out["error"] is True and "player_id" in out["message"]
+
+
 # ── play-by-play ─────────────────────────────────────────────
 
 

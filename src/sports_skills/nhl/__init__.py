@@ -64,6 +64,9 @@ from sports_skills.nhl._stats import (
     get_nhlstats_play_by_play as _get_nhlstats_play_by_play,
 )
 from sports_skills.nhl._stats import (
+    get_nhlstats_player_game_log as _get_nhlstats_player_game_log,
+)
+from sports_skills.nhl._stats import (
     get_nhlstats_player_stats as _get_nhlstats_player_stats,
 )
 from sports_skills.nhl._stats import (
@@ -283,6 +286,55 @@ def get_nhlstats_player_stats(
             one player; ambiguous names return the candidates.
     """
     return wrap(_get_nhlstats_player_stats(_params(player_id=player_id, player=player)))
+
+
+def get_nhlstats_player_game_log(
+    *,
+    player_id: str | None = None,
+    player: str | None = None,
+    season: int | str | None = None,
+    season_type: str | None = None,
+    sort_by: str | None = None,
+    descending: bool | None = None,
+    limit: int | None = None,
+    fields: str | None = None,
+) -> dict:
+    """Get a player's game-by-game log for one season via the NHL API.
+
+    One row per game, oldest first: game_id, game_date, opponent, home_away,
+    result ("W"/"L"), decided_by ("REG"/"OT"/"SO"), team_score and
+    opponent_score (from the team's schedule), and the game's stat line in
+    stats (skaters: goals, assists, points, shots, toi, ...; goalies:
+    decision, shotsAgainst, savePctg, ...).
+
+    Args:
+        player_id: NHL player id (e.g. "8478402"). Find it with find_nhl_player.
+        player: Player name to resolve instead of player_id. Must match exactly
+            one player; ambiguous names return the candidates.
+        season: Season starting year (e.g. 2025) or NHL form ("20252026").
+            Defaults to the current season.
+        season_type: "regular" (default) or "playoffs".
+        sort_by: Optional column to sort rows by, e.g. points (stat keys are
+            addressable directly). Numeric-aware; missing values sort last.
+        descending: Sort direction when sort_by is given. Defaults to true.
+        limit: Optional max rows to return, applied after sort_by.
+        fields: Optional comma-separated columns to keep, e.g. "result,goals,assists".
+            Always keeps game_id, game_date, team_abbreviation, opponent. Unknown names return the valid columns.
+    """
+    return wrap(
+        _get_nhlstats_player_game_log(
+            _params(
+                player_id=player_id,
+                player=player,
+                season=season,
+                season_type=season_type,
+                sort_by=sort_by,
+                descending=descending,
+                limit=limit,
+                fields=fields,
+            )
+        )
+    )
 
 
 def get_nhlstats_play_by_play(*, game_id: str, limit: int | None = None) -> dict:

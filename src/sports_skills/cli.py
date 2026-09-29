@@ -427,6 +427,9 @@ _REGISTRY = {
         "find_nhl_player": {"required": ["name"]},
         "get_nhlstats_schedule": {"optional": ["date", "season", "team"]},
         "get_nhlstats_player_stats": {"optional": ["player_id", "player"]},
+        "get_nhlstats_player_game_log": {
+            "optional": ["player_id", "player", "season", "season_type", *_SHAPING]
+        },
         "get_nhlstats_play_by_play": {"required": ["game_id"], "optional": ["limit"]},
         "get_nhlstats_boxscore": {"required": ["game_id"]},
         "get_nhlstats_standings": {"optional": ["date"]},
