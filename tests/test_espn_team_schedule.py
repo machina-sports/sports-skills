@@ -4,7 +4,7 @@ import importlib
 
 import pytest
 
-from sports_skills import _espn_base, cbb, cfb, nba
+from sports_skills import _espn_base, cbb, cfb, nba, wnba
 
 
 def _event(event_id, date, season_type):
@@ -43,20 +43,20 @@ def _ids(result):
     return [e["id"] for e in result["data"]["events"]]
 
 
-@pytest.mark.parametrize("module", [nba, cfb, cbb])
+@pytest.mark.parametrize("module", [nba, wnba, cfb, cbb])
 def test_default_request_is_unchanged(fake_espn, module):
     assert _ids(module.get_team_schedule(team_id="9", season=2025)) == ["1"]
     assert fake_espn[-1][2] == {"season": 2025}
 
 
-@pytest.mark.parametrize("module", [nba, cfb, cbb])
+@pytest.mark.parametrize("module", [nba, wnba, cfb, cbb])
 @pytest.mark.parametrize("value", ["postseason", "playoffs", "3", 3])
 def test_postseason_sends_seasontype_3(fake_espn, module, value):
     assert _ids(module.get_team_schedule(team_id="9", season=2025, season_type=value)) == ["3"]
     assert fake_espn[-1][2] == {"season": 2025, "seasontype": "3"}
 
 
-@pytest.mark.parametrize("module", [cfb, cbb])
+@pytest.mark.parametrize("module", [wnba, cfb, cbb])
 def test_all_merges_regular_and_postseason(fake_espn, module):
     result = module.get_team_schedule(team_id="9", season=2025, season_type="all")
     assert _ids(result) == ["1", "3"]
@@ -114,3 +114,30 @@ def test_scoreboard_score_string_is_unchanged(league):
     connector = importlib.import_module(f"sports_skills.{league}._connector")
     scores = [c["score"] for c in connector._normalize_event(_schedule_event("13", "20"))["competitors"]]
     assert scores == ["13", "20"]
+
+
+# Each row says which part of the season it is from (#159): team schedules
+# carry ``seasonType``, scoreboards ``season.type``.
+@pytest.mark.parametrize("league", _ESPN_LEAGUES)
+@pytest.mark.parametrize(
+    ("event", "expected"),
+    [
+        ({"seasonType": {"id": "1"}}, "preseason"),
+        ({"seasonType": {"id": "2"}}, "regular"),
+        ({"seasonType": {"id": "3"}}, "postseason"),
+        ({"seasonType": {"id": "5"}}, "playin"),
+        ({"season": {"year": 2025, "type": 3}}, "postseason"),
+        ({}, ""),
+    ],
+)
+def test_rows_carry_season_type(league, event, expected):
+    connector = importlib.import_module(f"sports_skills.{league}._connector")
+    row = connector._normalize_event({**_schedule_event("13", "20"), **event})
+    assert row["season_type"] == expected
+
+
+@pytest.mark.parametrize("event", [{"seasonType": "2"}, {"season": 2025}, {"seasonType": None, "season": None}])
+def test_season_type_tolerates_non_dict_values(event):
+    from sports_skills._espn_base import event_season_type
+
+    assert event_season_type(event) in ("regular", "")

@@ -11,7 +11,7 @@ CLI commands organized by article type. For full details on each command (parame
 | Sport | Command | Parameters |
 |-------|---------|-----------|
 | NFL | `sports-skills nfl get_schedule` | `--season=YYYY` `--week=N` |
-| NBA | `sports-skills nba get_schedule` | `--date=YYYY-MM-DD` `--season=YYYY` |
+| NBA | `sports-skills nba get_schedule` | `--date=YYYY-MM-DD` (for a season: `get_team_schedule --season=YYYY`) |
 | WNBA | `sports-skills wnba get_schedule` | `--date=YYYY-MM-DD` |
 | NHL | `sports-skills nhl get_schedule` | `--date=YYYY-MM-DD` |
 | MLB | `sports-skills mlb get_schedule` | `--date=YYYY-MM-DD` |

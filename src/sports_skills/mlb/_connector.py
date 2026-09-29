@@ -15,10 +15,13 @@ from sports_skills._espn_base import (
     _current_year,
     _http_fetch,
     _resolve_leaders,
+    default_standings_season,
+    epoch_seconds,
     espn_core_request,
     espn_request,
     espn_summary,
     espn_web_request,
+    event_season_type,
     fetch_season,
     fill_team_divisions,
     normalize_boxscore,
@@ -31,6 +34,7 @@ from sports_skills._espn_base import (
     normalize_scoring_plays,
     normalize_summary_odds,
     normalize_transactions,
+    standings_fields,
 )
 
 logger = logging.getLogger("sports_skills.mlb")
@@ -83,6 +87,8 @@ def _normalize_event(espn_event):
         "status": ESPN_STATUS_MAP.get(status_type, status_type),
         "status_detail": status_detail,
         "start_time": comp.get("date", espn_event.get("date", "")),
+        "start_ts": epoch_seconds(comp.get("date", espn_event.get("date", ""))),
+        "season_type": event_season_type(espn_event),
         "venue": {
             "name": comp.get("venue", {}).get("fullName", ""),
             "city": comp.get("venue", {}).get("address", {}).get("city", ""),
@@ -114,7 +120,9 @@ def _normalize_standings_entries(standings_data):
             "games_back": stats.get("gamesBehind", stats.get("GB", "")),
             "runs_scored": stats.get("pointsFor", stats.get("runsFor", "")),
             "runs_allowed": stats.get("pointsAgainst", stats.get("runsAgainst", "")),
-            "run_diff": stats.get("differential", stats.get("diff", "")),
+            # ESPN's "differential" is the per-game average (+0.9); the season
+            # total (+138 = 739 - 601) is "pointDifferential".
+            "run_diff": stats.get("pointDifferential", stats.get("differential", stats.get("diff", ""))),
             "streak": stats.get("streak", ""),
             "home_record": stats.get("Home", stats.get("homeRecord", "")),
             "away_record": stats.get("Road", stats.get("awayRecord", "")),
@@ -364,6 +372,11 @@ def get_standings(request_data):
     data = espn_web_request(SPORT_PATH, "standings", espn_params or None)
     if data.get("error"):
         return data
+    data, defaulted_from = default_standings_season(
+        data, season, lambda year: espn_web_request(SPORT_PATH, "standings", {**espn_params, "season": year})
+    )
+    if defaulted_from:
+        espn_params["season"] = defaulted_from - 1
 
     groups = _normalize_standings(data)
     # The conference tables above leave "division" empty; a level=3 request
@@ -374,9 +387,9 @@ def get_standings(request_data):
     fill_team_divisions(groups, division_data)
     return {
         "groups": groups,
-        # Prefer the requested season: ESPN's envelope reports the *current*
-        # season regardless of the season filter applied to the events.
-        "season": _echo_season(season, data),
+        # The tables' own season (ESPN's envelope reports the *current* one)
+        # or the requested one, with its type and status.
+        **standings_fields(data, season, defaulted_from),
     }
 
 
@@ -542,11 +555,21 @@ def get_schedule(request_data):
     date = params.get("date")
     season = params.get("season")
 
+    if season and not date:
+        # ESPN's scoreboard ignores ``season`` and returns the next game day,
+        # so a season-only request would answer with the wrong games.
+        return {
+            "error": True,
+            "message": (
+                f"get_schedule cannot list season {season}: ESPN's scoreboard has no season filter. "
+                "Pass date=YYYY-MM-DD for one day, or use get_team_schedule(team_id, season) "
+                "for a team's season."
+            ),
+        }
+
     espn_params = {}
     if date:
         espn_params["dates"] = date.replace("-", "")
-    elif season:
-        espn_params["season"] = str(season)
 
     data = espn_request(SPORT_PATH, "scoreboard", espn_params or None)
     if data.get("error"):
