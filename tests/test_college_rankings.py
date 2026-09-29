@@ -62,3 +62,10 @@ def test_core_failure_is_returned(monkeypatch):
     monkeypatch.setattr(_espn_base, "espn_core_request", lambda *a, **k: {"error": True, "message": "HTTP 404"})
     result = importlib.import_module("sports_skills.cfb._connector").get_rankings({"params": {"season": 1900, "week": 5}})
     assert result == {"error": True, "message": "HTTP 404"}
+
+
+def test_malformed_poll_links_are_skipped(monkeypatch):
+    listing = {"items": [{}, {"$ref": "https://example.com/other"}]}
+    monkeypatch.setattr(_espn_base, "espn_core_request", lambda *a, **k: listing)
+    monkeypatch.setattr(_espn_base, "espn_request", lambda *a, **k: {"sports": []})
+    assert _espn_base.espn_week_rankings("football/college-football", 2025, 5) == {"rankings": [], "week": 5}

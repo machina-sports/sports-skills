@@ -134,3 +134,10 @@ def test_rows_carry_season_type(league, event, expected):
     connector = importlib.import_module(f"sports_skills.{league}._connector")
     row = connector._normalize_event({**_schedule_event("13", "20"), **event})
     assert row["season_type"] == expected
+
+
+@pytest.mark.parametrize("event", [{"seasonType": "2"}, {"season": 2025}, {"seasonType": None, "season": None}])
+def test_season_type_tolerates_non_dict_values(event):
+    from sports_skills._espn_base import event_season_type
+
+    assert event_season_type(event) in ("regular", "")

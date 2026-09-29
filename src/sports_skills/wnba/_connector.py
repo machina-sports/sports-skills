@@ -368,8 +368,6 @@ def get_standings(request_data):
     data, defaulted_from = default_standings_season(
         data, season, lambda year: espn_web_request(SPORT_PATH, "standings", {**espn_params, "season": year})
     )
-    if defaulted_from:
-        espn_params["season"] = defaulted_from - 1
 
     groups = _normalize_standings(data)
     return {

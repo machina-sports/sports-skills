@@ -133,3 +133,40 @@ def test_failed_fallback_keeps_the_default_table(monkeypatch):
 
 def test_no_dates_means_no_status():
     assert _espn_base.standings_season(_payload(2026, 2, 1, 1))["season_status"] == ""
+
+
+def test_fallback_is_dropped_when_espn_ignores_the_prior_season(monkeypatch):
+    """A 'prior' load that is the same upcoming table is not a fallback."""
+    connector, _ = _serve(monkeypatch, "nba", {None: UPCOMING, 2026: UPCOMING})
+    result = connector.get_standings({"params": {}})
+    assert result["season"] == 2027
+    assert "defaulted_from" not in result
+
+
+def test_group_filtered_college_table_with_overall_records(monkeypatch):
+    """cfb group=: the root is the conference table, and rows have no ``losses`` stat."""
+    stats = [{"name": "wins", "value": 0}, {"name": "overall", "displayValue": "0-0"}]
+    root = {
+        "season": {"year": 2027},
+        "standings": {"season": 2027, "seasonType": 2, "entries": [{"team": {"id": "1"}, "stats": stats}]},
+    }
+    prior = {
+        "standings": {
+            "season": 2026,
+            "seasonType": 2,
+            "entries": [{"team": {"id": "1"}, "stats": [{"name": "overall", "displayValue": "12-2"}]}],
+        }
+    }
+    calls = []
+
+    def load(year):
+        calls.append(year)
+        return prior
+
+    data, defaulted_from = _espn_base.default_standings_season(root, None, load)
+    assert (data, defaulted_from, calls) == (prior, 2027, [2026])
+
+
+def test_malformed_payloads_do_not_raise():
+    assert _espn_base.standings_season({"children": [None, {"standings": {"entries": [{"stats": None}]}}]})
+    assert _espn_base._no_games_played({"children": [None, {"standings": {"entries": [None, {"stats": None}]}}]}) is False

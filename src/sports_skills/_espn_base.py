@@ -851,18 +851,41 @@ def event_season_type(espn_event):
     Team schedules carry ``seasonType``; scoreboards carry ``season.type``.
     ``""`` when neither is present.
     """
-    code = (espn_event.get("seasonType") or {}).get("id") or (espn_event.get("season") or {}).get("type")
+    season_type, season = espn_event.get("seasonType"), espn_event.get("season")
+    code = season_type.get("id") if isinstance(season_type, dict) else season_type
+    if not code and isinstance(season, dict):
+        code = season.get("type")
     return _STANDINGS_SEASON_TYPES.get(str(code or ""), "")
+
 
 def _now():
     """Current time as epoch seconds (a seam for tests)."""
     return time.time()
 
 
+def _tables(data):
+    """Every standings table of an ESPN standings payload, outermost first.
+
+    The root carries its own table when ESPN is filtered to one conference
+    (college ``group=``); otherwise tables sit under ``children`` (and, with
+    ``level=3``, their children).
+    """
+    tables = []
+    nodes = [data]
+    while nodes:
+        node = nodes.pop(0)
+        if not isinstance(node, dict):
+            continue
+        if isinstance(node.get("standings"), dict) and node["standings"]:
+            tables.append(node["standings"])
+        nodes.extend(node.get("children") or [])
+    return tables
+
+
 def _standings_table(data):
     """The first standings table of an ESPN standings payload (``{}`` if none)."""
     for child in data.get("children") or []:
-        if child.get("standings"):
+        if isinstance(child, dict) and child.get("standings"):
             return child["standings"]
     return data.get("standings") or {}
 
@@ -881,10 +904,10 @@ def standings_season(data):
     season_type = _STANDINGS_SEASON_TYPES.get(str(table.get("seasonType", "")), "")
     status = ""
     for entry in data.get("seasons") or []:
-        if entry.get("year") != year:
+        if not isinstance(entry, dict) or entry.get("year") != year:
             continue
         for kind in entry.get("types") or []:
-            if str(kind.get("id")) != "2":
+            if not isinstance(kind, dict) or str(kind.get("id")) != "2":
                 continue
             start, end = epoch_seconds(kind.get("startDate")), epoch_seconds(kind.get("endDate"))
             now = _now()
@@ -897,16 +920,29 @@ def standings_season(data):
     return {"season": year, "season_type": season_type, "season_status": status}
 
 
+def _record(stats):
+    """``(wins, losses)`` of a standings row, or ``None`` when it has neither.
+
+    CFB rows have no ``losses`` stat, only the ``overall`` record ("12-2").
+    """
+    try:
+        if "wins" in stats and "losses" in stats:
+            return float(stats["wins"].get("value") or 0), float(stats["losses"].get("value") or 0)
+        overall = str((stats.get("overall") or {}).get("displayValue", ""))
+        wins, losses = overall.split("-")[:2]
+        return float(wins), float(losses)
+    except (AttributeError, TypeError, ValueError):
+        return None
+
+
 def _no_games_played(data):
     """True when every standings row has zero wins and zero losses."""
-    rows = [entry for child in data.get("children") or [] for entry in (child.get("standings") or {}).get("entries", [])]
+    rows = [e for table in _tables(data) for e in (table.get("entries") or []) if isinstance(e, dict)]
     if not rows:
         return False
     for entry in rows:
-        stats = {s.get("name"): s.get("value") for s in entry.get("stats", [])}
-        if "wins" not in stats or "losses" not in stats:
-            return False
-        if (stats["wins"] or 0) or (stats["losses"] or 0):
+        stats = {s.get("name"): s for s in entry.get("stats") or [] if isinstance(s, dict)}
+        if _record(stats) != (0, 0):
             return False
     return True
 
@@ -915,9 +951,11 @@ def default_standings_season(data, requested, load):
     """Fall back to the last season with standings when none was requested.
 
     Between seasons ESPN's default standings are the upcoming season: a table
-    of zeros, or preseason records. When the caller named no season and the
-    regular season has not started (by ESPN's dates, a preseason table, or no
-    team having a win or loss), ``load(year)`` fetches the prior season.
+    of zeros, or preseason records. When the caller named no season and that
+    season has no regular-season games yet (ESPN's dates say it has not
+    started, the table is preseason, or no team has a win or a loss),
+    ``load(year)`` fetches the prior season, which is kept only if it really
+    is that season.
 
     Returns ``(data, defaulted_from)``; ``defaulted_from`` is the season that
     was skipped, or ``None`` when ``data`` is unchanged.
@@ -936,7 +974,7 @@ def default_standings_season(data, requested, load):
     if not upcoming:
         return data, None
     prior = load(year - 1)
-    if not isinstance(prior, dict) or prior.get("error") or not _standings_table(prior):
+    if not isinstance(prior, dict) or prior.get("error") or standings_season(prior)["season"] != year - 1:
         return data, None
     return prior, year
 
@@ -952,7 +990,7 @@ def standings_fields(data, requested, defaulted_from):
     if defaulted_from:
         info["defaulted_from"] = defaulted_from
         info["note"] = (
-            f"The {defaulted_from} season has not started; returned {info['season']}. "
+            f"The {defaulted_from} standings have no regular-season games yet; returned {info['season']}. "
             f"Pass season={defaulted_from} for the upcoming season's table."
         )
     return info
@@ -1057,8 +1095,11 @@ def espn_core_request(sport_path, resource_path, ttl=300):
 
 
 def _core_path(ref_url):
-    """The path after ``/leagues/<league>/`` of a core API ``$ref`` URL."""
-    return ref_url.split("/leagues/", 1)[1].split("/", 1)[1].split("?", 1)[0]
+    """The path after ``/leagues/<league>/`` of a core API ``$ref`` URL (``""`` if none)."""
+    parts = str(ref_url or "").split("/leagues/", 1)
+    if len(parts) < 2 or "/" not in parts[1]:
+        return ""
+    return parts[1].split("/", 1)[1].split("?", 1)[0]
 
 
 def espn_week_rankings(sport_path, season, week):
@@ -1084,13 +1125,17 @@ def espn_week_rankings(sport_path, season, week):
                 logo = (team.get("logos") or [{}])[0].get("href", "")
                 teams[str(team.get("id", ""))] = {**team, "logo": team.get("logo") or logo}
     rankings = []
-    for item in listing.get("items", []):
-        poll = espn_core_request(sport_path, _core_path(item.get("$ref", "")), ttl=3600)
+    for item in listing.get("items") or []:
+        path = _core_path((item or {}).get("$ref"))
+        if not path:
+            continue
+        poll = espn_core_request(sport_path, path, ttl=3600)
         if poll.get("error"):
             return poll
         ranks = []
-        for rank in poll.get("ranks", []):
-            team_id = rank.get("team", {}).get("$ref", "").split("/teams/")[-1].split("?")[0]
+        for rank in poll.get("ranks") or []:
+            ref = str((rank.get("team") or {}).get("$ref", ""))
+            team_id = ref.split("/teams/")[-1].split("?")[0] if "/teams/" in ref else ""
             ranks.append(
                 {
                     **rank,
