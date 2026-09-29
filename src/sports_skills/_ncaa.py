@@ -345,22 +345,41 @@ def fold(text: Any) -> str:
 # ── scoreboard / schedule ─────────────────────────────
 
 
+def _legacy_time(value: Any) -> Any:
+    """24-hour Eastern "20:00" -> "08:00PM ET", the format casablanca rows had.
+
+    Anything else ("TBA", "", None) passes through unchanged.
+    """
+    try:
+        return datetime.strptime(str(value), "%H:%M").strftime("%I:%M%p") + " ET"
+    except ValueError:
+        return value
+
+
+def _score(value: Any) -> str | None:
+    return None if value is None else str(value)
+
+
 def _normalize_contest(contest: dict[str, Any]) -> dict[str, Any]:
     teams = contest.get("teams") or []
     home = next((t for t in teams if t.get("isHome")), {})
     away = next((t for t in teams if not t.get("isHome")), {})
     return {
         "game_id": str(contest.get("contestId", "")),
-        "start_date": contest.get("startDate"),
-        "start_time": contest.get("startTime"),
+        # Kept in the casablanca formats callers already parse: "11-19-2024",
+        # "07:00PM ET", string scores.
+        "start_date": (contest.get("startDate") or "").replace("/", "-") or None,
+        "start_time": _legacy_time(contest.get("startTime")),
         "status": contest.get("statusCodeDisplay") or contest.get("gameState"),
         "period": contest.get("currentPeriod") or None,
         "home_team": home.get("nameShort"),
         "away_team": away.get("nameShort"),
         "home_seo": home.get("seoname"),
         "away_seo": away.get("seoname"),
-        "home_score": home.get("score"),
-        "away_score": away.get("score"),
+        "home_score": _score(home.get("score")),
+        "away_score": _score(away.get("score")),
+        # The GraphQL contest carries only the conference slug ("sun-belt"),
+        # not casablanca's display name ("Sun Belt").
         "home_conference": home.get("conferenceSeo"),
         "away_conference": away.get("conferenceSeo"),
     }

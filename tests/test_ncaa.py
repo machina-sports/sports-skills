@@ -121,6 +121,32 @@ class TestScoreboard:
         assert army_navy["status"] == "final"
         assert army_navy["home_score"] is not None and army_navy["away_score"] is not None
 
+    def test_rows_keep_the_casablanca_value_formats(self, offline):
+        """Callers parse the old feed's formats: "11-19-2024", "07:00PM ET",
+        string scores. Conference is the slug: GraphQL carries no name."""
+        out = _ncaa.fetch_scoreboard("football", "fbs", year=2025, week=16)
+        army_navy, boise = out["games"]
+        assert army_navy["start_date"] == "12-13-2025"
+        assert army_navy["start_time"] == "03:00PM ET"
+        assert boise["start_time"] == "08:00PM ET"
+        assert (army_navy["home_score"], army_navy["away_score"]) == ("17", "16")
+        assert army_navy["home_conference"] == "american"
+
+    def test_unplayed_and_tba_rows_keep_missing_values(self):
+        row = _ncaa._normalize_contest(
+            {
+                "contestId": 1,
+                "startDate": "",
+                "startTime": "TBA",
+                "teams": [{"isHome": True, "score": None}, {"isHome": False, "score": None}],
+            }
+        )
+        assert row["start_date"] is None
+        assert row["start_time"] == "TBA"
+        assert row["home_score"] is None and row["away_score"] is None
+        assert _ncaa._normalize_contest({"startTime": None})["start_time"] is None
+        assert _ncaa._normalize_contest({"startTime": ""})["start_time"] == ""
+
     def test_basketball_date_query(self, offline):
         out = _ncaa.fetch_scoreboard("basketball-men", "d1", date="2026-03-20")
         assert out["count"] > 0
