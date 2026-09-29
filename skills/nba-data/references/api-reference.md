@@ -64,9 +64,9 @@ Get win probability chart data for a game.
 Returns timestamped home/away win probability percentages throughout the game.
 
 ### get_schedule
-Get NBA schedule for a specific date or season.
+Get NBA games for a specific date.
 - `date` (str, optional): Date in YYYY-MM-DD format
-- `season` (int, optional): Season year (used only if no date provided)
+- `season` (int, optional): Not a filter: ESPN's scoreboard has none. With `date` it is ignored; alone it returns an error. For a season use `get_team_schedule(team_id, season)`.
 
 Returns `events[]` for the specified date.
 

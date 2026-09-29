@@ -185,7 +185,8 @@ def get_schedule(*, date: str | None = None, season: int | None = None) -> dict:
 
     Args:
         date: Date in YYYY-MM-DD format. Defaults to today.
-        season: Season year. Defaults to current.
+        season: Not a filter (ESPN's scoreboard has none); without a date it returns an error.
+            Use get_team_schedule(team_id, season) for a season.
     """
     return wrap(_get_schedule(_params(date=date, season=season)))
 

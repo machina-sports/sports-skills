@@ -554,11 +554,21 @@ def get_schedule(request_data):
     date = params.get("date")
     season = params.get("season")
 
+    if season and not date:
+        # ESPN's scoreboard ignores ``season`` and returns the next game day,
+        # so a season-only request would answer with the wrong games.
+        return {
+            "error": True,
+            "message": (
+                f"get_schedule cannot list season {season}: ESPN's scoreboard has no season filter. "
+                "Pass date=YYYY-MM-DD for one day, or use get_team_schedule(team_id, season) "
+                "for a team's season."
+            ),
+        }
+
     espn_params = {}
     if date:
         espn_params["dates"] = date.replace("-", "")
-    elif season:
-        espn_params["season"] = str(season)
 
     data = espn_request(SPORT_PATH, "scoreboard", espn_params or None)
     if data.get("error"):

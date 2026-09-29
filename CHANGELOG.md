@@ -1,5 +1,8 @@
 ## [Unreleased]
 
+### Changed
+- **nba / nhl / mlb: `get_schedule(season=…)` without a `date` is now an error** (#159). ESPN's scoreboard has no season filter: it ignored `season` and returned the next game day, so `nba.get_schedule(season=2026)` and `season=2025` both answered with a 2026-27 preseason game. The error says so and points to `get_schedule(date=…)` for a day and `get_team_schedule(team_id, season)` for a season. With a `date`, the request is unchanged.
+
 ### Fixed
 - **wnba: team schedules mixed preseason, exhibitions and playoffs with the regular season, with no way to tell them apart** (#159). ESPN's WNBA `teams/{id}/schedule` returns every game by default (Atlanta 2025: 44 regular, 3 postseason, 2 preseason). Schedule and scoreboard rows in all seven ESPN leagues now carry `season_type` (`preseason` / `regular` / `postseason` / `playin`, from ESPN's `seasonType` or `season.type`), and WNBA `get_team_schedule` takes the same optional `season_type` filter as NBA/CFB/CBB (`all` = regular + postseason). Omitted, the WNBA request is unchanged.
 - **cfb / cbb docs: wrong conference ids** (#159). The CFB table gave the Big Ten as group 9 and the Pac-12 as 15. ESPN's ids are 5 (Big Ten), 9 (Pac-12) and 15 (MAC), so a Big Ten standings request returned the two-team 2025 Pac-12. The CBB table gave the West Coast Conference as 26, which is the SWAC; it is 29. The CFB table also lists FBS Independents (18). The `get_standings` docstring's examples are corrected too.
