@@ -1,3 +1,12 @@
+## [Unreleased]
+
+### Added
+- **kalshi: Formula 1 sport code `f1`** ([#162](https://github.com/machina-sports/sports-skills/issues/162)). `get_sports_config` had no F1 entry, so `search_markets(sport="f1")` and `get_todays_events(sport="f1")` returned "Unknown sport". `f1` now maps to the series found on Kalshi's `/series?category=Sports`: `KXF1` (drivers' champion), `KXF1CONSTRUCTORS`, and the per-Grand-Prix `KXF1RACE`, `KXF1RACEPODIUM`, `KXF1TOP5`, `KXF1TOP10`, `KXF1FASTLAP`, `KXF1TOPCONSTRUCTOR`, `KXF1POLE`, `KXF1H2H`, `KXF1RACESPRINT` and `KXF1SPRINTPOLE`.
+
+### Fixed
+- **polymarket: `search_markets("2026 Men's US Open")` found nothing** (#162), while `"US Open"` found the markets. The event title is `2026 Men’s US Open Winner (Tennis)` with a curly apostrophe, and the slug drops it (`2026-mens-us-open-winner-tennis`), so a typed `Men's` matched neither. Apostrophes are now ignored on both sides, so `Men's`, `Men’s` and `Mens` all match. Multi-word queries still require every word (#120).
+- **kalshi: the `KXATP-26-` tickers in the US Open are Kalshi's own** (#162). Event `KXATP-26USO` holds 13 markets such as `KXATP-26-SHA` (Denis Shapovalov) beside `KXATP-26USO-SIN`, and `get_market("KXATP-26-SHA")` resolves upstream, so the SDK passes them through unchanged. The skill docs now say to group markets by `event_ticker`, never by parsing the ticker.
+
 ## [0.34.0]
 
 ### Changed
