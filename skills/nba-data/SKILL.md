@@ -73,7 +73,7 @@ Derive the current year from the system prompt's date (e.g., `currentDate: 2026-
 | `get_team_stats` | Team statistical profile |
 | `get_player_stats` | Player statistical profile |
 | `find_nba_player` | Search the NBA Stats player registry (all eras) |
-| `get_nbastats_game_log` | League game log via NBA Stats — history to 1946, carries NBA game ids |
+| `get_nbastats_game_log` | League game log via NBA Stats — history to 1946, carries NBA game ids. `player_or_team="player"` or `player=<name or id>` for player game logs |
 | `get_nbastats_player_career` | Career stats season by season via NBA Stats |
 | `get_nbastats_team_stats` | League team stats via NBA Stats — advanced ratings, pace, four factors |
 | `get_nbastats_shot_chart` | Per-shot court coordinates via NBA Stats |
@@ -108,6 +108,7 @@ sports-skills nba get_nbastats_game_log --season=2025 --team=MIA \
 | Command | Always kept by `fields` |
 |---------|-------------------------|
 | `get_nbastats_game_log` | `game_id`, `game_date`, `team_abbreviation`, `matchup` |
+| `get_nbastats_game_log` (player rows) | `game_id`, `game_date`, `player_id`, `team_abbreviation`, `matchup` |
 | `get_nbastats_team_stats` | `team_id`, `team_name`, `team_abbreviation` |
 | `get_nbastats_shot_chart` | `game_id`, `game_date`, `period` |
 

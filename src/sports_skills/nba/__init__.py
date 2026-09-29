@@ -403,6 +403,8 @@ def get_nbastats_game_log(
     season: int | str | None = None,
     team: str | None = None,
     season_type: str | None = None,
+    player_or_team: str | None = None,
+    player: str | None = None,
     sort_by: str | None = None,
     descending: bool | None = None,
     limit: int | None = None,
@@ -410,8 +412,11 @@ def get_nbastats_game_log(
 ) -> dict:
     """Get the league-wide game log via the NBA Stats backend.
 
-    One row per team per game, with the 10-digit NBA game ids the other
-    get_nbastats_* functions take. History reaches back to the 1946-47 season.
+    One row per team per game (or per player per game with
+    player_or_team="player"), with the 10-digit NBA game ids the other
+    get_nbastats_* functions take. matchup names the opponent and home/away
+    ("LAL vs. HOU" at home, "LAL @ HOU" away); wl is the result. Player rows
+    also carry opponent and home_away, parsed from matchup. History reaches back to the 1946-47 season.
     Rows carry both NBA.com and ESPN team abbreviations; join to the ESPN
     functions on (game_date, team abbreviations) — the two id systems are
     unrelated.
@@ -423,12 +428,17 @@ def get_nbastats_game_log(
             "NO", "SA", "UTAH", "WSH") are translated to NBA.com's.
         season_type: "regular" (default), "playoffs", "preseason", or "playin". Also accepts
             stats.nba.com spellings ("Regular Season", "Playoffs", "PlayIn") and 2/4/5.
+        player_or_team: "team" (default) for one row per team per game, or "player" for one
+            row per player per game (the whole league unless player or team narrows it).
+        player: Optional player name or NBA person id (e.g. "LeBron James" or "2544"): that
+            player's games only, one light request. Implies player_or_team="player".
         sort_by: Optional column to sort rows by, e.g. pts. Numeric-aware;
             missing values sort last.
         descending: Sort direction when sort_by is given. Defaults to true.
         limit: Optional max rows to return, applied after sort_by.
         fields: Optional comma-separated columns to keep, e.g. "game_date,matchup,wl,pts".
-            Always keeps game_id, game_date, team_abbreviation, matchup. Unknown names return the valid columns.
+            Always keeps game_id, game_date, team_abbreviation, matchup (and player_id for
+            player rows). Unknown names return the valid columns.
     """
     return wrap(
         _get_nbastats_game_log(
@@ -436,6 +446,8 @@ def get_nbastats_game_log(
                 season=season,
                 team=team,
                 season_type=season_type,
+                player_or_team=player_or_team,
+                player=player,
                 sort_by=sort_by,
                 descending=descending,
                 limit=limit,

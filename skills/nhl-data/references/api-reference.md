@@ -97,6 +97,16 @@ Get full player statistical profile for a season.
 
 Returns `categories[]` with detailed stats including value, rank, and per-game averages.
 
+### get_nhlstats_player_game_log
+Get one player's games in a season via the NHL API (`/v1/player/{id}/game-log/{season}/{type}`).
+- `player_id` (str, optional): NHL player id (e.g. `8478402`). Find it with `find_nhl_player`.
+- `player` (str, optional): Player name to resolve instead of `player_id`. Must match exactly one player.
+- `season` (int or str, optional): Season starting year (`2025`) or NHL form (`"20252026"`). Defaults to current.
+- `season_type` (str, optional): `regular` (default) or `playoffs`.
+- `sort_by`, `descending`, `limit`, `fields` (optional): Row shaping (`sort_by` then `limit`; `fields` always keeps `game_id`, `game_date`, `team_abbreviation`, `opponent`). Stat keys (`points`, `toi`) are addressable directly. With any set, the response adds `total_rows` and `returned_rows`.
+
+Returns `games[]`, oldest first: `game_id`, `game_date`, `opponent` (abbreviation), `home_away`, `result` (`W`/`L`), `decided_by` (`REG`/`OT`/`SO`), `team_score`, `opponent_score`, `team_abbreviation`, `team_abbreviation_espn`, and `stats` (skaters: `goals`, `assists`, `points`, `plusMinus`, `shots`, `toi`, ...; goalies: `decision`, `shotsAgainst`, `goalsAgainst`, `savePctg`, ...). The game log has no scores, so `result` and the scores come from each team's `club-schedule-season` (one more cached request per team); if that fails they are `null` and `warnings` says why. Connor McDavid (8478402) has 82 regular-season rows in 2025-26.
+
 ## Team IDs
 
 | Team | ID | Team | ID |

@@ -74,7 +74,7 @@ Derive the active season from the system prompt's date — not just the calendar
 | `get_player_stats` | Player statistical profile |
 | `find_mlb_player` | Search MLB's player registry by name |
 | `get_mlbstats_schedule` | Games via the MLB Stats API — history to 1901, carries gamePk ids |
-| `get_mlbstats_player_stats` | Season/career/year-by-year splits by stat group via MLB Stats API |
+| `get_mlbstats_player_stats` | Season/career/year-by-year splits by stat group via MLB Stats API; `stat_type=game_log` gives one split per game |
 | `get_mlbstats_play_by_play` | Pitch-level PBP — velocity, spin, plate coords, exit velo, launch angle |
 | `get_mlbstats_boxscore` | Full box score with per-player batting/pitching via MLB Stats API |
 | `get_mlbstats_standings` | Standings by division via MLB Stats API |
@@ -84,7 +84,7 @@ See `references/api-reference.md` for full parameter lists and return shapes.
 
 ## Shaping Play-by-Play Results
 
-`get_mlbstats_play_by_play` accepts `sort_by`, `descending`, `limit` and `fields`.
+`get_mlbstats_play_by_play` and `get_mlbstats_player_stats` accept `sort_by`, `descending`, `limit` and `fields`.
 `fields` is the quickest way to drop the per-pitch lists when you only need the
 at-bat outcomes:
 
@@ -95,7 +95,7 @@ sports-skills mlb get_mlbstats_play_by_play --game_pk=775296 --fields=event,rbi
 - `sort_by`: one column to sort by. Numbers (and numeric strings) sort numerically; missing values always go last.
 - `descending`: `true` (default) or `false`; only used with `sort_by`.
 - `limit`: positive integer, applied after sorting.
-- `fields`: comma-separated keep-list. `inning`, `half`, `batter`, `pitcher` and the `sort_by` column are always kept.
+- `fields`: comma-separated keep-list. `inning`, `half`, `batter`, `pitcher` (play-by-play) or `season`, `team`, `game_pk`, `game_date` (player stats; stat keys such as `homeRuns` are addressable directly) and the `sort_by` column are always kept.
 - An unknown `sort_by`/`fields` column returns an error listing the valid columns.
 - With any of these set, the response adds `total_rows` (matching rows before `limit`) and `returned_rows`. With none set, output is unchanged. They are applied after the fetch, so they never change the upstream request or its replay entry.
 

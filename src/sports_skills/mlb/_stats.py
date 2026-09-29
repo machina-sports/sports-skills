@@ -41,6 +41,7 @@ _TIMEOUT = 15
 
 # Columns ``fields`` always keeps, so a trimmed play still says what it describes.
 _PBP_IDENTITY = ("inning", "half", "batter", "pitcher")
+_SPLIT_IDENTITY = ("season", "team", "game_pk", "game_date")
 
 # ESPN and MLB disagree on two team abbreviations. Both spellings are accepted
 # everywhere a team filter exists; rows carry both systems so results can be
@@ -58,7 +59,12 @@ _GAME_TYPES = {
     "allstar": "A",
 }
 
-_STAT_TYPES = {"season": "season", "career": "career", "year_by_year": "yearByYear"}
+_STAT_TYPES = {
+    "season": "season",
+    "career": "career",
+    "year_by_year": "yearByYear",
+    "game_log": "gameLog",
+}
 
 _STAT_GROUPS = {"hitting": "hitting", "pitching": "pitching", "fielding": "fielding"}
 
@@ -368,7 +374,7 @@ def get_mlbstats_player_stats(request_data: dict[str, Any]) -> dict[str, Any]:
     person_id, display = _resolve_player(params.get("player_id"), params.get("player"))
 
     query = {"stats": stat_type, "group": group}
-    if stat_type == "season":
+    if stat_type in ("season", "gameLog"):
         query["season"] = _season_str(params.get("season"))
 
     data = _request(f"people/{person_id}/stats", query)
@@ -378,13 +384,25 @@ def get_mlbstats_player_stats(request_data: dict[str, Any]) -> dict[str, Any]:
             # A bare player_id has no name yet; every split names its player.
             if display == person_id and (split.get("player") or {}).get("fullName"):
                 display = split["player"]["fullName"]
-            splits.append(
-                {
-                    "season": split.get("season"),
-                    "team": (split.get("team") or {}).get("name"),
-                    "stats": split.get("stat") or {},
-                }
-            )
+            row = {
+                "season": split.get("season"),
+                "team": (split.get("team") or {}).get("name"),
+            }
+            if stat_type == "gameLog":
+                is_home, is_win = split.get("isHome"), split.get("isWin")
+                row.update(
+                    {
+                        "game_pk": str((split.get("game") or {}).get("gamePk", "")),
+                        "game_date": split.get("date"),
+                        "game_type": split.get("gameType"),
+                        "opponent": (split.get("opponent") or {}).get("name"),
+                        "home_away": None if is_home is None else ("home" if is_home else "away"),
+                        "result": None if is_win is None else ("W" if is_win else "L"),
+                    }
+                )
+            row["stats"] = split.get("stat") or {}
+            splits.append(row)
+    splits, shaping = shape_rows(splits, params, identity=_SPLIT_IDENTITY, nested="stats")
     return {
         "provider": "mlb-stats",
         "player_id": person_id,
@@ -394,6 +412,7 @@ def get_mlbstats_player_stats(request_data: dict[str, Any]) -> dict[str, Any]:
         "splits": splits,
         "count": len(splits),
         "copyright": data.get("copyright"),
+        **shaping,
     }
 
 

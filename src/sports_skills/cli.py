@@ -377,7 +377,9 @@ _REGISTRY = {
         "get_live_playbyplay": {"required": ["game_id"], "optional": ["limit", "scoring_only"]},
         "get_player_live_stats": {"required": ["player_name"]},
         "find_nba_player": {"required": ["name"]},
-        "get_nbastats_game_log": {"optional": ["season", "team", "season_type", *_SHAPING]},
+        "get_nbastats_game_log": {
+            "optional": ["season", "team", "season_type", "player_or_team", "player", *_SHAPING]
+        },
         "get_nbastats_player_career": {"optional": ["player_id", "player", "per_mode"]},
         "get_nbastats_team_stats": {
             "optional": ["season", "team", "measure", "per_mode", "season_type", *_SHAPING]
@@ -425,6 +427,9 @@ _REGISTRY = {
         "find_nhl_player": {"required": ["name"]},
         "get_nhlstats_schedule": {"optional": ["date", "season", "team"]},
         "get_nhlstats_player_stats": {"optional": ["player_id", "player"]},
+        "get_nhlstats_player_game_log": {
+            "optional": ["player_id", "player", "season", "season_type", *_SHAPING]
+        },
         "get_nhlstats_play_by_play": {"required": ["game_id"], "optional": ["limit"]},
         "get_nhlstats_boxscore": {"required": ["game_id"]},
         "get_nhlstats_standings": {"optional": ["date"]},
@@ -453,7 +458,7 @@ _REGISTRY = {
         "find_mlb_player": {"required": ["name"]},
         "get_mlbstats_schedule": {"optional": ["date", "season", "team", "game_type"]},
         "get_mlbstats_player_stats": {
-            "optional": ["player_id", "player", "stat_type", "stat_group", "season"]
+            "optional": ["player_id", "player", "stat_type", "stat_group", "season", *_SHAPING]
         },
         "get_mlbstats_play_by_play": {"required": ["game_pk"], "optional": list(_SHAPING)},
         "get_mlbstats_boxscore": {"required": ["game_pk"]},

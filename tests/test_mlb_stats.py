@@ -26,6 +26,8 @@ def offline(monkeypatch):
 
     def fake_request(path, params=None, ttl=600):
         calls.append((path, params))
+        if (params or {}).get("stats") == "gameLog":
+            return _fixture(f"{path}_gameLog")
         return _fixture(path)
 
     monkeypatch.setattr(_stats, "_request", fake_request)
@@ -298,6 +300,68 @@ class TestPlayerStats:
             {"params": {"player_id": "1", "stat_group": "batting"}}
         )
         assert out["error"] is True and "hitting" in out["message"]
+
+    def test_existing_splits_unchanged(self, offline):
+        """#150: the game-log fields and shaping keys appear only when asked for."""
+        out = _stats.get_mlbstats_player_stats({"params": {"player_id": "660271", "season": 2024}})
+        assert list(out["splits"][0]) == ["season", "team", "stats"]
+        assert "total_rows" not in out
+
+
+class TestPlayerGameLog:
+    """#150: stat_type="game_log" is the Stats API's stats=gameLog, one split per game."""
+
+    def test_request(self, offline):
+        _stats.get_mlbstats_player_stats(
+            {"params": {"player_id": "660271", "stat_type": "game_log", "season": 2025}}
+        )
+        path, params = offline[-1]
+        assert path == "people/660271/stats"
+        assert params == {"stats": "gameLog", "group": "hitting", "season": "2025"}
+
+    def test_rows_carry_game_opponent_venue_and_result(self, offline):
+        out = _stats.get_mlbstats_player_stats(
+            {"params": {"player_id": "660271", "stat_type": "game_log", "season": 2025}}
+        )
+        assert out["stat_type"] == "gameLog" and out["count"] == 5
+        first, third = out["splits"][0], out["splits"][2]
+        assert first == {
+            "season": "2025",
+            "team": "Los Angeles Dodgers",
+            "game_pk": "778563",
+            "game_date": "2025-03-18",
+            "game_type": "R",
+            "opponent": "Chicago Cubs",
+            "home_away": "away",
+            "result": "W",
+            "stats": first["stats"],
+        }
+        assert first["stats"]["hits"] == 2
+        assert third["home_away"] == "home" and third["opponent"] == "Detroit Tigers"
+        assert third["stats"]["homeRuns"] == 1
+
+    def test_shaping_addresses_stat_keys(self, offline):
+        out = _stats.get_mlbstats_player_stats(
+            {
+                "params": {
+                    "player_id": "660271",
+                    "stat_type": "game_log",
+                    "sort_by": "hits",
+                    "limit": 2,
+                    "fields": "result",
+                }
+            }
+        )
+        assert out["total_rows"] == 5 and out["returned_rows"] == 2
+        top = out["splits"][0]
+        assert set(top) == {"season", "team", "game_pk", "game_date", "result", "stats"}
+        assert top["stats"] == {"hits": 2}
+
+    def test_unknown_field_lists_columns(self, offline):
+        out = _stats.get_mlbstats_player_stats(
+            {"params": {"player_id": "660271", "stat_type": "game_log", "fields": "nope"}}
+        )
+        assert out["error"] is True and "homeRuns" in out["message"]
 
 
 # ── play-by-play ─────────────────────────────────────────────

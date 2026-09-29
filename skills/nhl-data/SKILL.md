@@ -74,6 +74,7 @@ Derive the current year from the system prompt's date (e.g., `currentDate: 2026-
 | `find_nhl_player` | Search the NHL's player registry by name |
 | `get_nhlstats_schedule` | Games via the NHL API — team seasons to the Original Six era, NHL game ids |
 | `get_nhlstats_player_stats` | Career season-by-season across leagues via NHL API |
+| `get_nhlstats_player_game_log` | One player's games in a season (opponent, home/away, result, stat line) via NHL API |
 | `get_nhlstats_play_by_play` | Play-by-play with on-ice x/y coordinates, zone, shot type |
 | `get_nhlstats_boxscore` | Full box score (skaters + goalies) via NHL API |
 | `get_nhlstats_standings` | Standings, current or any historical date (back to 1917) |

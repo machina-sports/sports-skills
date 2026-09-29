@@ -26,6 +26,8 @@ def offline(monkeypatch):
 
     def fake_request(endpoint, params, ttl=600):
         calls.append((endpoint, params))
+        if params.get("PlayerOrTeam") == "P":
+            return _fixture(f"{endpoint}_player")
         return _fixture(endpoint)
 
     monkeypatch.setattr(_stats, "_request", fake_request)
@@ -221,6 +223,114 @@ class TestGameLog:
         endpoint, params = offline[-1]
         assert endpoint == "leaguegamelog"
         assert params["SeasonType"] == "Playoffs"
+
+    def test_default_request_and_output_unchanged(self, offline):
+        """#150: the team log must not change with the new player options."""
+        out = _stats.get_nbastats_game_log({"params": {"season": 2024}})
+        endpoint, params = offline[-1]
+        assert params["PlayerOrTeam"] == "T"
+        assert "player_or_team" not in out and "player" not in out
+        explicit = _stats.get_nbastats_game_log({"params": {"season": 2024, "player_or_team": "team"}})
+        assert explicit == out
+        assert offline[-1] == (endpoint, params)
+
+
+class TestPlayerGameLog:
+    """#150: player rows via leaguegamelog "P", or playergamelog for one player."""
+
+    def test_league_player_rows(self, offline):
+        out = _stats.get_nbastats_game_log({"params": {"season": 2024, "player_or_team": "player"}})
+        endpoint, params = offline[-1]
+        assert (endpoint, params["PlayerOrTeam"]) == ("leaguegamelog", "P")
+        assert out["player_or_team"] == "player"
+        row = out["games"][0]
+        assert row["player_name"] == "Al Horford"
+        assert row["matchup"] == "BOS vs. NYK" and row["wl"] == "W" and row["pts"] == 11
+        assert row["team_abbreviation_espn"] == "BOS"
+
+    def test_team_filter_on_player_rows(self, offline):
+        out = _stats.get_nbastats_game_log(
+            {"params": {"season": 2024, "player_or_team": "player", "team": "GS"}}
+        )
+        assert out["count"] == 4
+        assert all(r["team_abbreviation"] == "GSW" for r in out["games"])
+
+    def test_one_player_uses_the_light_endpoint(self, offline):
+        out = _stats.get_nbastats_game_log({"params": {"season": 2024, "player": "LeBron James"}})
+        endpoint, params = offline[-1]
+        assert endpoint == "playergamelog"
+        assert params["PlayerID"] == "2544" and params["Season"] == "2024-25"
+        assert out["player_id"] == "2544" and out["player"] == "LeBron James"
+        assert out["count"] == 5
+
+    def test_one_player_rows_match_league_row_form(self, offline):
+        out = _stats.get_nbastats_game_log({"params": {"season": 2024, "player": "2544"}})
+        assert all(e != "commonallplayers" for e, _ in offline), "an id needs no registry lookup"
+        dates = [r["game_date"] for r in out["games"]]
+        assert dates == sorted(dates), "chronological, like leaguegamelog"
+        last = out["games"][-1]
+        assert last["game_id"] == "0022401185" and last["game_date"] == "2025-04-11"
+        assert last["matchup"] == "LAL vs. HOU" and last["wl"] == "W" and last["pts"] == 14
+        assert last["team_abbreviation"] == "LAL" and last["team_abbreviation_espn"] == "LAL"
+
+    def test_shaping_keeps_player_identity(self, offline):
+        out = _stats.get_nbastats_game_log(
+            {"params": {"season": 2024, "player": "2544", "sort_by": "pts", "limit": 1, "fields": "pts"}}
+        )
+        assert out["total_rows"] == 5 and out["returned_rows"] == 1
+        assert set(out["games"][0]) == {
+            "game_id", "game_date", "player_id", "team_abbreviation", "matchup", "pts"
+        }
+
+    def test_opponent_and_home_away_from_matchup(self, offline):
+        league = _stats.get_nbastats_game_log({"params": {"season": 2024, "player_or_team": "player"}})
+        home = league["games"][0]  # BOS vs. NYK
+        assert (home["matchup"], home["opponent"], home["home_away"]) == ("BOS vs. NYK", "NYK", "home")
+        away = next(r for r in league["games"] if " @ " in r["matchup"])
+        assert away["home_away"] == "away" and away["opponent"] == away["matchup"].split(" @ ")[1]
+        one = _stats.get_nbastats_game_log({"params": {"season": 2024, "player": "2544"}})
+        last = one["games"][-1]  # LAL vs. HOU
+        assert (last["opponent"], last["home_away"], last["wl"]) == ("HOU", "home", "W")
+        assert all(r["home_away"] in ("home", "away") for r in one["games"])
+
+    def test_team_rows_gain_no_matchup_columns(self, offline):
+        out = _stats.get_nbastats_game_log({"params": {"season": 2024}})
+        assert "opponent" not in out["games"][0] and "home_away" not in out["games"][0]
+
+    @pytest.mark.parametrize(
+        "matchup, expected",
+        [
+            ("LAL vs. HOU", ("HOU", "home")),
+            ("LAL @ HOU", ("HOU", "away")),
+            ("", (None, None)),
+            (None, (None, None)),
+            ("LAL - HOU", (None, None)),
+        ],
+    )
+    def test_matchup_parsing(self, matchup, expected):
+        assert _stats._matchup_sides(matchup) == expected
+
+    def test_player_with_team_mode_is_reported(self, offline):
+        out = _stats.get_nbastats_game_log(
+            {"params": {"player_or_team": "team", "player": "LeBron James"}}
+        )
+        assert out["error"] is True and "player_or_team" in out["message"]
+        assert offline == []
+
+    def test_invalid_mode_lists_valid_values(self, offline):
+        out = _stats.get_nbastats_game_log({"params": {"player_or_team": "both"}})
+        assert out["error"] is True and "player, team" in out["message"]
+
+    def test_ambiguous_player_is_reported(self, offline):
+        out = _stats.get_nbastats_game_log({"params": {"player": "Curry"}})
+        assert out["error"] is True and "Stephen Curry" in out["message"]
+
+    def test_empty_player_log_warns(self, monkeypatch):
+        empty = _fixture("playergamelog")
+        empty["resultSets"][0]["rowSet"] = []
+        monkeypatch.setattr(_stats, "_request", lambda endpoint, params, ttl=600: empty)
+        out = _stats.get_nbastats_game_log({"params": {"season": 2024, "player": "2544"}})
+        assert out["count"] == 0 and "no Regular Season games" in out["warnings"][0]
 
 
 class TestPlayerCareer:

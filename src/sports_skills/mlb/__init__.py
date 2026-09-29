@@ -306,17 +306,31 @@ def get_mlbstats_player_stats(
     stat_type: str | None = None,
     stat_group: str | None = None,
     season: int | None = None,
+    sort_by: str | None = None,
+    descending: bool | None = None,
+    limit: int | None = None,
+    fields: str | None = None,
 ) -> dict:
     """Get a player's stats via the MLB Stats API.
+
+    stat_type="game_log" returns one split per game played, each with game_pk,
+    game_date, opponent, home_away, result ("W"/"L") and that game's stat line.
 
     Args:
         player_id: MLB person id (e.g. "660271"). Find it with find_mlb_player.
         player: Player name to resolve instead of player_id. Must match exactly
             one player; ambiguous names return the candidates.
-        stat_type: "season" (default), "career", or "year_by_year".
+        stat_type: "season" (default), "career", "year_by_year", or "game_log"
+            (one split per game).
         stat_group: "hitting" (default), "pitching", or "fielding".
-        season: Season year when stat_type is "season". Defaults to the most
-            recent season.
+        season: Season year when stat_type is "season" or "game_log". Defaults
+            to the most recent season.
+        sort_by: Optional column to sort splits by, e.g. homeRuns (stat keys are
+            addressable directly). Numeric-aware; missing values sort last.
+        descending: Sort direction when sort_by is given. Defaults to true.
+        limit: Optional max splits to return, applied after sort_by.
+        fields: Optional comma-separated columns to keep, e.g. "result,hits,homeRuns".
+            Always keeps season, team, game_pk, game_date. Unknown names return the valid columns.
     """
     return wrap(
         _get_mlbstats_player_stats(
@@ -326,6 +340,10 @@ def get_mlbstats_player_stats(
                 stat_type=stat_type,
                 stat_group=stat_group,
                 season=season,
+                sort_by=sort_by,
+                descending=descending,
+                limit=limit,
+                fields=fields,
             )
         )
     )
