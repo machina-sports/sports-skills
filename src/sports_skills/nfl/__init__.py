@@ -79,14 +79,15 @@ def _params(**kwargs):
     return {"params": {k: v for k, v in kwargs.items() if v is not None}}
 
 
-def get_scoreboard(*, date: str | None = None, week: int | None = None) -> dict:
+def get_scoreboard(*, date: str | None = None, week: int | None = None, season: int | None = None) -> dict:
     """Get live/recent NFL scores.
 
     Args:
         date: Date in YYYY-MM-DD format. Defaults to today.
         week: NFL week number (1-18 regular season, 19+ postseason).
+        season: Season year for ``week`` (e.g. 2024). Defaults to current. Ignored with ``date``.
     """
-    return wrap(_get_scoreboard(_params(date=date, week=week)))
+    return wrap(_get_scoreboard(_params(date=date, week=week, season=season)))
 
 
 def get_standings(*, season: int | None = None) -> dict:

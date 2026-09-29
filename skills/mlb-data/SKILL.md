@@ -65,7 +65,7 @@ Derive the active season from the system prompt's date — not just the calendar
 | `get_news` | MLB news articles |
 | `get_play_by_play` | Full play-by-play for a game |
 | `get_win_probability` | Win probability chart data |
-| `get_schedule` | Schedule for a specific date or season |
+| `get_schedule` | Games on a specific date (no season filter; see `get_team_schedule`) |
 | `get_injuries` | Injury reports across all teams |
 | `get_transactions` | Recent transactions |
 | `get_futures` | Futures/odds markets |
