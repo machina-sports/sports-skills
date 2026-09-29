@@ -139,6 +139,17 @@ Get real-time stats for one player in today's games.
 
 Returns the matching player's current box-score line.
 
+### get_nbastats_game_log
+Get the league game log via the NBA Stats backend (stats.nba.com): one row per team per game, or per player per game.
+- `season` (int or str, optional): Season starting year (`2024`) or NBA form (`"2024-25"`). Defaults to current.
+- `team` (str, optional): Team abbreviation filter; ESPN spellings (`GS`, `NY`, `NO`, `SA`, `UTAH`, `WSH`) are translated.
+- `season_type` (str, optional): `regular` (default), `playoffs`, `preseason`, or `playin`.
+- `player_or_team` (str, optional): `team` (default) or `player`. `player` without `player` returns every player's games (about 26,000 rows a season); narrow it with `team` or the shaping params.
+- `player` (str, optional): Player name or NBA person id (`"LeBron James"`, `"2544"`). Returns that player's games from `playergamelog`, a request of a few KB. Implies `player_or_team="player"`.
+- `sort_by`, `descending`, `limit`, `fields` (optional): Row shaping, see SKILL.md.
+
+Returns `games[]` with NBA.com's lowercased columns: `game_id`, `game_date` (`YYYY-MM-DD`), `matchup` (`"LAL vs. HOU"` at home, `"LAL @ HOU"` away), `wl`, `min`, `pts`, `reb`, `ast`, `fg3m`, `plus_minus`, and the rest of the box line, plus `team_abbreviation` and `team_abbreviation_espn`. Player rows add `player_id` (and `player_name`, `team_id`, `team_name`, `fantasy_pts` for league-wide player rows). With `player`, the response adds `player_id` and `player`. The default team log is unchanged.
+
 ## Team IDs
 
 | Team | ID | Team | ID |

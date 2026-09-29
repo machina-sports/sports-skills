@@ -108,6 +108,9 @@ _MEASURE_TYPES = {
 # stats.nba.com's value is "Per36"; "Per36Minutes" is answered with HTTP 400.
 _PER_MODES = {"totals": "Totals", "per_game": "PerGame", "per_36": "Per36"}
 
+# leaguegamelog's PlayerOrTeam values.
+_PLAYER_OR_TEAM = {"team": "T", "player": "P"}
+
 
 class _NbaStatsError(Exception):
     """A request cannot be built or served as asked."""
@@ -145,6 +148,7 @@ def _guard(fn):
 
 # Columns ``fields`` always keeps, so a trimmed row still says what it describes.
 _GAME_LOG_IDENTITY = ("game_id", "game_date", "team_abbreviation", "matchup")
+_PLAYER_GAME_LOG_IDENTITY = ("game_id", "game_date", "player_id", "team_abbreviation", "matchup")
 _TEAM_STATS_IDENTITY = ("team_id", "team_name", "team_abbreviation")
 _SHOT_IDENTITY = ("game_id", "game_date", "period")
 
@@ -393,6 +397,36 @@ def find_nba_player(request_data: dict[str, Any]) -> dict[str, Any]:
     }
 
 
+def _player_game_log(person_id: str, season: str, season_type: str) -> list[dict[str, Any]]:
+    """One player's games from playergamelog, in leaguegamelog's row form.
+
+    A few KB, where leaguegamelog's player rows are the whole league (~26k rows,
+    ~5 MB a season). This endpoint names no team and dates games "Apr 11, 2025",
+    newest first; rows gain team_abbreviation (from matchup), an ISO game_date,
+    and date order.
+    """
+    data = _request(
+        "playergamelog",
+        {
+            "DateFrom": "",
+            "DateTo": "",
+            "LeagueID": "00",
+            "PlayerID": person_id,
+            "Season": season,
+            "SeasonType": season_type,
+        },
+    )
+    rows = _records(data, "PlayerGameLog")
+    for row in rows:
+        try:
+            row["game_date"] = datetime.strptime(str(row.get("game_date")), "%b %d, %Y").strftime("%Y-%m-%d")
+        except ValueError:
+            pass
+        row["team_abbreviation"] = str(row.get("matchup") or "").split(" ")[0] or None
+    rows.sort(key=lambda r: (str(r.get("game_date")), str(r.get("game_id"))))
+    return rows
+
+
 @_guard
 def get_nbastats_game_log(request_data: dict[str, Any]) -> dict[str, Any]:
     params = request_data.get("params", {})
@@ -400,6 +434,16 @@ def get_nbastats_game_log(request_data: dict[str, Any]) -> dict[str, Any]:
     season_type = _season_type(params.get("season_type"))
     raw_team = params.get("team")
     team = _normalize_team(raw_team)
+    raw_player = params.get("player")
+    mode = params.get("player_or_team")
+    if mode is None and raw_player is not None:
+        mode = "player"
+    if _lookup(_PLAYER_OR_TEAM, mode, "team", "player_or_team") == "P":
+        return _game_log_players(params, season, season_type, raw_team, team, raw_player)
+    if raw_player is not None:
+        raise _NbaStatsError(
+            "player selects player rows; pass player_or_team='player' (or omit it) with player."
+        )
 
     data = _request(
         "leaguegamelog",
@@ -432,6 +476,63 @@ def get_nbastats_game_log(request_data: dict[str, Any]) -> dict[str, Any]:
         **shaping,
     }
     warnings = _team_warnings(team, raw_team, total)
+    if warnings:
+        result["warnings"] = warnings
+    return result
+
+
+def _game_log_players(
+    params: dict[str, Any],
+    season: str,
+    season_type: str,
+    raw_team: Any,
+    team: str | None,
+    raw_player: Any,
+) -> dict[str, Any]:
+    """get_nbastats_game_log with player_or_team="player": one row per player per game."""
+    person_id = display = None
+    if raw_player is not None:
+        text = str(raw_player).strip()
+        person_id, display = _resolve_player(text, None) if text.isdigit() else _resolve_player(None, text)
+        rows = _player_game_log(person_id, season, season_type)
+    else:
+        data = _request(
+            "leaguegamelog",
+            {
+                "Counter": 0,
+                "DateFrom": "",
+                "DateTo": "",
+                "Direction": "ASC",
+                "LeagueID": "00",
+                "PlayerOrTeam": "P",
+                "Season": season,
+                "SeasonType": season_type,
+                "Sorter": "DATE",
+            },
+        )
+        rows = _records(data, "LeagueGameLog")
+    if team is not None:
+        rows = [r for r in rows if str(r.get("team_abbreviation", "")).upper() == team]
+    _with_espn_abbreviation(rows)
+    total = len(rows)
+    rows, shaping = shape_rows(rows, params, identity=_PLAYER_GAME_LOG_IDENTITY)
+
+    result = {
+        "provider": "nba-stats",
+        "season": season,
+        "season_type": season_type,
+        "player_or_team": "player",
+        "team": team,
+        "games": rows,
+        "count": len(rows),
+        **shaping,
+    }
+    if person_id is not None:
+        result["player_id"] = person_id
+        result["player"] = display
+    warnings = _team_warnings(team, raw_team, total)
+    if person_id is not None and not total and team is None:
+        warnings.append(f"player {display!r} has no {season_type} games in {season}")
     if warnings:
         result["warnings"] = warnings
     return result

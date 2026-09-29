@@ -377,7 +377,9 @@ _REGISTRY = {
         "get_live_playbyplay": {"required": ["game_id"], "optional": ["limit", "scoring_only"]},
         "get_player_live_stats": {"required": ["player_name"]},
         "find_nba_player": {"required": ["name"]},
-        "get_nbastats_game_log": {"optional": ["season", "team", "season_type", *_SHAPING]},
+        "get_nbastats_game_log": {
+            "optional": ["season", "team", "season_type", "player_or_team", "player", *_SHAPING]
+        },
         "get_nbastats_player_career": {"optional": ["player_id", "player", "per_mode"]},
         "get_nbastats_team_stats": {
             "optional": ["season", "team", "measure", "per_mode", "season_type", *_SHAPING]
