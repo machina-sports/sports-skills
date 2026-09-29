@@ -316,7 +316,7 @@ _REGISTRY = {
         "get_race_results": {"required": ["year", "event"]},
         "get_pit_stops": {"required": ["year"], "optional": ["event", "driver"]},
         "get_speed_data": {"required": ["year"], "optional": ["event", "driver"]},
-        "get_championship_standings": {"required": ["year"]},
+        "get_championship_standings": {"required": ["year"], "optional": ["round"]},
         "get_season_stats": {"required": ["year"]},
         "get_team_comparison": {
             "required": ["year", "team1", "team2"],
@@ -329,7 +329,7 @@ _REGISTRY = {
         "get_tire_analysis": {"required": ["year"], "optional": ["event", "driver"]},
     },
     "nfl": {
-        "get_scoreboard": {"optional": ["date", "week"]},
+        "get_scoreboard": {"optional": ["date", "week", "season"]},
         "get_standings": {"optional": ["season"]},
         "get_teams": {},
         "get_team_roster": {"required": ["team_id"]},
@@ -393,7 +393,7 @@ _REGISTRY = {
         "get_standings": {"optional": ["season"]},
         "get_teams": {},
         "get_team_roster": {"required": ["team_id"]},
-        "get_team_schedule": {"required": ["team_id"], "optional": ["season"]},
+        "get_team_schedule": {"required": ["team_id"], "optional": ["season", "season_type"]},
         "get_game_summary": {"required": ["event_id"]},
         "get_play_by_play": {"required": ["event_id"]},
         "get_win_probability": {"required": ["event_id"]},

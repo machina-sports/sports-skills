@@ -1,0 +1,115 @@
+{
+  "games": [
+    {
+      "id": 2024010079,
+      "season": 20242025,
+      "gameType": 1,
+      "gameDate": "2024-10-02",
+      "venue": {
+        "default": "Amalie Arena"
+      },
+      "startTimeUTC": "2024-10-02T23:00:00Z",
+      "venueUTCOffset": "-04:00",
+      "venueTimezone": "US/Eastern",
+      "gameState": "FINAL",
+      "awayTeam": {
+        "id": 13,
+        "commonName": {
+          "default": "Panthers"
+        },
+        "abbrev": "FLA",
+        "score": 2
+      },
+      "homeTeam": {
+        "id": 14,
+        "commonName": {
+          "default": "Lightning"
+        },
+        "abbrev": "TBL",
+        "score": 1
+      },
+      "periodDescriptor": {
+        "number": 4,
+        "periodType": "OT",
+        "maxRegulationPeriods": 3
+      },
+      "gameOutcome": {
+        "lastPeriodType": "OT"
+      }
+    },
+    {
+      "id": 2024020020,
+      "season": 20242025,
+      "gameType": 2,
+      "gameDate": "2024-10-11",
+      "venue": {
+        "default": "Lenovo Center"
+      },
+      "startTimeUTC": "2024-10-11T23:00:00Z",
+      "venueUTCOffset": "-04:00",
+      "venueTimezone": "US/Eastern",
+      "gameState": "OFF",
+      "awayTeam": {
+        "id": 14,
+        "commonName": {
+          "default": "Lightning"
+        },
+        "abbrev": "TBL",
+        "score": 4
+      },
+      "homeTeam": {
+        "id": 12,
+        "commonName": {
+          "default": "Hurricanes"
+        },
+        "abbrev": "CAR",
+        "score": 1
+      },
+      "periodDescriptor": {
+        "number": 3,
+        "periodType": "REG",
+        "maxRegulationPeriods": 3
+      },
+      "gameOutcome": {
+        "lastPeriodType": "REG"
+      }
+    },
+    {
+      "id": 2024020210,
+      "season": 20242025,
+      "gameType": 2,
+      "gameDate": "2024-11-07",
+      "venue": {
+        "default": "Amalie Arena"
+      },
+      "startTimeUTC": "2024-11-08T00:30:00Z",
+      "venueUTCOffset": "-05:00",
+      "venueTimezone": "US/Eastern",
+      "gameState": "OFF",
+      "awayTeam": {
+        "id": 4,
+        "commonName": {
+          "default": "Flyers"
+        },
+        "abbrev": "PHI",
+        "score": 2
+      },
+      "homeTeam": {
+        "id": 14,
+        "commonName": {
+          "default": "Lightning"
+        },
+        "abbrev": "TBL",
+        "score": 1
+      },
+      "periodDescriptor": {
+        "number": 5,
+        "periodType": "SO",
+        "maxRegulationPeriods": 3
+      },
+      "gameOutcome": {
+        "lastPeriodType": "SO"
+      }
+    }
+  ]
+}

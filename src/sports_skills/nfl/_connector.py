@@ -15,10 +15,13 @@ from sports_skills._espn_base import (
     _current_year,
     _http_fetch,
     _resolve_leaders,
+    default_standings_season,
+    epoch_seconds,
     espn_core_request,
     espn_request,
     espn_summary,
     espn_web_request,
+    event_season_type,
     fetch_season,
     fill_team_divisions,
     normalize_boxscore,
@@ -31,6 +34,7 @@ from sports_skills._espn_base import (
     normalize_scoring_plays,
     normalize_summary_odds,
     normalize_transactions,
+    standings_fields,
 )
 
 logger = logging.getLogger("sports_skills.nfl")
@@ -110,6 +114,8 @@ def _normalize_event(espn_event):
         "status": ESPN_STATUS_MAP.get(status_type, status_type),
         "status_detail": status_detail,
         "start_time": comp.get("date", espn_event.get("date", "")),
+        "start_ts": epoch_seconds(comp.get("date", espn_event.get("date", ""))),
+        "season_type": event_season_type(espn_event),
         "venue": {
             "name": comp.get("venue", {}).get("fullName", ""),
             "city": comp.get("venue", {}).get("address", {}).get("city", ""),
@@ -399,10 +405,14 @@ def get_scoreboard(request_data):
     params = request_data.get("params", {})
     date = params.get("date")
     week = params.get("week")
+    season = params.get("season")
 
     espn_params = {}
     if date:
         espn_params["dates"] = date.replace("-", "")
+    elif season:
+        # With a week, ESPN reads a year in ``dates`` as the season.
+        espn_params["dates"] = str(season)
     espn_params.update(_resolve_week_params(week))
 
     data = espn_request(SPORT_PATH, "scoreboard", espn_params or None)
@@ -439,6 +449,11 @@ def get_standings(request_data):
     data = espn_web_request(SPORT_PATH, "standings", espn_params or None)
     if data.get("error"):
         return data
+    data, defaulted_from = default_standings_season(
+        data, season, lambda year: espn_web_request(SPORT_PATH, "standings", {**espn_params, "season": year})
+    )
+    if defaulted_from:
+        espn_params["season"] = defaulted_from - 1
 
     groups = _normalize_standings(data)
     # The conference tables above leave "division" empty; a level=3 request
@@ -449,9 +464,9 @@ def get_standings(request_data):
     fill_team_divisions(groups, division_data)
     return {
         "groups": groups,
-        # Prefer the requested season: ESPN's envelope reports the *current*
-        # season regardless of the season filter applied to the events.
-        "season": _echo_season(season, data),
+        # The tables' own season (ESPN's envelope reports the *current* one)
+        # or the requested one, with its type and status.
+        **standings_fields(data, season, defaulted_from),
     }
 
 
@@ -461,11 +476,23 @@ def get_teams(request_data=None):
     if data.get("error"):
         return data
 
+    # ESPN's team list has no conference or division; its ``groups`` resource
+    # nests them (conference -> division -> teams). If that request fails, both
+    # are "" and the teams are still returned.
+    groups = espn_request(SPORT_PATH, "groups", max_retries=0)
+    placement = {}
+    for conference in groups.get("groups", []) if isinstance(groups, dict) else []:
+        for division in conference.get("children", []):
+            for team in division.get("teams", []):
+                placement[str(team.get("id", ""))] = (conference.get("abbreviation", ""), division.get("name", ""))
+
     teams = []
     for sport in data.get("sports", []):
         for league in sport.get("leagues", []):
             for team_wrapper in league.get("teams", []):
-                teams.append(_normalize_team(team_wrapper))
+                team = _normalize_team(team_wrapper)
+                team["conference"], team["division"] = placement.get(team["id"], ("", ""))
+                teams.append(team)
 
     return {"teams": teams, "count": len(teams)}
 

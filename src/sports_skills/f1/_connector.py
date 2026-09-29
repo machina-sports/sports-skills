@@ -45,12 +45,24 @@ def _session_info(session):
     """Session metadata reported by get_session_data."""
     if isinstance(session, _ReplayedSession):
         return session.info
+    # session.event is a FastF1 Event (a pandas Series): its ``.name`` is the
+    # row index, not the event name, so read the columns.
+    event = session.event
+    session_name = getattr(session, "name", None)
+    event_date = event.get("EventDate")
+    session_date = "Unknown Date"
+    for n in range(1, 6):
+        date = event.get(f"Session{n}Date")
+        if event.get(f"Session{n}") == session_name and pd.notna(date):
+            session_date = date.isoformat()
     return {
         "session": str(session),
-        "event_name": getattr(session.event, "name", "Unknown Event"),
-        "event_date": str(getattr(session.event, "date", "Unknown Date")),
-        "session_type": getattr(session, "session_type", "Unknown Session Type"),
-        "track_name": getattr(session.event, "circuit_name", "Unknown Track"),
+        "event_name": str(event.get("EventName", "Unknown Event")),
+        "round": _safe_int(event.get("RoundNumber")),
+        "event_date": event_date.strftime("%Y-%m-%d") if pd.notna(event_date) else "Unknown Date",
+        "session_date": session_date,
+        "session_type": session_name or "Unknown Session Type",
+        "track_name": str(event.get("Location", "Unknown Track")),
     }
 
 
@@ -543,7 +555,12 @@ def _load_session_cached(year, event, *, results_only=False, laps_only=False, se
 
 
 def get_pit_stops(request_data):
-    """Get pit stop durations (PitIn → PitOut) for a race or full season."""
+    """Get pit stops for a race or full season.
+
+    Durations are pit-lane time (PitIn → PitOut), not stationary time, which
+    FastF1 does not provide. Red-flag tyre changes are listed with
+    ``red_flag: True`` and left out of team averages.
+    """
     try:
         params = request_data.get("params", {})
         year = int(params.get("year", _CURRENT_YEAR))
@@ -568,6 +585,8 @@ def get_pit_stops(request_data):
                     dl = laps[laps["Driver"] == drv].sort_values("LapNumber")
                     team = dl["Team"].iloc[0] if not dl.empty else ""
 
+                    # A stop is a pit entry on lap N followed by a pit exit on
+                    # lap N+1. A pit entry with no exit is a retirement.
                     pit_in_laps = dl[dl["PitInTime"].notna()]
                     for _, pit_lap in pit_in_laps.iterrows():
                         pit_in_time = pit_lap["PitInTime"]
@@ -578,16 +597,19 @@ def get_pit_stops(request_data):
                         ):
                             pit_out_time = next_lap.iloc[0]["PitOutTime"]
                             duration = (pit_out_time - pit_in_time).total_seconds()
-                            if 15 < duration < 60:
-                                all_pits.append(
-                                    {
-                                        "race": race_name,
-                                        "team": team,
-                                        "driver": drv,
-                                        "lap": int(lap_num),
-                                        "duration_seconds": round(duration, 3),
-                                    }
-                                )
+                            # TrackStatus "5" = red flag: the car waited in the
+                            # pit lane, so its pit-lane time is not a stop time.
+                            red_flag = "5" in str(pit_lap.get("TrackStatus", ""))
+                            all_pits.append(
+                                {
+                                    "race": race_name,
+                                    "team": team,
+                                    "driver": drv,
+                                    "lap": int(lap_num),
+                                    "duration_seconds": round(duration, 3),
+                                    "red_flag": red_flag,
+                                }
+                            )
             except _replay.ReplayFailure:
                 raise
             except Exception:
@@ -599,6 +621,8 @@ def get_pit_stops(request_data):
         # Compute team averages
         team_stats = {}
         for p in all_pits:
+            if p["red_flag"]:
+                continue
             t = p["team"]
             if t not in team_stats:
                 team_stats[t] = {
@@ -632,6 +656,7 @@ def get_pit_stops(request_data):
                 "pit_stops": all_pits,
                 "team_summary": team_summary,
                 "total_stops": len(all_pits),
+                "duration_type": "pit_lane_time",
             },
             "message": f"Pit stop data for {year}"
             + (f" {event}" if event else " (full season)")
@@ -745,12 +770,30 @@ def get_speed_data(request_data):
 
 
 def get_championship_standings(request_data):
-    """Get driver and constructor championship standings by aggregating all race results."""
+    """Get driver and constructor championship standings by aggregating all race results.
+
+    ``round`` (optional) limits the totals to races and sprints up to and
+    including that round number.
+    """
     try:
         params = request_data.get("params", {})
         year = int(params.get("year", _CURRENT_YEAR))
+        after_round = params.get("round")
+        if after_round is not None:
+            try:
+                after_round = int(after_round)
+            except (TypeError, ValueError):
+                return {
+                    "status": False,
+                    "data": None,
+                    "message": f"Invalid round '{after_round}': expected a round number such as 5",
+                }
 
         race_names = _get_completed_races(year)
+        if after_round is not None:
+            schedule = _event_schedule(year)
+            through = set(schedule[schedule["RoundNumber"] <= after_round]["EventName"])
+            race_names = [r for r in race_names if r in through]
 
         driver_points = {}
         driver_info = {}
@@ -798,7 +841,9 @@ def get_championship_standings(request_data):
             except Exception:
                 continue
 
-        sprint_points = _season_sprint_points(year)
+        sprint_points = _season_sprint_points(
+            year, events=race_names if after_round is not None else None
+        )
         for drv, sp in sprint_points.items():
             if drv not in driver_points:
                 driver_points[drv] = 0
@@ -847,8 +892,11 @@ def get_championship_standings(request_data):
                 "driver_standings": driver_standings,
                 "constructor_standings": constructor_standings,
                 "races_counted": len(race_names),
+                "after_round": after_round,
             },
-            "message": f"Championship standings for {year} ({len(race_names)} races)",
+            "message": f"Championship standings for {year}"
+            + (f" after round {after_round}" if after_round is not None else "")
+            + f" ({len(race_names)} races)",
         }
 
     except _replay.ReplayFailure as e:
@@ -1708,9 +1756,23 @@ def get_race_results(request_data):
         event = params.get("event", "Monza")
 
         event = _validate_event(year, event)
-        session = _load_session_cached(year, event, results_only=True)
+        session = _load_session_cached(year, event, laps_only=True)
 
         results = session.results
+
+        # FastF1's live-timing results have no FastestLapTime column (only the
+        # old Ergast backend did), so derive each driver's best lap from laps.
+        if "FastestLapTime" not in results.columns:
+            results = results.copy()
+            try:
+                laps = session.laps
+                timed = laps[laps["LapTime"].notna()]
+                if "Deleted" in timed.columns:
+                    timed = timed[timed["Deleted"] != True]  # noqa: E712
+                best = timed.groupby("Driver")["LapTime"].min()
+            except Exception:
+                best = pd.Series(dtype="timedelta64[ns]")
+            results["FastestLapTime"] = pd.to_timedelta(results["Abbreviation"].map(best))
 
         # Find who set the fastest lap (lowest FastestLapTime)
         fastest_lap_driver = None

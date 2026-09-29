@@ -6,6 +6,7 @@
 Get live/recent NFL scores.
 - `date` (str, optional): Date in YYYY-MM-DD format
 - `week` (int, optional): Week number (1-18 regular season, 19-23 postseason)
+- `season` (int, optional): Season year for `week` (e.g. 2024). Defaults to current; ignored with `date`.
 
 Returns `events[]` with game info, scores, status, and competitors.
 
@@ -18,7 +19,7 @@ Returns `groups[]` with AFC/NFC conferences, divisions, and team standings inclu
 ### get_teams
 Get all 32 NFL teams. No parameters.
 
-Returns `teams[]` with id, name, abbreviation, logo, and location.
+Returns `teams[]` with id, name, abbreviation, logo, location, `conference` (e.g. `"AFC"`) and `division` (e.g. `"AFC East"`).
 
 ### get_team_roster
 Get full roster for a team.

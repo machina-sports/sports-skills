@@ -1,0 +1,43 @@
+{
+  "copyright": "Copyright 2026 MLB Advanced Media, L.P.  Use of any content on this page acknowledges agreement to the terms posted here http://gdx.mlb.com/components/copyright.txt",
+  "dates": [
+    {
+      "date": "2024-10-30",
+      "games": [
+        {
+          "gamePk": 775296,
+          "gameType": "W",
+          "gameDate": "2024-10-31T00:08:00Z",
+          "officialDate": "2024-10-30",
+          "status": {
+            "detailedState": "Final"
+          },
+          "teams": {
+            "away": {
+              "team": {
+                "name": "Los Angeles Dodgers"
+              },
+              "score": 7
+            },
+            "home": {
+              "team": {
+                "name": "New York Yankees"
+              },
+              "score": 6
+            }
+          },
+          "venue": {
+            "id": 3313,
+            "name": "Yankee Stadium",
+            "timeZone": {
+              "tz": "EDT",
+              "id": "America/New_York",
+              "offset": -4,
+              "offsetAtGameTime": -4
+            }
+          }
+        }
+      ]
+    }
+  ]
+}
