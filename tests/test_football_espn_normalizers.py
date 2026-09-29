@@ -175,3 +175,38 @@ def test_null_display_values_do_not_raise_and_derive_zero():
     st = c._normalize_espn_summary_statistics(summary)[0]["statistics"]
     assert st["shots_total"] == "0" and st["shots_on_target"] == "0"
     assert st["shots_off_target"] == "0" and st["ball_possession"] == "0"
+
+
+# --- #163: league probe fetches the summary once; stoppage time kept ---
+
+LA_LIGA_SUMMARY = {
+    "header": {
+        "league": {"slug": "esp.1"},
+        "season": {"year": 2026},
+        "competitions": [{"date": "2026-09-20T19:00Z", "competitors": []}],
+    },
+    "keyEvents": [
+        {"id": "1", "type": {"text": "Halftime"}, "clock": {"displayValue": "45'+3'"}},
+        {"id": "2", "type": {"text": "Goal"}, "clock": {"displayValue": "59'"}},
+        {"id": "3", "type": {"text": "End Regular Time"}, "clock": {"displayValue": "90'+7'"}},
+    ],
+}
+
+
+def test_event_summary_probe_fetches_real_league_once(monkeypatch):
+    calls = []
+
+    def fake_fetch(url, **kw):
+        calls.append(url)
+        return json.dumps(LA_LIGA_SUMMARY).encode(), None
+
+    monkeypatch.setattr(c, "_http_fetch", fake_fetch)
+    out = c.get_event_summary({"params": {"event_id": "163000001"}})
+    assert out["event"]["competition"]["id"] == "la-liga"
+    # ESPN answered the eng.1 probe with the La Liga summary; it is not fetched again under esp.1
+    assert len(calls) == 1, calls
+
+
+def test_timeline_keeps_stoppage_time_as_added_time():
+    tl = c._normalize_espn_summary_timeline(LA_LIGA_SUMMARY)
+    assert [(e["minute"], e["added_time"]) for e in tl] == [(45, 3), (59, 0), (90, 7)]
