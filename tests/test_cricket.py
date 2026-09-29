@@ -344,6 +344,65 @@ class TestGetPlayerStats:
         assert result["error"] is True
 
 
+# ── super overs (#163) ──────────────────────────────────────
+
+# A tied match decided by a super over: Cricsheet appends innings 3-4 with
+# "super_over": true (e.g. IPL 2017 1082625, Gujarat Lions v Mumbai Indians).
+TIED_MATCH = {
+    "info": {
+        "dates": ["2024-04-10"], "season": "2024", "teams": ["Team A", "Team B"],
+        "players": {"Team A": ["A One"], "Team B": ["B One"]},
+        "outcome": {"result": "tie", "eliminator": "Team A"},
+    },
+    "innings": [
+        {"team": "Team A", "overs": [{"over": 0, "deliveries": [
+            {"batter": "A One", "bowler": "B One", "non_striker": "A Two",
+             "runs": {"batter": 1, "extras": 0, "total": 1}},
+        ]}]},
+        {"team": "Team B", "overs": [{"over": 0, "deliveries": [
+            {"batter": "B One", "bowler": "A One", "non_striker": "B Two",
+             "runs": {"batter": 1, "extras": 0, "total": 1}},
+        ]}]},
+        {"team": "Team B", "super_over": True, "overs": [{"over": 0, "deliveries": [
+            {"batter": "B One", "bowler": "A One", "non_striker": "B Two",
+             "runs": {"batter": 6, "extras": 0, "total": 6}},
+        ]}]},
+        {"team": "Team A", "super_over": True, "overs": [{"over": 0, "deliveries": [
+            {"batter": "A One", "bowler": "B One", "non_striker": "A Two",
+             "runs": {"batter": 4, "extras": 0, "total": 4},
+             "wickets": [{"kind": "bowled", "player_out": "A One"}]},
+        ]}]},
+    ],
+}
+
+
+@pytest.fixture
+def super_over_zip(tmp_path, monkeypatch):
+    monkeypatch.setattr(_cricsheet, "_cache_dir", lambda: str(tmp_path))
+    buf = io.BytesIO()
+    with zipfile.ZipFile(buf, "w") as zf:
+        zf.writestr("2001.json", json.dumps(TIED_MATCH))
+    (tmp_path / "ipl_json.zip").write_bytes(buf.getvalue())
+    monkeypatch.setattr(
+        _cricsheet, "_download", lambda url, dest: pytest.fail("tests must not hit the network")
+    )
+    return tmp_path
+
+
+class TestSuperOvers:
+    def test_deliveries_flag_super_over_innings(self, super_over_zip):
+        result = _cricsheet.get_match_deliveries({"params": {"competition": "ipl", "match_id": "2001"}})
+        assert [i["super_over"] for i in result["innings"]] == [False, False, True, True]
+
+    def test_season_stats_exclude_super_over_balls(self, super_over_zip):
+        a = _cricsheet.get_player_stats({"params": {"competition": "ipl", "player": "A One"}})
+        assert a["batting"]["runs"] == 1 and a["batting"]["balls"] == 1
+        assert a["batting"]["dismissals"] == 0
+        assert a["bowling"]["runs_conceded"] == 1 and a["bowling"]["balls"] == 1
+        b = _cricsheet.get_player_stats({"params": {"competition": "ipl", "player": "B One"}})
+        assert b["batting"]["runs"] == 1 and b["bowling"]["wickets"] == 0
+
+
 # ── find_player ─────────────────────────────────────────────
 
 PEOPLE_CSV = (
@@ -603,6 +662,27 @@ class TestGetGameSummary:
         assert "not a match id" in result["message"]
         assert "8048" in result["message"] and "get_series" in result["message"]
         assert "1535465" in result["message"] and "1527674" in result["message"]
+
+    def test_scorecards_cover_every_innings(self, monkeypatch):
+        # #163: ESPN's matchcards only hold the latest innings (4 of this 4-day match)
+        path = os.path.join(os.path.dirname(__file__), "fixtures", "cricket_summary_1535672.json")
+        with open(path) as f:
+            payload = json.load(f)
+        assert {m["inningsNumber"] for m in payload["matchcards"]} == {"4"}
+        monkeypatch.setattr(_espn, "espn_summary", lambda *a, **kw: payload)
+        result = _espn.get_game_summary({"params": {"series_id": "24375", "event_id": "1535672"}})
+        cards = result["scorecards"]
+        assert [c["innings"] for c in cards] == [1, 2, 3, 4]
+        assert [c["batting_team"] for c in cards] == ["India A", "Australia A"] * 2
+        assert [c["bowling_team"] for c in cards] == ["Australia A", "India A"] * 2
+        first = cards[0]["batting"][0]
+        assert first["player"] == "Sai Sudharsan"
+        assert (first["runs"], first["balls"], first["not_out"], first["dismissal"]) == (57, 103, False, "c")
+        assert result["matchcards"] == payload["matchcards"]  # unchanged
+
+    def test_scorecards_tolerate_missing_rosters(self):
+        assert _espn._innings_scorecards(None) == []
+        assert _espn._innings_scorecards([{"team": {}, "roster": [{"athlete": {}}]}]) == []
 
 
 class TestGetNews:

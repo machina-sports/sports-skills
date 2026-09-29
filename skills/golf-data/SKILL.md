@@ -65,11 +65,11 @@ If the user doesn't specify, default to `pga`. If they say "women's golf" or "LP
 
 | Command | Description |
 |---|---|
-| `get_leaderboard` | Current tournament leaderboard with all golfer scores |
+| `get_leaderboard` | Tournament leaderboard with all golfer scores (current, or `event_id` / `date`) |
 | `get_schedule` | Full season tournament schedule |
 | `get_player_info` | Individual golfer profile |
 | `get_player_overview` | Detailed overview with season stats, rankings, recent results |
-| `get_scorecard` | Hole-by-hole scorecard for a golfer |
+| `get_scorecard` | Hole-by-hole scorecard for a golfer (current, or `event_id` / `date`) |
 | `get_news` | Golf news articles |
 
 See `references/api-reference.md` for full parameter lists and return shapes.
@@ -116,7 +116,7 @@ Result: Season stats (scoring average, earnings, wins, top-10s), world ranking, 
 
 ## Commands that DO NOT exist — never call these
 
-- ~~`get_tournament_results`~~ — does not exist. Use `get_leaderboard` for current/recent tournament scores.
+- ~~`get_tournament_results`~~ — does not exist. Use `get_leaderboard` (with `event_id` from `get_schedule` for a past tournament).
 - ~~`get_rankings`~~ — does not exist. FedEx Cup/world rankings are not available via this API. Use `get_player_overview` for individual rankings.
 - ~~`get_odds`~~ / ~~`get_betting_odds`~~ — not available. For prediction market odds, use the polymarket or kalshi skill.
 - ~~`search_player`~~ — does not exist. Use `get_leaderboard` to find player IDs from the current field.
