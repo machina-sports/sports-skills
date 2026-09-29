@@ -17,6 +17,7 @@ from sports_skills._espn_base import (
     espn_team_schedule,
     espn_web_request,
     espn_week_rankings,
+    event_season_type,
     fetch_season,
     normalize_boxscore,
     normalize_core_stats,
@@ -95,6 +96,7 @@ def _normalize_event(espn_event):
         "status_detail": status_detail,
         "start_time": comp.get("date", espn_event.get("date", "")),
         "start_ts": epoch_seconds(comp.get("date", espn_event.get("date", ""))),
+        "season_type": event_season_type(espn_event),
         "venue": {
             "name": comp.get("venue", {}).get("fullName", ""),
             "city": comp.get("venue", {}).get("address", {}).get("city", ""),

@@ -393,7 +393,7 @@ _REGISTRY = {
         "get_standings": {"optional": ["season"]},
         "get_teams": {},
         "get_team_roster": {"required": ["team_id"]},
-        "get_team_schedule": {"required": ["team_id"], "optional": ["season"]},
+        "get_team_schedule": {"required": ["team_id"], "optional": ["season", "season_type"]},
         "get_game_summary": {"required": ["event_id"]},
         "get_play_by_play": {"required": ["event_id"]},
         "get_win_probability": {"required": ["event_id"]},

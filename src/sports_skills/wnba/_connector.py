@@ -20,7 +20,9 @@ from sports_skills._espn_base import (
     espn_core_request,
     espn_request,
     espn_summary,
+    espn_team_schedule,
     espn_web_request,
+    event_season_type,
     fetch_season,
     normalize_boxscore,
     normalize_core_stats,
@@ -85,6 +87,7 @@ def _normalize_event(espn_event):
         "status_detail": status_detail,
         "start_time": comp.get("date", espn_event.get("date", "")),
         "start_ts": epoch_seconds(comp.get("date", espn_event.get("date", ""))),
+        "season_type": event_season_type(espn_event),
         "venue": {
             "name": comp.get("venue", {}).get("fullName", ""),
             "city": comp.get("venue", {}).get("address", {}).get("city", ""),
@@ -439,11 +442,7 @@ def get_team_schedule(request_data):
     if not team_id:
         return {"error": True, "message": "team_id is required"}
 
-    espn_params = {}
-    if season:
-        espn_params["season"] = season
-
-    data = espn_request(SPORT_PATH, f"teams/{team_id}/schedule", espn_params or None)
+    data = espn_team_schedule(SPORT_PATH, team_id, season, params.get("season_type"))
     if data.get("error"):
         return data
 

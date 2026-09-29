@@ -842,8 +842,17 @@ def fill_team_divisions(groups, division_data):
             entry["division"] = group.get("division") or divisions.get(entry["team"]["id"], "")
 
 
-_STANDINGS_SEASON_TYPES = {"1": "preseason", "2": "regular", "3": "postseason", "4": "offseason"}
+_STANDINGS_SEASON_TYPES = {"1": "preseason", "2": "regular", "3": "postseason", "4": "offseason", "5": "playin"}
 
+
+def event_season_type(espn_event):
+    """``preseason`` / ``regular`` / ``postseason`` / ``playin`` for an ESPN event.
+
+    Team schedules carry ``seasonType``; scoreboards carry ``season.type``.
+    ``""`` when neither is present.
+    """
+    code = (espn_event.get("seasonType") or {}).get("id") or (espn_event.get("season") or {}).get("type")
+    return _STANDINGS_SEASON_TYPES.get(str(code or ""), "")
 
 def _now():
     """Current time as epoch seconds (a seam for tests)."""
