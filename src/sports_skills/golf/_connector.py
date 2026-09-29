@@ -14,6 +14,7 @@ from sports_skills._espn_base import (
     ESPN_STATUS_MAP,
     _cache_get,
     _cache_set,
+    _espn_rate_limiter,
     _http_fetch,
     espn_request,
 )
@@ -305,7 +306,7 @@ def _event_start_date(tour, event_id):
     if cached is not None:
         return cached, None
     url = f"https://sports.core.api.espn.com/v2/sports/golf/leagues/{tour}/events/{event_id}"
-    raw, err = _http_fetch(url, headers={"User-Agent": _USER_AGENT})
+    raw, err = _http_fetch(url, headers={"User-Agent": _USER_AGENT}, rate_limiter=_espn_rate_limiter)
     if err:
         return None, {
             "error": True,
