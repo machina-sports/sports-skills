@@ -3,10 +3,12 @@
 ## Commands
 
 ### get_leaderboard
-Get the current tournament leaderboard with all golfer scores.
+Get a tournament leaderboard with all golfer scores.
 - `tour` (str, required): "pga", "lpga", or "eur"
+- `event_id` (str, optional): ESPN event ID from `get_schedule` — reaches completed tournaments
+- `date` (str, optional): Any day of the tournament, YYYY-MM-DD. With `event_id`, picks that event when two run the same week
 
-Returns the current/most recent tournament with:
+Without `event_id`/`date`, returns the current/most recent tournament with:
 - Tournament name, venue, status, current round, and `field_size`
 - `leaderboard[]` sorted by position with golfer `id`, `name`, `country`, `score`, and `rounds[]`
 
@@ -15,14 +17,14 @@ Each golfer in `leaderboard[]` has:
 - `name`: Golfer name
 - `country`: Nationality
 - `score`: Total score relative to par (e.g., "-17", "E", "+2")
-- `rounds[]`: Array with `round`, `strokes`, and `score` (score-to-par) per round
+- `rounds[]`: Array with `round`, `strokes`, `score` (score-to-par) and `holes_played` per round. An unplayed round (missed cut) has `strokes: null` and `score: "-"`. `holes_played` counts ESPN's hole-by-hole card (`null` when ESPN sent none); below 18 means the round was not finished. A withdrawal's round keeps only the holes played (e.g. `strokes: 4, score: "E"` after one hole), often with `holes_played: null`.
 
 ### get_schedule
 Get full season tournament schedule.
 - `tour` (str, required): "pga", "lpga", or "eur"
 - `year` (int, optional): Season year. Defaults to current.
 
-Returns `tournaments[]` with tournament name, ID, start/end dates.
+Returns `tournaments[]` with tournament name, ID, start/end dates. Only ESPN's season calendar is fetched (about 13 KB), not every event's field.
 
 ### get_player_info
 Get individual golfer profile.
@@ -38,12 +40,16 @@ Get detailed golfer overview with season stats, rankings, and recent results.
 - `player_id` (str, required): ESPN athlete ID
 - `tour` (str, optional): "pga", "lpga", or "eur". Defaults to "pga".
 
-Returns season statistics (scoring average, earnings, wins, top-10s), world/tour rankings, and recent tournament results.
+Returns season statistics (scoring average, earnings, wins, top-10s), world/tour rankings, and recent tournament results (`recent_tournaments[]`, newest first across tours).
 
 ### get_scorecard
-Get hole-by-hole scorecard for a golfer in the current/most recent tournament.
+Get hole-by-hole scorecard for a golfer in the current/most recent tournament, or a given one.
 - `tour` (str, required): "pga", "lpga", or "eur"
 - `player_id` (str, required): ESPN athlete ID
+- `event_id` (str, optional): ESPN event ID from `get_schedule`
+- `date` (str, optional): Any day of the tournament, YYYY-MM-DD
+
+Between tournaments the default scoreboard shows the next (unplayed) event, so `holes` is empty; pass `event_id` for a completed one.
 
 Returns `rounds[]` with hole-by-hole scores (strokes, score relative to par) for each completed round.
 

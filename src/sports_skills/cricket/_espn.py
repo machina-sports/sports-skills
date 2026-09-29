@@ -204,6 +204,79 @@ def _series_for_event(event_id):
     return None
 
 
+def _num(value):
+    """ESPN stat displayValue as int/float when numeric, else as sent."""
+    try:
+        return int(value)
+    except (TypeError, ValueError):
+        try:
+            return float(value)
+        except (TypeError, ValueError):
+            return value
+
+
+def _innings_scorecards(rosters):
+    """Batting and bowling card for every innings, rebuilt from the rosters.
+
+    ESPN's ``matchcards`` only carry the latest innings and the summary takes
+    no innings parameter, but each roster player's ``linescores`` hold their
+    figures per innings (``period``).
+    """
+    cards = {}
+    for team in rosters or []:
+        team_name = (team.get("team") or {}).get("displayName", "")
+        for player in team.get("roster") or []:
+            athlete = player.get("athlete") or {}
+            who = {"player_id": str(athlete.get("id", "")), "player": athlete.get("displayName", "")}
+            for ls in player.get("linescores") or []:
+                n = _num(ls.get("period"))
+                for sub in ls.get("linescores") or []:
+                    stats = {
+                        s.get("name"): s.get("displayValue")
+                        for cat in ((sub.get("statistics") or {}).get("categories") or [])
+                        for s in cat.get("stats") or []
+                    }
+                    card = cards.setdefault(n, {
+                        "innings": n, "batting_team": "", "bowling_team": "",
+                        "batting": [], "bowling": [],
+                    })
+                    if stats.get("batted") == "1":
+                        card["batting_team"] = team_name
+                        card["batting"].append({
+                            **who,
+                            "position": _num(stats.get("battingPosition")),
+                            "runs": _num(stats.get("runs")),
+                            "balls": _num(stats.get("ballsFaced")),
+                            "fours": _num(stats.get("fours")),
+                            "sixes": _num(stats.get("sixes")),
+                            "strike_rate": _num(stats.get("strikeRate")),
+                            "not_out": stats.get("outs") == "0",
+                            "dismissal": stats.get("dismissalCard", ""),
+                        })
+                    if stats.get("bowled") == "1":
+                        card["bowling_team"] = team_name
+                        card["bowling"].append({
+                            **who,
+                            "position": _num(stats.get("bowlingPosition")),
+                            "overs": _num(stats.get("overs")),
+                            "maidens": _num(stats.get("maidens")),
+                            "runs": _num(stats.get("conceded")),
+                            "wickets": _num(stats.get("wickets")),
+                            "economy": _num(stats.get("economyRate")),
+                            "wides": _num(stats.get("wides")),
+                            "noballs": _num(stats.get("noballs")),
+                        })
+    out = []
+    for n in sorted(cards, key=lambda k: k if isinstance(k, int) else 99):
+        card = cards[n]
+        if not card["batting"] and not card["bowling"]:
+            continue
+        for key in ("batting", "bowling"):
+            card[key].sort(key=lambda r: r["position"] if isinstance(r["position"], int) else 99)
+        out.append(card)
+    return out
+
+
 def get_game_summary(request_data):
     """Match detail: rosters, leaders, matchcards, game info, header.
 
@@ -252,6 +325,8 @@ def get_game_summary(request_data):
         "rosters": data.get("rosters", []),
         "leaders": data.get("leaders", []),
         "matchcards": data.get("matchcards", {}),
+        # matchcards hold only the latest innings; this has every innings.
+        "scorecards": _innings_scorecards(data.get("rosters")),
         "article": data.get("article", {}),
     }
 

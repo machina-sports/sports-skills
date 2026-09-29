@@ -1,0 +1,1360 @@
+{
+ "_source": "site.web.api.espn.com/apis/site/v2/sports/cricket/24375/summary?event=1535672 (India A v Australia A, 2026-09-22), trimmed to the top two batters and the opening bowler of each innings per team",
+ "matchcards": [
+  {
+   "inningsNumber": "4",
+   "teamName": "Australia A",
+   "headline": "Batting"
+  },
+  {
+   "inningsNumber": "4",
+   "teamName": "India A",
+   "headline": "Bowling"
+  },
+  {
+   "inningsNumber": "4",
+   "teamName": "Australia A",
+   "headline": "Partnerships"
+  }
+ ],
+ "rosters": [
+  {
+   "homeAway": "home",
+   "team": {
+    "id": "1781",
+    "displayName": "India A"
+   },
+   "roster": [
+    {
+     "athlete": {
+      "id": "1151288",
+      "displayName": "Sai Sudharsan"
+     },
+     "linescores": [
+      {
+       "period": 1,
+       "linescores": [
+        {
+         "order": 1,
+         "statistics": {
+          "categories": [
+           {
+            "name": "general",
+            "stats": [
+             {
+              "name": "ballsFaced",
+              "displayValue": "103"
+             },
+             {
+              "name": "batted",
+              "displayValue": "1"
+             },
+             {
+              "name": "battingPosition",
+              "displayValue": "1"
+             },
+             {
+              "name": "dismissalCard",
+              "displayValue": "c"
+             },
+             {
+              "name": "fours",
+              "displayValue": "3"
+             },
+             {
+              "name": "outs",
+              "displayValue": "1"
+             },
+             {
+              "name": "runs",
+              "displayValue": "57"
+             },
+             {
+              "name": "sixes",
+              "displayValue": "0"
+             },
+             {
+              "name": "strikeRate",
+              "displayValue": "55.33"
+             }
+            ]
+           }
+          ]
+         }
+        }
+       ]
+      },
+      {
+       "period": 2,
+       "linescores": [
+        {
+         "order": 0,
+         "statistics": {
+          "categories": [
+           {
+            "name": "general",
+            "stats": [
+             {
+              "name": "bowled",
+              "displayValue": "0"
+             },
+             {
+              "name": "bowlingPosition",
+              "displayValue": "0"
+             },
+             {
+              "name": "conceded",
+              "displayValue": "0"
+             },
+             {
+              "name": "economyRate",
+              "displayValue": "-"
+             },
+             {
+              "name": "maidens",
+              "displayValue": "0"
+             },
+             {
+              "name": "noballs",
+              "displayValue": "0"
+             },
+             {
+              "name": "overs",
+              "displayValue": "0"
+             },
+             {
+              "name": "wickets",
+              "displayValue": "0"
+             },
+             {
+              "name": "wides",
+              "displayValue": "0"
+             }
+            ]
+           }
+          ]
+         }
+        }
+       ]
+      },
+      {
+       "period": 3,
+       "linescores": [
+        {
+         "order": 1,
+         "statistics": {
+          "categories": [
+           {
+            "name": "general",
+            "stats": [
+             {
+              "name": "ballsFaced",
+              "displayValue": "85"
+             },
+             {
+              "name": "batted",
+              "displayValue": "1"
+             },
+             {
+              "name": "battingPosition",
+              "displayValue": "1"
+             },
+             {
+              "name": "dismissalCard",
+              "displayValue": "lbw"
+             },
+             {
+              "name": "fours",
+              "displayValue": "3"
+             },
+             {
+              "name": "outs",
+              "displayValue": "1"
+             },
+             {
+              "name": "runs",
+              "displayValue": "39"
+             },
+             {
+              "name": "sixes",
+              "displayValue": "0"
+             },
+             {
+              "name": "strikeRate",
+              "displayValue": "45.88"
+             }
+            ]
+           }
+          ]
+         }
+        }
+       ]
+      },
+      {
+       "period": 4,
+       "linescores": [
+        {
+         "order": 0,
+         "statistics": {
+          "categories": [
+           {
+            "name": "general",
+            "stats": [
+             {
+              "name": "bowled",
+              "displayValue": "0"
+             },
+             {
+              "name": "bowlingPosition",
+              "displayValue": "0"
+             },
+             {
+              "name": "conceded",
+              "displayValue": "0"
+             },
+             {
+              "name": "economyRate",
+              "displayValue": "-"
+             },
+             {
+              "name": "maidens",
+              "displayValue": "0"
+             },
+             {
+              "name": "noballs",
+              "displayValue": "0"
+             },
+             {
+              "name": "overs",
+              "displayValue": "0"
+             },
+             {
+              "name": "wickets",
+              "displayValue": "0"
+             },
+             {
+              "name": "wides",
+              "displayValue": "0"
+             }
+            ]
+           }
+          ]
+         }
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "athlete": {
+      "id": "1216158",
+      "displayName": "Aman Mokhade"
+     },
+     "linescores": [
+      {
+       "period": 1,
+       "linescores": [
+        {
+         "order": 2,
+         "statistics": {
+          "categories": [
+           {
+            "name": "general",
+            "stats": [
+             {
+              "name": "ballsFaced",
+              "displayValue": "14"
+             },
+             {
+              "name": "batted",
+              "displayValue": "1"
+             },
+             {
+              "name": "battingPosition",
+              "displayValue": "2"
+             },
+             {
+              "name": "dismissalCard",
+              "displayValue": "lbw"
+             },
+             {
+              "name": "fours",
+              "displayValue": "1"
+             },
+             {
+              "name": "outs",
+              "displayValue": "1"
+             },
+             {
+              "name": "runs",
+              "displayValue": "6"
+             },
+             {
+              "name": "sixes",
+              "displayValue": "0"
+             },
+             {
+              "name": "strikeRate",
+              "displayValue": "42.85"
+             }
+            ]
+           }
+          ]
+         }
+        }
+       ]
+      },
+      {
+       "period": 2,
+       "linescores": [
+        {
+         "order": 0,
+         "statistics": {
+          "categories": [
+           {
+            "name": "general",
+            "stats": [
+             {
+              "name": "bowled",
+              "displayValue": "0"
+             },
+             {
+              "name": "bowlingPosition",
+              "displayValue": "0"
+             },
+             {
+              "name": "conceded",
+              "displayValue": "0"
+             },
+             {
+              "name": "economyRate",
+              "displayValue": "-"
+             },
+             {
+              "name": "maidens",
+              "displayValue": "0"
+             },
+             {
+              "name": "noballs",
+              "displayValue": "0"
+             },
+             {
+              "name": "overs",
+              "displayValue": "0"
+             },
+             {
+              "name": "wickets",
+              "displayValue": "0"
+             },
+             {
+              "name": "wides",
+              "displayValue": "0"
+             }
+            ]
+           }
+          ]
+         }
+        }
+       ]
+      },
+      {
+       "period": 3,
+       "linescores": [
+        {
+         "order": 2,
+         "statistics": {
+          "categories": [
+           {
+            "name": "general",
+            "stats": [
+             {
+              "name": "ballsFaced",
+              "displayValue": "21"
+             },
+             {
+              "name": "batted",
+              "displayValue": "1"
+             },
+             {
+              "name": "battingPosition",
+              "displayValue": "2"
+             },
+             {
+              "name": "dismissalCard",
+              "displayValue": "lbw"
+             },
+             {
+              "name": "fours",
+              "displayValue": "1"
+             },
+             {
+              "name": "outs",
+              "displayValue": "1"
+             },
+             {
+              "name": "runs",
+              "displayValue": "9"
+             },
+             {
+              "name": "sixes",
+              "displayValue": "0"
+             },
+             {
+              "name": "strikeRate",
+              "displayValue": "42.85"
+             }
+            ]
+           }
+          ]
+         }
+        }
+       ]
+      },
+      {
+       "period": 4,
+       "linescores": [
+        {
+         "order": 0,
+         "statistics": {
+          "categories": [
+           {
+            "name": "general",
+            "stats": [
+             {
+              "name": "bowled",
+              "displayValue": "0"
+             },
+             {
+              "name": "bowlingPosition",
+              "displayValue": "0"
+             },
+             {
+              "name": "conceded",
+              "displayValue": "0"
+             },
+             {
+              "name": "economyRate",
+              "displayValue": "-"
+             },
+             {
+              "name": "maidens",
+              "displayValue": "0"
+             },
+             {
+              "name": "noballs",
+              "displayValue": "0"
+             },
+             {
+              "name": "overs",
+              "displayValue": "0"
+             },
+             {
+              "name": "wickets",
+              "displayValue": "0"
+             },
+             {
+              "name": "wides",
+              "displayValue": "0"
+             }
+            ]
+           }
+          ]
+         }
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "athlete": {
+      "id": "1125960",
+      "displayName": "Tanush Kotian"
+     },
+     "linescores": [
+      {
+       "period": 1,
+       "linescores": [
+        {
+         "order": 7,
+         "statistics": {
+          "categories": [
+           {
+            "name": "general",
+            "stats": [
+             {
+              "name": "ballsFaced",
+              "displayValue": "138"
+             },
+             {
+              "name": "batted",
+              "displayValue": "1"
+             },
+             {
+              "name": "battingPosition",
+              "displayValue": "7"
+             },
+             {
+              "name": "dismissalCard",
+              "displayValue": "c"
+             },
+             {
+              "name": "fours",
+              "displayValue": "4"
+             },
+             {
+              "name": "outs",
+              "displayValue": "1"
+             },
+             {
+              "name": "runs",
+              "displayValue": "69"
+             },
+             {
+              "name": "sixes",
+              "displayValue": "1"
+             },
+             {
+              "name": "strikeRate",
+              "displayValue": "50"
+             }
+            ]
+           }
+          ]
+         }
+        }
+       ]
+      },
+      {
+       "period": 2,
+       "linescores": [
+        {
+         "order": 5,
+         "statistics": {
+          "categories": [
+           {
+            "name": "general",
+            "stats": [
+             {
+              "name": "bowled",
+              "displayValue": "1"
+             },
+             {
+              "name": "bowlingPosition",
+              "displayValue": "5"
+             },
+             {
+              "name": "conceded",
+              "displayValue": "31"
+             },
+             {
+              "name": "economyRate",
+              "displayValue": "5.63"
+             },
+             {
+              "name": "maidens",
+              "displayValue": "0"
+             },
+             {
+              "name": "noballs",
+              "displayValue": "0"
+             },
+             {
+              "name": "overs",
+              "displayValue": "5.3"
+             },
+             {
+              "name": "wickets",
+              "displayValue": "2"
+             },
+             {
+              "name": "wides",
+              "displayValue": "0"
+             }
+            ]
+           }
+          ]
+         }
+        }
+       ]
+      },
+      {
+       "period": 3,
+       "linescores": [
+        {
+         "order": 7,
+         "statistics": {
+          "categories": [
+           {
+            "name": "general",
+            "stats": [
+             {
+              "name": "ballsFaced",
+              "displayValue": "14"
+             },
+             {
+              "name": "batted",
+              "displayValue": "1"
+             },
+             {
+              "name": "battingPosition",
+              "displayValue": "7"
+             },
+             {
+              "name": "dismissalCard",
+              "displayValue": "c"
+             },
+             {
+              "name": "fours",
+              "displayValue": "0"
+             },
+             {
+              "name": "outs",
+              "displayValue": "1"
+             },
+             {
+              "name": "runs",
+              "displayValue": "8"
+             },
+             {
+              "name": "sixes",
+              "displayValue": "1"
+             },
+             {
+              "name": "strikeRate",
+              "displayValue": "57.14"
+             }
+            ]
+           }
+          ]
+         }
+        }
+       ]
+      },
+      {
+       "period": 4,
+       "linescores": [
+        {
+         "order": 5,
+         "statistics": {
+          "categories": [
+           {
+            "name": "general",
+            "stats": [
+             {
+              "name": "bowled",
+              "displayValue": "1"
+             },
+             {
+              "name": "bowlingPosition",
+              "displayValue": "5"
+             },
+             {
+              "name": "conceded",
+              "displayValue": "57"
+             },
+             {
+              "name": "economyRate",
+              "displayValue": "4.07"
+             },
+             {
+              "name": "maidens",
+              "displayValue": "2"
+             },
+             {
+              "name": "noballs",
+              "displayValue": "0"
+             },
+             {
+              "name": "overs",
+              "displayValue": "14"
+             },
+             {
+              "name": "wickets",
+              "displayValue": "2"
+             },
+             {
+              "name": "wides",
+              "displayValue": "0"
+             }
+            ]
+           }
+          ]
+         }
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "athlete": {
+      "id": "1292497",
+      "displayName": "Shaik Rasheed"
+     },
+     "linescores": [
+      {
+       "period": 1,
+       "linescores": [
+        {
+         "order": 4,
+         "statistics": {
+          "categories": [
+           {
+            "name": "general",
+            "stats": [
+             {
+              "name": "ballsFaced",
+              "displayValue": "57"
+             },
+             {
+              "name": "batted",
+              "displayValue": "1"
+             },
+             {
+              "name": "battingPosition",
+              "displayValue": "4"
+             },
+             {
+              "name": "dismissalCard",
+              "displayValue": "c"
+             },
+             {
+              "name": "fours",
+              "displayValue": "0"
+             },
+             {
+              "name": "outs",
+              "displayValue": "1"
+             },
+             {
+              "name": "runs",
+              "displayValue": "16"
+             },
+             {
+              "name": "sixes",
+              "displayValue": "0"
+             },
+             {
+              "name": "strikeRate",
+              "displayValue": "28.07"
+             }
+            ]
+           }
+          ]
+         }
+        }
+       ]
+      },
+      {
+       "period": 2,
+       "linescores": [
+        {
+         "order": 11,
+         "statistics": {
+          "categories": [
+           {
+            "name": "general",
+            "stats": [
+             {
+              "name": "bowled",
+              "displayValue": "0"
+             },
+             {
+              "name": "bowlingPosition",
+              "displayValue": "0"
+             },
+             {
+              "name": "conceded",
+              "displayValue": "0"
+             },
+             {
+              "name": "economyRate",
+              "displayValue": "-"
+             },
+             {
+              "name": "maidens",
+              "displayValue": "0"
+             },
+             {
+              "name": "noballs",
+              "displayValue": "0"
+             },
+             {
+              "name": "overs",
+              "displayValue": "0"
+             },
+             {
+              "name": "wickets",
+              "displayValue": "0"
+             },
+             {
+              "name": "wides",
+              "displayValue": "0"
+             }
+            ]
+           }
+          ]
+         }
+        }
+       ]
+      },
+      {
+       "period": 3,
+       "linescores": [
+        {
+         "order": 4,
+         "statistics": {
+          "categories": [
+           {
+            "name": "general",
+            "stats": [
+             {
+              "name": "ballsFaced",
+              "displayValue": "6"
+             },
+             {
+              "name": "batted",
+              "displayValue": "1"
+             },
+             {
+              "name": "battingPosition",
+              "displayValue": "4"
+             },
+             {
+              "name": "dismissalCard",
+              "displayValue": "c"
+             },
+             {
+              "name": "fours",
+              "displayValue": "0"
+             },
+             {
+              "name": "outs",
+              "displayValue": "1"
+             },
+             {
+              "name": "runs",
+              "displayValue": "0"
+             },
+             {
+              "name": "sixes",
+              "displayValue": "0"
+             },
+             {
+              "name": "strikeRate",
+              "displayValue": "0"
+             }
+            ]
+           }
+          ]
+         }
+        }
+       ]
+      },
+      {
+       "period": 4,
+       "linescores": [
+        {
+         "order": 11,
+         "statistics": {
+          "categories": [
+           {
+            "name": "general",
+            "stats": [
+             {
+              "name": "bowled",
+              "displayValue": "1"
+             },
+             {
+              "name": "bowlingPosition",
+              "displayValue": "6"
+             },
+             {
+              "name": "conceded",
+              "displayValue": "4"
+             },
+             {
+              "name": "economyRate",
+              "displayValue": "4"
+             },
+             {
+              "name": "maidens",
+              "displayValue": "0"
+             },
+             {
+              "name": "noballs",
+              "displayValue": "0"
+             },
+             {
+              "name": "overs",
+              "displayValue": "1"
+             },
+             {
+              "name": "wickets",
+              "displayValue": "0"
+             },
+             {
+              "name": "wides",
+              "displayValue": "0"
+             }
+            ]
+           }
+          ]
+         }
+        }
+       ]
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "homeAway": "away",
+   "team": {
+    "id": "49",
+    "displayName": "Australia A"
+   },
+   "roster": [
+    {
+     "athlete": {
+      "id": "1393951",
+      "displayName": "Sam Konstas"
+     },
+     "linescores": [
+      {
+       "period": 1,
+       "linescores": [
+        {
+         "order": 0,
+         "statistics": {
+          "categories": [
+           {
+            "name": "general",
+            "stats": [
+             {
+              "name": "bowled",
+              "displayValue": "0"
+             },
+             {
+              "name": "bowlingPosition",
+              "displayValue": "0"
+             },
+             {
+              "name": "conceded",
+              "displayValue": "0"
+             },
+             {
+              "name": "economyRate",
+              "displayValue": "-"
+             },
+             {
+              "name": "maidens",
+              "displayValue": "0"
+             },
+             {
+              "name": "noballs",
+              "displayValue": "0"
+             },
+             {
+              "name": "overs",
+              "displayValue": "0"
+             },
+             {
+              "name": "wickets",
+              "displayValue": "0"
+             },
+             {
+              "name": "wides",
+              "displayValue": "0"
+             }
+            ]
+           }
+          ]
+         }
+        }
+       ]
+      },
+      {
+       "period": 2,
+       "linescores": [
+        {
+         "order": 1,
+         "statistics": {
+          "categories": [
+           {
+            "name": "general",
+            "stats": [
+             {
+              "name": "ballsFaced",
+              "displayValue": "76"
+             },
+             {
+              "name": "batted",
+              "displayValue": "1"
+             },
+             {
+              "name": "battingPosition",
+              "displayValue": "1"
+             },
+             {
+              "name": "dismissalCard",
+              "displayValue": "lbw"
+             },
+             {
+              "name": "fours",
+              "displayValue": "2"
+             },
+             {
+              "name": "outs",
+              "displayValue": "1"
+             },
+             {
+              "name": "runs",
+              "displayValue": "25"
+             },
+             {
+              "name": "sixes",
+              "displayValue": "0"
+             },
+             {
+              "name": "strikeRate",
+              "displayValue": "32.89"
+             }
+            ]
+           }
+          ]
+         }
+        }
+       ]
+      },
+      {
+       "period": 3,
+       "linescores": [
+        {
+         "order": 0,
+         "statistics": {
+          "categories": [
+           {
+            "name": "general",
+            "stats": [
+             {
+              "name": "bowled",
+              "displayValue": "0"
+             },
+             {
+              "name": "bowlingPosition",
+              "displayValue": "0"
+             },
+             {
+              "name": "conceded",
+              "displayValue": "0"
+             },
+             {
+              "name": "economyRate",
+              "displayValue": "-"
+             },
+             {
+              "name": "maidens",
+              "displayValue": "0"
+             },
+             {
+              "name": "noballs",
+              "displayValue": "0"
+             },
+             {
+              "name": "overs",
+              "displayValue": "0"
+             },
+             {
+              "name": "wickets",
+              "displayValue": "0"
+             },
+             {
+              "name": "wides",
+              "displayValue": "0"
+             }
+            ]
+           }
+          ]
+         }
+        }
+       ]
+      },
+      {
+       "period": 4,
+       "linescores": [
+        {
+         "order": 1,
+         "statistics": {
+          "categories": [
+           {
+            "name": "general",
+            "stats": [
+             {
+              "name": "ballsFaced",
+              "displayValue": "63"
+             },
+             {
+              "name": "batted",
+              "displayValue": "1"
+             },
+             {
+              "name": "battingPosition",
+              "displayValue": "1"
+             },
+             {
+              "name": "dismissalCard",
+              "displayValue": "lbw"
+             },
+             {
+              "name": "fours",
+              "displayValue": "2"
+             },
+             {
+              "name": "outs",
+              "displayValue": "1"
+             },
+             {
+              "name": "runs",
+              "displayValue": "20"
+             },
+             {
+              "name": "sixes",
+              "displayValue": "0"
+             },
+             {
+              "name": "strikeRate",
+              "displayValue": "31.74"
+             }
+            ]
+           }
+          ]
+         }
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "athlete": {
+      "id": "1295842",
+      "displayName": "Campbell Kellaway"
+     },
+     "linescores": [
+      {
+       "period": 1,
+       "linescores": [
+        {
+         "order": 6,
+         "statistics": {
+          "categories": [
+           {
+            "name": "general",
+            "stats": [
+             {
+              "name": "bowled",
+              "displayValue": "1"
+             },
+             {
+              "name": "bowlingPosition",
+              "displayValue": "6"
+             },
+             {
+              "name": "conceded",
+              "displayValue": "3"
+             },
+             {
+              "name": "economyRate",
+              "displayValue": "3"
+             },
+             {
+              "name": "maidens",
+              "displayValue": "0"
+             },
+             {
+              "name": "noballs",
+              "displayValue": "0"
+             },
+             {
+              "name": "overs",
+              "displayValue": "1"
+             },
+             {
+              "name": "wickets",
+              "displayValue": "0"
+             },
+             {
+              "name": "wides",
+              "displayValue": "0"
+             }
+            ]
+           }
+          ]
+         }
+        }
+       ]
+      },
+      {
+       "period": 2,
+       "linescores": [
+        {
+         "order": 2,
+         "statistics": {
+          "categories": [
+           {
+            "name": "general",
+            "stats": [
+             {
+              "name": "ballsFaced",
+              "displayValue": "18"
+             },
+             {
+              "name": "batted",
+              "displayValue": "1"
+             },
+             {
+              "name": "battingPosition",
+              "displayValue": "2"
+             },
+             {
+              "name": "dismissalCard",
+              "displayValue": "lbw"
+             },
+             {
+              "name": "fours",
+              "displayValue": "0"
+             },
+             {
+              "name": "outs",
+              "displayValue": "1"
+             },
+             {
+              "name": "runs",
+              "displayValue": "2"
+             },
+             {
+              "name": "sixes",
+              "displayValue": "0"
+             },
+             {
+              "name": "strikeRate",
+              "displayValue": "11.11"
+             }
+            ]
+           }
+          ]
+         }
+        }
+       ]
+      },
+      {
+       "period": 3,
+       "linescores": [
+        {
+         "order": 6,
+         "statistics": {
+          "categories": [
+           {
+            "name": "general",
+            "stats": [
+             {
+              "name": "bowled",
+              "displayValue": "1"
+             },
+             {
+              "name": "bowlingPosition",
+              "displayValue": "5"
+             },
+             {
+              "name": "conceded",
+              "displayValue": "12"
+             },
+             {
+              "name": "economyRate",
+              "displayValue": "4"
+             },
+             {
+              "name": "maidens",
+              "displayValue": "0"
+             },
+             {
+              "name": "noballs",
+              "displayValue": "0"
+             },
+             {
+              "name": "overs",
+              "displayValue": "3"
+             },
+             {
+              "name": "wickets",
+              "displayValue": "0"
+             },
+             {
+              "name": "wides",
+              "displayValue": "0"
+             }
+            ]
+           }
+          ]
+         }
+        }
+       ]
+      },
+      {
+       "period": 4,
+       "linescores": [
+        {
+         "order": 2,
+         "statistics": {
+          "categories": [
+           {
+            "name": "general",
+            "stats": [
+             {
+              "name": "ballsFaced",
+              "displayValue": "2"
+             },
+             {
+              "name": "batted",
+              "displayValue": "1"
+             },
+             {
+              "name": "battingPosition",
+              "displayValue": "2"
+             },
+             {
+              "name": "dismissalCard",
+              "displayValue": "lbw"
+             },
+             {
+              "name": "fours",
+              "displayValue": "0"
+             },
+             {
+              "name": "outs",
+              "displayValue": "1"
+             },
+             {
+              "name": "runs",
+              "displayValue": "0"
+             },
+             {
+              "name": "sixes",
+              "displayValue": "0"
+             },
+             {
+              "name": "strikeRate",
+              "displayValue": "0"
+             }
+            ]
+           }
+          ]
+         }
+        }
+       ]
+      }
+     ]
+    }
+   ]
+  }
+ ]
+}
