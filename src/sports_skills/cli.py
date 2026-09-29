@@ -543,9 +543,9 @@ _REGISTRY = {
     },
     "volleyball": {
         "get_competitions": {},
-        "get_standings": {"required": ["competition_id"]},
-        "get_schedule": {"required": ["competition_id"]},
-        "get_results": {"required": ["competition_id"]},
+        "get_standings": {"required": ["competition_id"], "optional": ["season"]},
+        "get_schedule": {"required": ["competition_id"], "optional": ["season"]},
+        "get_results": {"required": ["competition_id"], "optional": ["season"]},
         "get_clubs": {"optional": ["competition_id", "limit"]},
         "get_club_schedule": {"required": ["club_id"]},
         "get_club_results": {"required": ["club_id"]},

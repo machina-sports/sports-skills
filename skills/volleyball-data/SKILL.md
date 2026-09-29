@@ -87,6 +87,8 @@ See `references/competition-ids.md` for the full reference with team counts and 
 
 See `references/api-reference.md` for full parameter lists and return shapes.
 
+**Current season only.** Nevobo removes past-season poules and exports, so `get_standings`, `get_schedule` and `get_results` always cover the current season. Their optional `season` ("2026-2027" or 2026) returns a clear error for any other season. Matches without a date yet have `date: null`; cancelled matches carry `status: "vervallen"`.
+
 ## Examples
 
 Example 1: Eredivisie standings

@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom" xmlns:nevobo="https://www.api.nevobo.nl/rss/">
+  <channel>
+    <title>RSS feed Nederlandse Volleybalbond</title>
+    <link>https://api.nevobo.nl/export/vereniging/CKL5C67/resultaten.rss</link>
+    <description>Wedstrijdprogramma van de Nederlandse volleybalcompetitie, georganiseerd door de Nederlandse Volleybalbond</description>
+    <lastBuildDate>Tue, 29 Sep 2026 23:12:57 +0200</lastBuildDate>
+    <atom:link href="https://api.nevobo.nl/export/vereniging/CKL5C67/resultaten.rss" rel="self" type="text/xml"/>
+    <item>
+      <title><![CDATA[LSV L3 1 - LSV L3 2, Uitslag: 0-2]]></title>
+      <link>https://api.nevobo.nl/permalink/wedstrijd/2057301</link>
+      <guid>https://api.nevobo.nl/permalink/wedstrijd/2057301</guid>
+      <description><![CDATA[Wedstrijd: LSV L3 1 - LSV L3 2, Uitslag: 0-2, Setstanden: 22-30]]></description>
+      <pubDate>Sat, 19 Sep 2026 13:00:00 +0200</pubDate>
+      <nevobo:status>gespeeld</nevobo:status>
+    </item><item>
+      <title><![CDATA[LSV L3 1 - LSV L3 2, Uitslag: 0-2]]></title>
+      <link>https://api.nevobo.nl/permalink/wedstrijd/2057301</link>
+      <guid>https://api.nevobo.nl/permalink/wedstrijd/2057301</guid>
+      <description><![CDATA[Wedstrijd: LSV L3 1 - LSV L3 2, Uitslag: 0-2, Setstanden: 22-30]]></description>
+      <pubDate>Sat, 19 Sep 2026 13:00:00 +0200</pubDate>
+      <nevobo:status>gespeeld</nevobo:status>
+    </item><item>
+      <title><![CDATA[LSV L5 2 - LSV L5 1, Uitslag: 3-1]]></title>
+      <link>https://api.nevobo.nl/permalink/wedstrijd/2057378</link>
+      <guid>https://api.nevobo.nl/permalink/wedstrijd/2057378</guid>
+      <description><![CDATA[Wedstrijd: LSV L5 2 - LSV L5 1, Uitslag: 3-1, Setstanden: 13-13, 17-12]]></description>
+      <pubDate>Sat, 19 Sep 2026 12:20:00 +0200</pubDate>
+      <nevobo:status>gespeeld</nevobo:status>
+    </item><item>
+      <title><![CDATA[LSV L5 2 - LSV L5 1, Uitslag: 3-1]]></title>
+      <link>https://api.nevobo.nl/permalink/wedstrijd/2057378</link>
+      <guid>https://api.nevobo.nl/permalink/wedstrijd/2057378</guid>
+      <description><![CDATA[Wedstrijd: LSV L5 2 - LSV L5 1, Uitslag: 3-1, Setstanden: 13-13, 17-12]]></description>
+      <pubDate>Sat, 19 Sep 2026 12:20:00 +0200</pubDate>
+      <nevobo:status>gespeeld</nevobo:status>
+    </item><item>
+      <title><![CDATA[Vervallen: 19 sep 12:10: Lycurgus L3 2 - LSV L3 1]]></title>
+      <link>https://api.nevobo.nl/permalink/wedstrijd/2057296</link>
+      <guid>https://api.nevobo.nl/permalink/wedstrijd/2057296</guid>
+      <description><![CDATA[Vervallen wedstrijd: 1000V531A1GB, Datum: zaterdag 19 september, 12:10, Speellocatie: De Beemden, Sportlaan 14, 9781CL  Bedum]]></description>
+      <pubDate>Sat, 19 Sep 2026 12:10:00 +0200</pubDate>
+      <nevobo:status>vervallen</nevobo:status>
+    </item>
+  </channel>
+</rss>

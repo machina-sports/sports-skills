@@ -166,6 +166,23 @@ def _find_national_competition(family):
     return None
 
 
+def current_season():
+    """Return the season Nevobo currently serves (e.g. "2026-2027"), or None.
+
+    Reads the first page of the competitions list — the same request
+    ``_find_national_competition`` starts with, so it is usually cached.
+    """
+    data = _hydra_request("/competitie/competities", {"itemsPerPage": 30, "page": 1})
+    _raise_replay_failure(data)
+    if isinstance(data, dict) and data.get("error"):
+        return None
+    for item in (data or {}).get("hydra:member", []):
+        season = str(item.get("seizoen") or "")
+        if season:
+            return season.rsplit("/", 1)[-1]
+    return None
+
+
 def _rss_request(export_path):
     """Fetch and parse an RSS export feed."""
     url = f"{_BASE}/export/{export_path}"
@@ -182,6 +199,31 @@ def _rss_request(export_path):
         return feed
     except Exception as e:
         return {"error": True, "message": str(e)}
+
+
+# Title prefixes ahead of "Team A - Team B": an optional status word
+# ("Vervallen: " = cancelled) and a date/time ("12 mrt 19:30: "). Matches not yet
+# scheduled carry no date, leaving a bare ": " in front of the home team.
+_TITLE_PREFIX_RE = re.compile(
+    r"^(?:[A-Z][a-z]+:\s+(?=\d))?(?:\d{1,2}\s+\w+(?:\s+\d{1,2}:\d{2})?)?:\s*"
+)
+
+
+def _strip_title_prefix(title):
+    return _TITLE_PREFIX_RE.sub("", title, count=1)
+
+
+def _dedupe_entries(entries):
+    """Drop repeated feed items; a club feed lists an intra-club match once per team."""
+    seen = set()
+    unique = []
+    for entry in entries:
+        key = entry.get("id") or entry.get("link") or entry.get("title")
+        if key in seen:
+            continue
+        seen.add(key)
+        unique.append(entry)
+    return unique
 
 
 # ---------------------------------------------------------------------------
@@ -265,11 +307,8 @@ def _parse_schedule_entry(entry):
 
     match = {}
 
-    # Strip date/time prefix from title: "12 mrt 19:30: Team A - Team B"
-    teams_part = title
-    prefix_m = re.match(r"\d{1,2}\s+\w+\s+\d{1,2}:\d{2}:\s*(.+)", title)
-    if prefix_m:
-        teams_part = prefix_m.group(1)
+    # Strip status/date prefix from title: "12 mrt 19:30: Team A - Team B"
+    teams_part = _strip_title_prefix(title)
 
     t = teams_part.split(" - ", 1)
     if len(t) == 2:
@@ -285,8 +324,10 @@ def _parse_schedule_entry(entry):
         if venue_m:
             match["venue"] = venue_m.group(1).strip().rstrip(",")
 
-    if published:
-        match["date"] = published
+    # Unscheduled matches have an empty pubDate; keep the key so rows align.
+    match["date"] = published or None
+    if entry.get("nevobo_status"):
+        match["status"] = entry["nevobo_status"]
 
     return match
 
@@ -322,6 +363,7 @@ def _parse_result_entry(entry):
     result = {}
 
     # Split title on ", Uitslag:" to separate teams from score
+    title = _strip_title_prefix(title)
     uitslag_m = re.match(r"(.+?),\s*Uitslag:\s*(\d+-\d+)", title)
     if uitslag_m:
         teams_part = uitslag_m.group(1).strip()
@@ -347,8 +389,9 @@ def _parse_result_entry(entry):
             if set_scores:
                 result["set_scores"] = set_scores
 
-    if published:
-        result["date"] = published
+    result["date"] = published or None
+    if entry.get("nevobo_status"):
+        result["status"] = entry["nevobo_status"]
 
     return result
 
@@ -377,7 +420,7 @@ def get_club_schedule(club_id):
     if isinstance(feed, dict) and feed.get("error"):
         return feed
 
-    matches = [_parse_schedule_entry(e) for e in feed.entries]
+    matches = [_parse_schedule_entry(e) for e in _dedupe_entries(feed.entries)]
     return {
         "club_id": club_id,
         "matches": matches,
@@ -391,7 +434,7 @@ def get_club_results(club_id):
     if isinstance(feed, dict) and feed.get("error"):
         return feed
 
-    results = [_parse_result_entry(e) for e in feed.entries]
+    results = [_parse_result_entry(e) for e in _dedupe_entries(feed.entries)]
     return {
         "club_id": club_id,
         "results": results,

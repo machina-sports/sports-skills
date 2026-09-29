@@ -4,8 +4,12 @@ Nevobo increments a season counter inside poule paths, so hardcoded paths expire
 every season. These tests pin the resolution behaviour that replaces them.
 """
 
+from pathlib import Path
+
+import feedparser
 import pytest
 
+from sports_skills import volleyball
 from sports_skills.volleyball import LEAGUES, _nevobo
 
 
@@ -131,3 +135,75 @@ class TestLeagueConfiguration:
         """The stale path stays as a last resort if the API is unreachable."""
         for cid, cfg in LEAGUES.items():
             assert cfg.get("poule_path"), f"{cid} lost its fallback path"
+
+
+FIXTURES = Path(__file__).parent / "fixtures" / "nevobo"
+
+
+def _feed(name):
+    return feedparser.parse((FIXTURES / name).read_text())
+
+
+class TestFeedRows:
+    """Recorded Nevobo RSS rows (#164)."""
+
+    def test_unscheduled_match_has_clean_home_team_and_null_date(self, monkeypatch):
+        monkeypatch.setattr(_nevobo, "_rss_request", lambda p: _feed("poule_programma_undated.rss"))
+        matches = _nevobo.get_poule_schedule("x")["matches"]
+        undated = matches[0]
+        assert undated["home_team"] == "VCN DS 2"
+        assert undated["away_team"] == "Sport Pride US DS 1"
+        assert undated["date"] is None
+        assert matches[1]["home_team"] == "VV Utrecht DS 2"
+        assert matches[1]["date"] == "Sat, 03 Oct 2026 15:30:00 +0200"
+
+    def test_club_results_dedupe_intra_club_matches(self, monkeypatch):
+        monkeypatch.setattr(_nevobo, "_rss_request", lambda p: _feed("club_resultaten_dupes.rss"))
+        results = _nevobo.get_club_results("CKL5C67")["results"]
+        # 5 feed items: two intra-club matches listed twice, one cancelled match.
+        assert len(results) == 3
+        pairs = [(r["home_team"], r["away_team"]) for r in results]
+        assert len(pairs) == len(set(pairs))
+
+    def test_cancelled_match_prefix_is_stripped(self, monkeypatch):
+        monkeypatch.setattr(_nevobo, "_rss_request", lambda p: _feed("club_resultaten_dupes.rss"))
+        results = _nevobo.get_club_results("CKL5C67")["results"]
+        cancelled = [r for r in results if r.get("status") == "vervallen"]
+        assert len(cancelled) == 1
+        assert cancelled[0]["home_team"] == "Lycurgus L3 2"
+        assert cancelled[0]["away_team"] == "LSV L3 1"
+
+
+class TestSeason:
+    COMPETITIONS = {
+        "hydra:member": [
+            {
+                "@id": "/competitie/competities/nationale-competitie/competitie-eredivisie",
+                "seizoen": "/seizoenen/2026-2027",
+            }
+        ]
+    }
+
+    @pytest.fixture(autouse=True)
+    def _patch(self, monkeypatch):
+        _nevobo._cache.clear()
+        monkeypatch.setattr(_nevobo, "_hydra_request", lambda p, params=None: self.COMPETITIONS)
+        monkeypatch.setattr(_nevobo, "get_poule_standings", lambda p: {"standings": [], "poule_path": p})
+        yield
+        _nevobo._cache.clear()
+
+    def test_past_season_returns_explicit_error(self):
+        for season in ("2025-2026", 2025, "2025"):
+            out = volleyball.get_standings(competition_id="nevobo-eredivisie-heren", season=season)
+            assert out["status"] is False
+            assert "2025-2026" in out["message"] and "2026-2027" in out["message"]
+
+    def test_current_season_is_accepted(self):
+        for season in (None, "2026-2027", 2026):
+            out = volleyball.get_standings(competition_id="nevobo-eredivisie-heren", season=season)
+            assert out["status"] is True, out
+
+    def test_malformed_season_is_rejected(self):
+        out = volleyball.get_standings(competition_id="nevobo-eredivisie-heren", season="last year")
+        assert out["status"] is False
+        assert "Invalid season" in out["message"]
