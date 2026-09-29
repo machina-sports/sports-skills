@@ -118,6 +118,30 @@ def _normalize_event(espn_event):
     }
 
 
+def _neutral_record(stats):
+    """Record at neutral sites: overall minus home minus road.
+
+    ESPN's Home and Road records leave out neutral-site games (NBA Cup knockout
+    games in Las Vegas, international games), so they can sum to fewer games
+    than the overall record. ``""`` when a record is missing or unparseable.
+    """
+
+    def parse(record):
+        try:
+            wins, losses = str(record).split("-")
+            return int(wins), int(losses)
+        except ValueError:
+            return None
+
+    overall = parse(stats.get("overall", ""))
+    home = parse(stats.get("Home", stats.get("homeRecord", "")))
+    road = parse(stats.get("Road", stats.get("awayRecord", "")))
+    if not (overall and home and road):
+        return ""
+    wins, losses = overall[0] - home[0] - road[0], overall[1] - home[1] - road[1]
+    return f"{wins}-{losses}" if wins >= 0 and losses >= 0 else ""
+
+
 def _normalize_standings_entries(standings_data):
     """Parse entries from an ESPN standings block."""
     entries = []
@@ -139,6 +163,7 @@ def _normalize_standings_entries(standings_data):
                 "streak": stats.get("streak", ""),
                 "home_record": stats.get("Home", stats.get("homeRecord", "")),
                 "away_record": stats.get("Road", stats.get("awayRecord", "")),
+                "neutral_record": _neutral_record(stats),
                 "conference_record": stats.get("vsConf", stats.get("conferenceRecord", stats.get("vs. Conf.", ""))),
                 "division_record": stats.get("vsDiv", stats.get("divisionRecord", "")),
                 "last_ten": stats.get("L10", stats.get("last10Record", "")),

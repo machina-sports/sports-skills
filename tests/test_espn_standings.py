@@ -143,3 +143,13 @@ def test_mlb_run_diff_is_the_season_total():
         _entry(("pointsFor", "739"), ("pointsAgainst", "601"), ("differential", "+0.9"), ("pointDifferential", "+138"))
     )
     assert (row["runs_scored"], row["runs_allowed"], row["run_diff"]) == ("739", "601", "+138")
+
+
+def test_nba_neutral_record_is_what_home_and_road_leave_out():
+    """Knicks 2025-26: 53-29 overall, 30-10 home, 22-19 road -> 1-0 neutral (#159)."""
+    (row,) = _connector("nba")._normalize_standings_entries(
+        _entry(("overall", "53-29"), ("Home", "30-10"), ("Road", "22-19"))
+    )
+    assert row["neutral_record"] == "1-0"
+    (row,) = _connector("nba")._normalize_standings_entries(_entry(("overall", "62-20")))
+    assert row["neutral_record"] == ""
