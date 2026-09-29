@@ -1047,6 +1047,52 @@ def espn_core_request(sport_path, resource_path, ttl=300):
         return {"error": True, "message": "ESPN core API returned invalid JSON"}
 
 
+def _core_path(ref_url):
+    """The path after ``/leagues/<league>/`` of a core API ``$ref`` URL."""
+    return ref_url.split("/leagues/", 1)[1].split("/", 1)[1].split("?", 1)[0]
+
+
+def espn_week_rankings(sport_path, season, week):
+    """The polls of one regular-season week of a past or current season.
+
+    The site API's ``rankings`` ignores the season once a week is given (it
+    returns that week of the current season), so the week is read from the core
+    API instead: one request for the poll list, one per poll, and one for the
+    team list the polls' team links are resolved against. Returns the site
+    API's shape (``{"rankings": [...]}``) so the league normalizers apply.
+    """
+    listing = espn_core_request(sport_path, f"seasons/{season}/types/2/weeks/{week}/rankings", ttl=3600)
+    if listing.get("error"):
+        return listing
+    teams_data = espn_request(sport_path, "teams", {"limit": 1000})
+    if teams_data.get("error"):
+        return teams_data
+    teams = {}
+    for sport in teams_data.get("sports", []):
+        for league in sport.get("leagues", []):
+            for wrapper in league.get("teams", []):
+                team = wrapper.get("team", {})
+                logo = (team.get("logos") or [{}])[0].get("href", "")
+                teams[str(team.get("id", ""))] = {**team, "logo": team.get("logo") or logo}
+    rankings = []
+    for item in listing.get("items", []):
+        poll = espn_core_request(sport_path, _core_path(item.get("$ref", "")), ttl=3600)
+        if poll.get("error"):
+            return poll
+        ranks = []
+        for rank in poll.get("ranks", []):
+            team_id = rank.get("team", {}).get("$ref", "").split("/teams/")[-1].split("?")[0]
+            ranks.append(
+                {
+                    **rank,
+                    "team": teams.get(team_id, {"id": team_id}),
+                    "recordSummary": (rank.get("record") or {}).get("summary", ""),
+                }
+            )
+        rankings.append({**poll, "ranks": ranks})
+    return {"rankings": rankings, "week": int(week)}
+
+
 # ============================================================
 # Shared Normalizers — Injuries, Transactions, Stats, Futures, Depth Charts
 # ============================================================

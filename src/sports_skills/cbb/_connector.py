@@ -19,6 +19,7 @@ from sports_skills._espn_base import (
     espn_summary,
     espn_team_schedule,
     espn_web_request,
+    espn_week_rankings,
     fetch_season,
     normalize_boxscore,
     normalize_core_stats,
@@ -556,7 +557,11 @@ def get_rankings(request_data):
     if week:
         espn_params["weeks"] = week
 
-    data = espn_request(SPORT_PATH, "rankings", espn_params or None)
+    if season and week:
+        # The site API answers a week with the current season's poll.
+        data = espn_week_rankings(SPORT_PATH, season, week)
+    else:
+        data = espn_request(SPORT_PATH, "rankings", espn_params or None)
     if data.get("error"):
         return data
 
