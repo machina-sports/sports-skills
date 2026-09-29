@@ -67,6 +67,7 @@ If you're unsure whether a command exists, check this list. Do not try commands 
 
 ### get_championship_standings
 - `year` (int, required): Season year
+- `round` (int, optional): Standings after this round (races and sprints through it). Omit for the latest standings.
 
 ### get_season_stats
 - `year` (int, required): Season year

@@ -128,7 +128,10 @@ def get_race_results(*, year: int, event: str) -> dict:
 def get_pit_stops(
     *, year: int, event: str | None = None, driver: str | None = None
 ) -> dict:
-    """Get pit stop durations (PitIn → PitOut) for a race or full season.
+    """Get pit stops for a race or full season.
+
+    Durations are pit-lane time (PitIn → PitOut), not stationary time. Red-flag
+    tyre changes are listed with ``red_flag: True`` and left out of team averages.
 
     Args:
         year: Season year.
@@ -151,13 +154,15 @@ def get_speed_data(
     return _get_speed_data(_req(year=year, event=event, driver=driver))
 
 
-def get_championship_standings(*, year: int) -> dict:
+def get_championship_standings(*, year: int, round: int | None = None) -> dict:
     """Get driver and constructor championship standings aggregated from all race results.
 
     Args:
         year: Season year.
+        round: Standings after this round (races and sprints up to and including it).
+            Omit for the current standings.
     """
-    return _get_championship_standings(_req(year=year))
+    return _get_championship_standings(_req(year=year, round=round))
 
 
 def get_season_stats(*, year: int) -> dict:

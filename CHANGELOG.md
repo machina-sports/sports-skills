@@ -1,3 +1,13 @@
+## [Unreleased]
+
+### Added
+- **f1: `get_championship_standings` takes an optional `round`** ([#161](https://github.com/machina-sports/sports-skills/issues/161)). It sums races and sprints up to and including that round, so `round=2` of 2026 gives Russell 51 points (two Grands Prix plus the Chinese sprint's 8). Available in Python and as `--round` on the CLI; the response echoes `after_round` (`null` when omitted). A non-numeric `round` returns an error message.
+
+### Fixed
+- **f1: `get_pit_stops` dropped every stop outside 15-60 s** (#161). At Monza 2026 it returned 9 stops although the race had 30 stint changes (52 tyre stints over 22 drivers). The other 21 were tyre changes during the lap-3 red flag, whose pit-lane time covers the whole stoppage (about 1840 s). Every pit entry followed by a pit exit on the next lap is now listed, and each stop has `red_flag` (the in-lap's TrackStatus shows a red flag). Red-flag stops count in `total_stops` but are left out of `team_summary`. A pit entry with no exit (a retirement) is still not a stop. `duration_seconds` is pit-lane time (pit entry to pit exit), not stationary time, which FastF1 does not provide, and the response now says so with `duration_type: "pit_lane_time"`.
+- **f1: `get_race_results` had `fastest_lap: false` and an empty `fastest_lap_time` for every driver** (#161). FastF1's results frame has no `FastestLapTime` column (only the old Ergast backend had one). Each driver's best timed lap, with deleted laps excluded, now comes from the session laps, so Monza 2026 gives Antonelli `fastest_lap: true` at `1:23.504`.
+- **f1: `get_session_data` metadata was wrong** (#161). FastF1's `session.event` is a pandas Series, so `.name` returned its row index: `event_name` was `14` for the 2026 Italian GP, while `event_date`, `session_type` and `track_name` were always "Unknown". They now come from the event's `EventName`, `EventDate` and `Location` and the session's name (`"Italian Grand Prix"`, `"2026-09-06"`, `"Race"`, `"Monza"`). New fields `round` (13) and `session_date` give the round number and the session's local start time from `Session*Date`, which matters for sprints (the Chinese sprint is `2026-03-14T11:00:00+08:00`, a day before the Grand Prix).
+
 ## [0.34.0]
 
 ### Changed
