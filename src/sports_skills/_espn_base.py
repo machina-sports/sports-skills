@@ -842,6 +842,113 @@ def fill_team_divisions(groups, division_data):
             entry["division"] = group.get("division") or divisions.get(entry["team"]["id"], "")
 
 
+_STANDINGS_SEASON_TYPES = {"1": "preseason", "2": "regular", "3": "postseason", "4": "offseason"}
+
+
+def _now():
+    """Current time as epoch seconds (a seam for tests)."""
+    return time.time()
+
+
+def _standings_table(data):
+    """The first standings table of an ESPN standings payload (``{}`` if none)."""
+    for child in data.get("children") or []:
+        if child.get("standings"):
+            return child["standings"]
+    return data.get("standings") or {}
+
+
+def standings_season(data):
+    """Season, season type and season status of an ESPN standings payload.
+
+    The standings tables say which season and season type their rows describe;
+    the top-level ``season`` is ESPN's *current* season, which can differ (MLB
+    reports 2027 over 2026 tables in the offseason). ``season_status`` compares
+    now with that season's regular-season dates: ``not_started``,
+    ``in_progress`` or ``complete`` (``""`` when ESPN sends no dates).
+    """
+    table = _standings_table(data)
+    year = table.get("season") or (data.get("season") or {}).get("year", "")
+    season_type = _STANDINGS_SEASON_TYPES.get(str(table.get("seasonType", "")), "")
+    status = ""
+    for entry in data.get("seasons") or []:
+        if entry.get("year") != year:
+            continue
+        for kind in entry.get("types") or []:
+            if str(kind.get("id")) != "2":
+                continue
+            start, end = epoch_seconds(kind.get("startDate")), epoch_seconds(kind.get("endDate"))
+            now = _now()
+            if start and now < start:
+                status = "not_started"
+            elif end and now >= end:
+                status = "complete"
+            elif start:
+                status = "in_progress"
+    return {"season": year, "season_type": season_type, "season_status": status}
+
+
+def _no_games_played(data):
+    """True when every standings row has zero wins and zero losses."""
+    rows = [entry for child in data.get("children") or [] for entry in (child.get("standings") or {}).get("entries", [])]
+    if not rows:
+        return False
+    for entry in rows:
+        stats = {s.get("name"): s.get("value") for s in entry.get("stats", [])}
+        if "wins" not in stats or "losses" not in stats:
+            return False
+        if (stats["wins"] or 0) or (stats["losses"] or 0):
+            return False
+    return True
+
+
+def default_standings_season(data, requested, load):
+    """Fall back to the last season with standings when none was requested.
+
+    Between seasons ESPN's default standings are the upcoming season: a table
+    of zeros, or preseason records. When the caller named no season and the
+    regular season has not started (by ESPN's dates, a preseason table, or no
+    team having a win or loss), ``load(year)`` fetches the prior season.
+
+    Returns ``(data, defaulted_from)``; ``defaulted_from`` is the season that
+    was skipped, or ``None`` when ``data`` is unchanged.
+    """
+    if requested not in (None, ""):
+        return data, None
+    info = standings_season(data)
+    year = info["season"]
+    if not isinstance(year, int):
+        return data, None
+    upcoming = (
+        info["season_status"] == "not_started"
+        or info["season_type"] == "preseason"
+        or (info["season_status"] != "complete" and _no_games_played(data))
+    )
+    if not upcoming:
+        return data, None
+    prior = load(year - 1)
+    if not isinstance(prior, dict) or prior.get("error") or not _standings_table(prior):
+        return data, None
+    return prior, year
+
+
+def standings_fields(data, requested, defaulted_from):
+    """``season``/``season_type``/``season_status`` (and the default note) for a response."""
+    info = standings_season(data)
+    if requested not in (None, ""):
+        try:
+            info["season"] = int(requested)
+        except (TypeError, ValueError):
+            info["season"] = requested
+    if defaulted_from:
+        info["defaulted_from"] = defaulted_from
+        info["note"] = (
+            f"The {defaulted_from} season has not started; returned {info['season']}. "
+            f"Pass season={defaulted_from} for the upcoming season's table."
+        )
+    return info
+
+
 def fetch_season(loader, season_year, explicit):
     """Fetch a season-scoped resource, stepping back a year for an implied season.
 

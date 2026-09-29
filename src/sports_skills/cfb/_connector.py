@@ -9,6 +9,7 @@ import logging
 from sports_skills._espn_base import (
     ESPN_STATUS_MAP,
     _current_year,
+    default_standings_season,
     espn_core_request,
     espn_request,
     espn_summary,
@@ -23,6 +24,7 @@ from sports_skills._espn_base import (
     normalize_score,
     normalize_scoring_plays,
     normalize_summary_odds,
+    standings_fields,
 )
 
 logger = logging.getLogger("sports_skills.cfb")
@@ -427,13 +429,18 @@ def get_standings(request_data):
     data = espn_web_request(SPORT_PATH, "standings", espn_params or None)
     if data.get("error"):
         return data
+    data, defaulted_from = default_standings_season(
+        data, season, lambda year: espn_web_request(SPORT_PATH, "standings", {**espn_params, "season": year})
+    )
+    if defaulted_from:
+        espn_params["season"] = defaulted_from - 1
 
     groups = _normalize_standings(data)
     return {
         "groups": groups,
-        # Prefer the requested season: ESPN's envelope reports the *current*
-        # season regardless of the season filter applied to the events.
-        "season": _echo_season(season, data),
+        # The tables' own season (ESPN's envelope reports the *current* one)
+        # or the requested one, with its type and status.
+        **standings_fields(data, season, defaulted_from),
     }
 
 
