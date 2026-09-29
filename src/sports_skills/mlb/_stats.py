@@ -290,6 +290,8 @@ def _normalize_game(game: dict[str, Any]) -> dict[str, Any]:
         "away_score": away.get("score"),
         "home_score": home.get("score"),
         "venue": (game.get("venue") or {}).get("name"),
+        # IANA zone of the ballpark (hydrate=venue(timezone)); null when absent.
+        "venue_timezone": ((game.get("venue") or {}).get("timeZone") or {}).get("id"),
         # A postponed or suspended game is listed twice under one gamePk: once
         # on the original date (moved away, no final score) and once on the
         # make-up/resumption date. ``rescheduled`` marks the superseded row.
@@ -307,7 +309,7 @@ def get_mlbstats_schedule(request_data: dict[str, Any]) -> dict[str, Any]:
     raw_team = params.get("team")
     game_type = _lookup(_GAME_TYPES, params.get("game_type"), None, "game_type")
 
-    query: dict[str, Any] = {"sportId": 1}
+    query: dict[str, Any] = {"sportId": 1, "hydrate": "venue(timezone)"}
     season = None
     if date is not None:
         if not re.fullmatch(r"\d{4}-\d{2}-\d{2}", str(date)):
@@ -337,7 +339,7 @@ def get_mlbstats_schedule(request_data: dict[str, Any]) -> dict[str, Any]:
                 _annotate_abbrs(row, team["abbreviation"])
             games.append(row)
 
-    return {
+    result = {
         "provider": "mlb-stats",
         "season": season,
         "date": date,
@@ -347,6 +349,15 @@ def get_mlbstats_schedule(request_data: dict[str, Any]) -> dict[str, Any]:
         "count": len(games),
         "copyright": data.get("copyright"),
     }
+    if not games and game_type is not None:
+        where = f"on {date}" if date is not None else f"for {team['abbreviation']} in {season}"
+        result["warnings"] = [
+            f"No game_type={params.get('game_type')!r} (MLB gameType {game_type}) games {where}. "
+            "Postseason rounds are only played on their own dates (the World Series "
+            "in late October); drop game_type to see every game that day, or pass "
+            "team=<abbr> and season=<year> with game_type to list the round's dates."
+        ]
+    return result
 
 
 @_guard
@@ -364,6 +375,9 @@ def get_mlbstats_player_stats(request_data: dict[str, Any]) -> dict[str, Any]:
     splits = []
     for block in data.get("stats", []):
         for split in block.get("splits", []):
+            # A bare player_id has no name yet; every split names its player.
+            if display == person_id and (split.get("player") or {}).get("fullName"):
+                display = split["player"]["fullName"]
             splits.append(
                 {
                     "season": split.get("season"),

@@ -190,6 +190,28 @@ class TestSchedule:
         out = _stats.get_nhlstats_schedule({"params": {"date": "June 24"}})
         assert out["error"] is True and "YYYY-MM-DD" in out["message"]
 
+    def test_rows_say_how_a_final_was_decided(self, monkeypatch):
+        """#160: every final is ``OFF``; ``decided_by`` comes from ``gameOutcome.lastPeriodType``.
+
+        TBL 2024-25 club schedule (live payload, trimmed): REG, OT and SO finals.
+        PHI 2-1 SO at TBL (2024020210) stays 2-1: the NHL's official score, box
+        score and score feed all credit the shootout winner one goal.
+        """
+        payload = json.loads((FIXTURES / "club_schedule_season_TBL_20242025_decided_by.json").read_text())
+        monkeypatch.setattr(_stats, "_request", lambda url, ttl=600: payload)
+        games = _stats.get_nhlstats_schedule({"params": {"season": 2024, "team": "TBL"}})["games"]
+        by_id = {g["game_id"]: g for g in games}
+        assert by_id["2024020210"]["status"] == by_id["2024020020"]["status"] == "OFF"
+        assert by_id["2024020020"]["decided_by"] == "REG"
+        assert by_id["2024010079"]["decided_by"] == "OT"
+        shootout = by_id["2024020210"]
+        assert shootout["decided_by"] == "SO"
+        assert (shootout["away_score"], shootout["home_score"]) == (2, 1)
+
+    def test_unfinished_game_has_no_decided_by(self, offline):
+        games = _stats.get_nhlstats_schedule({"params": {"season": 2024, "team": "TB"}})["games"]
+        assert next(g for g in games if g["game_id"] == "2024010044")["decided_by"] is None
+
 
 # ── player stats ─────────────────────────────────────────────
 
@@ -270,6 +292,19 @@ class TestPlayByPlay:
         assert named
         assert all(" " in p["player"] for p in named[:5])
 
+    def test_blocked_shots_name_the_blocker(self, offline):
+        """#160: on a blocked shot the NHL's eventOwnerTeamId is the shooting
+        team (FLA 13 here), while the box score credits the block to the
+        defender (EDM 22). ``team_id``/``player`` stay the shooter's; the
+        blocker is added."""
+        out = _stats.get_nhlstats_play_by_play({"params": {"game_id": "2023030417"}})
+        first = next(p for p in out["plays"] if p["event"] == "blocked-shot")
+        assert first["team_id"] == 13
+        assert first["blocking_team_id"] == 22
+        assert first["blocking_player"] and " " in first["blocking_player"]
+        assert first["player"] != first["blocking_player"]
+        assert all("blocking_team_id" not in p for p in out["plays"] if p["event"] != "blocked-shot")
+
     def test_limit_flags_truncation(self, offline):
         out = _stats.get_nhlstats_play_by_play({"params": {"game_id": "2023030417", "limit": 2}})
         assert out["count"] == 2 and out["truncated"] is True
@@ -292,6 +327,10 @@ class TestBoxscore:
             assert team["team_abbreviation_espn"]
             assert team["skaters"], side
             assert team["goalies"], side
+
+    def test_decided_by(self, offline):
+        out = _stats.get_nhlstats_boxscore({"params": {"game_id": "2023030417"}})
+        assert out["decided_by"] == "REG"
 
     def test_player_stat_bags(self, offline):
         out = _stats.get_nhlstats_boxscore({"params": {"game_id": "2023030417"}})

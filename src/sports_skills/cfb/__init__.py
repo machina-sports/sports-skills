@@ -99,7 +99,7 @@ def get_standings(*, season: int | None = None, group: int | None = None) -> dic
 
     Args:
         season: Season year (e.g. 2025). Defaults to current.
-        group: Conference ID to filter (e.g. 1=ACC, 4=Big 12, 8=SEC, 9=Big Ten, 15=Pac-12).
+        group: Conference ID to filter (e.g. 1=ACC, 4=Big 12, 5=Big Ten, 8=SEC, 9=Pac-12).
     """
     return wrap(_get_standings(_params(season=season, group=group)))
 

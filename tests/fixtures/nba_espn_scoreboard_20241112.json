@@ -1,0 +1,316 @@
+{
+  "events": [
+    {
+      "id": "401703370",
+      "name": "Atlanta Hawks at Boston Celtics",
+      "shortName": "ATL @ BOS",
+      "date": "2024-11-13T00:00Z",
+      "status": {
+        "type": {
+          "name": "STATUS_FINAL",
+          "state": "post",
+          "completed": true,
+          "detail": "Final"
+        }
+      },
+      "competitions": [
+        {
+          "id": "401703370",
+          "competitors": [
+            {
+              "homeAway": "home",
+              "score": "116",
+              "team": {
+                "id": "2",
+                "displayName": "Boston Celtics",
+                "abbreviation": "BOS"
+              }
+            },
+            {
+              "homeAway": "away",
+              "score": "117",
+              "team": {
+                "id": "1",
+                "displayName": "Atlanta Hawks",
+                "abbreviation": "ATL"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "401703371",
+      "name": "Miami Heat at Detroit Pistons",
+      "shortName": "MIA @ DET",
+      "date": "2024-11-13T00:00Z",
+      "status": {
+        "type": {
+          "name": "STATUS_FINAL",
+          "state": "post",
+          "completed": true,
+          "detail": "Final/OT"
+        }
+      },
+      "competitions": [
+        {
+          "id": "401703371",
+          "competitors": [
+            {
+              "homeAway": "home",
+              "score": "123",
+              "team": {
+                "id": "8",
+                "displayName": "Detroit Pistons",
+                "abbreviation": "DET"
+              }
+            },
+            {
+              "homeAway": "away",
+              "score": "121",
+              "team": {
+                "id": "14",
+                "displayName": "Miami Heat",
+                "abbreviation": "MIA"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "401703372",
+      "name": "Charlotte Hornets at Orlando Magic",
+      "shortName": "CHA @ ORL",
+      "date": "2024-11-13T00:00Z",
+      "status": {
+        "type": {
+          "name": "STATUS_FINAL",
+          "state": "post",
+          "completed": true,
+          "detail": "Final"
+        }
+      },
+      "competitions": [
+        {
+          "id": "401703372",
+          "competitors": [
+            {
+              "homeAway": "home",
+              "score": "114",
+              "team": {
+                "id": "19",
+                "displayName": "Orlando Magic",
+                "abbreviation": "ORL"
+              }
+            },
+            {
+              "homeAway": "away",
+              "score": "89",
+              "team": {
+                "id": "30",
+                "displayName": "Charlotte Hornets",
+                "abbreviation": "CHA"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "401703373",
+      "name": "New York Knicks at Philadelphia 76ers",
+      "shortName": "NY @ PHI",
+      "date": "2024-11-13T00:30Z",
+      "status": {
+        "type": {
+          "name": "STATUS_FINAL",
+          "state": "post",
+          "completed": true,
+          "detail": "Final"
+        }
+      },
+      "competitions": [
+        {
+          "id": "401703373",
+          "competitors": [
+            {
+              "homeAway": "home",
+              "score": "99",
+              "team": {
+                "id": "20",
+                "displayName": "Philadelphia 76ers",
+                "abbreviation": "PHI"
+              }
+            },
+            {
+              "homeAway": "away",
+              "score": "111",
+              "team": {
+                "id": "18",
+                "displayName": "New York Knicks",
+                "abbreviation": "NY"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "401703374",
+      "name": "Toronto Raptors at Milwaukee Bucks",
+      "shortName": "TOR @ MIL",
+      "date": "2024-11-13T01:00Z",
+      "status": {
+        "type": {
+          "name": "STATUS_FINAL",
+          "state": "post",
+          "completed": true,
+          "detail": "Final"
+        }
+      },
+      "competitions": [
+        {
+          "id": "401703374",
+          "competitors": [
+            {
+              "homeAway": "home",
+              "score": "99",
+              "team": {
+                "id": "15",
+                "displayName": "Milwaukee Bucks",
+                "abbreviation": "MIL"
+              }
+            },
+            {
+              "homeAway": "away",
+              "score": "85",
+              "team": {
+                "id": "28",
+                "displayName": "Toronto Raptors",
+                "abbreviation": "TOR"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "401703375",
+      "name": "Phoenix Suns at Utah Jazz",
+      "shortName": "PHX @ UTAH",
+      "date": "2024-11-13T02:00Z",
+      "status": {
+        "type": {
+          "name": "STATUS_FINAL",
+          "state": "post",
+          "completed": true,
+          "detail": "Final"
+        }
+      },
+      "competitions": [
+        {
+          "id": "401703375",
+          "competitors": [
+            {
+              "homeAway": "home",
+              "score": "112",
+              "team": {
+                "id": "26",
+                "displayName": "Utah Jazz",
+                "abbreviation": "UTAH"
+              }
+            },
+            {
+              "homeAway": "away",
+              "score": "120",
+              "team": {
+                "id": "21",
+                "displayName": "Phoenix Suns",
+                "abbreviation": "PHX"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "401703376",
+      "name": "Dallas Mavericks at Golden State Warriors",
+      "shortName": "DAL @ GS",
+      "date": "2024-11-13T03:00Z",
+      "status": {
+        "type": {
+          "name": "STATUS_FINAL",
+          "state": "post",
+          "completed": true,
+          "detail": "Final"
+        }
+      },
+      "competitions": [
+        {
+          "id": "401703376",
+          "competitors": [
+            {
+              "homeAway": "home",
+              "score": "120",
+              "team": {
+                "id": "9",
+                "displayName": "Golden State Warriors",
+                "abbreviation": "GS"
+              }
+            },
+            {
+              "homeAway": "away",
+              "score": "117",
+              "team": {
+                "id": "6",
+                "displayName": "Dallas Mavericks",
+                "abbreviation": "DAL"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "401703377",
+      "name": "Minnesota Timberwolves at Portland Trail Blazers",
+      "shortName": "MIN @ POR",
+      "date": "2024-11-13T03:00Z",
+      "status": {
+        "type": {
+          "name": "STATUS_FINAL",
+          "state": "post",
+          "completed": true,
+          "detail": "Final"
+        }
+      },
+      "competitions": [
+        {
+          "id": "401703377",
+          "competitors": [
+            {
+              "homeAway": "home",
+              "score": "122",
+              "team": {
+                "id": "22",
+                "displayName": "Portland Trail Blazers",
+                "abbreviation": "POR"
+              }
+            },
+            {
+              "homeAway": "away",
+              "score": "108",
+              "team": {
+                "id": "16",
+                "displayName": "Minnesota Timberwolves",
+                "abbreviation": "MIN"
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

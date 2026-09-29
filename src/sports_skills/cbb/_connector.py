@@ -11,12 +11,16 @@ import logging
 from sports_skills._espn_base import (
     ESPN_STATUS_MAP,
     _current_year,
+    default_standings_season,
+    epoch_seconds,
     espn_core_request,
     espn_fitt_request,
     espn_request,
     espn_summary,
     espn_team_schedule,
     espn_web_request,
+    espn_week_rankings,
+    event_season_type,
     fetch_season,
     normalize_boxscore,
     normalize_core_stats,
@@ -25,6 +29,7 @@ from sports_skills._espn_base import (
     normalize_score,
     normalize_scoring_plays,
     normalize_summary_odds,
+    standings_fields,
 )
 
 logger = logging.getLogger("sports_skills.cbb")
@@ -90,6 +95,8 @@ def _normalize_event(espn_event):
         "status": ESPN_STATUS_MAP.get(status_type, status_type),
         "status_detail": status_detail,
         "start_time": comp.get("date", espn_event.get("date", "")),
+        "start_ts": epoch_seconds(comp.get("date", espn_event.get("date", ""))),
+        "season_type": event_season_type(espn_event),
         "venue": {
             "name": comp.get("venue", {}).get("fullName", ""),
             "city": comp.get("venue", {}).get("address", {}).get("city", ""),
@@ -428,13 +435,16 @@ def get_standings(request_data):
     data = espn_web_request(SPORT_PATH, "standings", espn_params or None)
     if data.get("error"):
         return data
+    data, defaulted_from = default_standings_season(
+        data, season, lambda year: espn_web_request(SPORT_PATH, "standings", {**espn_params, "season": year})
+    )
 
     groups = _normalize_standings(data)
     return {
         "groups": groups,
-        # Prefer the requested season: ESPN's envelope reports the *current*
-        # season regardless of the season filter applied to the events.
-        "season": _echo_season(season, data),
+        # The tables' own season (ESPN's envelope reports the *current* one)
+        # or the requested one, with its type and status.
+        **standings_fields(data, season, defaulted_from),
     }
 
 
@@ -547,7 +557,11 @@ def get_rankings(request_data):
     if week:
         espn_params["weeks"] = week
 
-    data = espn_request(SPORT_PATH, "rankings", espn_params or None)
+    if season and week:
+        # The site API answers a week with the current season's poll.
+        data = espn_week_rankings(SPORT_PATH, season, week)
+    else:
+        data = espn_request(SPORT_PATH, "rankings", espn_params or None)
     if data.get("error"):
         return data
 
