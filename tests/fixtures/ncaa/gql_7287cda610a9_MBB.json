@@ -1,0 +1,225 @@
+{
+ "data": {
+  "contests": [
+   {
+    "__typename": "Contest",
+    "championshipId": 6393,
+    "bracketId": 231,
+    "contestId": 6534626,
+    "url": "/game/6534626",
+    "gameState": "F",
+    "statusCodeDisplay": "final",
+    "currentPeriod": "FINAL - OT",
+    "contestClock": "",
+    "finalMessage": "FINAL",
+    "startTimeEpoch": 1774023300,
+    "startTime": "12:15",
+    "startDate": "03/20/2026",
+    "hasStartTime": true,
+    "broadcasterId": 40723,
+    "broadcasterName": "CBS",
+    "roundNumber": 2,
+    "roundDescription": "First Round",
+    "sportUrl": "basketball-men",
+    "stage": 3,
+    "tba": false,
+    "isChampionship": true,
+    "championshipGame": {
+     "__typename": "ChampionshipGame",
+     "round": {
+      "__typename": "Round",
+      "roundNumber": 2,
+      "title": "First Round",
+      "subtitle": "3/19-3/20"
+     }
+    },
+    "teams": [
+     {
+      "__typename": "ContestTeam",
+      "isHome": true,
+      "seoname": "kentucky",
+      "nameShort": "Kentucky",
+      "name6Char": "UK",
+      "name8Char": "",
+      "name10Char": "",
+      "seed": 7,
+      "teamRank": null,
+      "score": 89,
+      "isWinner": true,
+      "conferenceSeo": "sec"
+     },
+     {
+      "__typename": "ContestTeam",
+      "isHome": false,
+      "seoname": "santa-clara",
+      "nameShort": "Santa Clara",
+      "name6Char": "STCLAR",
+      "name8Char": "",
+      "name10Char": "",
+      "seed": 10,
+      "teamRank": null,
+      "score": 84,
+      "isWinner": false,
+      "conferenceSeo": "wcc"
+     }
+    ],
+    "liveVideos": [
+     {
+      "__typename": "Stream",
+      "state": "final",
+      "enabled": true,
+      "stateCode": 1,
+      "doNotSyndicate": false,
+      "syndicateOnly": false
+     }
+    ]
+   },
+   {
+    "__typename": "Contest",
+    "championshipId": 6393,
+    "bracketId": 227,
+    "contestId": 6534622,
+    "url": "/game/6534622",
+    "gameState": "F",
+    "statusCodeDisplay": "final",
+    "currentPeriod": "FINAL",
+    "contestClock": "",
+    "finalMessage": "FINAL",
+    "startTimeEpoch": 1774024800,
+    "startTime": "12:40",
+    "startDate": "03/20/2026",
+    "hasStartTime": true,
+    "broadcasterId": 40715,
+    "broadcasterName": "truTV",
+    "roundNumber": 2,
+    "roundDescription": "First Round",
+    "sportUrl": "basketball-men",
+    "stage": 3,
+    "tba": false,
+    "isChampionship": true,
+    "championshipGame": {
+     "__typename": "ChampionshipGame",
+     "round": {
+      "__typename": "Round",
+      "roundNumber": 2,
+      "title": "First Round",
+      "subtitle": "3/19-3/20"
+     }
+    },
+    "teams": [
+     {
+      "__typename": "ContestTeam",
+      "isHome": true,
+      "seoname": "texas-tech",
+      "nameShort": "Texas Tech",
+      "name6Char": "TXTECH",
+      "name8Char": "",
+      "name10Char": "",
+      "seed": 5,
+      "teamRank": null,
+      "score": 91,
+      "isWinner": true,
+      "conferenceSeo": "big-12"
+     },
+     {
+      "__typename": "ContestTeam",
+      "isHome": false,
+      "seoname": "akron",
+      "nameShort": "Akron",
+      "name6Char": "AKRON",
+      "name8Char": "",
+      "name10Char": "",
+      "seed": 12,
+      "teamRank": null,
+      "score": 71,
+      "isWinner": false,
+      "conferenceSeo": "mac"
+     }
+    ],
+    "liveVideos": [
+     {
+      "__typename": "Stream",
+      "state": "final",
+      "enabled": true,
+      "stateCode": 1,
+      "doNotSyndicate": false,
+      "syndicateOnly": false
+     }
+    ]
+   },
+   {
+    "__typename": "Contest",
+    "championshipId": 6393,
+    "bracketId": 217,
+    "contestId": 6534612,
+    "url": "/game/6534612",
+    "gameState": "F",
+    "statusCodeDisplay": "final",
+    "currentPeriod": "FINAL",
+    "contestClock": "",
+    "finalMessage": "FINAL",
+    "startTimeEpoch": 1774028100,
+    "startTime": "13:35",
+    "startDate": "03/20/2026",
+    "hasStartTime": true,
+    "broadcasterId": 40720,
+    "broadcasterName": "TNT",
+    "roundNumber": 2,
+    "roundDescription": "First Round",
+    "sportUrl": "basketball-men",
+    "stage": 3,
+    "tba": false,
+    "isChampionship": true,
+    "championshipGame": {
+     "__typename": "ChampionshipGame",
+     "round": {
+      "__typename": "Round",
+      "roundNumber": 2,
+      "title": "First Round",
+      "subtitle": "3/19-3/20"
+     }
+    },
+    "teams": [
+     {
+      "__typename": "ContestTeam",
+      "isHome": true,
+      "seoname": "arizona",
+      "nameShort": "Arizona",
+      "name6Char": "ARIZ",
+      "name8Char": "",
+      "name10Char": "",
+      "seed": 1,
+      "teamRank": null,
+      "score": 92,
+      "isWinner": true,
+      "conferenceSeo": "big-12"
+     },
+     {
+      "__typename": "ContestTeam",
+      "isHome": false,
+      "seoname": "long-island",
+      "nameShort": "LIU",
+      "name6Char": "LIU",
+      "name8Char": "",
+      "name10Char": "",
+      "seed": 16,
+      "teamRank": null,
+      "score": 58,
+      "isWinner": false,
+      "conferenceSeo": "nec"
+     }
+    ],
+    "liveVideos": [
+     {
+      "__typename": "Stream",
+      "state": "final",
+      "enabled": true,
+      "stateCode": 1,
+      "doNotSyndicate": false,
+      "syndicateOnly": false
+     }
+    ]
+   }
+  ]
+ }
+}

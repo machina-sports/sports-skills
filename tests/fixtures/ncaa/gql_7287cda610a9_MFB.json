@@ -1,0 +1,118 @@
+{
+ "data": {
+  "contests": [
+   {
+    "__typename": "Contest",
+    "championshipId": null,
+    "bracketId": null,
+    "contestId": 6458979,
+    "url": "/game/6458979",
+    "gameState": "F",
+    "statusCodeDisplay": "final",
+    "currentPeriod": "FINAL",
+    "contestClock": "",
+    "finalMessage": "FINAL",
+    "startTimeEpoch": 1765656000,
+    "startTime": "15:00",
+    "startDate": "12/13/2025",
+    "hasStartTime": true,
+    "broadcasterId": null,
+    "broadcasterName": null,
+    "roundNumber": null,
+    "roundDescription": "",
+    "sportUrl": "football",
+    "stage": 1,
+    "tba": false,
+    "isChampionship": false,
+    "championshipGame": null,
+    "teams": [
+     {
+      "__typename": "ContestTeam",
+      "isHome": true,
+      "seoname": "navy",
+      "nameShort": "Navy",
+      "name6Char": "NAVY",
+      "name8Char": "",
+      "name10Char": "",
+      "seed": null,
+      "teamRank": null,
+      "score": 17,
+      "isWinner": true,
+      "conferenceSeo": "american"
+     },
+     {
+      "__typename": "ContestTeam",
+      "isHome": false,
+      "seoname": "army",
+      "nameShort": "Army West Point",
+      "name6Char": "ARMY",
+      "name8Char": "",
+      "name10Char": "",
+      "seed": null,
+      "teamRank": null,
+      "score": 16,
+      "isWinner": false,
+      "conferenceSeo": "american"
+     }
+    ],
+    "liveVideos": []
+   },
+   {
+    "__typename": "Contest",
+    "championshipId": null,
+    "bracketId": null,
+    "contestId": 6534496,
+    "url": "/game/6534496",
+    "gameState": "F",
+    "statusCodeDisplay": "final",
+    "currentPeriod": "FINAL",
+    "contestClock": "",
+    "finalMessage": "FINAL",
+    "startTimeEpoch": 1765674000,
+    "startTime": "20:00",
+    "startDate": "12/13/2025",
+    "hasStartTime": true,
+    "broadcasterId": null,
+    "broadcasterName": null,
+    "roundNumber": null,
+    "roundDescription": "",
+    "sportUrl": "football",
+    "stage": 1,
+    "tba": false,
+    "isChampionship": false,
+    "championshipGame": null,
+    "teams": [
+     {
+      "__typename": "ContestTeam",
+      "isHome": true,
+      "seoname": "boise-st",
+      "nameShort": "Boise St.",
+      "name6Char": "BOISE",
+      "name8Char": "",
+      "name10Char": "",
+      "seed": null,
+      "teamRank": null,
+      "score": 10,
+      "isWinner": false,
+      "conferenceSeo": "mountain-west"
+     },
+     {
+      "__typename": "ContestTeam",
+      "isHome": false,
+      "seoname": "washington",
+      "nameShort": "Washington",
+      "name6Char": "WASH",
+      "name8Char": "",
+      "name10Char": "",
+      "seed": null,
+      "teamRank": null,
+      "score": 38,
+      "isWinner": true,
+      "conferenceSeo": "big-ten"
+     }
+    ],
+    "liveVideos": []
+   }
+  ]
+ }
+}

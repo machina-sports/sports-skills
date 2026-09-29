@@ -94,8 +94,8 @@ See `references/api-reference.md` for full parameter lists and return shapes.
 
 ## Official NCAA Backend
 
-The `get_ncaa_*` commands read the NCAA's own endpoints (data.ncaa.com +
-sdataprod.ncaa.com) — coverage ESPN does not carry:
+The `get_ncaa_*` commands read the NCAA's own endpoints (sdataprod.ncaa.com +
+ncaa.com) — coverage ESPN does not carry:
 
 - **D2 and D3 scoreboards** via `division="d2"`/`"d3"` — ESPN's college
   coverage is D1-centric.
@@ -109,10 +109,14 @@ sdataprod.ncaa.com) — coverage ESPN does not carry:
 - **The schools index** (~1,200 schools, all divisions): `get_ncaa_schools`.
 
 NCAA game ids (from `get_ncaa_scoreboard`) and ESPN event ids share nothing —
-join on game date plus team names. Game-detail and bracket commands ride NCAA's
+join on game date plus team names. NCAA reissues game ids, so take them from a
+fresh `get_ncaa_scoreboard` call rather than storing them. `get_ncaa_bracket`
+returns an error, not a placeholder bracket, when no game has teams: the 2020
+tournaments were cancelled, and future brackets appear once the field is
+announced. All `get_ncaa_*` commands except `get_ncaa_schools` ride NCAA's
 GraphQL persisted queries, whose hashes rotate when ncaa.com redeploys; when
-that happens those commands say so explicitly while the scoreboard/schedule
-commands keep working.
+that happens they say so explicitly, and the ESPN-backed `get_scoreboard` /
+`get_schedule` cover the same D1 games.
 
 ## Examples
 

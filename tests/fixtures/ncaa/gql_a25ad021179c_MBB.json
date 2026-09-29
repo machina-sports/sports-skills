@@ -1,0 +1,77 @@
+{
+ "data": {
+  "schedules": {
+   "games": [
+    {
+     "count": 169,
+     "contestDate": "11/03/2025"
+    },
+    {
+     "count": 36,
+     "contestDate": "11/04/2025"
+    },
+    {
+     "count": 35,
+     "contestDate": "11/05/2025"
+    },
+    {
+     "count": 44,
+     "contestDate": "11/06/2025"
+    },
+    {
+     "count": 76,
+     "contestDate": "11/07/2025"
+    },
+    {
+     "count": 68,
+     "contestDate": "11/08/2025"
+    },
+    {
+     "count": 33,
+     "contestDate": "11/09/2025"
+    },
+    {
+     "count": 24,
+     "contestDate": "03/10/2026"
+    },
+    {
+     "count": 38,
+     "contestDate": "03/11/2026"
+    },
+    {
+     "count": 44,
+     "contestDate": "03/12/2026"
+    },
+    {
+     "count": 33,
+     "contestDate": "03/13/2026"
+    },
+    {
+     "count": 23,
+     "contestDate": "03/14/2026"
+    },
+    {
+     "count": 5,
+     "contestDate": "03/15/2026"
+    },
+    {
+     "count": 10,
+     "contestDate": "03/17/2026"
+    },
+    {
+     "count": 10,
+     "contestDate": "03/18/2026"
+    },
+    {
+     "count": 16,
+     "contestDate": "03/19/2026"
+    }
+   ],
+   "today": {
+    "date": "04/06/2026",
+    "week": null,
+    "season": 2025
+   }
+  }
+ }
+}

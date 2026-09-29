@@ -142,3 +142,7 @@ Solution: Use `search_players --query=<partial>` first to find the canonical spe
 Error: Logo URL works but the image is low resolution
 Cause: TheSportsDB returns the badge as-is from contributors
 Solution: This is an upstream limitation. Most badges are 200×200 or larger; very small icons indicate a low-quality submission. No workaround.
+
+Error: "TheSportsDB rate limit: the free API key allows 30 requests per minute" (`status_code: 429`)
+Cause: The free key answers HTTP 429 from the 31st request in a minute, then locks out for about 2 minutes. The client paces itself below that (bursts of 5, then about one request every 2.4 s), so this error means a long batch outran the pacing or another process shares the key
+Solution: Wait for the time in the message, then retry. Repeated lookups are cached for 5 minutes, so reuse earlier results rather than re-querying in a loop
