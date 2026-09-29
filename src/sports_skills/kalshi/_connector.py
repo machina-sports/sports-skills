@@ -619,6 +619,22 @@ KALSHI_SERIES = {
     "cs2": ["KXCS2GAME"],
     "lol": ["KXLOLGAME"],
     "dota2": ["KXDOTA2GAME"],
+    # Formula 1 — championship futures plus per-Grand-Prix race, qualifying
+    # and sprint series (live-verified on /series?category=Sports, 2026-09).
+    "f1": [
+        "KXF1",  # drivers' champion
+        "KXF1CONSTRUCTORS",  # constructors' champion
+        "KXF1RACE",  # race winner
+        "KXF1RACEPODIUM",  # podium finishers
+        "KXF1TOP5",  # top 5 finishers
+        "KXF1TOP10",  # top 10 finishers
+        "KXF1FASTLAP",  # fastest lap
+        "KXF1TOPCONSTRUCTOR",  # top constructor in the race
+        "KXF1POLE",  # qualifying pole position
+        "KXF1H2H",  # driver head-to-head
+        "KXF1RACESPRINT",  # sprint race winner
+        "KXF1SPRINTPOLE",  # sprint qualifying pole
+    ],
     # FIFA World Cup 2026 — winner, match, group, and futures series. These
     # markets are NOT reachable via the no-sport /events page scan (that
     # returns one page of all Kalshi events); series tickers are the only path.
@@ -666,7 +682,7 @@ def get_todays_events(request_data):
     Params:
         sport (str): Sport code (required) — 'nba', 'nfl', 'nhl', 'mlb',
             'wnba', 'cfb', 'cbb', 'epl', 'ucl', 'laliga', 'bundesliga',
-            'seriea', 'ligue1', 'mls', 'worldcup'.
+            'seriea', 'ligue1', 'mls', 'worldcup', 'f1'.
         limit (int): Max events per series (default: 50, max: 1000), and cap
             on the merged event list. Each series is paged through in full
             (cursor-following).
@@ -770,7 +786,7 @@ def search_markets(request_data):
     Params:
         sport (str): Sport code (e.g. 'nba', 'nfl', 'nhl', 'mlb', 'wnba',
             'cfb', 'cbb', 'epl', 'ucl', 'laliga', 'bundesliga', 'seriea',
-            'ligue1', 'mls', 'worldcup'). Resolves to series_ticker(s) automatically.
+            'ligue1', 'mls', 'worldcup', 'f1'). Resolves to series_ticker(s) automatically.
         query (str): Keyword to match in event/market titles.
         status (str): Market status filter (default: 'open').
         limit (int): Max events fetched per series (default: 50, max: 1000) —

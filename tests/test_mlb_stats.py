@@ -232,6 +232,41 @@ class TestSchedule:
         assert row["start_time"] == "2025-09-27T02:15:00Z"
         assert row["start_ts"] == 1758939300
 
+    def test_rows_carry_venue_timezone(self, monkeypatch):
+        """WS G5 2024-10-30 at Yankee Stadium (#160, live payload, trimmed)."""
+        payload = _fixture("schedule_2024-10-30_venue_timezone")
+        calls = []
+
+        def fake(path, params=None, ttl=600):
+            calls.append(params)
+            return payload
+
+        monkeypatch.setattr(_stats, "_request", fake)
+        (row,) = _stats.get_mlbstats_schedule({"params": {"date": "2024-10-30"}})["games"]
+        assert calls[0]["hydrate"] == "venue(timezone)"
+        assert row["venue"] == "Yankee Stadium"
+        assert row["venue_timezone"] == "America/New_York"
+
+    def test_venue_timezone_is_null_when_absent(self, offline):
+        out = _stats.get_mlbstats_schedule({"params": {"season": 2024, "team": "CHW"}})
+        assert out["games"][0]["venue_timezone"] is None
+
+    def test_empty_game_type_day_explains_itself(self, monkeypatch):
+        """game_type=worldseries on 2024-07-10 (no WS that day): live payload is ``dates: []``."""
+        payload = {"copyright": "Copyright 2026 MLB Advanced Media, L.P.", "dates": []}
+        monkeypatch.setattr(_stats, "_request", lambda path, params=None, ttl=600: payload)
+        out = _stats.get_mlbstats_schedule(
+            {"params": {"date": "2024-07-10", "game_type": "worldseries"}}
+        )
+        assert out["count"] == 0 and "error" not in out
+        assert "worldseries" in out["warnings"][0] and "2024-07-10" in out["warnings"][0]
+        assert "drop game_type" in out["warnings"][0]
+
+    def test_empty_day_without_game_type_has_no_warning(self, monkeypatch):
+        monkeypatch.setattr(_stats, "_request", lambda path, params=None, ttl=600: {"dates": []})
+        out = _stats.get_mlbstats_schedule({"params": {"date": "2024-12-25"}})
+        assert "warnings" not in out
+
 
 # ── player stats ─────────────────────────────────────────────
 
@@ -242,6 +277,12 @@ class TestPlayerStats:
         assert out["count"] >= 1
         split = out["splits"][0]
         assert split["stats"], "stat bag must not be empty"
+
+    def test_player_id_lookup_reports_the_name(self, offline):
+        """#160: ``player`` echoed the id; each split carries ``player.fullName``."""
+        out = _stats.get_mlbstats_player_stats({"params": {"player_id": "660271", "season": 2024}})
+        assert out["player_id"] == "660271"
+        assert out["player"] == "Shohei Ohtani"
 
     def test_season_param_only_sent_for_season_type(self, offline):
         _stats.get_mlbstats_player_stats(

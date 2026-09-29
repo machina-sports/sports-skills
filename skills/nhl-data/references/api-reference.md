@@ -57,9 +57,9 @@ Get full play-by-play data for a game.
 Returns play-by-play detail including period, clock, team, play type, and scoring plays.
 
 ### get_schedule
-Get NHL schedule for a specific date or season.
+Get NHL games for a specific date.
 - `date` (str, optional): Date in YYYY-MM-DD format
-- `season` (int, optional): Season year (used only if no date provided)
+- `season` (int, optional): Not a filter: ESPN's scoreboard has none. With `date` it is ignored; alone it returns an error. For a season use `get_team_schedule(team_id, season)`.
 
 Returns `events[]` for the specified date.
 

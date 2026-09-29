@@ -65,7 +65,7 @@ Derive the current year from the system prompt's date (e.g., `currentDate: 2026-
 | `get_news` | NBA news articles |
 | `get_play_by_play` | Full play-by-play for a game |
 | `get_win_probability` | Win probability chart data |
-| `get_schedule` | Schedule for a specific date or season |
+| `get_schedule` | Games on a specific date (no season filter; see `get_team_schedule`) |
 | `get_injuries` | Injury reports across all teams |
 | `get_transactions` | Recent transactions |
 | `get_futures` | Futures/odds markets |
@@ -131,6 +131,7 @@ two sources use unrelated id systems:
   ("jokic" finds "Nikola Jokić").
 - **Seasons.** Pass the starting year (`season=2024` means 2024-25). The NBA form
   (`"2024-25"`) is also accepted.
+- **Dates.** `game_date` is `YYYY-MM-DD` in game logs and shot charts alike.
 
 stats.nba.com throttles by client and volume: heavy bursts (and many
 datacenter/cloud IPs) get silently tarpitted rather than refused. The commands

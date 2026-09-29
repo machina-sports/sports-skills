@@ -823,9 +823,13 @@ def _query_matches(query, haystack):
     Cross-venue callers build "<away> <home>" queries ("Orioles Rays") whose
     tokens are never contiguous in titles like "Orioles vs. Rays" — every
     token must appear, but not adjacently.
+
+    Apostrophes are dropped on both sides: titles use a curly one ("2026
+    Men’s US Open Winner") and slugs none ("2026-mens-us-open"), so a
+    typed "Men's" otherwise matches neither.
     """
-    query = str(query or "").lower()
-    haystack = str(haystack or "").lower()
+    query = re.sub(r"['’‘`]", "", str(query or "").lower())
+    haystack = re.sub(r"['’‘`]", "", str(haystack or "").lower())
     if re.search(rf"(?<!\w){re.escape(query)}(?!\w)", haystack):
         return True
     tokens = query.split()

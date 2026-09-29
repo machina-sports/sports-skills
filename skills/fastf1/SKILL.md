@@ -74,9 +74,9 @@ Derive the current year from the system prompt's date (e.g., `currentDate: 2026-
 | `get_driver_info` | Driver details from the grid |
 | `get_team_info` | Team info with driver lineup |
 | `get_lap_data` | Lap-by-lap timing with sectors and tire data |
-| `get_pit_stops` | Pit stop durations and team averages |
+| `get_pit_stops` | Pit stops with pit-lane time (not stationary time) and team averages |
 | `get_speed_data` | Speed trap and intermediate speed data |
-| `get_championship_standings` | Driver and constructor championship standings |
+| `get_championship_standings` | Driver and constructor championship standings (`--round=N` for standings after round N) |
 | `get_season_stats` | Aggregate season performance |
 | `get_team_comparison` | Team head-to-head: qualifying, race pace, sectors |
 | `get_driver_comparison` | Driver head-to-head: qualifying H2H, race H2H, pace delta |
@@ -129,7 +129,7 @@ Cause: The session has not happened yet
 Solution: FastF1 only returns data for completed sessions. Check `get_race_schedule` for when the session is scheduled
 
 Error: `get_race_results` returns no `fastest_lap_time`
-Cause: Some races do not include fastest lap data in the results endpoint
+Cause: FastF1 has no lap data for that race (`fastest_lap_time` is computed from the laps)
 Solution: Use `get_lap_data(session_type="R")` and find the minimum `lap_time` across all drivers
 
 Error: Querying the current year in January or February returns no data
