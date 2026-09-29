@@ -557,7 +557,7 @@ _REGISTRY = {
         "search_athlete": {"required": ["name", "school"]},
         "get_athlete_profile": {"required": ["athlete_id", "school", "name"]},
         "get_team_roster": {"required": ["school"], "optional": ["sport"]},
-        "get_meet_results": {"required": ["meet_id", "slug"]},
+        "get_meet_results": {"required": ["meet_id", "slug"], "optional": ["sport"]},
         "get_news": {"optional": ["limit"]},
     },
 }

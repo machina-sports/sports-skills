@@ -155,12 +155,13 @@ def _parse_meet_table(table_html: str) -> dict | None:
             # First data row must contain a date to be a meet result table.
             # Per-event summary tables have no date in their header row.
             date_m = re.search(
-                r"([A-Z][a-z]{2,8}\.?\s+\d{1,2}(?:[–\-]\d{1,2})?,\s*\d{4})",
+                r"([A-Z][a-z]{2,8}\.?\s+\d{1,2}(?:\s*[–\-]\s*\d{1,2})?,\s*\d{4})",
                 row_text,
             )
             if not date_m:
                 return None
-            meet_date = date_m.group(1)
+            # Single-digit ranges come padded ("Apr  3- 4, 2026"); tidy to "Apr 3-4, 2026".
+            meet_date = re.sub(r"\s*([–\-])\s*", r"\1", date_m.group(1))
             meet_name = row_text[: date_m.start()].strip().lstrip('>"').strip()
             # Per-event all-time tables start with a time/distance mark before the meet
             # name (e.g. "2:13.37 (-0.3) 2024 WAC..." or "18:25.5 Mark Covert...").
@@ -491,8 +492,88 @@ def _parse_team_scores(html: str) -> dict:
     return scores
 
 
+# TFRRS pads result tables with decoy TIME/MARK columns whose CSS classes are
+# hidden by a per-event <style> block ({ display: none !important; }). Only the
+# column left visible holds the real mark, so hidden cells must be dropped before
+# columns are matched to headers.
+_HIDDEN_CLASS_RE = re.compile(r"\.([\w-]+)\s*\{\s*display\s*:\s*none", re.IGNORECASE)
+
+# Result-table header -> result key. TIME/MARK/POINTS headers feed ``marks``.
+_COLUMN_FIELDS = {
+    "PL": "place",
+    "NAME": "name",
+    "YEAR": "year",
+    "TEAM": "team",
+    "SC": "score",
+    "SCORE": "score",
+    "WIND": "wind",
+    "CONV": "conversion",
+    "ENGLISH": "conversion",
+}
+_MARK_COLUMNS = {"TIME", "MARK", "POINTS"}
+
+
+def _hidden_classes(html: str) -> set[str]:
+    return set(_HIDDEN_CLASS_RE.findall(html))
+
+
+def _visible_cells(row_html: str, hidden: set[str]) -> list[str]:
+    """Cell texts of a row, in order, skipping cells whose class is hidden.
+
+    Empty cells are kept so the remaining cells stay aligned with the headers
+    (a DNF/DQ row has an empty place, a relay row has no name or year).
+    """
+    texts: list[str] = []
+    for m in re.finditer(
+        r"<(t[dh])([^>]*)>(.*?)</\1>", row_html, re.DOTALL | re.IGNORECASE
+    ):
+        cls = re.search(r'class="([^"]*)"', m.group(2))
+        if cls and any(c in hidden for c in cls.group(1).split()):
+            continue
+        texts.append(_strip_tags(m.group(3)))
+    return texts
+
+
+def _parse_results_table(table_html: str, hidden: set[str]) -> list[dict]:
+    """Parse a results table by its header labels rather than column positions."""
+    rows = re.findall(r"<tr[^>]*>(.*?)</tr>", table_html, re.DOTALL | re.IGNORECASE)
+    headers: list[str] | None = None
+    results: list[dict] = []
+    for row_html in rows:
+        # Skip field-event sub-rows (attempt breakdowns shown below each athlete)
+        if "div-subRow-table" in row_html or "border-right-0" in row_html:
+            continue
+        cells = _visible_cells(row_html, hidden)
+        if re.search(r"<th", row_html, re.IGNORECASE):
+            headers = [c.upper() for c in cells]
+            continue
+        if headers is None or len(cells) != len(headers):
+            continue
+
+        result: dict = {
+            "place": None,
+            "name": None,
+            "year": None,
+            "team": None,
+            "marks": [],
+            "score": None,
+        }
+        for header, text in zip(headers, cells):
+            if header in _MARK_COLUMNS:
+                if text:
+                    result["marks"].append(text)
+            elif header == "ATHLETES":
+                result["athletes"] = [a.strip() for a in text.split(",") if a.strip()]
+            elif header in _COLUMN_FIELDS:
+                result[_COLUMN_FIELDS[header]] = text or None
+        if result["name"] or result["team"]:
+            results.append(result)
+    return results
+
+
 def _parse_compiled_results(html: str, gender: str) -> list[dict]:
     """Parse one compiled results page (men's or women's) into a list of events."""
+    hidden = _hidden_classes(html)
     html = re.sub(
         r"<script[^>]*>.*?</script>", "", html, flags=re.DOTALL | re.IGNORECASE
     )
@@ -537,47 +618,7 @@ def _parse_compiled_results(html: str, gender: str) -> list[dict]:
         if not table_m:
             continue
 
-        rows = re.findall(
-            r"<tr[^>]*>(.*?)</tr>", table_m.group(1), re.DOTALL | re.IGNORECASE
-        )
-
-        results: list[dict] = []
-        for row_html in rows:
-            # Skip field-event sub-rows (attempt breakdowns shown below each athlete)
-            if "div-subRow-table" in row_html or "border-right-0" in row_html:
-                continue
-            # Skip header rows
-            if re.search(r"<th", row_html, re.IGNORECASE):
-                continue
-
-            cells = re.findall(
-                r"<td[^>]*>(.*?)</td>", row_html, re.DOTALL | re.IGNORECASE
-            )
-            texts = [_strip_tags(c) for c in cells]
-            texts = [t for t in texts if t]
-
-            # Need at least: place, name, year, team, mark
-            if len(texts) < 5:
-                continue
-
-            # Layout: PL, NAME, YEAR, TEAM, [mark(s)...], SC
-            # SC is always the last column; marks are everything between TEAM and SC.
-            place = texts[0]
-            name = texts[1]
-            year = texts[2]
-            team = texts[3]
-            score = texts[-1]
-            marks = texts[4:-1]  # one mark for track; multiple attempts for field
-
-            result: dict = {
-                "place": place,
-                "name": name,
-                "year": year,
-                "team": team,
-                "marks": marks,
-                "score": score,
-            }
-            results.append(result)
+        results = _parse_results_table(table_m.group(1), hidden)
 
         event: dict = {"event": event_name, "gender": gender, "results": results}
         if wind:
@@ -587,19 +628,72 @@ def _parse_compiled_results(html: str, gender: str) -> list[dict]:
     return events
 
 
-def get_meet_results(*, meet_id: str, slug: str) -> dict:
+def _parse_xc_results(html: str) -> tuple[dict, list[dict]]:
+    """Parse a cross-country meet page: one team table and one individual table per race.
+
+    Returns (team_scores keyed by race name, individual race events).
+    """
+    hidden = _hidden_classes(html)
+    team_scores: dict = {}
+    events: list[dict] = []
+    for m in re.finditer(
+        r'<h3[^>]*class="[^"]*font-weight-500[^"]*"[^>]*>(.*?)</h3>.*?<table[^>]*>(.*?)</table>',
+        html,
+        re.DOTALL | re.IGNORECASE,
+    ):
+        # The heading carries "Top" / "START TIME" spans after the title.
+        title = _strip_tags(re.split(r"<span", m.group(1), maxsplit=1)[0])
+        kind = re.search(r"\s+(Team|Individual) Results\b.*$", title)
+        if not kind:
+            continue
+        race = title[: kind.start()].strip()
+        rows = _parse_results_table(m.group(2), hidden)
+        if kind.group(1) == "Team":
+            team_scores[race] = [
+                {"rank": r["place"], "team": r["team"], "score": r["score"]} for r in rows
+            ]
+        else:
+            lower = race.lower()
+            gender = "women" if lower.startswith("women") else "men" if lower.startswith("men") else ""
+            events.append({"event": race, "gender": gender, "results": rows})
+    return team_scores, events
+
+
+def _slug_matches(slug: str, meet_name: str) -> bool:
+    """True if the slug shares a word with the meet name TFRRS returned.
+
+    TFRRS ignores the slug and serves whatever meet owns the id, so a
+    cross-country id on the track path silently returns an unrelated meet.
+    """
+    def words(text):
+        return {w for w in re.findall(r"[a-z0-9]+", text.lower()) if len(w) > 2}
+
+    slug_words = words(slug)
+    return not meet_name or not slug_words or bool(slug_words & words(meet_name))
+
+
+def get_meet_results(*, meet_id: str, slug: str, sport: str = "tf") -> dict:
     """Fetch all event results and team scores from a TFRRS meet.
 
-    Fetches the main page (team scores) plus the men's and women's compiled
-    results pages (individual event results).
+    Track meets: fetches the main page (team scores) plus the men's and
+    women's compiled results pages (individual event results). Cross-country
+    meets live on one page under a separate id range.
 
     Args:
         meet_id: TFRRS numeric meet ID (e.g. "95890" from
             tfrrs.org/results/95890/BU_vs_BU_Dual).
         slug: Meet name slug as it appears in the TFRRS URL
             (e.g. "BU_vs_BU_Dual").
+        sport: "tf" (default) for track & field, "xc" for cross country
+            (URLs like tfrrs.org/results/xc/28714/Gans_Creek_Classic).
     """
-    base_url = f"{_BASE}/results/{meet_id}/{slug}"
+    if sport not in ("tf", "xc"):
+        return {"error": True, "message": f"Invalid sport {sport!r}: use 'tf' or 'xc'."}
+    base_url = (
+        f"{_BASE}/results/xc/{meet_id}/{slug}"
+        if sport == "xc"
+        else f"{_BASE}/results/{meet_id}/{slug}"
+    )
 
     # --- Main page: meet metadata + team scores ---
     main_html = _fetch(base_url)
@@ -625,25 +719,28 @@ def get_meet_results(*, meet_id: str, slug: str) -> dict:
 
     # Date and location from panel-heading-normal-text spans
     date_m = re.search(
-        r"([A-Z][a-z]{2,8}\.?\s+\d{1,2}(?:[–\-]\d{1,2})?,\s*\d{4})",
+        r"([A-Z][a-z]{2,8}\.?\s+\d{1,2}(?:\s*[–\-]\s*\d{1,2})?,\s*\d{4})",
         main_html_clean,
     )
-    meet_date = date_m.group(1) if date_m else ""
+    meet_date = re.sub(r"\s*([–\-])\s*", r"\1", date_m.group(1)) if date_m else ""
 
-    team_scores = _parse_team_scores(main_html_clean)
-
-    # --- Compiled results: men's and women's ---
     events: list[dict] = []
-    for gender, code in (("women", "f"), ("men", "m")):
-        comp_url = f"{_BASE}/results/{meet_id}/{code}/{slug}"
-        comp_html = _fetch(comp_url)
-        if _is_replay_failure(comp_html):
-            return comp_html
-        if isinstance(comp_html, dict):
-            continue
-        events.extend(_parse_compiled_results(comp_html, gender))
+    if sport == "xc":
+        team_scores, events = _parse_xc_results(main_html)
+    else:
+        team_scores = _parse_team_scores(main_html_clean)
 
-    return {
+        # --- Compiled results: men's and women's ---
+        for gender, code in (("women", "f"), ("men", "m")):
+            comp_url = f"{_BASE}/results/{meet_id}/{code}/{slug}"
+            comp_html = _fetch(comp_url)
+            if _is_replay_failure(comp_html):
+                return comp_html
+            if isinstance(comp_html, dict):
+                continue
+            events.extend(_parse_compiled_results(comp_html, gender))
+
+    result = {
         "meet": meet_name,
         "date": meet_date,
         "meet_id": meet_id,
@@ -652,6 +749,13 @@ def get_meet_results(*, meet_id: str, slug: str) -> dict:
         "team_scores": team_scores,
         "events": events,
     }
+    if not _slug_matches(slug, meet_name):
+        hint = " If this is a cross-country meet, pass sport='xc'." if sport == "tf" else ""
+        result["warnings"] = [
+            f"TFRRS returned meet {meet_name!r} for id {meet_id}, which does not match "
+            f"slug {slug!r}; the id may belong to a different meet.{hint}"
+        ]
+    return result
 
 
 _STRIDER_FEED = "https://www.thestridereport.com/blog-feed.xml"
