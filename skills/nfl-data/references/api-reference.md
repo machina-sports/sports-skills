@@ -6,6 +6,7 @@
 Get live/recent NFL scores.
 - `date` (str, optional): Date in YYYY-MM-DD format
 - `week` (int, optional): Week number (1-18 regular season, 19-23 postseason)
+- `season` (int, optional): Season year for `week` (e.g. 2024). Defaults to current; ignored with `date`.
 
 Returns `events[]` with game info, scores, status, and competitors.
 

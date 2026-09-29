@@ -405,10 +405,14 @@ def get_scoreboard(request_data):
     params = request_data.get("params", {})
     date = params.get("date")
     week = params.get("week")
+    season = params.get("season")
 
     espn_params = {}
     if date:
         espn_params["dates"] = date.replace("-", "")
+    elif season:
+        # With a week, ESPN reads a year in ``dates`` as the season.
+        espn_params["dates"] = str(season)
     espn_params.update(_resolve_week_params(week))
 
     data = espn_request(SPORT_PATH, "scoreboard", espn_params or None)

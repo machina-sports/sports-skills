@@ -284,3 +284,15 @@ class TestLoadProvider:
         self._hide(monkeypatch, "nflreadpy", "nfl_data_py")
         with pytest.raises(ImportError, match=r"sports-skills\[nfl\]"):
             _nflverse._load_provider()
+
+
+def test_scoreboard_week_of_a_past_season(monkeypatch):
+    """``season`` + ``week`` asks ESPN for that season's week (#159)."""
+    from sports_skills.nfl import _connector
+
+    calls = []
+    monkeypatch.setattr(_connector, "espn_request", lambda *a, **k: calls.append(a[2]) or {"events": []})
+    _connector.get_scoreboard({"params": {"season": 2024, "week": 5}})
+    _connector.get_scoreboard({"params": {"season": 2024, "week": 22}})
+    _connector.get_scoreboard({"params": {"week": 5}})
+    assert calls == [{"dates": "2024", "week": 5}, {"dates": "2024", "seasontype": 3, "week": 4}, {"week": 5}]

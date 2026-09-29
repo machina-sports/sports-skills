@@ -329,7 +329,7 @@ _REGISTRY = {
         "get_tire_analysis": {"required": ["year"], "optional": ["event", "driver"]},
     },
     "nfl": {
-        "get_scoreboard": {"optional": ["date", "week"]},
+        "get_scoreboard": {"optional": ["date", "week", "season"]},
         "get_standings": {"optional": ["season"]},
         "get_teams": {},
         "get_team_roster": {"required": ["team_id"]},

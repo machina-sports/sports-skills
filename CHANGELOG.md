@@ -11,6 +11,9 @@
 - **nba / nfl / mlb / nhl / wnba / cfb / cbb: schedule and scoreboard rows add `start_ts`** ([#152](https://github.com/machina-sports/sports-skills/issues/152)), the `start_time` instant as epoch seconds (`null` without a date), as MLB Stats, NHL Stats and openfootball rows already have. ESPN's scoreboard, team-schedule and summary payloads carry no venue time zone, so these rows have no `venue_timezone`.
 - **nba / nfl / mlb / nhl / wnba / cfb / cbb: offseason `get_standings()` returned next season's empty table** ([#153](https://github.com/machina-sports/sports-skills/issues/153)). Between seasons ESPN's default standings are the upcoming season, so `nba.get_standings()` on 2026-09-25 gave `season: 2027` with every team `0-0`, and NHL gave preseason records. With no `season`, a table whose regular season has not started (by ESPN's dates, a preseason table, or no team with a win or loss) is replaced by the previous season's, and the response adds `defaulted_from: 2027` and a `note`. An explicit `season` is always returned as asked. Every response now carries `season_type` (`preseason` / `regular` / `postseason`) and `season_status` (`not_started` / `in_progress` / `complete`, from ESPN's regular-season dates). `season` is now the tables' own season when none was requested: MLB reported `2027` over the finished 2026 tables.
 
+### Added
+- **nfl: `season` on `get_scoreboard`** (#159). `get_scoreboard(week=N)` only reached the current season; `get_scoreboard(season=2024, week=5)` now returns that week (14 games), postseason weeks 19-23 included. Omitted, the request is unchanged.
+
 ## [0.34.0]
 
 ### Changed
