@@ -13,6 +13,7 @@ No keyless bookmaker odds exist for esports. For implied-probability signals use
 the `kalshi` (get_esports_odds) and `polymarket` (get_esports_events) skills.
 """
 
+import datetime
 import json
 import random
 import threading
@@ -238,28 +239,40 @@ def _normalize_pro_match(m):
 def get_pro_matches(request_data):
     """Recent professional Dota 2 matches (OpenDota).
 
+    OpenDota serves the latest 100 pro matches per call, newest first, with no
+    date filter. Page back with ``less_than_match_id``: pass the response's
+    ``next_less_than_match_id`` to get the 100 before it.
+
     Params:
         limit (int): Max matches (default 20, max 100).
+        less_than_match_id (str|int): Only matches with a lower id (older).
     """
     try:
         params = request_data.get("params", {})
         limit = min(int(params.get("limit", 20)), 100)
-        resp = _opendota_get("/proMatches", ttl=180)
+        before = params.get("less_than_match_id")
+        if before is not None and before != "":
+            before = str(before).strip()
+            if not before.isdigit():
+                return _error(
+                    f"Invalid less_than_match_id '{before}': must be a numeric OpenDota match id"
+                )
+        resp = _opendota_get("/proMatches", {"less_than_match_id": before}, ttl=180)
         err = _http_error(resp)
         if err:
             return err
         matches = resp if isinstance(resp, list) else []
         normalized = [_normalize_pro_match(m) for m in matches[:limit]]
-        return _success(
-            {"matches": normalized, "count": len(normalized)},
-            f"Retrieved {len(normalized)} pro matches",
-        )
+        data = {"matches": normalized, "count": len(normalized)}
+        if normalized:
+            data["next_less_than_match_id"] = normalized[-1]["match_id"]
+        return _success(data, f"Retrieved {len(normalized)} pro matches")
     except Exception as e:
         return _error(f"Error fetching pro matches: {e}")
 
 
 def get_leagues(request_data):
-    """Dota 2 leagues / tournaments (OpenDota).
+    """Dota 2 leagues / tournaments (OpenDota), newest first.
 
     Params:
         tier (str): Filter by tier ('premium', 'professional', 'excluded').
@@ -279,6 +292,9 @@ def get_leagues(request_data):
         leagues = resp if isinstance(resp, list) else []
         if tier:
             leagues = [x for x in leagues if str(x.get("tier", "")).lower() == tier]
+        # /leagues is unordered (oldest ids first in practice); league ids grow
+        # over time, so sort newest first before truncating.
+        leagues = sorted(leagues, key=lambda x: x.get("leagueid") or 0, reverse=True)
         normalized = [
             {
                 "league_id": x.get("leagueid"),
@@ -297,6 +313,10 @@ def get_leagues(request_data):
 
 def get_pro_teams(request_data):
     """Top professional Dota 2 teams by rating (OpenDota).
+
+    Join teams to matches on ``team_id``, not name: OpenDota keeps separate
+    records whose names differ only in case (``mouz`` 161707 from 2013,
+    ``MOUZ`` 9338413 today), and each endpoint reports the same name per id.
 
     Params:
         limit (int): Max teams (default 25, max 100).
@@ -384,11 +404,21 @@ def get_match(request_data):
 
 
 def _cargo_rows(resp):
-    """Envelope is {"cargoquery":[{"title":{...}}]}; drop __precision helper keys."""
+    """Envelope is {"cargoquery":[{"title":{...}}]}; drop __precision helper keys.
+
+    Cargo echoes field names with underscores turned into spaces
+    ("DateTime_UTC" comes back as "DateTime UTC"); restore the requested names.
+    """
     rows = []
     for item in resp.get("cargoquery", []):
         title = item.get("title", {})
-        rows.append({k: v for k, v in title.items() if not k.endswith("__precision")})
+        rows.append(
+            {
+                k.replace(" ", "_"): v
+                for k, v in title.items()
+                if not k.endswith("__precision")
+            }
+        )
     return rows
 
 
@@ -434,11 +464,28 @@ def lol_cargo_query(request_data):
         return _error(f"Error querying Leaguepedia: {e}")
 
 
+# Leaguepedia has been answering Cargo queries that carry order_by with its
+# in-band "ratelimited" body (#164), so get_lol_tournaments bounds the query by
+# start date instead and sorts the rows itself. The bound moves a month at a
+# time so the request URL (and its record/replay key) stays stable for a month.
+_TOURNAMENT_WINDOW_MONTHS = 2
+_CARGO_MAX_LIMIT = 500
+
+
+def _tournament_window_start(today=None):
+    """First day of the month ``_TOURNAMENT_WINDOW_MONTHS`` before today's."""
+    today = today or datetime.date.today()
+    months = today.year * 12 + today.month - 1 - _TOURNAMENT_WINDOW_MONTHS
+    return datetime.date(months // 12, months % 12 + 1, 1)
+
+
 def get_lol_tournaments(request_data):
     """Recent LoL esports tournaments (Leaguepedia Cargo 'Tournaments' table).
 
-    Returns Name, DateStart, Region. For richer fields (League, Prizepool,
-    DateEnd, ...) query lol_cargo_query directly — see the skill references.
+    Returns Name, DateStart, Region, newest first, for tournaments starting
+    since the first of the month two months back (e.g. from 2026-07-01 on
+    2026-09-29). For richer fields (League, Prizepool, DateEnd, ...) or older
+    tournaments query lol_cargo_query directly — see the skill references.
 
     Params:
         region (str): Filter by region (e.g. 'Korea', 'Brazil', 'Europe').
@@ -446,24 +493,34 @@ def get_lol_tournaments(request_data):
     """
     try:
         params = request_data.get("params", {})
+        limit = min(int(params.get("limit", 20)), 100)
         # Only live-verified fields (Name/DateStart/Region, 2026-07-01). Other
         # Tournaments columns are reachable via lol_cargo_query once confirmed.
-        where = None
+        where = f"Tournaments.DateStart >= '{_tournament_window_start().isoformat()}'"
         if params.get("region"):
             # Escape single quotes so a region name (or a hostile value) can't
             # break out of / inject into the Cargo WHERE clause.
             safe_region = str(params["region"]).replace("'", "''")
-            where = f"Tournaments.Region='{safe_region}'"
-        return lol_cargo_query(
-            {
-                "params": {
-                    "tables": "Tournaments",
-                    "fields": "Name,DateStart,Region",
-                    "where": where,
-                    "order_by": "DateStart DESC",
-                    "limit": params.get("limit", 20),
-                }
-            }
-        )
+            where += f" AND Tournaments.Region='{safe_region}'"
+        query = {
+            "tables": "Tournaments",
+            "fields": "Name,DateStart,Region",
+            "where": where,
+            "limit": _CARGO_MAX_LIMIT,
+        }
+        resp = _leaguepedia_get(query)
+        err = _http_error(resp)
+        if err:
+            return err
+        if isinstance(resp, dict) and resp.get("error"):
+            return _error(f"Leaguepedia API error: {resp['error'].get('info', 'Cargo error')}")
+        rows = _cargo_rows(resp)
+        message = f"Retrieved {min(len(rows), limit)} rows"
+        if len(rows) >= _CARGO_MAX_LIMIT:
+            message += (
+                f" (window capped at {_CARGO_MAX_LIMIT} tournaments; pass region to narrow it)"
+            )
+        rows = sorted(rows, key=lambda r: r.get("DateStart") or "", reverse=True)[:limit]
+        return _success({"rows": rows, "count": len(rows)}, message)
     except Exception as e:
         return _error(f"Error fetching LoL tournaments: {e}")

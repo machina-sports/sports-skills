@@ -217,7 +217,103 @@ class TestGetLolTournamentsRegionEscaping:
         get_lol_tournaments({"params": {"region": "Ivan's Region"}})
         # The WHERE clause passed to Leaguepedia must have the quote doubled.
         sent = mock_get.call_args[0][0]
-        assert sent["where"] == "Tournaments.Region='Ivan''s Region'"
+        assert sent["where"].endswith(" AND Tournaments.Region='Ivan''s Region'")
+
+
+class TestGetLolTournamentsOrdering:
+    """Cargo queries with order_by come back 'ratelimited' (#164)."""
+
+    ROWS = {
+        "cargoquery": [
+            {"title": {"Name": "LCK 2026 Summer", "DateStart": "2026-06-18", "Region": "Korea"}},
+            {"title": {"Name": "Worlds 2026", "DateStart": "2026-10-01", "Region": "International"}},
+            {"title": {"Name": "LTA South 2026 Split 3", "DateStart": "2026-07-26", "Region": "Brazil",
+                       "DateStart__precision": "1"}},
+        ]
+    }
+
+    @patch("sports_skills.esports._connector._leaguepedia_get")
+    def test_no_server_side_order_by(self, mock_get):
+        mock_get.return_value = self.ROWS
+        get_lol_tournaments({"params": {}})
+        sent = mock_get.call_args[0][0]
+        assert "order_by" not in sent
+        assert sent["where"].startswith("Tournaments.DateStart >= '")
+
+    @patch("sports_skills.esports._connector._leaguepedia_get")
+    def test_sorted_newest_first_client_side(self, mock_get):
+        mock_get.return_value = self.ROWS
+        out = get_lol_tournaments({"params": {"limit": 2}})
+        assert out["status"] is True
+        assert [r["Name"] for r in out["data"]["rows"]] == ["Worlds 2026", "LTA South 2026 Split 3"]
+
+    @patch("sports_skills.esports._connector._leaguepedia_get")
+    def test_throttle_body_is_an_error(self, mock_get):
+        mock_get.return_value = {"error": {"code": "ratelimited", "info": "exceeded rate limit"}}
+        out = get_lol_tournaments({"params": {}})
+        assert out["status"] is False
+        assert "exceeded rate limit" in out["message"]
+
+    def test_window_moves_by_month(self):
+        import datetime
+
+        assert ec._tournament_window_start(datetime.date(2026, 9, 29)) == datetime.date(2026, 7, 1)
+        assert ec._tournament_window_start(datetime.date(2026, 1, 5)) == datetime.date(2025, 11, 1)
+
+
+class TestCargoKeyNormalization:
+    @patch("sports_skills.esports._connector._leaguepedia_get")
+    def test_spaces_in_field_names_become_underscores(self, mock_get):
+        # Cargo echoes "DateTime_UTC" as "DateTime UTC".
+        mock_get.return_value = {
+            "cargoquery": [
+                {"title": {"Team1": "T1", "DateTime UTC": "2026-09-20 08:00:00",
+                           "DateTime UTC__precision": "0"}}
+            ]
+        }
+        out = lol_cargo_query(
+            {"params": {"tables": "MatchSchedule", "fields": "Team1,DateTime_UTC"}}
+        )
+        assert out["data"]["rows"] == [{"Team1": "T1", "DateTime_UTC": "2026-09-20 08:00:00"}]
+
+
+class TestProMatchesPagination:
+    @patch("sports_skills.esports._connector._opendota_get")
+    def test_less_than_match_id_is_forwarded_and_cursor_returned(self, mock_get):
+        mock_get.return_value = [{"match_id": 9012123019}, {"match_id": 9011000000}]
+        out = get_pro_matches({"params": {"less_than_match_id": "9012167647"}})
+        assert mock_get.call_args[0][1] == {"less_than_match_id": "9012167647"}
+        assert out["data"]["next_less_than_match_id"] == 9011000000
+
+    @patch("sports_skills.esports._connector._opendota_get")
+    def test_default_request_unchanged(self, mock_get):
+        mock_get.return_value = []
+        get_pro_matches({"params": {}})
+        assert mock_get.call_args[0][1] == {"less_than_match_id": None}
+
+    def test_non_numeric_cursor_rejected(self):
+        out = get_pro_matches({"params": {"less_than_match_id": "abc&x=1"}})
+        assert out["status"] is False
+        assert "less_than_match_id" in out["message"]
+
+    def test_default_url_has_no_query_string(self):
+        with patch("sports_skills.esports._connector._http_get_json") as http:
+            http.return_value = []
+            ec._opendota_get("/proMatches", {"less_than_match_id": None})
+        assert http.call_args[0][0] == "https://api.opendota.com/api/proMatches"
+
+
+class TestGetLeaguesNewestFirst:
+    @patch("sports_skills.esports._connector._opendota_get")
+    def test_sorted_by_league_id_desc(self, mock_get):
+        # /leagues order as served (2026-09-29): 212, 214, 2840, ... old ids first.
+        mock_get.return_value = [
+            {"leagueid": 212, "name": "old", "tier": "excluded"},
+            {"leagueid": 65019, "name": "BanglaGamer Dota 2 Championship", "tier": "professional"},
+            {"leagueid": 2840, "name": "mid", "tier": None},
+        ]
+        out = get_leagues({"params": {"limit": 2}})
+        assert [x["league_id"] for x in out["data"]["leagues"]] == [65019, 2840]
 
 
 # ---------------------------------------------------------------- Kalshi odds

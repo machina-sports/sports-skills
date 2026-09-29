@@ -28,7 +28,14 @@ Keyless, public sources. **No API key, no signup.**
 - **Dota 2 only** for match/team/league data (OpenDota). LoL uses Leaguepedia Cargo.
 - **Leaguepedia is aggressively rate-limited.** The throttle comes back as an
   *in-body* error (`Leaguepedia API error: ...`) on an HTTP 200 — not a 4xx.
-  Results are cached ~30 min; don't hammer it.
+  Results are cached ~30 min; don't hammer it. Queries with `order_by` have
+  been answered with that throttle body every time, so avoid `order_by` in
+  `lol_cargo_query` and sort the rows yourself.
+- **OpenDota has no date filter.** `get_pro_matches` returns the latest pro
+  matches (100 per call at most). For older ones pass the response's
+  `next_less_than_match_id` as `less_than_match_id`.
+- **Match Dota teams on `team_id`, not name.** OpenDota has separate records
+  whose names differ only in case (`mouz` 161707 from 2013, `MOUZ` 9338413 now).
 - **No odds here.** Bookmaker odds for esports are not available keyless. For
   implied-probability signals, use `kalshi get_esports_odds --game=cs2` or
   `polymarket get_esports_events`.
@@ -57,11 +64,11 @@ esports.get_lol_tournaments(region="Brazil")
 
 | Command | Description |
 |---|---|
-| `get_pro_matches` | Recent Dota 2 professional matches (OpenDota) |
-| `get_leagues` | Dota 2 leagues/tournaments, filter by tier (OpenDota) |
+| `get_pro_matches` | Latest Dota 2 pro matches, newest first; page back with `less_than_match_id` (OpenDota) |
+| `get_leagues` | Dota 2 leagues/tournaments, newest first, filter by tier (OpenDota) |
 | `get_pro_teams` | Top Dota 2 teams by rating (OpenDota) |
 | `get_match` | Detailed Dota 2 match by id (OpenDota) |
-| `get_lol_tournaments` | Recent LoL esports tournaments (Leaguepedia) |
+| `get_lol_tournaments` | LoL esports tournaments starting since the 1st of the month two months back, newest first (Leaguepedia) |
 | `lol_cargo_query` | Raw Leaguepedia Cargo query (any table/fields) |
 
 ## Leaguepedia Cargo reference
@@ -70,7 +77,8 @@ esports.get_lol_tournaments(region="Brazil")
 with a small query first): `Tournaments` (Name, DateStart, DateEnd, League,
 Region, Prizepool), `MatchSchedule` (Team1, Team2, Winner, DateTime_UTC, BestOf),
 `ScoreboardGames`, `Players`, `Teams`. Full schema:
-<https://lol.fandom.com/wiki/Special:CargoTables>.
+<https://lol.fandom.com/wiki/Special:CargoTables>. Row keys use the field names
+you asked for (`DateTime_UTC`), even though Cargo itself returns them with spaces.
 
 ## Troubleshooting
 

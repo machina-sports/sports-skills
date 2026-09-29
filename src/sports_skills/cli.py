@@ -196,7 +196,7 @@ _REGISTRY = {
         "get_sports_config": {},
     },
     "esports": {
-        "get_pro_matches": {"optional": ["limit"]},
+        "get_pro_matches": {"optional": ["limit", "less_than_match_id"]},
         "get_leagues": {"optional": ["tier", "limit"]},
         "get_pro_teams": {"optional": ["limit"]},
         "get_match": {"required": ["match_id"]},
