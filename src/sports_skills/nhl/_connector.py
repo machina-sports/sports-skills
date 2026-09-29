@@ -16,6 +16,7 @@ from sports_skills._espn_base import (
     _http_fetch,
     _resolve_leaders,
     default_standings_season,
+    epoch_seconds,
     espn_core_request,
     espn_request,
     espn_summary,
@@ -84,6 +85,7 @@ def _normalize_event(espn_event):
         "status": ESPN_STATUS_MAP.get(status_type, status_type),
         "status_detail": status_detail,
         "start_time": comp.get("date", espn_event.get("date", "")),
+        "start_ts": epoch_seconds(comp.get("date", espn_event.get("date", ""))),
         "venue": {
             "name": comp.get("venue", {}).get("fullName", ""),
             "city": comp.get("venue", {}).get("address", {}).get("city", ""),
