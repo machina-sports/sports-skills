@@ -22,6 +22,8 @@ Get full season tournament calendar.
 
 Returns `tournaments[]` with tournament name, dates, location, surface, and prize money. Use this to find when specific tournaments are scheduled.
 
+ESPN has no light calendar endpoint: the only source is the full-year scoreboard (about 19 MB for ATP 2026, 25 MB for WTA), so the first call is slow. The result is cached for 6 hours per tour and year.
+
 ### get_player_info
 Get individual tennis player profile.
 - `player_id` (str, required): ESPN athlete ID
