@@ -135,3 +135,11 @@ def test_clincher_maps_to_clinch(league):
 def test_conference_record_reads_vs_conf(league):
     (row,) = _connector(league)._normalize_standings_entries(_entry(("vs. Conf.", "15-5")))
     assert row["conference_record"] == "15-5"
+
+
+def test_mlb_run_diff_is_the_season_total():
+    """ESPN's ``differential`` is per game (+0.9); ``pointDifferential`` is the total (#159)."""
+    (row,) = _connector("mlb")._normalize_standings_entries(
+        _entry(("pointsFor", "739"), ("pointsAgainst", "601"), ("differential", "+0.9"), ("pointDifferential", "+138"))
+    )
+    assert (row["runs_scored"], row["runs_allowed"], row["run_diff"]) == ("739", "601", "+138")

@@ -120,7 +120,9 @@ def _normalize_standings_entries(standings_data):
             "games_back": stats.get("gamesBehind", stats.get("GB", "")),
             "runs_scored": stats.get("pointsFor", stats.get("runsFor", "")),
             "runs_allowed": stats.get("pointsAgainst", stats.get("runsAgainst", "")),
-            "run_diff": stats.get("differential", stats.get("diff", "")),
+            # ESPN's "differential" is the per-game average (+0.9); the season
+            # total (+138 = 739 - 601) is "pointDifferential".
+            "run_diff": stats.get("pointDifferential", stats.get("differential", stats.get("diff", ""))),
             "streak": stats.get("streak", ""),
             "home_record": stats.get("Home", stats.get("homeRecord", "")),
             "away_record": stats.get("Road", stats.get("awayRecord", "")),
