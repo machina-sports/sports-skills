@@ -11,20 +11,23 @@ Returns `configured_leagues[]` with competition_id, name, country, gender, and s
 ### get_standings
 Get league table for a volleyball competition.
 - `competition_id` (str, required): League identifier (e.g. "nevobo-eredivisie-heren").
+- `season` (str|int, optional): "2026-2027" or start year 2026. Nevobo only serves the current season; any other season returns an error.
 
 Returns `standings[]` with rank, team, matches_played, points, sets_won, sets_lost, points_for, points_against.
 
 ### get_schedule
 Get upcoming match schedule for a competition.
 - `competition_id` (str, required): League identifier.
+- `season` (str|int, optional): "2026-2027" or start year 2026. Nevobo only serves the current season; any other season returns an error.
 
-Returns `matches[]` with home_team, away_team, date, and details.
+Returns `matches[]` with home_team, away_team, date (null when not yet scheduled), status (e.g. "gepland", "vervallen" = cancelled), and details.
 
 ### get_results
 Get match results for a competition.
 - `competition_id` (str, required): League identifier.
+- `season` (str|int, optional): "2026-2027" or start year 2026. Nevobo only serves the current season; any other season returns an error.
 
-Returns `results[]` with home_team, away_team, score, set_scores[], date, and details.
+Returns `results[]` with home_team, away_team, score, set_scores[], date, status ("gespeeld", "vervallen"), and details.
 
 ### get_clubs
 List volleyball clubs.
@@ -37,13 +40,13 @@ Returns `items[]` with club data from the Nevobo API (name, location, coordinate
 Get upcoming matches for a club across all its teams.
 - `club_id` (str, required): Nevobo club identifier (e.g. "CKL5C67").
 
-Returns `matches[]` with home_team, away_team, date, and details.
+Returns `matches[]` with home_team, away_team, date (null when not yet scheduled), status (e.g. "gepland", "vervallen" = cancelled), and details.
 
 ### get_club_results
 Get match results for a club across all its teams.
 - `club_id` (str, required): Nevobo club identifier.
 
-Returns `results[]` with home_team, away_team, score, set_scores[], date, and details.
+Returns `results[]` with home_team, away_team, score, set_scores[], date, status ("gespeeld", "vervallen"), and details.
 
 ### get_poules
 Browse Nevobo poules for advanced discovery of divisions and regional leagues.

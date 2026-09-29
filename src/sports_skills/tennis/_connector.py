@@ -309,19 +309,28 @@ def get_calendar(request_data):
 
     year = params.get("year") or _current_year()
 
-    # Using dates=YYYY returns the full year of tournaments (no match details)
+    # ESPN has no light tournament list: dates=YYYY returns every match of the
+    # year (19 MB ATP / 25 MB WTA for 2026), limit=1 drops all but one event and
+    # the core API only returns refs. Cache the normalized calendar for hours.
+    cache_key = f"tennis_calendar:{tour}:{year}"
+    cached = _cache_get(cache_key)
+    if cached is not None:
+        return cached
+
     data = espn_request(_tour_path(tour), "scoreboard", {"dates": str(year)})
     if data.get("error"):
         return data
 
     tournaments = [_normalize_tournament(e, include_matches=False) for e in data.get("events", [])]
 
-    return {
+    result = {
         "tour": tour.upper(),
         "year": year,
         "tournaments": tournaments,
         "count": len(tournaments),
     }
+    _cache_set(cache_key, result, ttl=6 * 3600)
+    return result
 
 
 def get_rankings(request_data):

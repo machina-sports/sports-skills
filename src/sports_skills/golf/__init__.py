@@ -32,13 +32,17 @@ def _params(**kwargs):
     return {"params": {k: v for k, v in kwargs.items() if v is not None}}
 
 
-def get_leaderboard(*, tour: str) -> dict:
-    """Get current tournament leaderboard.
+def get_leaderboard(
+    *, tour: str, event_id: str | None = None, date: str | None = None
+) -> dict:
+    """Get a tournament leaderboard (the current one unless event_id or date is given).
 
     Args:
         tour: Tour name — "pga", "lpga", or "eur" (DP World Tour).
+        event_id: ESPN event ID (from get_schedule) — reaches completed tournaments.
+        date: Any day of the tournament (YYYY-MM-DD).
     """
-    return wrap(_get_leaderboard(_params(tour=tour)))
+    return wrap(_get_leaderboard(_params(tour=tour, event_id=event_id, date=date)))
 
 
 def get_schedule(*, tour: str, year: int | None = None) -> dict:
@@ -80,11 +84,19 @@ def get_player_overview(*, player_id: str, tour: str | None = None) -> dict:
     return wrap(_get_player_overview(_params(player_id=player_id, tour=tour)))
 
 
-def get_scorecard(*, tour: str, player_id: str) -> dict:
-    """Get hole-by-hole scorecard for a golfer in the active tournament.
+def get_scorecard(
+    *, tour: str, player_id: str, event_id: str | None = None, date: str | None = None
+) -> dict:
+    """Get hole-by-hole scorecard for a golfer (the current tournament unless event_id or date is given).
 
     Args:
         tour: Tour name — "pga", "lpga", or "eur".
         player_id: ESPN athlete ID.
+        event_id: ESPN event ID (from get_schedule) — reaches completed tournaments.
+        date: Any day of the tournament (YYYY-MM-DD).
     """
-    return wrap(_get_scorecard(_params(tour=tour, player_id=player_id)))
+    return wrap(
+        _get_scorecard(
+            _params(tour=tour, player_id=player_id, event_id=event_id, date=date)
+        )
+    )

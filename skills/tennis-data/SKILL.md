@@ -93,6 +93,7 @@ Result: French Open dates, location (Paris), and surface (clay)
 - ~~`get_draw`~~ — does not exist. Tournament draw data is not available via this API.
 - ~~`get_head_to_head`~~ — does not exist. Head-to-head records are not available via this API.
 - ~~`get_standings`~~ — does not exist. Tennis uses `get_rankings`, not standings.
+- ~~`get_match_stats`~~ — does not exist. ESPN publishes no per-match statistics for tennis (aces, double faults, break points): scoreboard `statistics` lists are empty and the per-match stats endpoint returns "No competitor stats found", even for Grand Slam finals. Only set scores are available.
 
 If a command is not listed in the Commands table above, it does not exist.
 

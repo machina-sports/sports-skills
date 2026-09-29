@@ -27,6 +27,12 @@
 | MLS | `mls` | KXMLSGAME |
 | FIFA World Cup 2026 | `worldcup` | KXMENWORLDCUP, KXWCGAME, KXWCGROUPQUAL, KXWCGROUPORDER, KXWCSTAGE, KXWCHOSTSTAGE, KXWCBESTHOST, KXWCNOEURSA, KXWCREGIONKO, KXWCEVERYTEAMGOAL |
 
+### Motorsport
+
+| Series | Code | Series Tickers |
+|---|---|---|
+| Formula 1 | `f1` | KXF1, KXF1CONSTRUCTORS, KXF1RACE, KXF1RACEPODIUM, KXF1TOP5, KXF1TOP10, KXF1FASTLAP, KXF1TOPCONSTRUCTOR, KXF1POLE, KXF1H2H, KXF1RACESPRINT, KXF1SPRINTPOLE |
+
 Use `get_sports_config()` to see all available codes.
 
 **Football leagues have multiple series per league.** The `sport` parameter queries all of them automatically. For example, `search_markets(sport='epl')` queries KXEPLGAME, KXEPLTOTAL, KXEPLBTTS, KXEPLSPREAD, and KXEPLGOAL in one call.

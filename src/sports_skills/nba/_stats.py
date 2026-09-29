@@ -105,7 +105,8 @@ _MEASURE_TYPES = {
     "defense": "Defense",
 }
 
-_PER_MODES = {"totals": "Totals", "per_game": "PerGame", "per_36": "Per36Minutes"}
+# stats.nba.com's value is "Per36"; "Per36Minutes" is answered with HTTP 400.
+_PER_MODES = {"totals": "Totals", "per_game": "PerGame", "per_36": "Per36"}
 
 
 class _NbaStatsError(Exception):
@@ -573,6 +574,36 @@ def _name_to_abbr(name: Any) -> str | None:
     return None
 
 
+def _iso_date(value: Any) -> Any:
+    """shotchartdetail sends ``20241122``; game logs send ``2024-11-22``."""
+    text = str(value or "")
+    if re.fullmatch(r"\d{8}", text):
+        return f"{text[:4]}-{text[4:6]}-{text[6:]}"
+    return value
+
+
+@_guard
+def get_nba_game_matchup(request_data: dict[str, Any]) -> dict[str, Any]:
+    """Date (US Eastern) and ESPN team abbreviations of an NBA game id.
+
+    Lets the live commands find a game's ESPN event id when cdn.nba.com is
+    unavailable. ``gameCode`` is ``"20241112/ATLBOS"`` (away then home).
+    """
+    game_id = _require_nba_game_id(request_data.get("params", {}).get("game_id"))
+    summary = _request("boxscoresummaryv3", {"GameID": game_id}).get("boxScoreSummary") or {}
+    code = str(summary.get("gameCode") or "")
+    away = (summary.get("awayTeam") or {}).get("teamTricode")
+    home = (summary.get("homeTeam") or {}).get("teamTricode")
+    if not re.fullmatch(r"\d{8}/\w+", code) or not away or not home:
+        raise _NbaStatsError(f"stats.nba.com has no game summary for game id {game_id!r}")
+    return {
+        "game_id": game_id,
+        "date": _iso_date(code[:8]),
+        "away": _NBA_TO_ESPN.get(away, away),
+        "home": _NBA_TO_ESPN.get(home, home),
+    }
+
+
 @_guard
 def get_nbastats_shot_chart(request_data: dict[str, Any]) -> dict[str, Any]:
     params = request_data.get("params", {})
@@ -623,7 +654,7 @@ def get_nbastats_shot_chart(request_data: dict[str, Any]) -> dict[str, Any]:
     shots = [
         {
             "game_id": r.get("game_id"),
-            "game_date": r.get("game_date"),
+            "game_date": _iso_date(r.get("game_date")),
             "period": r.get("period"),
             "minutes_remaining": r.get("minutes_remaining"),
             "seconds_remaining": r.get("seconds_remaining"),

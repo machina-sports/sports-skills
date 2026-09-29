@@ -1,0 +1,28 @@
+{
+  "id": "139236",
+  "title": "2026 Men’s US Open Winner (Tennis)",
+  "slug": "2026-mens-us-open-winner-tennis",
+  "description": "",
+  "markets": [
+    {
+      "id": "1088471",
+      "question": "Will Jannik Sinner win the 2026 Men's US Open?",
+      "slug": "will-jannik-sinner-win-the-2026-mens-us-open",
+      "outcomes": "[\"Yes\", \"No\"]",
+      "outcomePrices": "[\"0\", \"1\"]",
+      "volume": "516969.26967499993",
+      "active": true,
+      "closed": true
+    },
+    {
+      "id": "1088472",
+      "question": "Will Carlos Alcaraz win the 2026 Men's US Open?",
+      "slug": "will-carlos-alcaraz-win-the-2026-mens-us-open",
+      "outcomes": "[\"Yes\", \"No\"]",
+      "outcomePrices": "[\"0\", \"1\"]",
+      "volume": "2578417.790125",
+      "active": true,
+      "closed": true
+    }
+  ]
+}

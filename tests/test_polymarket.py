@@ -1,5 +1,8 @@
 """Unit tests for the polymarket module (no network)."""
 
+import json
+from pathlib import Path
+
 from sports_skills.polymarket._connector import (
     _normalize_market,
     _text_match,
@@ -83,3 +86,33 @@ class TestTextMatchMarket:
     def test_no_match_returns_false(self):
         market = {"question": "Moneyline", "slug": "", "events": [{"title": "Cubs vs. Cards", "slug": ""}]}
         assert _text_match_market("Orioles Rays", market) is False
+
+
+class TestSearchMarketsApostrophes:
+    """#162: Polymarket titles use a curly apostrophe ("2026 Men’s US Open
+    Winner (Tennis)") and slugs drop it ("2026-mens-us-open-winner-tennis"),
+    so a straight-apostrophe query found nothing."""
+
+    @staticmethod
+    def _search(monkeypatch, query):
+        from sports_skills.polymarket import _connector
+
+        event = json.loads((Path(__file__).parent / "fixtures" / "polymarket_us_open_event.json").read_text())
+        monkeypatch.setattr(
+            _connector,
+            "_gamma_request",
+            lambda endpoint, params=None, ttl=120: [event] if endpoint == "/events" else [],
+        )
+        return _connector.search_markets({"params": {"query": query}})
+
+    def test_possessive_query_matches_curly_apostrophe_title(self, monkeypatch):
+        assert self._search(monkeypatch, "2026 Men's US Open")["data"]["count"] == 2
+
+    def test_query_without_apostrophe_matches(self, monkeypatch):
+        assert self._search(monkeypatch, "Mens US Open")["data"]["count"] == 2
+
+    def test_plain_query_still_matches(self, monkeypatch):
+        assert self._search(monkeypatch, "US Open")["data"]["count"] == 2
+
+    def test_other_draw_does_not_match(self, monkeypatch):
+        assert self._search(monkeypatch, "2026 Women's US Open")["data"]["count"] == 0

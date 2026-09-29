@@ -271,6 +271,8 @@ def get_match_deliveries(request_data):
         innings_out.append({
             "innings": idx,
             "team": inn.get("team", ""),
+            # Cricsheet marks tie-break super overs (innings 3+ of a tied T20)
+            "super_over": bool(inn.get("super_over")),
             "deliveries": deliveries,
             "count": len(deliveries),
         })
@@ -290,7 +292,8 @@ def get_player_stats(request_data):
     Conventions: batting balls faced exclude wides (no-balls faced);
     bowling balls exclude wides and no-balls; bowler concedes batter runs
     + wides + no-balls (not byes/leg-byes/penalty); run outs etc. are not
-    credited to the bowler.
+    credited to the bowler. Super-over innings are excluded, as in official
+    records.
     """
     params = request_data.get("params", {})
     code, err = _validate_competition(params.get("competition"))
@@ -322,6 +325,8 @@ def get_player_stats(request_data):
                 continue
             matches_played += 1
             for inn in data.get("innings", []):
+                if inn.get("super_over"):
+                    continue
                 for over in inn.get("overs", []):
                     for d in over.get("deliveries", []):
                         runs = d.get("runs", {})

@@ -10,9 +10,9 @@
 | `get_driver_info` | | year, driver | Driver details from the grid |
 | `get_team_info` | | year, team | Team info with driver lineup |
 | `get_lap_data` | | year, event, session_type, driver | Lap-by-lap timing with sectors and tire data |
-| `get_pit_stops` | | year, event, driver | Pit stop durations and team averages |
+| `get_pit_stops` | | year, event, driver | Pit stops with pit-lane time (not stationary time) and team averages |
 | `get_speed_data` | | year, event, driver | Speed trap and intermediate speed data |
-| `get_championship_standings` | | year | Driver and constructor championship standings |
+| `get_championship_standings` | | year, round | Driver and constructor championship standings (optionally after a given round) |
 | `get_season_stats` | | year | Aggregate season performance (fastest laps, top speeds) |
 | `get_team_comparison` | | year, team1, team2, event | Team head-to-head: qualifying, race pace, sectors |
 | `get_driver_comparison` | | year, driver1, driver2, event | Driver head-to-head: qualifying H2H, race H2H, pace delta |

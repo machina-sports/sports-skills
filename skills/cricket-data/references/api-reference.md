@@ -27,7 +27,7 @@ Use the returned `series_id` for every other ESPN command. IDs are season-specif
 ### get_scoreboard
 Matches + scores + status for one series.
 - `series_id` (str, required): ESPN series ID. Discover via `get_series`.
-- `date` (str, optional): `YYYYMMDD` or `YYYY-MM-DD`. Defaults to the current window.
+- `date` (str, optional): `YYYYMMDD` or `YYYY-MM-DD`. Defaults to the current window. ESPN only serves the series' current season by date: a date in an earlier season (e.g. IPL 2025 on `8048`) returns no events. For those, use the Cricsheet commands.
 
 Returns:
 - `series` — `series_id`, `name`, `abbreviation`.
@@ -51,7 +51,9 @@ Full match detail. Fields are passed through largely as ESPN returns them.
 - `event_id` (str, required): from `get_scoreboard` or `get_series`.
 - `series_id` (str, optional): resolved from the event when the match is in a currently-active series (as listed by `get_series`); required for older matches.
 
-Returns: `event_id`, `series_id`, `header`, `game_info`, `notes[]`, `rosters[]`, `leaders[]`, `matchcards`, `article`.
+Returns: `event_id`, `series_id`, `header`, `game_info`, `notes[]`, `rosters[]`, `leaders[]`, `matchcards`, `scorecards[]`, `article`.
+- `matchcards` is ESPN's own card and holds **only the latest innings** (ESPN's summary takes no innings parameter).
+- `scorecards[]` has every innings, rebuilt from each player's per-innings figures in `rosters`: `innings`, `batting_team`, `bowling_team`, `batting[]` (`player_id`, `player`, `position`, `runs`, `balls`, `fours`, `sixes`, `strike_rate`, `not_out`, `dismissal` code such as `"c"` or `"lbw"`) and `bowling[]` (`player_id`, `player`, `position`, `overs`, `maidens`, `runs`, `wickets`, `economy`, `wides`, `noballs`). Extras are not in `batting[]`, so batting runs sum below the team total.
 
 ### get_news
 News articles for a series.
@@ -86,7 +88,7 @@ Ball-by-ball deliveries for one match.
 - `innings` (int, optional): restrict to one innings (1–4).
 
 Returns: `match` (same shape as a `get_matches` entry), `innings[]`, `attribution`, optional `stale`.
-- Each innings: `innings` (number), `team`, `deliveries[]`, `count`.
+- Each innings: `innings` (number), `team`, `super_over` (true for the tie-break super-over innings, 3 and 4 of a tied T20), `deliveries[]`, `count`.
 - Each delivery: `over`, `ball`, `batter`, `bowler`, `non_striker`, `runs` (raw Cricsheet block, e.g. `{batter, extras, total}`), and — when present — `extras` and `wickets[]`.
 
 ### get_player_stats
@@ -105,6 +107,7 @@ Aggregation conventions:
 - Bowler concedes **batter runs + wides + no-balls** — not byes, leg-byes, or penalty runs.
 - Wickets are credited to the bowler **only** for: bowled, caught, lbw, stumped, hit wicket, caught and bowled (run-outs etc. are not credited).
 - `economy = runs_conceded / (balls / 6)`.
+- **Super-over innings are excluded**, as in official records.
 - Returns an error if the player name matches no match (names must match Cricsheet exactly).
 
 ### find_player

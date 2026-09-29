@@ -53,7 +53,7 @@ def get_team_roster(*, school: str, sport: str = "both") -> dict:
     return wrap(result)
 
 
-def get_meet_results(*, meet_id: str, slug: str) -> dict:
+def get_meet_results(*, meet_id: str, slug: str, sport: str = "tf") -> dict:
     """Fetch all event results and team scores from a TFRRS meet.
 
     Args:
@@ -61,8 +61,10 @@ def get_meet_results(*, meet_id: str, slug: str) -> dict:
             tfrrs.org/results/95890/BU_vs_BU_Dual).
         slug: Meet name slug as it appears in the TFRRS URL
             (e.g. "BU_vs_BU_Dual").
+        sport: "tf" (default) or "xc". Cross-country meets use a separate id
+            range (tfrrs.org/results/xc/28714/Gans_Creek_Classic).
     """
-    result = _connector.get_meet_results(meet_id=meet_id, slug=slug)
+    result = _connector.get_meet_results(meet_id=meet_id, slug=slug, sport=sport)
     return wrap(result)
 
 

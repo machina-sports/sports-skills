@@ -902,7 +902,13 @@ def _resolve_espn_event(event_id, params):
             )
             resolved = ESPN_TO_SLUG.get(real_espn)
             if resolved and LEAGUES.get(resolved, {}).get("espn"):
-                return LEAGUES[resolved]["espn"], eid
+                real_espn = LEAGUES[resolved]["espn"]
+                # ESPN serves any event under any league path, so this probe
+                # already holds the real league's summary: cache it under that
+                # league so callers don't fetch (and record) it a second time.
+                if real_espn != espn_slug:
+                    _cache_set(f"espn_summary:{real_espn}:{eid}", summary, ttl=300)
+                return real_espn, eid
             return espn_slug, eid
     return None, eid
 
@@ -1711,6 +1717,12 @@ def _normalize_espn_summary_timeline(summary):
             minute = int(minute_raw.split()[0]) if minute_raw.strip() else 0
         except ValueError:
             minute = 0
+        # Stoppage time: ESPN's "45'+3'" keeps 45 as minute and 3 as added_time.
+        try:
+            parts = minute_raw.split()
+            added_time = int(parts[1]) if len(parts) > 1 else 0
+        except ValueError:
+            added_time = 0
         team_data = ev.get("team", {})
         athletes = ev.get("athletesInvolved") or []
         if not athletes:
@@ -1723,6 +1735,7 @@ def _normalize_espn_summary_timeline(summary):
             "id": str(ev.get("id", ev.get("sequenceNumber", ""))),
             "type": mapped_type,
             "minute": minute,
+            "added_time": added_time,
             "period": "",
             "datetime": "",
             "team": {

@@ -134,7 +134,7 @@ Returns potential upset candidates and their BPI-versus-seed differential.
 | SEC | 23 | Big Ten | 7 |
 | Big East | 4 | Pac-12 | 21 |
 | American | 62 | Mountain West | 44 |
-| Atlantic 10 | 3 | West Coast | 26 |
+| Atlantic 10 | 3 | West Coast | 29 |
 | Missouri Valley | 18 | Colonial | 10 |
 
 **Note:** Conference IDs are different from CFB conference IDs.

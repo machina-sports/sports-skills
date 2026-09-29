@@ -53,6 +53,12 @@
 | MLS | `mls` | KXMLSGAME |
 | FIFA World Cup 2026 | `worldcup` | KXMENWORLDCUP, KXWCGAME, KXWCGROUPQUAL, KXWCGROUPORDER, KXWCSTAGE, KXWCHOSTSTAGE, KXWCBESTHOST, KXWCNOEURSA, KXWCREGIONKO, KXWCEVERYTEAMGOAL |
 
+### Motorsport
+
+| Series | Code | Series Tickers |
+|---|---|---|
+| Formula 1 | `f1` | KXF1, KXF1CONSTRUCTORS, KXF1RACE, KXF1RACEPODIUM, KXF1TOP5, KXF1TOP10, KXF1FASTLAP, KXF1TOPCONSTRUCTOR, KXF1POLE, KXF1H2H, KXF1RACESPRINT, KXF1SPRINTPOLE |
+
 See `references/series-tickers.md` for the full series ticker list and `references/api.md` for raw API documentation.
 
 ## Price Scale
