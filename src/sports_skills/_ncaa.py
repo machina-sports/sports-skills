@@ -1,18 +1,18 @@
-"""Shared NCAA connector (data.ncaa.com + sdataprod.ncaa.com) — stdlib only.
+"""Shared NCAA connector (sdataprod.ncaa.com + ncaa.com) — stdlib only.
 
-The NCAA serves official college data through two surfaces, both keyed by
-``(sport, division)``:
+The NCAA serves official college data through a GraphQL API at
+``sdataprod.ncaa.com`` using *persisted queries*: each route is addressed by a
+sha256 hash pinned to ncaa.com's frontend build, keyed by ``(sport,
+division)``. Scoreboards, schedules, game detail (info, box score,
+play-by-play, scoring summary) and tournament brackets all come from here.
 
-- ``data.ncaa.com/casablanca`` — plain JSON scoreboards and schedules. Stable,
-  no authentication, no User-Agent policy.
-- ``sdataprod.ncaa.com`` — a GraphQL API using *persisted queries*: each route
-  is addressed by a sha256 hash pinned to ncaa.com's frontend build. Game
-  detail (info, box score, play-by-play, scoring summary) and tournament
-  brackets only exist here; the legacy casablanca game endpoints are gone.
+The older ``data.ncaa.com/casablanca`` JSON feed is not used: it stopped
+updating (football on 2025-08-29, so every later game stays ``pre``; nothing
+newer than early 2025 for basketball), returns ``NoSuchKey`` for 2026, and
+carries game ids that have since been reissued (#165).
 
 The hashes rotate when ncaa.com redeploys, so they live in one table below and
-every consumer fails with the same explanatory message when that happens —
-while the casablanca layer keeps working.
+every consumer fails with the same explanatory message when that happens.
 
 This module is the shared core in the same sense as ``_espn_base``: the sport
 is a parameter here, and the public sport modules (cfb, cbb) expose wrappers
@@ -41,7 +41,6 @@ from sports_skills._espn_base import (
 
 logger = logging.getLogger("sports_skills._ncaa")
 
-_CASABLANCA_BASE = "https://data.ncaa.com/casablanca"
 _GRAPHQL_BASE = "https://sdataprod.ncaa.com/"
 _SCHOOLS_URL = "https://www.ncaa.com/json/schools"
 
@@ -155,7 +154,7 @@ _ncaa_rate_limiter = RateLimiter(max_tokens=2, refill_rate=2.0)
 _TIMEOUT = 15
 
 # Sport configuration: GraphQL sport codes, valid divisions with their GraphQL
-# division codes, and how the casablanca scoreboard path is dated.
+# division codes, and whether scoreboards are addressed by week or by date.
 SPORTS = {
     "football": {
         "code": "MFB",
@@ -186,6 +185,7 @@ SPORTS = {
 # Reference for current values: https://github.com/henrygd/ncaa-api (src/codes.ts).
 GAME_HASHES = {
     "scoreboard": "7287cda610a9326931931080cb3a604828febe6fe3c9016a7e4a36db99efdb7c",
+    "schedule": "a25ad021179ce1d97fb951a49954dc98da150089f9766e7e85890e439516ffbf",
     "game_info": "93a02c7193c89d85bcdda8c1784925d9b64657f73ef584382e2297af555acd4b",
     "scoring_summary": "7f86673d4875cd18102b7fa598e2bc5da3f49d05a1c15b1add0e2367ee890198",
     "bracket": "e651c2602fb9e82cdad6e947389600c6b69e0e463e437b78bf7ec614d6d15f80",
@@ -205,9 +205,9 @@ BOXSCORE_HASHES = {
 _ROTATION_MESSAGE = (
     "The NCAA GraphQL endpoint rejected this query — ncaa.com has likely "
     "redeployed and rotated its persisted-query hashes, which this backend "
-    "pins. The scoreboard and schedule commands (data.ncaa.com) are "
-    "unaffected. Current hashes can be found in henrygd/ncaa-api's "
-    "src/codes.ts."
+    "pins. get_ncaa_schools (ncaa.com/json) is unaffected, and the ESPN-backed "
+    "get_scoreboard/get_schedule commands cover the same games. Current "
+    "hashes can be found in henrygd/ncaa-api's src/codes.ts."
 )
 
 
@@ -342,51 +342,63 @@ def fold(text: Any) -> str:
     return normalized.encode("ascii", "ignore").decode().lower()
 
 
-# ── casablanca layer ─────────────────────────────
+# ── scoreboard / schedule ─────────────────────────────
 
 
-def _normalize_casablanca_game(entry: dict[str, Any]) -> dict[str, Any]:
-    game = entry.get("game") or {}
-    home, away = game.get("home") or {}, game.get("away") or {}
-    url = str(game.get("url", ""))
+def _normalize_contest(contest: dict[str, Any]) -> dict[str, Any]:
+    teams = contest.get("teams") or []
+    home = next((t for t in teams if t.get("isHome")), {})
+    away = next((t for t in teams if not t.get("isHome")), {})
     return {
-        "game_id": url.rsplit("/", 1)[-1] if url else str(game.get("gameID", "")),
-        "start_date": game.get("startDate"),
-        "start_time": game.get("startTime"),
-        "status": game.get("gameState"),
-        "period": game.get("currentPeriod") or None,
-        "home_team": (home.get("names") or {}).get("short"),
-        "away_team": (away.get("names") or {}).get("short"),
-        "home_seo": (home.get("names") or {}).get("seo"),
-        "away_seo": (away.get("names") or {}).get("seo"),
-        "home_score": home.get("score") or None,
-        "away_score": away.get("score") or None,
-        "home_conference": ((home.get("conferences") or [{}])[0] or {}).get("conferenceName"),
-        "away_conference": ((away.get("conferences") or [{}])[0] or {}).get("conferenceName"),
+        "game_id": str(contest.get("contestId", "")),
+        "start_date": contest.get("startDate"),
+        "start_time": contest.get("startTime"),
+        "status": contest.get("statusCodeDisplay") or contest.get("gameState"),
+        "period": contest.get("currentPeriod") or None,
+        "home_team": home.get("nameShort"),
+        "away_team": away.get("nameShort"),
+        "home_seo": home.get("seoname"),
+        "away_seo": away.get("seoname"),
+        "home_score": home.get("score"),
+        "away_score": away.get("score"),
+        "home_conference": home.get("conferenceSeo"),
+        "away_conference": away.get("conferenceSeo"),
     }
 
 
+def _season_of(day: datetime) -> int:
+    """Basketball season (by starting year) that a calendar day falls in."""
+    return day.year if day.month >= 7 else day.year - 1
+
+
+def _iso(us_date: str) -> str:
+    return datetime.strptime(us_date, "%m/%d/%Y").strftime("%Y-%m-%d")
+
+
 def fetch_scoreboard(sport: str, division: Any, *, year: Any = None, week: Any = None, date: Any = None) -> dict[str, Any]:
-    """Casablanca scoreboard for one sport/division and one week or day."""
+    """Scoreboard for one sport/division and one week (football) or day."""
     config = sport_config(sport)
-    slug, _ = resolve_division(sport, division)
+    slug, code = resolve_division(sport, division)
+    variables: dict[str, Any] = {"sportCode": config["code"], "division": code}
 
     if config["date_style"] == "week":
         season = int(year) if year is not None else current_season_year(sport)
         if week is None:
             raise _NcaaError("week is required for football scoreboards (1-20).")
-        segment = f"{season}/{int(week):02d}"
+        variables.update(seasonYear=season, week=int(week))
         scope = {"season": str(season), "week": int(week)}
     else:
         if date is None:
             raise _NcaaError("date is required — YYYY-MM-DD.")
-        if not re.fullmatch(r"\d{4}-\d{2}-\d{2}", str(date)):
-            raise _NcaaError(f"Invalid date {date!r}. Use YYYY-MM-DD.")
-        segment = str(date).replace("-", "/")
+        try:
+            day = datetime.strptime(str(date), "%Y-%m-%d")
+        except ValueError:
+            raise _NcaaError(f"Invalid date {date!r}. Use YYYY-MM-DD.") from None
+        variables.update(seasonYear=_season_of(day), contestDate=day.strftime("%m/%d/%Y"))
         scope = {"date": str(date)}
 
-    data = _fetch_json(f"{_CASABLANCA_BASE}/scoreboard/{config['sport_url']}/{slug}/{segment}/scoreboard.json", ttl=60)
-    games = [_normalize_casablanca_game(g) for g in data.get("games", [])]
+    data = _graphql(GAME_HASHES["scoreboard"], variables, ttl=60)
+    games = [_normalize_contest(c) for c in data.get("contests") or []]
     result = {
         "provider": "ncaa",
         "sport": sport,
@@ -399,26 +411,44 @@ def fetch_scoreboard(sport: str, division: Any, *, year: Any = None, week: Any =
 
 
 def fetch_schedule(sport: str, division: Any, *, year: Any = None, month: Any = None) -> dict[str, Any]:
-    """Casablanca schedule index: which dates/weeks have games."""
+    """Schedule index: which weeks (football) or dates have games."""
     config = sport_config(sport)
-    slug, _ = resolve_division(sport, division)
+    slug, code = resolve_division(sport, division)
     season = int(year) if year is not None else current_season_year(sport)
+    if config["date_style"] == "date" and month is None:
+        raise _NcaaError("month is required for this sport's schedule (1-12).")
 
+    data = _graphql(
+        GAME_HASHES["schedule"],
+        {"sportCode": config["code"], "division": code, "seasonYear": season},
+        operation="NCAA_schedules_today_web",
+        ttl=3600,
+    )
+    entries = (data.get("schedules") or {}).get("games") or []
+    schedule: list[dict[str, Any]] = []
     if config["date_style"] == "week":
-        path = f"{_CASABLANCA_BASE}/schedule/{config['sport_url']}/{slug}/{season}/schedule-all-conf.json"
+        # One entry per week in order ("MM/DD/YYYY-MM/DD/YYYY"), so position is
+        # the week number the scoreboard takes. The feed then appends one entry
+        # spanning the whole postseason, a rollup of those weeks: it starts
+        # before the previous entry ends, so it is not a week of its own.
+        for entry in entries:
+            first, _, last = str(entry.get("contestDate", "")).partition("-")
+            start, end = _iso(first), _iso(last or first)
+            if schedule and start < schedule[-1]["end_date"]:
+                continue
+            schedule.append({"week": len(schedule) + 1, "start_date": start, "end_date": end, "games": entry.get("count")})
     else:
-        if month is None:
-            raise _NcaaError("month is required for this sport's schedule (1-12).")
-        path = f"{_CASABLANCA_BASE}/schedule/{config['sport_url']}/{slug}/{season}/{int(month):02d}/schedule-all-conf.json"
-
-    data = _fetch_json(path, ttl=3600)
+        for entry in entries:
+            day = _iso(str(entry.get("contestDate", "")))
+            if int(day[5:7]) == int(month):
+                schedule.append({"date": day, "games": entry.get("count")})
     return {
         "provider": "ncaa",
         "sport": sport,
         "division": slug,
         "season": str(season),
-        "schedule": data.get("gameWeeks") or data.get("gameDates") or [],
-        "count": len(data.get("gameWeeks") or data.get("gameDates") or []),
+        "schedule": schedule,
+        "count": len(schedule),
     }
 
 
@@ -430,7 +460,10 @@ def fetch_game_info(game_id: Any) -> dict[str, Any]:
     data = _graphql(GAME_HASHES["game_info"], {"id": gid, "week": None, "staticTestEnv": None})
     contests = data.get("contests") or []
     if not contests:
-        raise _NcaaError(f"No game found for game_id {gid!r}")
+        raise _NcaaError(
+            f"No game found for game_id {gid!r}. NCAA reissues game ids; take a "
+            "current one from get_ncaa_scoreboard."
+        )
     return {"provider": "ncaa", "game_id": gid, "game": contests[0]}
 
 
@@ -535,13 +568,53 @@ def fetch_boxscore(sport: str, game_id: Any) -> dict[str, Any]:
     }
 
 
+_FG_SUMMARY = re.compile(r"^(?P<kicker>.+?) field goal is good", re.IGNORECASE)
+_FG_PLAY = re.compile(r"^(?:\(\d+:\d+\)\s*)?(?P<kicker>.+?) field goal attempt from (?P<yards>\d+) yards? GOOD", re.IGNORECASE)
+
+
+def _add_field_goal_distances(gid: str, summary: dict[str, Any]) -> list[str]:
+    """Set ``distance_yards`` on made field goals, from the play-by-play.
+
+    The summary text carries no distance ("Smith,Garrison Field Goal is
+    good."); the play-by-play attempt does ("... field goal attempt from 43
+    yards GOOD"). Made kicks pair up per kicker in game order. Returns warnings.
+    """
+    fgs = []
+    for period in summary.get("periods") or []:
+        for entry in period.get("summary") or []:
+            m = _FG_SUMMARY.match(str(entry.get("scoreText", "")))
+            if entry.get("scoreType") == "FG" and m:
+                fgs.append((entry, m.group("kicker").strip().lower()))
+    if not fgs:
+        return []
+    try:
+        data = _graphql(PBP_HASHES["football"], {"contestId": gid, "staticTestEnv": None})
+    except _NcaaError as exc:
+        return [f"field-goal distances unavailable: {exc}"]
+    made: dict[str, list[int]] = {}
+    for period in (data.get("playbyplay") or {}).get("periods") or []:
+        for block in period.get("playbyplayStats") or []:
+            for play in block.get("plays") or []:
+                m = _FG_PLAY.match(str(play.get("playText", "")))
+                if m:
+                    made.setdefault(m.group("kicker").strip().lower(), []).append(int(m.group("yards")))
+    for entry, kicker in fgs:
+        kicks = made.get(kicker)
+        entry["distance_yards"] = kicks.pop(0) if kicks else None
+    return []
+
+
 def fetch_scoring_summary(game_id: Any) -> dict[str, Any]:
     gid = require_game_id(game_id)
     data = _graphql(GAME_HASHES["scoring_summary"], {"contestId": gid, "staticTestEnv": None})
     summary = data.get("scoringSummary") or {}
     if not summary:
         raise _NcaaError(f"No scoring summary for game_id {gid!r}")
-    return {"provider": "ncaa", "game_id": gid, "scoring_summary": summary}
+    result = {"provider": "ncaa", "game_id": gid, "scoring_summary": summary}
+    warnings = _add_field_goal_distances(gid, summary)
+    if warnings:
+        result["warnings"] = warnings
+    return result
 
 
 def fetch_bracket(sport: str, division: Any, year: Any = None) -> dict[str, Any]:
@@ -561,6 +634,16 @@ def fetch_bracket(sport: str, division: Any, year: Any = None) -> dict[str, Any]
             "tournament field is announced."
         )
     champ = championships[0]
+    games = champ.get("games") or []
+    if not any(g.get("teams") for g in games):
+        # The source still serves the bracket skeleton (2020: 67 TBA games
+        # with success status), which is a placeholder, not a bracket.
+        note = (
+            " The 2020 NCAA tournaments were cancelled (COVID-19) and never played."
+            if season == 2020
+            else " The field has not been announced yet."
+        )
+        raise _NcaaError(f"The {season} {sport}/{slug} bracket has no teams in any game.{note}")
     return {
         "provider": "ncaa",
         "sport": sport,
@@ -569,7 +652,7 @@ def fetch_bracket(sport: str, division: Any, year: Any = None) -> dict[str, Any]
         "championship_id": champ.get("championshipId"),
         "rounds": champ.get("rounds") or [],
         "regions": champ.get("regions") or [],
-        "games": champ.get("games") or [],
+        "games": games,
     }
 
 

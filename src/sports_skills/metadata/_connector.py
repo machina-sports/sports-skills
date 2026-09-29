@@ -84,7 +84,14 @@ class _RateLimiter:
             time.sleep(0.1)
 
 
-_limiter = _RateLimiter()
+# The free key allows 30 requests per minute (the 31st gets HTTP 429 and a
+# ~2 minute Retry-After). Burst + one minute of refill stays at 30.
+_limiter = _RateLimiter(max_tokens=5, refill_rate=25 / 60)
+
+_RATE_LIMIT_MESSAGE = (
+    "TheSportsDB rate limit: the free API key allows 30 requests per minute. {detail} "
+    "Repeated lookups are cached, so reuse earlier results where possible."
+)
 
 # ============================================================
 # HTTP Fetching
@@ -96,17 +103,24 @@ def _http_fetch(url, retries=2):
 
     In replay mode no network call, rate-limit wait, or retry happens.
     """
-    if _replay.mode() != _replay.REPLAY:
-        _limiter.acquire()
-
     cached = _cache_get(url)
     if cached is not None:
         return cached
 
+    if _replay.mode() != _replay.REPLAY and not _limiter.acquire():
+        return {
+            "error": True,
+            "status_code": 429,
+            "message": _RATE_LIMIT_MESSAGE.format(detail="Too many lookups in a row; wait a few seconds and retry."),
+        }
+
     raw, err = _replay.fetch(url, lambda: _live_http_fetch(url, retries))
     if err is not None:
-        # This module's error shape has no status_code; keep the replay flags.
+        # This module's error shape has no status_code, except 429, which the
+        # response wrapper turns into a rate-limit upgrade hint. Keep the replay flags.
         error = {"error": True, "message": err.get("message", "")}
+        if err.get("status_code") == 429:
+            error["status_code"] = 429
         for flag in ("replay_miss", "replay_error"):
             if err.get(flag):
                 error[flag] = True
@@ -125,7 +139,12 @@ def _live_http_fetch(url, retries):
             with urllib.request.urlopen(req, timeout=15) as resp:
                 return resp.read(), None
         except urllib.error.HTTPError as e:
-            if e.code == 429 or e.code >= 500:
+            if e.code == 429:
+                # The lockout lasts minutes; retrying after a second only burns quota.
+                retry_after = e.headers.get("Retry-After") if e.headers else None
+                detail = f"Retry after {retry_after} seconds." if retry_after else "Wait a minute and retry."
+                return None, {"error": True, "status_code": 429, "message": _RATE_LIMIT_MESSAGE.format(detail=detail)}
+            if e.code >= 500:
                 last_err = e
                 time.sleep(min(2 ** attempt, 4))
                 continue

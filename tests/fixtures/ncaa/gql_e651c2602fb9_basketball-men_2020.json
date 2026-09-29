@@ -1,0 +1,171 @@
+{
+ "data": {
+  "championships": [
+   {
+    "__typename": "Championship",
+    "title": "2020 Division I Men's Basketball Championship ",
+    "year": 2020,
+    "dataPath": "/carmen/brackets/championships/basketball-men/d1/2020",
+    "bracketTemplate": "bracket_68.json",
+    "season": 2019,
+    "sportUrl": "basketball-men",
+    "championshipId": 6061,
+    "divisionName": "d1",
+    "games": [
+     {
+      "__typename": "ChampionshipGame",
+      "contestId": 3960090,
+      "bracketPositionId": 101,
+      "bracketId": 101,
+      "victorGamePosition": "Bottom",
+      "victorBracketPositionId": 201,
+      "loserGamePosition": null,
+      "loserBracketPositionId": null,
+      "contestClock": "",
+      "currentPeriod": "",
+      "finalMessage": "",
+      "gameState": "P",
+      "statusCodeDisplay": "pre",
+      "liveVideoEnabled": false,
+      "hasStartTime": false,
+      "startDate": "",
+      "startTime": "TBA",
+      "startTimeEpoch": null,
+      "sectionId": 1,
+      "title": "",
+      "url": "/game/3960090",
+      "enabled": true,
+      "isIfNecessary": false,
+      "visible": false,
+      "isTopVisible": false,
+      "isBottomVisible": false,
+      "teams": [],
+      "stream": {
+       "__typename": "Stream",
+       "syndicateOnly": false,
+       "enabled": false,
+       "state": "pre",
+       "url": ""
+      },
+      "broadcaster": null
+     },
+     {
+      "__typename": "ChampionshipGame",
+      "contestId": 3960099,
+      "bracketPositionId": 102,
+      "bracketId": 102,
+      "victorGamePosition": "Bottom",
+      "victorBracketPositionId": 213,
+      "loserGamePosition": null,
+      "loserBracketPositionId": null,
+      "contestClock": "",
+      "currentPeriod": "",
+      "finalMessage": "",
+      "gameState": "P",
+      "statusCodeDisplay": "pre",
+      "liveVideoEnabled": false,
+      "hasStartTime": false,
+      "startDate": "",
+      "startTime": "TBA",
+      "startTimeEpoch": null,
+      "sectionId": 1,
+      "title": "",
+      "url": "/game/3960099",
+      "enabled": true,
+      "isIfNecessary": false,
+      "visible": false,
+      "isTopVisible": false,
+      "isBottomVisible": false,
+      "teams": [],
+      "stream": {
+       "__typename": "Stream",
+       "syndicateOnly": false,
+       "enabled": false,
+       "state": "pre",
+       "url": ""
+      },
+      "broadcaster": null
+     },
+     {
+      "__typename": "ChampionshipGame",
+      "contestId": 3960095,
+      "bracketPositionId": 103,
+      "bracketId": 103,
+      "victorGamePosition": "Bottom",
+      "victorBracketPositionId": 225,
+      "loserGamePosition": null,
+      "loserBracketPositionId": null,
+      "contestClock": "",
+      "currentPeriod": "",
+      "finalMessage": "",
+      "gameState": "P",
+      "statusCodeDisplay": "pre",
+      "liveVideoEnabled": false,
+      "hasStartTime": false,
+      "startDate": "",
+      "startTime": "TBA",
+      "startTimeEpoch": null,
+      "sectionId": 1,
+      "title": "",
+      "url": "/game/3960095",
+      "enabled": true,
+      "isIfNecessary": false,
+      "visible": false,
+      "isTopVisible": false,
+      "isBottomVisible": false,
+      "teams": [],
+      "stream": {
+       "__typename": "Stream",
+       "syndicateOnly": false,
+       "enabled": false,
+       "state": "pre",
+       "url": ""
+      },
+      "broadcaster": null
+     }
+    ],
+    "rounds": [
+     {
+      "__typename": "Round",
+      "id": "7281",
+      "roundNumber": 1,
+      "label": "",
+      "staged": true,
+      "subtitle": "",
+      "title": "First Four&#174;"
+     },
+     {
+      "__typename": "Round",
+      "id": "7282",
+      "roundNumber": 2,
+      "label": "",
+      "staged": true,
+      "subtitle": "",
+      "title": "First Round"
+     }
+    ],
+    "regions": [
+     {
+      "__typename": "RegionSection",
+      "id": "2521",
+      "abbreviation": "",
+      "title": "",
+      "subtitle": "",
+      "sectionId": 1,
+      "regionCode": "TT"
+     },
+     {
+      "__typename": "RegionSection",
+      "id": "2522",
+      "abbreviation": "",
+      "title": "",
+      "subtitle": "",
+      "sectionId": 2,
+      "regionCode": "TL"
+     }
+    ],
+    "sections": []
+   }
+  ]
+ }
+}

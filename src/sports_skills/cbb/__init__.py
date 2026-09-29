@@ -286,7 +286,7 @@ def find_upset_candidates(
 
 
 # ============================================================
-# Official NCAA backend (data.ncaa.com + sdataprod.ncaa.com)
+# Official NCAA backend (sdataprod.ncaa.com + ncaa.com)
 # ============================================================
 
 def _ncaa_call(fetch, *args, **kwargs):

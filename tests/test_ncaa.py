@@ -2,7 +2,7 @@
 
 No network: `_fetch_json` is monkeypatched to serve trimmed real payloads
 captured from the live endpoints (tests/fixtures/ncaa/), so the normalizers are
-exercised against the actual response shapes of both upstreams (casablanca JSON
+exercised against the actual response shapes of both upstreams (ncaa.com JSON
 and the sdataprod persisted queries).
 """
 
@@ -25,6 +25,8 @@ def _key_for(url):
         var = re.search(r"variables=([^&]+)", url)
         v = json.loads(urllib.parse.unquote(var.group(1))) if var else {}
         tail = v.get("contestId") or v.get("id") or v.get("sportUrl") or v.get("sportCode") or ""
+        if v.get("year"):
+            tail = f"{tail}_{v['year']}"
         return f"gql_{hid}_{tail}"
     path = url.split("casablanca/")[-1] if "casablanca" in url else url.rsplit("/", 2)[-1]
     return re.sub(r"[^A-Za-z0-9]+", "_", path.replace(".json", "")).strip("_")
@@ -89,29 +91,47 @@ class TestRequireGameId:
             _ncaa.require_game_id("abc")
 
 
-# ── casablanca layer ─────────────────────────────────────────────
+# ── scoreboard / schedule (sdataprod) ─────────────────────────────
+
+
+def _variables(url):
+    return json.loads(urllib.parse.unquote(re.search(r"variables=([^&]+)", url).group(1)))
 
 
 class TestScoreboard:
+    """#165: casablanca froze on 2025-08-29 (every later game stuck at `pre`,
+    2026 and newer dates NoSuchKey), so scoreboards come from the GraphQL
+    scoreboard query instead."""
+
     def test_football_week_query(self, offline):
-        out = _ncaa.fetch_scoreboard("football", "fbs", year=2024, week=13)
-        assert out["count"] > 0
+        out = _ncaa.fetch_scoreboard("football", "fbs", year=2025, week=16)
+        assert out["count"] == 2
         g = out["games"][0]
         assert {"game_id", "home_team", "away_team", "status"} <= set(g)
         assert re.fullmatch(r"\d+", g["game_id"])
-        assert "/2024/13/" in offline[-1]
+        assert "sdataprod" in offline[-1]
+        assert _variables(offline[-1]) == {"sportCode": "MFB", "division": 11, "seasonYear": 2025, "week": 16}
 
-    def test_week_is_zero_padded_in_the_path(self, offline):
-        try:
-            _ncaa.fetch_scoreboard("football", "fbs", year=2024, week=5)
-        except Exception:
-            pass  # fixture for week 5 does not exist; only the URL matters
-        assert "/2024/05/" in offline[-1]
+    def test_finished_games_are_final_with_scores(self, offline):
+        """Army-Navy 2025: casablanca still lists it as `pre` under the stale id
+        6455327, which the game endpoint no longer knows."""
+        out = _ncaa.fetch_scoreboard("football", "fbs", year=2025, week=16)
+        army_navy = next(g for g in out["games"] if "Navy" in (g["home_team"], g["away_team"]))
+        assert army_navy["game_id"] == "6458979"
+        assert army_navy["status"] == "final"
+        assert army_navy["home_score"] is not None and army_navy["away_score"] is not None
 
     def test_basketball_date_query(self, offline):
-        out = _ncaa.fetch_scoreboard("basketball-men", "d1", date="2025-02-28")
+        out = _ncaa.fetch_scoreboard("basketball-men", "d1", date="2026-03-20")
         assert out["count"] > 0
-        assert "/2025/02/28/" in offline[-1]
+        assert out["games"][0]["status"] == "final"
+        # A March date belongs to the season that started the previous fall.
+        assert _variables(offline[-1]) == {
+            "sportCode": "MBB",
+            "division": 1,
+            "seasonYear": 2025,
+            "contestDate": "03/20/2026",
+        }
 
     def test_football_requires_week(self, offline):
         with pytest.raises(_ncaa._NcaaError, match="week is required"):
@@ -127,9 +147,24 @@ class TestScoreboard:
 
 
 class TestSchedule:
-    def test_football_schedule_index(self, offline):
-        out = _ncaa.fetch_schedule("football", "fbs", year=2024)
+    def test_football_schedule_numbers_weeks(self, offline):
+        out = _ncaa.fetch_schedule("football", "fbs", year=2025)
+        weeks = out["schedule"]
+        assert [w["week"] for w in weeks] == list(range(1, 22))
+        assert weeks[15] == {"week": 16, "start_date": "2025-12-13", "end_date": "2025-12-13", "games": 2}
+        assert out["count"] == 21
+
+    def test_football_schedule_drops_postseason_rollup(self, offline):
+        """The source appends one overlapping entry totalling the postseason
+        weeks; it is not a week of its own."""
+        out = _ncaa.fetch_schedule("football", "fbs", year=2025)
+        assert all(w["games"] != 47 for w in out["schedule"])
+
+    def test_basketball_schedule_filters_month(self, offline):
+        out = _ncaa.fetch_schedule("basketball-men", "d1", year=2025, month=3)
         assert out["count"] > 0
+        assert all(d["date"].startswith("2026-03-") for d in out["schedule"])
+        assert _variables(offline[-1]) == {"sportCode": "MBB", "division": 1, "seasonYear": 2025}
 
     def test_basketball_needs_month(self, offline):
         with pytest.raises(_ncaa._NcaaError, match="month is required"):
@@ -171,10 +206,32 @@ class TestGameDetail:
         out = _ncaa.fetch_scoring_summary("6306261")
         assert out["scoring_summary"]
 
+    def test_scoring_summary_field_goals_carry_distance(self, offline):
+        """#165: the summary text is "Smith,Garrison Field Goal is good." with
+        no distance; the play-by-play attempt text carries it."""
+        out = _ncaa.fetch_scoring_summary("6306261")
+        fgs = [
+            s
+            for p in out["scoring_summary"]["periods"]
+            for s in p["summary"]
+            if s["scoreType"] == "FG"
+        ]
+        assert [s["distance_yards"] for s in fgs] == [43, 40, 26, 27]
+
+    def test_missing_game_hints_at_reissued_ids(self, monkeypatch):
+        monkeypatch.setattr(_ncaa, "_fetch_json", lambda url, ttl=300: {"data": {"contests": []}})
+        with pytest.raises(_ncaa._NcaaError, match="get_ncaa_scoreboard"):
+            _ncaa.fetch_game_info("6455327")
+
     def test_bracket_march_madness(self, offline):
         out = _ncaa.fetch_bracket("basketball-men", "d1", 2025)
         assert out["rounds"] and out["regions"]
         assert out["games"], "bracket carries games with live scores in season"
+
+    def test_bracket_without_a_field_is_an_error(self, offline):
+        """#165: 2020 returns 67 TBA placeholder games (tournament cancelled)."""
+        with pytest.raises(_ncaa._NcaaError, match="cancelled"):
+            _ncaa.fetch_bracket("basketball-men", "d1", 2020)
 
 
 class TestHashRotation:
@@ -197,7 +254,7 @@ class TestHashRotation:
             _ncaa._graphql("deadbeef", {})
 
     def test_rotation_message_names_the_working_layer(self):
-        assert "data.ncaa.com" in _ncaa._ROTATION_MESSAGE
+        assert "get_ncaa_schools" in _ncaa._ROTATION_MESSAGE
         assert "henrygd/ncaa-api" in _ncaa._ROTATION_MESSAGE
 
     def test_hash_tables_are_wellformed(self):
@@ -260,21 +317,21 @@ class TestWrappers:
     def test_cfb_scoreboard_pins_football(self, offline):
         from sports_skills import cfb
 
-        out = cfb.get_ncaa_scoreboard(week=13, season=2024)
+        out = cfb.get_ncaa_scoreboard(week=16, season=2025)
         assert out["status"] is True
         assert (out["data"] or {})["sport"] == "football"
 
     def test_cbb_scoreboard_pins_basketball(self, offline):
         from sports_skills import cbb
 
-        out = cbb.get_ncaa_scoreboard(date="2025-02-28")
+        out = cbb.get_ncaa_scoreboard(date="2026-03-20")
         assert out["status"] is True
         assert (out["data"] or {})["sport"] == "basketball-men"
 
     def test_cfb_rejects_basketball_divisions(self, offline):
         from sports_skills import cfb
 
-        out = cfb.get_ncaa_scoreboard(week=13, division="d3")
+        out = cfb.get_ncaa_scoreboard(week=16, division="d3")
         assert out["status"] is False
         assert "fbs, fcs" in out["message"]
 
