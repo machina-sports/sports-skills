@@ -316,7 +316,7 @@ _REGISTRY = {
         "get_race_results": {"required": ["year", "event"]},
         "get_pit_stops": {"required": ["year"], "optional": ["event", "driver"]},
         "get_speed_data": {"required": ["year"], "optional": ["event", "driver"]},
-        "get_championship_standings": {"required": ["year"]},
+        "get_championship_standings": {"required": ["year"], "optional": ["round"]},
         "get_season_stats": {"required": ["year"]},
         "get_team_comparison": {
             "required": ["year", "team1", "team2"],
