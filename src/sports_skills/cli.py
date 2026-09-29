@@ -455,7 +455,7 @@ _REGISTRY = {
         "find_mlb_player": {"required": ["name"]},
         "get_mlbstats_schedule": {"optional": ["date", "season", "team", "game_type"]},
         "get_mlbstats_player_stats": {
-            "optional": ["player_id", "player", "stat_type", "stat_group", "season"]
+            "optional": ["player_id", "player", "stat_type", "stat_group", "season", *_SHAPING]
         },
         "get_mlbstats_play_by_play": {"required": ["game_pk"], "optional": list(_SHAPING)},
         "get_mlbstats_boxscore": {"required": ["game_pk"]},

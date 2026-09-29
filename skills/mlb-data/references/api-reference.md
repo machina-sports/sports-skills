@@ -109,6 +109,17 @@ Get full player statistical profile for a season.
 
 Returns `categories[]` with detailed stats including value, rank, and per-game averages.
 
+### get_mlbstats_player_stats
+Get a player's stats via the MLB Stats API (statsapi.mlb.com).
+- `player_id` (str, optional): MLB person id (e.g. `660271`). Find it with `find_mlb_player`.
+- `player` (str, optional): Player name to resolve instead of `player_id`. Must match exactly one player.
+- `stat_type` (str, optional): `season` (default), `career`, `year_by_year`, or `game_log` (one split per game).
+- `stat_group` (str, optional): `hitting` (default), `pitching`, or `fielding`.
+- `season` (int, optional): Season year for `season` and `game_log`. Defaults to the most recent season.
+- `sort_by`, `descending`, `limit`, `fields` (optional): Row shaping, see SKILL.md. Stat keys (`homeRuns`, `strikeOuts`) are addressable directly.
+
+Returns `splits[]`, each with `season`, `team` and a `stats` bag in MLB's keys. `game_log` splits add `game_pk`, `game_date`, `game_type`, `opponent`, `home_away` (`home`/`away`) and `result` (`W`/`L`): 158 hitting splits for Shohei Ohtani (660271) in 2025.
+
 ## Team IDs
 
 | Team | ID | Team | ID |
