@@ -1,3 +1,18 @@
+## [Unreleased]
+
+### Fixed
+- **football: `get_event_summary` fetched La Liga / Bundesliga summaries twice** ([#163](https://github.com/machina-sports/sports-skills/issues/163)). Without a league hint the event is probed under each league, `eng.1` first, and ESPN serves any soccer event under any league path, so Real Madrid at Atlético Madrid (401882865) was fetched, and recorded, under `eng.1` and again under `esp.1`. The probe's answer is now kept under the league it names, so one request is made.
+- **football: the timeline dropped stoppage time** (#163). ESPN's clock `"45'+3'"` became `minute: 45` with the `+3` lost. Entries gain `added_time` (`3` here, `0` outside stoppage time); `minute` and the order are unchanged.
+- **golf: `get_schedule` downloaded every event's full field** (#163). The season calendar comes with any scoreboard response, so the request now adds `limit=1`: 13 KB instead of 26 MB for the 2026 PGA season, with the same 49 tournaments.
+- **golf: unplayed rounds had `strokes: 0`** (#163). A missed-cut round (`"-"`) now has `strokes` / `total_strokes` `null`. Round rows in `get_leaderboard` and `get_scorecard` gain `holes_played` (holes in ESPN's card, `null` when it sent none), because a withdrawal's round keeps only the holes played: Collin Morikawa's 2026 PLAYERS round 1 is `4` strokes, `"E"`, after one hole.
+- **golf: `recent_tournaments` was grouped by tour, not ordered by date** (#163). ESPN lists PGA Tour events, then DP World Tour events, so Rory McIlroy's September BMW PGA Championship came sixth, after his July Open. The list is newest first now.
+- **tennis: `get_calendar` refetched the full-year scoreboard on every call** (#163). ESPN has no light tennis calendar (`dates=2026` is 19 MB for the ATP and 25 MB for the WTA, `limit=1` keeps one tournament, the core API returns only refs), so the result is cached for 6 hours per tour and year. ESPN publishes no per-match tennis statistics (aces, double faults): scoreboard `statistics` are empty and the stats endpoint returns "No competitor stats found" even for the 2026 Wimbledon final. The skill docs say so.
+- **cricket: Cricsheet season stats counted super overs** (#163). `get_player_stats` now skips super-over innings, as official records do, and each `get_match_deliveries` innings carries `super_over` (true for innings 3 and 4 of IPL 2017 match 1082625, Gujarat Lions v Mumbai Indians).
+
+### Added
+- **golf: `event_id` and `date` on `get_leaderboard` and `get_scorecard`** (#163). Completed tournaments were unreachable: both read only the current scoreboard, which between events shows the next, unplayed one (empty `holes`). ESPN's golf scoreboard ignores an `event` parameter, so the event's start date is read from the core API and the scoreboard is requested for that day, picking the event by id (the Puerto Rico Open, not the Arnold Palmer Invitational played the same week). `date` alone (`YYYY-MM-DD`) returns that day's tournament. An unknown id or a malformed date returns an error message.
+- **cricket: `scorecards[]` in `get_game_summary`** (#163). ESPN's `matchcards` hold only the latest innings and the summary takes no innings parameter, so a Test's first three innings were missing. `scorecards[]` rebuilds batting and bowling for every innings from the rosters' per-innings figures (India A v Australia A, 1535672: four innings). `matchcards` is unchanged. ESPN's scoreboard `date` does work within a series' current season; an earlier season (IPL 2025 on `8048`) returns no events, which the docs now say.
+
 ## [0.34.0]
 
 ### Changed
