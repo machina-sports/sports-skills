@@ -271,6 +271,10 @@ def _normalize_score_game(game: dict[str, Any]) -> dict[str, Any]:
         "season": str(game.get("season", "")),
         "game_type": game.get("gameType"),
         "status": game.get("gameState"),
+        # How a final was decided: "REG", "OT" or "SO" (null until final). A
+        # shootout winner's score includes the one goal the NHL credits for
+        # the shootout, as in the official result (PHI 2-1 SO at TBL).
+        "decided_by": (game.get("gameOutcome") or {}).get("lastPeriodType"),
         "away_team": _default(away.get("name")) or away.get("abbrev"),
         "home_team": _default(home.get("name")) or home.get("abbrev"),
         "away_abbreviation": away.get("abbrev"),
@@ -405,10 +409,12 @@ def get_nhlstats_play_by_play(request_data: dict[str, Any]) -> dict[str, Any]:
 
     data = _request(f"{_API_BASE}/gamecenter/{game_id}/play-by-play")
     names = {}
+    teams = {}
     for spot in data.get("rosterSpots", []):
         pid = spot.get("playerId")
         if pid is not None:
             names[pid] = f"{_default(spot.get('firstName')) or ''} {_default(spot.get('lastName')) or ''}".strip()
+            teams[pid] = spot.get("teamId")
 
     all_plays = data.get("plays", [])
     total = len(all_plays)
@@ -437,6 +443,12 @@ def get_nhlstats_play_by_play(request_data: dict[str, Any]) -> dict[str, Any]:
             "away_score": det.get("awayScore"),
             "home_score": det.get("homeScore"),
         }
+        if p.get("typeDescKey") == "blocked-shot":
+            # team_id/player are the shooter's (the NHL's eventOwnerTeamId); the
+            # box score credits the block to the defending player, so name him.
+            blocker = det.get("blockingPlayerId")
+            row["blocking_player"] = names.get(blocker)
+            row["blocking_team_id"] = teams.get(blocker)
         plays.append(row)
 
     result = {
@@ -498,6 +510,7 @@ def get_nhlstats_boxscore(request_data: dict[str, Any]) -> dict[str, Any]:
         "provider": "nhl-stats",
         "game_id": game_id,
         "game_date": data.get("gameDate"),
+        "decided_by": (data.get("gameOutcome") or {}).get("lastPeriodType"),
         "home": _normalize_box_side(data.get("homeTeam") or {}, player_stats.get("homeTeam") or {}),
         "away": _normalize_box_side(data.get("awayTeam") or {}, player_stats.get("awayTeam") or {}),
     }
