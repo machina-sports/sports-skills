@@ -282,6 +282,34 @@ class TestPlayerGameLog:
             "game_id", "game_date", "player_id", "team_abbreviation", "matchup", "pts"
         }
 
+    def test_opponent_and_home_away_from_matchup(self, offline):
+        league = _stats.get_nbastats_game_log({"params": {"season": 2024, "player_or_team": "player"}})
+        home = league["games"][0]  # BOS vs. NYK
+        assert (home["matchup"], home["opponent"], home["home_away"]) == ("BOS vs. NYK", "NYK", "home")
+        away = next(r for r in league["games"] if " @ " in r["matchup"])
+        assert away["home_away"] == "away" and away["opponent"] == away["matchup"].split(" @ ")[1]
+        one = _stats.get_nbastats_game_log({"params": {"season": 2024, "player": "2544"}})
+        last = one["games"][-1]  # LAL vs. HOU
+        assert (last["opponent"], last["home_away"], last["wl"]) == ("HOU", "home", "W")
+        assert all(r["home_away"] in ("home", "away") for r in one["games"])
+
+    def test_team_rows_gain_no_matchup_columns(self, offline):
+        out = _stats.get_nbastats_game_log({"params": {"season": 2024}})
+        assert "opponent" not in out["games"][0] and "home_away" not in out["games"][0]
+
+    @pytest.mark.parametrize(
+        "matchup, expected",
+        [
+            ("LAL vs. HOU", ("HOU", "home")),
+            ("LAL @ HOU", ("HOU", "away")),
+            ("", (None, None)),
+            (None, (None, None)),
+            ("LAL - HOU", (None, None)),
+        ],
+    )
+    def test_matchup_parsing(self, matchup, expected):
+        assert _stats._matchup_sides(matchup) == expected
+
     def test_player_with_team_mode_is_reported(self, offline):
         out = _stats.get_nbastats_game_log(
             {"params": {"player_or_team": "team", "player": "LeBron James"}}

@@ -415,7 +415,8 @@ def get_nbastats_game_log(
     One row per team per game (or per player per game with
     player_or_team="player"), with the 10-digit NBA game ids the other
     get_nbastats_* functions take. matchup names the opponent and home/away
-    ("LAL vs. HOU" at home, "LAL @ HOU" away); wl is the result. History reaches back to the 1946-47 season.
+    ("LAL vs. HOU" at home, "LAL @ HOU" away); wl is the result. Player rows
+    also carry opponent and home_away, parsed from matchup. History reaches back to the 1946-47 season.
     Rows carry both NBA.com and ESPN team abbreviations; join to the ESPN
     functions on (game_date, team abbreviations) — the two id systems are
     unrelated.

@@ -481,6 +481,14 @@ def get_nbastats_game_log(request_data: dict[str, Any]) -> dict[str, Any]:
     return result
 
 
+def _matchup_sides(matchup: Any) -> tuple[str | None, str | None]:
+    """``"LAL vs. HOU"`` -> ``("HOU", "home")``; ``"LAL @ HOU"`` -> ``("HOU", "away")``."""
+    match = re.fullmatch(r"\s*\S+\s+(vs\.|@)\s+(\S+)\s*", str(matchup or ""))
+    if not match:
+        return None, None
+    return match.group(2), "home" if match.group(1) == "vs." else "away"
+
+
 def _game_log_players(
     params: dict[str, Any],
     season: str,
@@ -514,6 +522,8 @@ def _game_log_players(
     if team is not None:
         rows = [r for r in rows if str(r.get("team_abbreviation", "")).upper() == team]
     _with_espn_abbreviation(rows)
+    for row in rows:
+        row["opponent"], row["home_away"] = _matchup_sides(row.get("matchup"))
     total = len(rows)
     rows, shaping = shape_rows(rows, params, identity=_PLAYER_GAME_LOG_IDENTITY)
 

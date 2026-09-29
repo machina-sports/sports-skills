@@ -148,7 +148,7 @@ Get the league game log via the NBA Stats backend (stats.nba.com): one row per t
 - `player` (str, optional): Player name or NBA person id (`"LeBron James"`, `"2544"`). Returns that player's games from `playergamelog`, a request of a few KB. Implies `player_or_team="player"`.
 - `sort_by`, `descending`, `limit`, `fields` (optional): Row shaping, see SKILL.md.
 
-Returns `games[]` with NBA.com's lowercased columns: `game_id`, `game_date` (`YYYY-MM-DD`), `matchup` (`"LAL vs. HOU"` at home, `"LAL @ HOU"` away), `wl`, `min`, `pts`, `reb`, `ast`, `fg3m`, `plus_minus`, and the rest of the box line, plus `team_abbreviation` and `team_abbreviation_espn`. Player rows add `player_id` (and `player_name`, `team_id`, `team_name`, `fantasy_pts` for league-wide player rows). With `player`, the response adds `player_id` and `player`. The default team log is unchanged.
+Returns `games[]` with NBA.com's lowercased columns: `game_id`, `game_date` (`YYYY-MM-DD`), `matchup` (`"LAL vs. HOU"` at home, `"LAL @ HOU"` away), `wl`, `min`, `pts`, `reb`, `ast`, `fg3m`, `plus_minus`, and the rest of the box line, plus `team_abbreviation` and `team_abbreviation_espn`. Player rows add `player_id`, `opponent` and `home_away` (`home`/`away`, parsed from `matchup`; `null` if it does not parse) (and `player_name`, `team_id`, `team_name`, `fantasy_pts` for league-wide player rows). With `player`, the response adds `player_id` and `player`. The default team log is unchanged.
 
 ## Team IDs
 
