@@ -1,3 +1,19 @@
+## [Unreleased]
+
+### Changed
+- **nba: `get_nbastats_shot_chart` `game_date` is now `YYYY-MM-DD`** ([#160](https://github.com/machina-sports/sports-skills/issues/160)). stats.nba.com's shotchartdetail sends `"20241122"` while its game logs send `"2024-10-22"`, so shots could not be joined to games on the date. Shot rows now read `"2024-11-22"`, the same format as `get_nbastats_game_log`. Code that parsed the eight-digit form must change.
+
+### Fixed
+- **mlb: `get_mlbstats_player_stats(player_id=…)` put the id in `player`.** `player` was `"660271"` when called with an id. It now takes the name from the splits MLB returns (`"Shohei Ohtani"`); it stays the id only when MLB returns no splits (#160).
+- **mlb: `get_mlbstats_schedule` with a postseason `game_type` on another date returned nothing and gave no hint.** `game_type="worldseries"` with `date="2024-07-10"` still returns no games, but now with a `warnings` entry naming the game type and date, and saying to drop `game_type` or pass `team` + `season` with it to list the round's dates (#160).
+- **nba: `per_mode="per_36"` got HTTP 400.** `get_nbastats_team_stats` and `get_nbastats_player_career` sent `PerMode=Per36Minutes`, which stats.nba.com rejects. They now send `Per36`, which it accepts (#160).
+- **nba: `get_live_boxscore` fell back to ESPN with the NBA game id.** When cdn.nba.com answered 403, the ESPN summary was requested with `0022400001`, which ESPN cannot resolve. The NBA id is now mapped to its ESPN event id (date and teams from stats.nba.com's `boxscoresummaryv3`, then the ESPN scoreboard for that date: `0022400001` is ATL @ BOS on 2024-11-12, ESPN `401703370`). If the mapping fails, an error gives the CDN failure and the reason, and points to `get_scoreboard` plus `get_game_summary`. `get_live_playbyplay` had the same fallback and is fixed the same way. An ESPN event id is still passed straight to ESPN (#160).
+- **nhl: play-by-play blocked-shot rows did not match the box score.** On a `blocked-shot` event the NHL's `eventOwnerTeamId` is the shooting team (checked live on games from 2024 to 2025), while the box score's `blockedShots` credits the defender. `team_id` and `player` stay the shooter's, and blocked-shot rows gain `blocking_player` and `blocking_team_id`. Counting blocks by `blocking_team_id` matches the box score (#160).
+
+### Added
+- **mlb: `venue_timezone` on `get_mlbstats_schedule` rows** (#160). The request now asks for `hydrate=venue(timezone)`, and each row carries the ballpark's IANA zone from `venue.timeZone.id` (Yankee Stadium: `"America/New_York"`), or `null` when MLB omits it.
+- **nhl: `decided_by` on schedule rows and box scores** (#160). `status` is `OFF` for any final. `decided_by` is `gameOutcome.lastPeriodType`: `"REG"`, `"OT"` or `"SO"`, and `null` before the game ends. `status` is unchanged. Shootout scores are unchanged too: PHI at TBL on 2024-11-07 (1-1 after overtime) stays 2-1, the official score that the NHL's schedule, score and box-score feeds all report, because the shootout winner is credited one goal. `decided_by: "SO"` marks those games.
+
 ## [0.34.0]
 
 ### Changed
