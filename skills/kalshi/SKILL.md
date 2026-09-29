@@ -52,6 +52,8 @@ RIGHT: search_markets(sport='epl', query='Leeds') → returns all Leeds markets
 ## Important Notes
 
 - **On Kalshi, "Football" = NFL.** For football/soccer (EPL, La Liga, etc.), use sport codes: `epl`, `ucl`, `laliga`, `bundesliga`, `seriea`, `ligue1`, `mls`, `worldcup`.
+- **Formula 1** uses sport code `f1` (drivers'/constructors' champion plus per-Grand-Prix race, podium, pole, fastest-lap, head-to-head and sprint series).
+- **Market tickers are not always `<event_ticker>-<suffix>`.** Kalshi mints some with a different stem, e.g. `KXATP-26-SHA` sits inside event `KXATP-26USO` (2026 US Open men's singles) next to `KXATP-26USO-SIN`. That is Kalshi's real ticker: pass it verbatim to `get_market`, and group markets by their `event_ticker` field, never by parsing the ticker.
 - **Prices are probabilities.** A `last_price` of 20 means 20% implied probability. Scale is 0-100 (not 0-1 like Polymarket).
 - **Always use `status="open"`** when querying markets, otherwise results include settled/closed markets.
 - **Shared interface with Polymarket:** `search_markets(sport=...)`, `get_todays_events(sport=...)`, and `get_sports_config()` work the same way on both platforms.

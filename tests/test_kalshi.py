@@ -60,6 +60,17 @@ class TestWorldCupSeries:
         assert "KXWCGAME" in tickers
 
 
+class TestF1Series:
+    def test_f1_in_sports_config(self):
+        # #162: F1 series (live-verified on /series?category=Sports) were missing.
+        from sports_skills.kalshi._connector import get_sports_config
+
+        sports = {s["sport"]: s["series_tickers"] for s in get_sports_config({})["data"]["sports"]}
+        assert "f1" in sports
+        for ticker in ("KXF1", "KXF1CONSTRUCTORS", "KXF1RACE", "KXF1POLE", "KXF1RACESPRINT"):
+            assert ticker in sports["f1"]
+
+
 class TestGetTodaysEventsNormalization:
     @patch("sports_skills.kalshi._connector._request")
     def test_nested_markets_get_cent_fields(self, mock_request):
