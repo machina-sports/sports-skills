@@ -19,7 +19,7 @@ Returns `groups[]` with AFC/NFC conferences, divisions, and team standings inclu
 ### get_teams
 Get all 32 NFL teams. No parameters.
 
-Returns `teams[]` with id, name, abbreviation, logo, and location.
+Returns `teams[]` with id, name, abbreviation, logo, location, `conference` (e.g. `"AFC"`) and `division` (e.g. `"AFC East"`).
 
 ### get_team_roster
 Get full roster for a team.

@@ -296,3 +296,31 @@ def test_scoreboard_week_of_a_past_season(monkeypatch):
     _connector.get_scoreboard({"params": {"season": 2024, "week": 22}})
     _connector.get_scoreboard({"params": {"week": 5}})
     assert calls == [{"dates": "2024", "week": 5}, {"dates": "2024", "seasontype": 3, "week": 4}, {"week": 5}]
+
+
+_TEAMS = {"sports": [{"leagues": [{"teams": [{"team": {"id": "2", "displayName": "Buffalo Bills"}}]}]}]}
+_GROUPS = {
+    "groups": [
+        {"abbreviation": "AFC", "children": [{"name": "AFC East", "teams": [{"id": "2", "abbreviation": "BUF"}]}]}
+    ]
+}
+
+
+def test_teams_carry_conference_and_division(monkeypatch):
+    """ESPN's team list has neither; its ``groups`` resource has both (#159)."""
+    from sports_skills.nfl import _connector
+
+    monkeypatch.setattr(_connector, "espn_request", lambda sp, resource, *a, **k: _GROUPS if resource == "groups" else _TEAMS)
+    (team,) = _connector.get_teams()["teams"]
+    assert (team["name"], team["conference"], team["division"]) == ("Buffalo Bills", "AFC", "AFC East")
+
+
+def test_teams_survive_a_failed_groups_request(monkeypatch):
+    from sports_skills.nfl import _connector
+
+    def fake(sp, resource, *a, **k):
+        return {"error": True, "message": "HTTP 503"} if resource == "groups" else _TEAMS
+
+    monkeypatch.setattr(_connector, "espn_request", fake)
+    (team,) = _connector.get_teams()["teams"]
+    assert (team["conference"], team["division"]) == ("", "")

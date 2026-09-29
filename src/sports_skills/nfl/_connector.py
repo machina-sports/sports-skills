@@ -476,11 +476,23 @@ def get_teams(request_data=None):
     if data.get("error"):
         return data
 
+    # ESPN's team list has no conference or division; its ``groups`` resource
+    # nests them (conference -> division -> teams). If that request fails, both
+    # are "" and the teams are still returned.
+    groups = espn_request(SPORT_PATH, "groups", max_retries=0)
+    placement = {}
+    for conference in groups.get("groups", []) if isinstance(groups, dict) else []:
+        for division in conference.get("children", []):
+            for team in division.get("teams", []):
+                placement[str(team.get("id", ""))] = (conference.get("abbreviation", ""), division.get("name", ""))
+
     teams = []
     for sport in data.get("sports", []):
         for league in sport.get("leagues", []):
             for team_wrapper in league.get("teams", []):
-                teams.append(_normalize_team(team_wrapper))
+                team = _normalize_team(team_wrapper)
+                team["conference"], team["division"] = placement.get(team["id"], ("", ""))
+                teams.append(team)
 
     return {"teams": teams, "count": len(teams)}
 
