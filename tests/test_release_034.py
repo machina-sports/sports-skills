@@ -1,4 +1,4 @@
-"""Release gates for the sports-skills 0.33.0 distribution candidate."""
+"""Release gates for the sports-skills 0.34.0 distribution candidate."""
 
 import email
 import hashlib
@@ -16,7 +16,7 @@ from pathlib import Path
 import pytest
 
 ROOT = Path(__file__).resolve().parents[1]
-VERSION = "0.33.0"
+VERSION = "0.34.0"
 TAG = f"v{VERSION}"
 REVIEWED_SOURCE_COMMIT = "3b135bb324a39710df024a22e8d9fba434b8e6a2"
 REVIEWED_SOURCE_TREE = "f5db2a03c79c63ad81b29296b7778881f81979e0"
@@ -63,18 +63,18 @@ def release_builds(tmp_path_factory):
     return _build(first), _build(second)
 
 
-def test_every_active_version_surface_is_033():
+def test_every_active_version_surface_is_034():
     pyproject = (ROOT / "pyproject.toml").read_text(encoding="utf-8")
     package = (ROOT / "src/sports_skills/__init__.py").read_text(encoding="utf-8")
     phase1 = (ROOT / "src/sports_skills/canonical/_phase1.py").read_text(encoding="utf-8")
     lock = (ROOT / "uv.lock").read_text(encoding="utf-8")
     changelog = (ROOT / "CHANGELOG.md").read_text(encoding="utf-8")
 
-    assert re.search(r'^version = "0\.33\.0"$', pyproject, re.MULTILINE)
-    assert re.search(r'^__version__ = "0\.33\.0"$', package, re.MULTILINE)
-    assert '"package_version": "0.33.0"' in phase1
-    assert re.search(r'(?ms)^name = "sports-skills"\nversion = "0\.33\.0"$', lock)
-    assert changelog.startswith("## [0.33.0]\n")
+    assert re.search(r'^version = "0\.34\.0"$', pyproject, re.MULTILINE)
+    assert re.search(r'^__version__ = "0\.34\.0"$', package, re.MULTILINE)
+    assert '"package_version": "0.34.0"' in phase1
+    assert re.search(r'(?ms)^name = "sports-skills"\nversion = "0\.34\.0"$', lock)
+    assert changelog.startswith("## [0.34.0]\n")
 
 
 def test_release_source_and_epoch_match_review_receipt():

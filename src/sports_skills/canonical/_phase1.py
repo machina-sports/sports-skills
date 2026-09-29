@@ -20,7 +20,7 @@ _TRUSTED_MANIFEST_SHA256 = "0fdf5e8a6661e1d2bb7f5190f6c4fe08637f3eab5149254c2688
 _SPORTS_SKILLS_CANONICAL_PACKAGE_REF = MappingProxyType(
     {
         "package_name": "sports-skills",
-        "package_version": "0.33.0",
+        "package_version": "0.34.0",
         "release_id": "canonical-evidence-step10-operations",
     }
 )
