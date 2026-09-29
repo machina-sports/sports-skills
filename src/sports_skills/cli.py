@@ -534,11 +534,11 @@ _REGISTRY = {
         "get_ncaa_schools": {"optional": ["query"]},
     },
     "golf": {
-        "get_leaderboard": {"required": ["tour"]},
+        "get_leaderboard": {"required": ["tour"], "optional": ["event_id", "date"]},
         "get_schedule": {"required": ["tour"], "optional": ["year"]},
         "get_player_info": {"required": ["player_id"], "optional": ["tour"]},
         "get_player_overview": {"required": ["player_id"], "optional": ["tour"]},
-        "get_scorecard": {"required": ["tour", "player_id"]},
+        "get_scorecard": {"required": ["tour", "player_id"], "optional": ["event_id", "date"]},
         "get_news": {"required": ["tour"]},
     },
     "volleyball": {

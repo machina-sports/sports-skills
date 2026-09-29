@@ -61,6 +61,23 @@ def _validate_tour(tour):
 # ============================================================
 
 
+def _round_strokes(ls):
+    """Strokes for a round linescore; None when ESPN marks the round unplayed ("-")."""
+    if ls.get("value") is None or ls.get("displayValue") == "-":
+        return None
+    return int(ls["value"])
+
+
+def _holes_played(ls):
+    """Holes in the nested card, or None when ESPN sent no hole detail.
+
+    A withdrawal's round keeps the strokes for the holes played (e.g. 4 strokes,
+    "E" after one hole), so a count below 18 marks an incomplete round.
+    """
+    holes = [h for h in ls.get("linescores", []) if 1 <= h.get("period", 0) <= 18]
+    return len(holes) if holes else None
+
+
 def _normalize_golfer(competitor):
     """Normalize a golfer from the scoreboard competitors list."""
     athlete = competitor.get("athlete", {})
@@ -74,8 +91,9 @@ def _normalize_golfer(competitor):
             continue
         rounds.append({
             "round": period,
-            "strokes": int(ls.get("value", 0)) if ls.get("value") is not None else None,
+            "strokes": _round_strokes(ls),
             "score": ls.get("displayValue", ""),
+            "holes_played": _holes_played(ls),
         })
 
     return {
@@ -199,6 +217,9 @@ def _normalize_player_overview(data):
                 "score": score_obj.get("displayValue", str(score_obj.get("value", ""))),
             })
 
+    # ESPN groups recent tournaments per tour (PGA, then DP World, ...); newest first.
+    recent.sort(key=lambda t: t["date"] or "", reverse=True)
+
     return {
         "season_stats": season_stats,
         "rankings": rankings,
@@ -232,8 +253,9 @@ def _normalize_scorecard(competitor, tournament_name=""):
 
         rounds.append({
             "round": period,
-            "total_strokes": int(ls.get("value", 0)) if ls.get("value") is not None else None,
+            "total_strokes": _round_strokes(ls),
             "total_score": ls.get("displayValue", ""),
+            "holes_played": len(holes) if holes else None,
             "holes": holes,
         })
 
@@ -276,27 +298,89 @@ def _normalize_news(espn_data):
 # ============================================================
 
 
+def _event_start_date(tour, event_id):
+    """Start date (YYYYMMDD) of an ESPN golf event, from the core API event record."""
+    cache_key = f"golf_event_date:{tour}:{event_id}"
+    cached = _cache_get(cache_key)
+    if cached is not None:
+        return cached, None
+    url = f"https://sports.core.api.espn.com/v2/sports/golf/leagues/{tour}/events/{event_id}"
+    raw, err = _http_fetch(url, headers={"User-Agent": _USER_AGENT})
+    if err:
+        return None, {
+            "error": True,
+            "message": f"Could not look up {_TOUR_NAMES[tour]} event {event_id} on ESPN "
+            f"({err.get('message', 'request failed')}). Check the id with get_schedule, "
+            "or pass date=YYYY-MM-DD (any day of the tournament).",
+        }
+    try:
+        date = json.loads(raw.decode()).get("date", "")[:10].replace("-", "")
+    except (json.JSONDecodeError, ValueError, AttributeError):
+        date = ""
+    if len(date) != 8:
+        return None, {
+            "error": True,
+            "message": f"ESPN has no date for {_TOUR_NAMES[tour]} event {event_id}; "
+            "pass date=YYYY-MM-DD (any day of the tournament).",
+        }
+    _cache_set(cache_key, date, ttl=86400)
+    return date, None
+
+
+def _scoreboard_events(tour, event_id=None, date=None):
+    """Scoreboard events for the current week, a given date, or a given event.
+
+    ESPN's golf scoreboard ignores an ``event`` parameter, so a past event is
+    reached through ``dates=YYYYMMDD`` (its start date when only the id is given).
+    Returns (events, error).
+    """
+    espn_params = None
+    if date:
+        day = str(date).replace("-", "")
+        if len(day) != 8 or not day.isdigit():
+            return None, {"error": True, "message": f"Invalid date '{date}'. Use YYYY-MM-DD."}
+        espn_params = {"dates": day}
+    elif event_id:
+        day, err = _event_start_date(tour, event_id)
+        if err:
+            return None, err
+        espn_params = {"dates": day}
+    data = espn_request(_TOUR_PATHS[tour], "scoreboard", espn_params)
+    if data.get("error"):
+        return None, data
+    events = data.get("events", [])
+    if event_id:
+        events = [e for e in events if str(e.get("id", "")) == str(event_id)]
+        if not events:
+            return None, {
+                "tour": _TOUR_NAMES[tour],
+                "error": True,
+                "message": f"Event {event_id} is not on the {_TOUR_NAMES[tour]} scoreboard"
+                + (f" for {date}" if date else "")
+                + ". Check the id and tour with get_schedule.",
+            }
+    return events, None
+
+
 def get_leaderboard(request_data):
-    """Get current tournament leaderboard."""
+    """Get a tournament leaderboard (current, or the given event_id / date)."""
     params = request_data.get("params", {})
     tour, err = _validate_tour(params.get("tour"))
     if err:
         return err
 
-    sport_path = _TOUR_PATHS[tour]
-    data = espn_request(sport_path, "scoreboard")
-    if data.get("error"):
-        return data
-
-    events = data.get("events", [])
+    events, err = _scoreboard_events(tour, params.get("event_id"), params.get("date"))
+    if err:
+        return err
     if not events:
         return {
             "tour": _TOUR_NAMES[tour],
             "tournament": None,
-            "message": "No active tournament right now.",
+            "message": "No tournament on the scoreboard"
+            + (f" for {params['date']}." if params.get("date") else " right now."),
         }
 
-    # Return the current/most recent tournament
+    # Return the requested, or the current/most recent, tournament
     tournament = _normalize_tournament(events[0])
     return {
         "tour": _TOUR_NAMES[tour],
@@ -315,9 +399,16 @@ def get_schedule(request_data):
     sport_path = _TOUR_PATHS[tour]
     espn_params = {"dates": str(year) if year else "2026"}
 
-    data = espn_request(sport_path, "scoreboard", espn_params)
+    # The season calendar comes with every scoreboard response; limit=1 keeps
+    # ESPN from also sending every event's full field (~26 MB for a PGA season
+    # vs ~13 KB). The full body is only fetched if the calendar is missing.
+    data = espn_request(sport_path, "scoreboard", {**espn_params, "limit": 1})
     if data.get("error"):
         return data
+    if not any(league.get("calendar") for league in data.get("leagues", [])):
+        data = espn_request(sport_path, "scoreboard", espn_params)
+        if data.get("error"):
+            return data
 
     # Calendar is in leagues[0].calendar[]
     tournaments = []
@@ -487,7 +578,7 @@ def get_player_overview(request_data):
 
 
 def get_scorecard(request_data):
-    """Get hole-by-hole scorecard for a golfer in the active tournament."""
+    """Get hole-by-hole scorecard for a golfer (current tournament, or event_id / date)."""
     params = request_data.get("params", {})
     tour, err = _validate_tour(params.get("tour"))
     if err:
@@ -496,17 +587,16 @@ def get_scorecard(request_data):
     if not player_id:
         return {"error": True, "message": "player_id is required"}
 
-    sport_path = _TOUR_PATHS[tour]
-    data = espn_request(sport_path, "scoreboard")
-    if data.get("error"):
-        return data
-
-    events = data.get("events", [])
+    events, err = _scoreboard_events(tour, params.get("event_id"), params.get("date"))
+    if err:
+        return err
     if not events:
         return {
             "tour": _TOUR_NAMES[tour],
             "error": True,
-            "message": "No active tournament right now.",
+            "message": "No tournament on the scoreboard"
+            + (f" for {params['date']}." if params.get("date") else " right now.")
+            + " Pass event_id (from get_schedule) for a completed tournament.",
         }
 
     # Search for the golfer in the current tournament
@@ -526,5 +616,5 @@ def get_scorecard(request_data):
         "tour": _TOUR_NAMES[tour],
         "tournament": tournament_name,
         "error": True,
-        "message": f"Player {player_id} not found in the current tournament field.",
+        "message": f"Player {player_id} not found in the {tournament_name or 'tournament'} field.",
     }
