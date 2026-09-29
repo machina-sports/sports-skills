@@ -1,4 +1,4 @@
-## [Unreleased]
+## [0.35.0]
 
 ### Changed
 - **nba / nhl / mlb: `get_schedule(season=…)` without a `date` is now an error** (#159). ESPN's scoreboard has no season filter: it ignored `season` and returned the next game day, so `nba.get_schedule(season=2026)` and `season=2025` both answered with a 2026-27 preseason game. The error says so and points to `get_schedule(date=…)` for a day and `get_team_schedule(team_id, season)` for a season. With a `date`, the request is unchanged.
