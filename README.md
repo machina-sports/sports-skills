@@ -111,6 +111,7 @@ npx skills add machina-sports/sports-skills@nba-data
 | [`betting`](https://skills.sh/machina-sports/sports-skills/betting) | Odds math & bet evaluation | 9 | Pure compute — no API calls |
 | [`markets`](https://skills.sh/machina-sports/sports-skills/markets) | ESPN ↔ Kalshi ↔ Polymarket orchestration | 14 | Unified dashboards, live ticks, cross-platform comparison |
 | [`sports-reporter`](https://skills.sh/machina-sports/sports-skills/sports-reporter) | Original sports journalism | prompt-only | Composes other skills to write articles |
+| [`espn-api`](https://skills.sh/machina-sports/sports-skills/espn-api) | Raw ESPN API reference (17 sports, 139 leagues) | prompt-only | Endpoints, league slugs, response schemas, and curl/Python fetch helpers for leagues without a dedicated skill |
 | [`machina`](https://skills.sh/machina-sports/sports-skills/machina) | Gateway to Machina premium / licensed data | prompt-only | Routes to `machina-cli` + MCP |
 | [`world-cup`](https://skills.sh/machina-sports/sports-skills/world-cup) | Premium World Cup 2026 intelligence (read-only) | prompt-only | Routes to a hosted Machina MCP project |
 
