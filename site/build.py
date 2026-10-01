@@ -102,6 +102,7 @@ CATEGORY_MAP = {
     "machina": "Machina Skills",
     "world-cup": "Machina Skills",
     "metadata": "Other",
+    "espn-api": "Other",
 }
 
 CATEGORY_ORDER = [
@@ -152,6 +153,7 @@ DATA_SOURCES = {
     "volleyball-data": "Nevobo API",
     "xctf-data": "TFRRS, The Stride Report",
     "metadata": "TheSportsDB",
+    "espn-api": "ESPN",
     "sports-news": "RSS / Google News",
     "sports-reporter": "RSS / Google News",
     "machina": "Machina Platform",
