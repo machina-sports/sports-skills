@@ -1,0 +1,103 @@
+{
+  "_about": "Minimized SHAPE FIXTURES, not raw payloads. Each entry keeps only the key layout of a public ESPN response observed during review; values are illustrative placeholders reduced to one or two items and must not be read as authentic current or historical results. 'source_timestamp' is the timestamp field inside the ESPN response body, not the fetch time; 'fetched_at' is null where the fetch time was not recorded. Raw ESPN JSON is provider-native: not the sports_skills status/data envelope and not canonical output.",
+  "nba_roster": {
+    "source_url": null,
+    "observed": {
+      "source_timestamp": "2026-10-02T12:58:07Z",
+      "fetched_at": null,
+      "notes": "Request URL not recorded; endpoint pattern is .../apis/site/v2/sports/basketball/nba/teams/{teamId}/roster. athletes[] was flat; no entry had an items key."
+    },
+    "shape": {
+      "timestamp": "2026-10-02T12:58:07Z",
+      "status": "success",
+      "season": {"year": 2027, "displayName": "2026-27", "type": 1, "name": "Preseason"},
+      "athletes": [
+        {
+          "id": "3975",
+          "displayName": "Stephen Curry",
+          "jersey": "30",
+          "position": {"abbreviation": "G"},
+          "dateOfBirth": "1988-03-14T08:00Z",
+          "injuries": [],
+          "status": {"id": "1", "name": "Active", "type": "active"}
+        },
+        {
+          "id": "4703396",
+          "displayName": "Graham Ike",
+          "position": {"abbreviation": "F"},
+          "injuries": [],
+          "status": {"id": "1", "name": "Active", "type": "active"}
+        }
+      ]
+    }
+  },
+  "nba_summary": {
+    "source_url": "https://site.api.espn.com/apis/site/v2/sports/basketball/nba/summary?event=401705534",
+    "observed": {
+      "source_timestamp": null,
+      "fetched_at": null,
+      "notes": "boxscore.players[] is a sibling of boxscore.teams[], one entry per team. Values below are illustrative, not from this event."
+    },
+    "shape": {
+      "boxscore": {
+        "teams": [
+          {"team": {"id": "9"}, "statistics": [{"name": "assists", "displayValue": "28"}]}
+        ],
+        "players": [
+          {
+            "team": {"id": "9"},
+            "statistics": [
+              {"names": ["MIN", "PTS"], "athletes": [{"athlete": {"id": "3975"}, "stats": ["36", "32"]}]}
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "nba_gamelog": {
+    "source_url": "https://site.web.api.espn.com/apis/common/v3/sports/basketball/nba/athletes/3136776/gamelog?season=2025",
+    "observed": {
+      "source_timestamp": null,
+      "fetched_at": null,
+      "notes": "events is a dict keyed by event id; stat rows are under seasonTypes[].categories[].events[] and reference events by eventId. Values below are illustrative."
+    },
+    "shape": {
+      "labels": ["MIN", "PTS"],
+      "events": {
+        "401765000": {"id": "401765000", "gameDate": "2025-03-14T00:00Z", "opponent": {"id": "2"}, "gameResult": "W"}
+      },
+      "seasonTypes": [
+        {
+          "displayName": "2024-25 Regular Season",
+          "categories": [{"events": [{"eventId": "401765000", "stats": ["36", "32"]}]}]
+        }
+      ]
+    }
+  },
+  "now_news": {
+    "source_url": "https://now.core.api.espn.com/v1/sports/news?sport=basketball&league=nba&limit=2",
+    "observed": {
+      "source_timestamp": "2026-10-02T12:58:39Z",
+      "fetched_at": null,
+      "notes": "Top-level keys were headlines and breakingNews; there was no feed key. The response reported resultsLimit 10 although limit=2 was requested, and included a WNBA item."
+    },
+    "shape": {
+      "resultsCount": 2,
+      "resultsLimit": 10,
+      "resultsOffset": 0,
+      "headlines": [
+        {
+          "id": 50084279,
+          "type": "HeadlineNews",
+          "headline": "...",
+          "published": "2026-10-02T12:46:15Z",
+          "categories": [{"type": "league", "leagueId": 46, "description": "NBA"}],
+          "links": {"web": {"href": "https://www.espn.com/nba/story/_/id/50084279/..."}}
+        }
+      ],
+      "breakingNews": [],
+      "timestamp": "2026-10-02T12:58:39Z",
+      "status": "success"
+    }
+  }
+}

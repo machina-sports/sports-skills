@@ -1,6 +1,9 @@
 #!/usr/bin/env python3
 """Build the sports-skills.sh marketplace from SKILL.md files."""
 
+# `dict | None` annotations below must not be evaluated on Python 3.9.
+from __future__ import annotations
+
 import json
 import os
 import re
@@ -102,6 +105,7 @@ CATEGORY_MAP = {
     "machina": "Machina Skills",
     "world-cup": "Machina Skills",
     "metadata": "Other",
+    "espn-api": "Other",
 }
 
 CATEGORY_ORDER = [
@@ -152,6 +156,7 @@ DATA_SOURCES = {
     "volleyball-data": "Nevobo API",
     "xctf-data": "TFRRS, The Stride Report",
     "metadata": "TheSportsDB",
+    "espn-api": "ESPN",
     "sports-news": "RSS / Google News",
     "sports-reporter": "RSS / Google News",
     "machina": "Machina Platform",

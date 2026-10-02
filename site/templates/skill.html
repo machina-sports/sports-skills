@@ -132,15 +132,38 @@
 <section class="quickstart-section">
   <div class="container">
     <h2>Quick Start</h2>
+    {% if skill.commands %}
     <div class="quickstart-code">
       <div class="comment"># CLI</div>
-      <div>sports-skills {{ skill.slug }} {{ skill.commands[0].name if skill.commands else 'get_data' }}</div>
+      <div>sports-skills {{ skill.slug }} {{ skill.commands[0].name }}</div>
     </div>
     <div class="quickstart-code">
       <div class="comment"># Python</div>
       <div>from sports_skills import {{ skill.slug | replace('-', '_') }}</div>
-      <div>{{ skill.slug | replace('-', '_') }}.{{ skill.commands[0].name if skill.commands else 'get_data' }}()</div>
+      <div>{{ skill.slug | replace('-', '_') }}.{{ skill.commands[0].name }}()</div>
     </div>
+    {% else %}
+    <div class="quickstart-code">
+      <div class="comment"># Install the skill (prompt-only: no CLI command or Python module)</div>
+      <div>{{ skill.install_command }}</div>
+    </div>
+    <div class="quickstart-code">
+      <div class="comment"># Then ask your agent, for example</div>
+      {% if skill.examples %}
+      {% for ex in skill.examples[:3] %}
+      <div>"{{ ex }}"</div>
+      {% endfor %}
+      {% else %}
+      <div>"Use the {{ skill.name }} skill to ..."</div>
+      {% endif %}
+    </div>
+    {% if skill.source_url %}
+    <div class="quickstart-code">
+      <div class="comment"># Reference</div>
+      <div><a href="{{ skill.source_url }}/SKILL.md" target="_blank" rel="noopener">SKILL.md and references/</a></div>
+    </div>
+    {% endif %}
+    {% endif %}
   </div>
 </section>
 {% endif %}

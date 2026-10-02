@@ -56,6 +56,17 @@
       "skill_path": "skills/cricket-data/SKILL.md",
       "untrusted_content": true
     },
+    "espn-api": {
+      "description": "Raw reference for ESPN's undocumented public JSON endpoints, for sports, leagues, or operations no dedicated skill covers, or explicit raw-endpoint developer work: endpoint catalog, 106 documented league slugs across 17 sports (not exhaustive; use discovery endpoints), observed response shapes, pitfalls, and stdlib Python/curl fetch helpers. Output is provider-native ESPN JSON, not normalized or canonical. Helpers are not record/replay-backed and refuse to run when SPORTS_SKILLS_REPLAY is not off. Prompt-only, no CLI module. Zero config, no API keys.",
+      "external_network": true,
+      "mode": "read_only",
+      "money_movement": false,
+      "requires_explicit_confirmation": false,
+      "risk": "low",
+      "secrets_required": false,
+      "skill_path": "skills/espn-api/SKILL.md",
+      "untrusted_content": true
+    },
     "esports": {
       "description": "Esports data — Dota 2 (OpenDota) and League of Legends esports (Leaguepedia). Pro matches, tournaments, teams, and structured LoL competitive data. Use when: user asks about Dota 2 pro matches/teams/leagues, or LoL esports tournaments/roste",
       "external_network": true,
