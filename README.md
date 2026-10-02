@@ -111,7 +111,7 @@ npx skills add machina-sports/sports-skills@nba-data
 | [`betting`](https://skills.sh/machina-sports/sports-skills/betting) | Odds math & bet evaluation | 9 | Pure compute — no API calls |
 | [`markets`](https://skills.sh/machina-sports/sports-skills/markets) | ESPN ↔ Kalshi ↔ Polymarket orchestration | 14 | Unified dashboards, live ticks, cross-platform comparison |
 | [`sports-reporter`](https://skills.sh/machina-sports/sports-skills/sports-reporter) | Original sports journalism | prompt-only | Composes other skills to write articles |
-| [`espn-api`](https://skills.sh/machina-sports/sports-skills/espn-api) | Raw ESPN API reference (106 documented league slugs across 17 sports; not exhaustive) | prompt-only | Endpoints, league slugs, observed response shapes, and curl/Python fetch helpers for leagues without a dedicated skill. Returns raw provider-native JSON, not the package envelope or canonical output. Helpers are not record/replay-backed and exit with an error when `SPORTS_SKILLS_REPLAY` is set to anything but `off` |
+| [`espn-api`](https://skills.sh/machina-sports/sports-skills/espn-api) | Raw ESPN API reference for leagues without a dedicated skill | prompt-only | Raw provider-native JSON, no record/replay — see [Dedicated Skills vs Reference-Only Coverage](#dedicated-skills-vs-reference-only-coverage) |
 | [`machina`](https://skills.sh/machina-sports/sports-skills/machina) | Gateway to Machina premium / licensed data | prompt-only | Routes to `machina-cli` + MCP |
 | [`world-cup`](https://skills.sh/machina-sports/sports-skills/world-cup) | Premium World Cup 2026 intelligence (read-only) | prompt-only | Routes to a hosted Machina MCP project |
 
@@ -145,6 +145,43 @@ They apply after the fetch (replay entries are unchanged) and add `total_rows` /
 Coverage still varies by league and source — each skill documents its own limits (e.g.
 [football data coverage](skills/football-data/references/data-coverage.md): xG is top-5
 leagues only, FPL stats are Premier League only).
+
+### Dedicated Skills vs Reference-Only Coverage
+
+Two kinds of coverage live in this repo. Use a dedicated skill first whenever one covers
+the league and the job.
+
+- **Dedicated runtime skills** ship with the Python package and the
+  `sports-skills` CLI: documented commands and one JSON envelope, with
+  [record & replay](#record--replay) for the supported public reads listed there.
+  Prompt-only orchestration and premium skills are separate; not every catalog entry
+  is a runtime module or replay-backed.
+- **Reference-only: [`espn-api`](skills/espn-api/SKILL.md)** is prompt-only. It has no
+  CLI command and no Python module; it gives an agent ESPN endpoint docs, league slugs,
+  observed response shapes, and two stdlib fetch helpers for leagues no dedicated skill
+  covers — e.g. MMA, lacrosse, rugby, Australian football, NCAA volleyball, field hockey
+  and water polo, NASCAR and IndyCar.
+
+```bash
+npx skills add machina-sports/sports-skills@espn-api
+```
+
+References: [endpoints](skills/espn-api/references/endpoints.md),
+[league slugs](skills/espn-api/references/league-slugs.md),
+[response shapes](skills/espn-api/references/response-schemas.md),
+[gotchas](skills/espn-api/references/gotchas.md).
+
+The 106 documented league slugs across 17 sport sections in `league-slugs.md` are a
+reference inventory, not a count of integrated, normalized, canonical, or live-tested
+leagues. The list is not exhaustive, a listed slug does not guarantee every endpoint
+works, and many listed leagues (NFL, NBA, Premier League, …) already have a dedicated
+skill that should be used instead.
+
+Boundaries: `espn-api` returns raw provider-native ESPN JSON from undocumented endpoints
+— not the package envelope and not [canonical output](#machina-sports-schema-canonical-output).
+Its helpers are not record/replay-backed and exit with an error when
+`SPORTS_SKILLS_REPLAY` is set to anything but `off`. It grants no commercial or
+redistribution rights to ESPN data; for licensed data see [machina.gg](https://machina.gg).
 
 ---
 

@@ -167,8 +167,32 @@ DATA_SOURCES = {
     "polymarket-sync-markets": "Polymarket API",
 }
 
+# espn-api's documented slug inventory — a reference list, not runtime coverage.
+ESPN_LEAGUE_SLUGS = ROOT / "skills" / "espn-api" / "references" / "league-slugs.md"
+
 
 # ── Parsing ────────────────────────────────────────────────────────────
+def espn_reference_inventory(path: Path = ESPN_LEAGUE_SLUGS) -> dict | None:
+    """Count sport sections and league rows documented in espn-api's league-slugs.md.
+
+    A sport section is a `## ... (sport: `x`)` heading; a league row is a table
+    row in one whose second cell is a backticked slug. Other sections (conference
+    IDs, CDN slugs) are not counted. Returns None when the file is absent.
+    """
+    if not path.exists():
+        return None
+    sports = leagues = 0
+    in_sport = False
+    for line in path.read_text(encoding="utf-8").split("\n"):
+        if line.startswith("## "):
+            in_sport = "(sport: `" in line
+            sports += in_sport
+        elif in_sport and re.match(r"^\|[^|]+\|\s*`[^`]+`\s*\|", line):
+            leagues += 1
+    return {"sports": sports, "leagues": leagues}
+
+
+
 def parse_skill_md(path: Path) -> dict | None:
     """Parse a SKILL.md file into a dict with frontmatter and content."""
     text = path.read_text(encoding="utf-8")
@@ -432,6 +456,7 @@ def build():
     print("Rendering homepage...")
     tpl_index = env.get_template("index.html")
     total_commands = sum(s["command_count"] for s in skills)
+    espn_inventory = espn_reference_inventory()
     html = tpl_index.render(
         skills=skills,
         categories=categories,
@@ -445,6 +470,7 @@ def build():
         } for s in skills]),
         total_skills=len(skills),
         total_commands=total_commands,
+        espn_inventory=espn_inventory,
         base_url=BASE_URL,
     )
     (DIST / "index.html").write_text(html, encoding="utf-8")
@@ -458,6 +484,7 @@ def build():
         html = tpl_skill.render(
             skill=skill,
             related=related,
+            espn_inventory=espn_inventory,
             base_url=BASE_URL,
         )
         skill_dir = DIST / skill["slug"]

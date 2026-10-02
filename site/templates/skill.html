@@ -88,6 +88,22 @@
   </div>
 </section>
 
+{% if skill.slug == 'espn-api' and espn_inventory %}
+<!-- COVERAGE -->
+<section class="description-section" id="coverage">
+  <div class="container">
+    <p class="skill-description">
+      Reference coverage: {{ espn_inventory.leagues }} documented league slugs across {{ espn_inventory.sports }} sport sections
+      (<a href="{{ skill.source_url }}/references/league-slugs.md" target="_blank" rel="noopener">league-slugs.md</a>).
+      This is a reference inventory, not a list of integrated, normalized, canonical or live-tested leagues, and not every endpoint works for every slug.
+      Leagues with a dedicated skill (NBA, NFL, MLB, NHL, listed soccer leagues and others) should use that skill instead.
+      Output is raw provider-native ESPN JSON, not the package envelope or canonical output; the helper scripts are not record/replay-backed.
+      Personal, non-commercial use only.
+    </p>
+  </div>
+</section>
+{% endif %}
+
 {% if skill.commands %}
 <!-- COMMANDS -->
 <section class="commands-section">

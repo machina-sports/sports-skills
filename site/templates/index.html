@@ -135,6 +135,40 @@
     </div>
   </div>
 </section>
+
+<!-- COVERAGE -->
+<section id="coverage" class="commands-section">
+  <div class="container">
+    <h2>Coverage: dedicated skills vs raw reference</h2>
+    <table class="commands-table">
+      <thead>
+        <tr>
+          <th>Layer</th>
+          <th>What you get</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Dedicated runtime skills</td>
+          <td>Python package and <code>sports-skills</code> CLI commands returning one JSON envelope, with record/replay for supported public reads. Use these first for the leagues they list. Prompt-only orchestration and premium skills are separate; not every catalog entry is a runtime module or replay-backed.</td>
+        </tr>
+        <tr>
+          <td><a href="/espn-api/">espn-api</a></td>
+          <td>Reference-only, prompt-only: no CLI command or Python module. Endpoint docs, league slugs and observed response shapes for leagues without a dedicated skill, e.g. MMA, lacrosse, rugby, Australian football, NCAA volleyball, field hockey and water polo, NASCAR and IndyCar.</td>
+        </tr>
+      </tbody>
+    </table>
+    <p class="skill-description" style="margin-top: 16px;">
+      {% if espn_inventory %}
+      espn-api documents {{ espn_inventory.leagues }} league slugs across {{ espn_inventory.sports }} sport sections. That is a reference inventory, not a count of integrated, normalized, canonical or live-tested leagues.
+      {% endif %}
+      It returns raw provider-native ESPN JSON from undocumented endpoints that may change, is not record/replay-backed (its helpers exit when <code>SPORTS_SKILLS_REPLAY</code> is not <code>off</code>), and grants no commercial rights to ESPN data.
+    </p>
+    <div class="install-hint">
+      Install: <code>npx skills add machina-sports/sports-skills@espn-api</code>
+    </div>
+  </div>
+</section>
 {% endblock %}
 
 {% block scripts %}
