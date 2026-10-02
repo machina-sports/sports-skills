@@ -4,6 +4,7 @@ on:
   push:
     tags:
       - "v*.*.*"
+  workflow_dispatch:
 
 env:
   APP_NAME: sports-skills-site
@@ -34,7 +35,12 @@ jobs:
           path: machina-templates
 
       - name: Get tag name as release version
-        run: echo "RELEASE_NAME=${GITHUB_REF#refs/tags/}" >> $GITHUB_ENV
+        run: |
+          if [ "$GITHUB_EVENT_NAME" = "workflow_dispatch" ]; then
+            echo "RELEASE_NAME=site-${GITHUB_SHA}" >> $GITHUB_ENV
+          else
+            echo "RELEASE_NAME=${GITHUB_REF#refs/tags/}" >> $GITHUB_ENV
+          fi
 
       - name: Resolve ghcr.io image path (lowercase owner)
         run: echo "IMAGE=ghcr.io/${GITHUB_REPOSITORY_OWNER,,}/${{ env.APP_NAME }}" >> $GITHUB_ENV
