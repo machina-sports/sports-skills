@@ -29,6 +29,6 @@ jobs:
       - name: Install package
         run: |
           pip install -r requirements-release.txt
-          pip install -e ".[dev]"
+          pip install -e ".[dev,site]"
       - name: Run tests
         run: pytest -v

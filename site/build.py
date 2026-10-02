@@ -1,6 +1,9 @@
 #!/usr/bin/env python3
 """Build the sports-skills.sh marketplace from SKILL.md files."""
 
+# `dict | None` annotations below must not be evaluated on Python 3.9.
+from __future__ import annotations
+
 import json
 import os
 import re

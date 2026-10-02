@@ -1,6 +1,10 @@
 # ESPN Sport and League Slugs
 
-Complete mapping of every sport and league available through the ESPN API. Use these slugs in URL paths.
+Documented sport and league slugs for the ESPN API. Use these slugs in URL paths.
+
+**Scope:** this file lists 106 league rows across 17 sport sections (cricket has no rows; its slugs come from discovery). It is not a complete list of what ESPN serves, and an entry here does not guarantee every endpoint works for that league. For anything not listed, use the discovery endpoints in [endpoints.md](endpoints.md#discovery-v2) (e.g. `https://sports.core.api.espn.com/v2/sports/{sport}/leagues`).
+
+Before using a slug, check whether a dedicated skill already covers that league (see the Routing table in `SKILL.md`).
 
 ## How Slugs Work
 
@@ -148,7 +152,7 @@ ESPN endpoints require two slugs: a **sport** slug and a **league** slug.
 
 ## MMA (sport: `mma`)
 
-ESPN tracks 25+ MMA promotions. The most commonly used:
+ESPN lists more MMA promotions than shown here; use `https://sports.core.api.espn.com/v2/sports/mma/leagues` for the current set. Documented promotions:
 
 | Promotion | Slug | Abbreviation |
 |-----------|------|--------------|

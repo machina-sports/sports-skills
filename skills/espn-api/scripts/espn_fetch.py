@@ -2,17 +2,22 @@
 """ESPN API fetch helper.
 
 Lightweight utility for querying ESPN's public APIs. No dependencies beyond
-the Python standard library.
+the Python standard library; uses certifi's CA bundle if it is installed.
+
+Prints raw, provider-native ESPN JSON. Makes live requests and does not
+participate in SPORTS_SKILLS_REPLAY: when that variable is set to any mode
+other than "off" it refuses to run, before any network access, so it cannot
+bypass an offline or replay evaluation.
 
 Usage:
     python espn_fetch.py scoreboard basketball nba
     python espn_fetch.py scoreboard basketball nba --date 20250315
     python espn_fetch.py standings basketball nba
     python espn_fetch.py teams football nfl
-    python espn_fetch.py roster basketball nba 13
+    python espn_fetch.py roster basketball nba 9
     python espn_fetch.py summary basketball nba 401811026
-    python espn_fetch.py athlete-stats basketball nba 3136776
-    python espn_fetch.py athlete-gamelog basketball nba 3136776
+    python espn_fetch.py athlete-stats basketball nba 3975
+    python espn_fetch.py athlete-gamelog basketball nba 3975
     python espn_fetch.py injuries football nfl
     python espn_fetch.py news basketball nba
     python espn_fetch.py odds basketball nba 401811026
@@ -22,6 +27,7 @@ Usage:
 
 import argparse
 import json
+import os
 import ssl
 import sys
 import urllib.error
@@ -35,28 +41,42 @@ CDN_API = "https://cdn.espn.com"
 NOW_API = "https://now.core.api.espn.com"
 
 
-# Build an SSL context that uses system certificates. Falls back to
-# unverified context only if certifi and the default bundle are both
-# unavailable (common on macOS with stock Python).
+_CERT_HELP = (
+    "Install certifi (python -m pip install --user certifi) or, on macOS with python.org Python, "
+    "run 'Install Certificates.command'. Certificate verification is never disabled."
+)
+
+
+def _fail(message):
+    print(message, file=sys.stderr)
+    sys.exit(1)
+
+
+# Always a verifying context: certifi's bundle when installed, else the system store.
 def _ssl_context():
-    ctx = ssl.create_default_context()
     try:
         import certifi
-
-        ctx.load_verify_locations(certifi.where())
-    except (ImportError, Exception):
-        pass
-    # Quick test: if the default cert store is empty, fall back
-    if ctx.cert_store_stats()["x509_ca"] == 0:
-        ctx = ssl._create_unverified_context()
-    return ctx
+    except ImportError:
+        return ssl.create_default_context()
+    try:
+        return ssl.create_default_context(cafile=certifi.where())
+    except OSError as e:
+        _fail(f"Could not load certifi CA bundle: {e}. Reinstall certifi or uninstall it to use the system store.")
 
 
-_SSL_CTX = _ssl_context()
+def _refuse_under_replay():
+    mode = (os.environ.get("SPORTS_SKILLS_REPLAY") or "off").strip().lower()
+    if mode != "off":
+        _fail(
+            f"SPORTS_SKILLS_REPLAY={mode}: this raw ESPN helper is not record/replay-backed and would "
+            "reach the network. Use the supported package runtime instead "
+            "(e.g. `sports-skills nba get_scoreboard`), or unset SPORTS_SKILLS_REPLAY for live raw requests."
+        )
 
 
 def fetch(url, params=None):
     """Fetch JSON from a URL with optional query parameters."""
+    _refuse_under_replay()
     if params:
         query = urllib.parse.urlencode({k: v for k, v in params.items() if v is not None})
         url = f"{url}?{query}"
@@ -68,14 +88,16 @@ def fetch(url, params=None):
         },
     )
     try:
-        with urllib.request.urlopen(req, timeout=30, context=_SSL_CTX) as resp:
+        with urllib.request.urlopen(req, timeout=30, context=_ssl_context()) as resp:
             return json.loads(resp.read().decode())
     except urllib.error.HTTPError as e:
-        print(f"HTTP {e.code}: {e.reason} — {url}", file=sys.stderr)
-        sys.exit(1)
+        _fail(f"HTTP {e.code}: {e.reason} — {url}")
     except urllib.error.URLError as e:
-        print(f"Connection error: {e.reason} — {url}", file=sys.stderr)
-        sys.exit(1)
+        if isinstance(e.reason, ssl.SSLCertVerificationError):
+            _fail(f"TLS certificate verification failed: {e.reason} — {url}. {_CERT_HELP}")
+        _fail(f"Connection error: {e.reason} — {url}")
+    except json.JSONDecodeError as e:
+        _fail(f"Response was not JSON ({e}) — {url}")
 
 
 def cmd_scoreboard(args):
@@ -250,6 +272,7 @@ def main():
     p.set_defaults(func=cmd_search)
 
     args = parser.parse_args()
+    _refuse_under_replay()
     data = args.func(args)
     print(json.dumps(data, indent=2 if args.pretty else None))
 

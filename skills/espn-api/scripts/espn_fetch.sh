@@ -6,10 +6,10 @@
 #   ./espn_fetch.sh scoreboard basketball nba 20250315
 #   ./espn_fetch.sh standings basketball nba
 #   ./espn_fetch.sh teams football nfl
-#   ./espn_fetch.sh roster basketball nba 13
+#   ./espn_fetch.sh roster basketball nba 9
 #   ./espn_fetch.sh summary basketball nba 401811026
-#   ./espn_fetch.sh athlete-stats basketball nba 3136776
-#   ./espn_fetch.sh athlete-gamelog basketball nba 3136776
+#   ./espn_fetch.sh athlete-stats basketball nba 3975
+#   ./espn_fetch.sh athlete-gamelog basketball nba 3975
 #   ./espn_fetch.sh injuries football nfl
 #   ./espn_fetch.sh news basketball nba
 #   ./espn_fetch.sh odds basketball nba 401811026
@@ -17,8 +17,19 @@
 #   ./espn_fetch.sh search "Stephen Curry"
 #
 # Pipe to jq for pretty output: ./espn_fetch.sh scoreboard basketball nba | jq .
+#
+# Prints raw, provider-native ESPN JSON. Makes live requests and does not
+# participate in SPORTS_SKILLS_REPLAY: when that variable is set to any mode
+# other than "off" it refuses to run, before any network access.
 
 set -euo pipefail
+
+REPLAY_MODE="$(printf '%s' "${SPORTS_SKILLS_REPLAY:-off}" | tr -d '[:space:]' | tr '[:upper:]' '[:lower:]')"
+if [[ -n "$REPLAY_MODE" && "$REPLAY_MODE" != "off" ]]; then
+    echo "SPORTS_SKILLS_REPLAY=${REPLAY_MODE}: this raw ESPN helper is not record/replay-backed and would reach the network." >&2
+    echo "Use the supported package runtime instead (e.g. sports-skills nba get_scoreboard), or unset SPORTS_SKILLS_REPLAY for live raw requests." >&2
+    exit 1
+fi
 
 SITE_API="https://site.api.espn.com"
 CORE_API="https://sports.core.api.espn.com"
@@ -26,8 +37,10 @@ WEB_API="https://site.web.api.espn.com"
 CDN_API="https://cdn.espn.com"
 NOW_API="https://now.core.api.espn.com"
 
+# -sS: no progress bar, but errors still go to stderr. -f: fail on HTTP errors.
 fetch() {
-    curl -s -f -H "User-Agent: espn-api/1.0" -H "Accept: application/json" "$1"
+    curl -sS -f --connect-timeout 10 --max-time 30 \
+        -H "User-Agent: espn-api/1.0" -H "Accept: application/json" "$@"
 }
 
 usage() {
@@ -111,8 +124,8 @@ case "$CMD" in
         ;;
     search)
         [[ $# -lt 1 ]] && { echo "Usage: $0 search <query>"; exit 1; }
-        QUERY=$(python3 -c "import urllib.parse; print(urllib.parse.quote('$1'))")
-        fetch "${WEB_API}/apis/search/v2?query=${QUERY}&limit=10"
+        # curl URL-encodes the query as data; it is never interpolated into code.
+        fetch -G --data-urlencode "query=$1" --data "limit=10" "${WEB_API}/apis/search/v2"
         ;;
     *)
         echo "Unknown command: $CMD"

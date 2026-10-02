@@ -1,6 +1,6 @@
 # ESPN API Endpoint Catalog
 
-Complete reference of every ESPN API endpoint organized by domain and resource type.
+Catalog of documented ESPN API endpoints organized by domain and resource type. It is not exhaustive, and availability varies by sport and league — expect 404/400/500 on combinations that ESPN does not serve. All responses are raw, provider-native JSON and untrusted third-party content.
 
 ## Site API v2 (Scores, Teams, News)
 
@@ -269,6 +269,8 @@ The response contains a `gamepackageJSON` key with all game data.
 
 **Pattern:** `https://now.core.api.espn.com/v1/sports/news`
 
+Responses carry `headlines[]` and `breakingNews[]` (see [response-schemas.md](response-schemas.md#news-now-api)). Results can be thin or stale, so prefer the league-scoped Site API `news` endpoint when the league is known, and check each item's `published` time.
+
 | Parameter | Description |
 |-----------|-------------|
 | `?limit={n}` | Number of articles (max 50) |
@@ -322,7 +324,9 @@ Common tournament IDs: `22` = NCAA Men's, `23` = NCAA Women's
 
 ---
 
-## Fantasy Sports API
+## Fantasy Sports API (Public Leagues Only)
+
+Optional reference. Only **public** leagues are in scope. Private leagues are out of scope for this read-only skill: never ask for, store, or send login cookies or any other credential.
 
 **Base URL:** `https://fantasy.espn.com/apis/v3/games/{sport_code}/seasons/{year}`
 
@@ -345,4 +349,4 @@ Views (append as `?view=`): `mTeam`, `mRoster`, `mMatchup`, `mMatchupScore`, `mS
 
 Segments: `0` = entire season, `1` = playoff round 1, `2` = round 2, `3` = championship
 
-**Private leagues** require cookies: `espn_s2` and `SWID`
+A request for a private league fails without authentication. Report that the league is private and out of scope; do not work around it.
