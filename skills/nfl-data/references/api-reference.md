@@ -195,6 +195,58 @@ Notes:
 - Team abbreviations: the `team` filters accept ESPN spellings (`LAR`, `WSH`) and translate them to nflverse's (`LA`, `WAS`). A `team` filter that matches nothing returns a `warnings[]` entry rather than a silently empty list.
 - Player IDs are not portable between the two backends: ESPN athlete IDs and nflverse GSIS IDs (`00-0033873`) are unrelated and there is no crosswalk. Match on name plus team.
 
+### get_fantasy_trending
+Get NFL players trending in Sleeper fantasy adds or drops. Public Sleeper API, no key.
+- `trend_type` (str, optional): `add` (default) or `drop`
+- `lookback_hours` (int, optional): Lookback window in whole hours, 1-168. Default 24
+- `limit` (int, optional): Players to return, 1-100. Default 10
+
+Booleans, floats (even `24.0`) and out-of-range values return an error before any request is made. Digit strings (`"48"`) are accepted.
+
+Upstream:
+- `GET https://api.sleeper.app/v1/players/nfl/trending/{add|drop}?lookback_hours=<h>&limit=<n>` — rows of `{player_id, count}`
+- `GET https://api.sleeper.app/v1/players/nfl` — the player catalog used to resolve names, keyed by Sleeper player ID
+
+Returns:
+```json
+{
+  "provider": "sleeper",
+  "sport": "nfl",
+  "trend_type": "add",
+  "lookback_hours": 24,
+  "limit": 10,
+  "players": [
+    {
+      "rank": 1,
+      "sleeper_player_id": "90001",
+      "name": "Example Player",
+      "name_resolved": true,
+      "team": "KC",
+      "position": "RB",
+      "count": 12345
+    }
+  ],
+  "count": 1,
+  "unresolved_count": 0,
+  "catalog_status": "loaded",
+  "source": {
+    "trending_url": "https://api.sleeper.app/v1/players/nfl/trending/add?lookback_hours=24&limit=10",
+    "trending_fetched_at": "2026-10-05T12:00:00Z",
+    "players_url": "https://api.sleeper.app/v1/players/nfl",
+    "players_fetched_at": "2026-10-05T08:00:00Z"
+  },
+  "note": "count is the add/drop tally Sleeper's trending API reports ..."
+}
+```
+
+Notes:
+- `count` (per player) is the add/drop tally Sleeper's trending API reports for the window, passed through as given — popularity among Sleeper users, not a projection, ranking, or betting edge. Top-level `count` is the number of rows.
+- `sleeper_player_id` is Sleeper's ID; keep it as the identifier. No ESPN or nflverse ID is attached, none should be inferred, and a name or team match against another provider is not a confirmed identity.
+- `name_resolved: false` means the catalog had no name for that ID; it is listed in `warnings[]`. `team` and `position` are resolved independently, so they can still be set when `name` is null; all three are null when the ID is missing from the catalog. Free agents have `team: null`.
+- `catalog_status`: `loaded`, `unavailable` (catalog fetch failed or changed shape; every row is unresolved and `warnings[]` gives the reason), or `not_needed` (no trending rows).
+- Caching: trending results are cached in memory for 5 minutes, per process only (each CLI call re-fetches them). The player catalog, trimmed to IDs, names, teams and positions, is cached in memory and on disk at `$XDG_CACHE_HOME/sports-skills/sleeper/players-nfl.json` (default `~/.cache/sports-skills/sleeper/`), so separate processes share it until 24 hours after it was fetched (Sleeper asks for at most one catalog fetch a day). Expired, future-dated, corrupt or unreadable cache files are ignored and the catalog is fetched again. Disk writes are best effort: a write failure does not fail the call, and the next process simply re-fetches. The `*_fetched_at` timestamps are when the data was fetched, so they stay the same on a cache hit. With `SPORTS_SKILLS_REPLAY` set, the memory and disk caches are neither read nor written, so every request is recorded or replayed, and a warning notes that `fetched_at` is the replay time.
+- Errors: HTTP failures (including 429 after retries), invalid JSON, or a trending payload that is not a list of `{player_id, count}` objects return `status: false` with a message naming the problem — never an empty success.
+
 ## Team IDs
 
 | Team | ID | Team | ID |
