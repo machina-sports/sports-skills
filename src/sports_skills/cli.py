@@ -475,6 +475,8 @@ _REGISTRY = {
         "get_rankings": {"required": ["tour"], "optional": ["limit"]},
         "get_player_info": {"required": ["player_id"]},
         "get_news": {"required": ["tour"]},
+        "get_wta_entry_list": {"required": ["tournament_id", "year"]},
+        "get_wta_player_results": {"required": ["player_id"], "optional": ["year", "limit"]},
     },
     "cricket": {
         "get_series": {},

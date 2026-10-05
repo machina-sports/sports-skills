@@ -1,6 +1,7 @@
 """Tennis data — ATP and WTA tournament scores, calendars, rankings, players, and news.
 
-Wraps ESPN public endpoints. No API keys required. Zero config.
+Wraps ESPN public endpoints, plus the public WTA API for WTA entry lists and
+player match results (keyed by native WTA ids). No API keys required. Zero config.
 """
 
 from __future__ import annotations
@@ -20,6 +21,12 @@ from sports_skills.tennis._connector import (
 )
 from sports_skills.tennis._connector import (
     get_scoreboard as _get_scoreboard,
+)
+from sports_skills.tennis._wta import (
+    get_wta_entry_list as _get_wta_entry_list,
+)
+from sports_skills.tennis._wta import (
+    get_wta_player_results as _get_wta_player_results,
 )
 
 
@@ -74,3 +81,24 @@ def get_news(*, tour: str) -> dict:
         tour: Tour name — "atp" or "wta".
     """
     return wrap(_get_news(_params(tour=tour)))
+
+
+def get_wta_entry_list(*, tournament_id: str, year: int) -> dict:
+    """Get the WTA entry list (singles players and doubles teams) for one tournament edition.
+
+    Args:
+        tournament_id: Native WTA tournament id, digits only, no leading zeros (e.g. "901"). Not an ESPN event id.
+        year: Tournament year (e.g. 2025).
+    """
+    return wrap(_get_wta_entry_list(_params(tournament_id=tournament_id, year=year)))
+
+
+def get_wta_player_results(*, player_id: str, year: int | None = None, limit: int = 20) -> dict:
+    """Get a WTA player's most recent match results (a bounded window, not full history), newest first.
+
+    Args:
+        player_id: Native WTA player id, digits only, no leading zeros (e.g. "320760"). Not an ESPN athlete id.
+        year: Only matches from this tournament year, filtered by the WTA API. Omit for the latest matches.
+        limit: Max matches to return, 1-200. Defaults to 20.
+    """
+    return wrap(_get_wta_player_results(_params(player_id=player_id, year=year, limit=limit)))
