@@ -1,0 +1,48 @@
+{# Shared UI pieces. Templates import this with `{% import "macros.html" as m %}`. #}
+
+{% macro icon(name, cls="") -%}
+<svg class="ico{% if cls %} {{ cls }}{% endif %}" aria-hidden="true" focusable="false"><use href="#i-{{ name }}"/></svg>
+{%- endmacro %}
+
+{% macro copy_btn(text, label="Copy") -%}
+<button class="copy" type="button" data-copy="{{ text }}" aria-label="Copy command">{{ icon("copy", "ico-copy") }}{{ icon("check", "ico-check") }}<span data-copy-label>{{ label }}</span></button>
+{%- endmacro %}
+
+{% macro install_widget(id) -%}
+<div class="install" data-tabs>
+  <div class="install-tabs" role="tablist" aria-label="Install method">
+    <button class="tab" type="button" role="tab" id="{{ id }}-t1" aria-controls="{{ id }}-p1" aria-selected="true">Agent skills</button>
+    <button class="tab" type="button" role="tab" id="{{ id }}-t2" aria-controls="{{ id }}-p2" aria-selected="false">Python SDK</button>
+  </div>
+  <div class="tab-panel" id="{{ id }}-p1" role="tabpanel" aria-labelledby="{{ id }}-t1">
+    <div class="cmdline"><span class="prompt">$</span><code>npx skills add machina-sports/sports-skills</code>{{ copy_btn("npx skills add machina-sports/sports-skills") }}</div>
+  </div>
+  <div class="tab-panel" id="{{ id }}-p2" role="tabpanel" aria-labelledby="{{ id }}-t2" hidden>
+    <div class="cmdline"><span class="prompt">$</span><code>pip install sports-skills</code>{{ copy_btn("pip install sports-skills") }}</div>
+  </div>
+</div>
+{%- endmacro %}
+
+{% macro skill_card(s) -%}
+<a href="/{{ s.slug }}/" class="card tone-{{ s.category_color }}" data-slug="{{ s.slug }}" data-category="{{ s.category }}">
+  <div class="card-top">
+    <span class="card-ico">{{ icon(s.icon or "trophy") }}</span>
+    <span class="card-name">{{ s.name }}</span>
+    <span class="card-badges">
+      {% if s.deprecated_for %}<span class="badge badge-outline">Deprecated</span>{% endif %}
+      {% if s.tier == "pro" %}<span class="badge tone-cyan">Pro</span>{% endif %}
+      {% if s.safety and s.safety.money_movement %}<span class="badge tone-red">High risk</span>{% endif %}
+      {% if s.installs and s.installs >= 1000 %}<span class="badge tone-green">Popular</span>{% endif %}
+    </span>
+  </div>
+  {% if s.highlight %}<div class="card-hl">{{ s.highlight }}</div>{% endif %}
+  <p class="card-desc">{{ s.description }}</p>
+  <div class="card-foot">
+    <span class="meta">
+      {% if s.installs_label %}<span title="{{ s.installs }} installs on skills.sh">{{ icon("download", "ico-xs") }}{{ s.installs_label }}</span>{% endif %}
+      <span>{% if s.command_count %}{{ s.command_count }} commands{% else %}prompt-only{% endif %}</span>
+    </span>
+    <span class="src">{{ s.data_source }}</span>
+  </div>
+</a>
+{%- endmacro %}

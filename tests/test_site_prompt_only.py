@@ -85,12 +85,31 @@ def test_cli_backed_page_keeps_cli_and_python_quickstart(build):
     assert skill["commands"]
     first = skill["commands"][0]["name"]
 
+    # The Quick Start names the real CLI module and Python package (`nba`), not the
+    # skill slug: `sports-skills nba-data ...` and `sports_skills.nba_data` don't exist.
     html = _render(build, skill)
-    assert f"sports-skills nba-data {first}" in html
-    assert "from sports_skills import nba_data" in html
-    assert f"nba_data.{first}()" in html
+    assert f"sports-skills nba {first}" in html
+    assert "from sports_skills import nba\n" in html
+    assert f"nba.{first}()" in html
+    assert "sports-skills nba-data " not in html
+    assert "nba_data" not in html
     assert "get_data" not in html
     assert "prompt-only: no CLI command or Python module" not in html
+
+
+@pytest.mark.parametrize("slug", sorted(p.parent.name for p in (ROOT / "skills").glob("*/SKILL.md")))
+def test_quickstart_names_a_registered_module_and_package(build, slug):
+    """Every CLI-backed Quick Start must name a real CLI module, command and Python package."""
+    if build.CLI_REGISTRY is None:
+        pytest.skip("sports_skills not importable")
+    skill = build.load_skill(slug, ROOT / "skills" / slug, "open")
+    if not skill["commands"]:
+        assert skill["cli_module"] is None and skill["py_module"] is None
+        return
+    assert skill["cli_module"] in build.CLI_REGISTRY, slug
+    assert skill["quickstart"]["name"] in build.CLI_REGISTRY[skill["cli_module"]], slug
+    # find_spec locates the package without importing optional backends (fastf1, nflverse).
+    assert importlib.util.find_spec(f"sports_skills.{skill['py_module']}") is not None, slug
 
 
 def test_pro_page_keeps_machina_cta_and_no_quickstart(build, tmp_path):

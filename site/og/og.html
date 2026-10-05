@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<!--
+  Source for site/static/og.png (1200×630 social card). Regenerate with:
+  "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome" --headless=new --hide-scrollbars \
+    --window-size=1200,630 --virtual-time-budget=6000 --screenshot=site/static/og.png site/og/og.html
+-->
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@500;600&family=Geist+Mono:wght@500;600&display=block" rel="stylesheet">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { width: 1200px; height: 630px; overflow: hidden; }
+  body {
+    position: relative; background: #050706; color: #eef3f0;
+    font-family: "Geist", system-ui, sans-serif; -webkit-font-smoothing: antialiased;
+  }
+  .glow {
+    position: absolute; left: 50%; top: -360px; width: 1400px; height: 860px; transform: translateX(-50%);
+    background: radial-gradient(closest-side, rgba(57, 224, 124, 0.22), transparent 75%);
+  }
+  .pitch {
+    position: absolute; left: 50%; bottom: -120px; width: 1500px; color: rgba(57, 224, 124, 0.32);
+    transform: translateX(-50%) perspective(900px) rotateX(64deg); transform-origin: 50% 100%;
+    -webkit-mask-image: linear-gradient(to top, transparent 0%, #000 30%, #000 55%, transparent 92%);
+  }
+  .inner { position: relative; padding: 64px 72px; height: 100%; display: flex; flex-direction: column; }
+  .brand { display: flex; align-items: center; gap: 14px; font-family: "Geist Mono", monospace; font-weight: 600; font-size: 26px; letter-spacing: -0.02em; }
+  .mark { width: 46px; height: 46px; border-radius: 12px; display: grid; place-items: center; background: linear-gradient(140deg, #39e07c, #c6f65e); }
+  .tld { color: #39e07c; }
+  h1 { margin-top: 54px; font-size: 84px; line-height: 0.98; font-weight: 600; letter-spacing: -0.05em; max-width: 900px; }
+  .grad { background: linear-gradient(100deg, #39e07c 5%, #c6f65e 95%); -webkit-background-clip: text; color: transparent; }
+  .sub { margin-top: 26px; font-size: 27px; color: #a4aea8; letter-spacing: -0.01em; }
+  .cmd {
+    margin-top: auto; align-self: flex-start; display: flex; align-items: center; gap: 14px;
+    padding: 16px 22px; border-radius: 14px; border: 1px solid rgba(255, 255, 255, 0.12);
+    background: rgba(11, 15, 13, 0.85); font-family: "Geist Mono", monospace; font-size: 24px;
+  }
+  .cmd b { color: #39e07c; font-weight: 600; }
+</style>
+</head>
+<body>
+  <div class="glow"></div>
+  <svg class="pitch" viewBox="0 0 1050 680" fill="none" stroke="currentColor" stroke-width="2">
+    <rect x="5" y="5" width="1040" height="670" rx="3"/><path d="M525 5v670"/>
+    <circle cx="525" cy="340" r="91.5"/><circle cx="525" cy="340" r="3" fill="currentColor"/>
+    <rect x="5" y="138.5" width="165" height="403"/><rect x="5" y="248.5" width="55" height="183"/>
+    <path d="M170 266.9A91.5 91.5 0 0 1 170 413.1"/>
+    <rect x="880" y="138.5" width="165" height="403"/><rect x="990" y="248.5" width="55" height="183"/>
+    <path d="M880 266.9A91.5 91.5 0 0 0 880 413.1"/>
+  </svg>
+  <div class="inner">
+    <div class="brand">
+      <span class="mark"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#03140a" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 7l5 5-5 5M12.5 17H19"/></svg></span>
+      <span>sports-skills<span class="tld">.sh</span></span>
+    </div>
+    <h1>The sports data layer for <span class="grad">AI agents</span></h1>
+    <p class="sub">Scores, stats, odds &amp; prediction markets across 30+ leagues. Zero API keys.</p>
+    <div class="cmd"><b>$</b>npx skills add machina-sports/sports-skills</div>
+  </div>
+</body>
+</html>
