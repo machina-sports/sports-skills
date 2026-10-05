@@ -353,6 +353,7 @@ _REGISTRY = {
         },
         "get_nflverse_team_stats": {"optional": ["season", "team", "week", "summary_level", *_SHAPING]},
         "get_nflverse_play_by_play": {"optional": ["season", "week", "team", "game_id", *_SHAPING]},
+        "get_fantasy_trending": {"optional": ["trend_type", "lookback_hours", "limit"]},
     },
     "nba": {
         "get_scoreboard": {"optional": ["date"]},
@@ -603,6 +604,7 @@ _INT_PARAMS = {
     "innings",
     "interval_seconds",
     "window_seconds",
+    "lookback_hours",
     "max_seasons",
 }
 

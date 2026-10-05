@@ -3,7 +3,7 @@ name: nfl-data
 description: |
   NFL data via ESPN public endpoints plus an nflverse backend for schedules, weekly rosters, play-by-play, and normalized player/team stat tables. Zero config, no API keys.
 
-  Use when: user asks about NFL scores, standings, team rosters, schedules, game stats, box scores, play-by-play, injuries, transactions, betting futures, depth charts, team/player statistics, or NFL news.
+  Use when: user asks about NFL scores, standings, team rosters, schedules, game stats, box scores, play-by-play, injuries, transactions, betting futures, depth charts, team/player statistics, NFL news, or which players are trending in fantasy adds/drops.
   Don't use when: user asks about football/soccer (use football-data), college football (use cfb-data), or other sports.
 license: MIT
 metadata:
@@ -97,8 +97,25 @@ Derive the current year from the system prompt's date (e.g., `currentDate: 2026-
 | `get_nflverse_player_stats` | nflverse-backed player stats — season totals by default |
 | `get_nflverse_team_stats` | nflverse-backed team stats — season totals by default |
 | `get_nflverse_play_by_play` | nflverse-backed play-by-play rows |
+| `get_fantasy_trending` | Sleeper fantasy trending adds/drops (popularity counts, Sleeper player IDs) |
 
 See `references/api-reference.md` for full parameter lists and return shapes.
+
+## Fantasy Trending (Sleeper)
+
+`get_fantasy_trending` reads Sleeper's public trending endpoint: the NFL players
+most added (or dropped) in Sleeper fantasy leagues over a recent window.
+
+```bash
+sports-skills nfl get_fantasy_trending --trend_type=add --lookback_hours=24 --limit=10
+sports-skills nfl get_fantasy_trending --trend_type=drop
+```
+
+- `trend_type`: `add` (default) or `drop`. `lookback_hours`: whole hours, 1-168 (default 24). `limit`: 1-100 (default 10).
+- `count` is the add/drop tally Sleeper's trending API reports for the player over the window. It is a **popularity signal, not a projection, ranking, or betting edge** — say so when reporting it.
+- Player IDs are `sleeper_player_id`, Sleeper's own namespace — keep them as the identifier. There is no mapping to ESPN athlete IDs or nflverse GSIS IDs: do not attach one, and do not present a name or team match against another provider as the same confirmed player.
+- `name_resolved: false` means Sleeper's player catalog had no name for that ID. `team` and `position` are resolved separately and may still be filled in. If the catalog itself could not be fetched, `catalog_status` is `unavailable` and `warnings[]` says why; counts and IDs are still valid.
+- Report freshness from `source.trending_fetched_at`. Trending results are cached in memory for 5 minutes, within one process only — each new CLI call fetches them again. Sleeper's player catalog (trimmed to IDs, names, teams and positions) is also saved under `$XDG_CACHE_HOME/sports-skills/sleeper/` (default `~/.cache/...`) and reused across processes until 24 hours after it was fetched, since Sleeper asks clients to fetch it at most once a day. That disk cache is best effort: if it cannot be written, the call still succeeds and the next process fetches the catalog again.
 
 ## Shaping Wide nflverse Results
 
@@ -206,6 +223,13 @@ Actions:
 1. Derive season year from `currentDate`
 2. Call `get_nflverse_play_by_play(season=<derived_year>, week=3, team="BUF")`
 Result: Play rows with game_id, down/distance, description, EPA, WP/WPA, and score state
+
+Example 9: Fantasy waiver-wire buzz
+User says: "Who are fantasy players picking up this week?"
+Actions:
+1. Call `get_fantasy_trending(trend_type="add", lookback_hours=24, limit=10)`
+2. Report name, team, position and count, with `source.trending_fetched_at`
+Result: The most-added players on Sleeper, described as popularity among Sleeper users rather than a recommendation
 
 ## Commands that DO NOT exist — never call these
 

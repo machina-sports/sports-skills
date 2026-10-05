@@ -72,6 +72,9 @@ from sports_skills.nfl._nflverse import (
 from sports_skills.nfl._nflverse import (
     get_nflverse_weekly_rosters as _get_nflverse_weekly_rosters,
 )
+from sports_skills.nfl._sleeper import (
+    get_fantasy_trending as _get_fantasy_trending,
+)
 
 
 def _params(**kwargs):
@@ -243,6 +246,29 @@ def get_player_stats(
             _params(
                 player_id=player_id, season_year=season_year, season_type=season_type
             )
+        )
+    )
+
+
+def get_fantasy_trending(
+    *, trend_type: str = "add", lookback_hours: int = 24, limit: int = 10
+) -> dict:
+    """Get NFL players trending in Sleeper fantasy adds or drops.
+
+    Public Sleeper data, no API key. ``count`` is the add/drop tally Sleeper's
+    API reports for the player in the window: popularity, not a projection or
+    betting edge. Players carry ``sleeper_player_id`` (Sleeper's
+    own ID, not an ESPN ID); name, team and position come from Sleeper's player
+    catalog, and ``name_resolved`` is false where the catalog has no match.
+
+    Args:
+        trend_type: "add" (default) or "drop".
+        lookback_hours: Lookback window in whole hours, 1-168. Defaults to 24.
+        limit: Number of players to return, 1-100. Defaults to 10.
+    """
+    return wrap(
+        _get_fantasy_trending(
+            _params(trend_type=trend_type, lookback_hours=lookback_hours, limit=limit)
         )
     )
 
