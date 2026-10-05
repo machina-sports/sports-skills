@@ -1,14 +1,19 @@
 {% extends "base.html" %}
+{% import "macros.html" as m %}
+{% set st = stats or {} %}
 
 {% block meta_extra %}
-<meta name="keywords" content="sports data, prediction markets, AI agents, kalshi, polymarket, NFL, NBA, football, tennis, golf, F1">
+<meta name="keywords" content="sports data, prediction markets, AI agents, agent skills, kalshi, polymarket, NFL, NBA, MLB, NHL, football, tennis, golf, F1">
+<link rel="canonical" href="{{ base_url }}/">
 <meta property="og:title" content="sports-skills.sh — Live Sports Data for AI Agents">
 <meta property="og:description" content="Agent skills for live sports data and prediction markets. Open source for public data, Machina Pro for licensed feeds.">
 <meta property="og:url" content="{{ base_url }}/">
 <meta property="og:type" content="website">
-<meta name="twitter:card" content="summary">
+<meta property="og:image" content="{{ base_url }}/og.png">
+<meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="sports-skills.sh — Live Sports Data for AI Agents">
 <meta name="twitter:description" content="Agent skills for live sports data and prediction markets. Open source for public data, Machina Pro for licensed feeds.">
+<meta name="twitter:image" content="{{ base_url }}/og.png">
 {% endblock %}
 
 {% block json_ld %}
@@ -38,134 +43,441 @@
 {% endblock %}
 
 {% block content %}
+{% set ticker = [
+  ("soccer", "Premier League", false), ("football", "NFL", false), ("basketball", "NBA", false),
+  ("baseball", "MLB", false), ("hockey", "NHL", false), ("candles", "Kalshi", true),
+  ("soccer", "Champions League", false), ("basketball", "WNBA", false), ("pie", "Polymarket", true),
+  ("soccer", "La Liga", false), ("college", "NCAA Football", false), ("basketball", "March Madness", false),
+  ("tennis", "ATP · WTA", false), ("golf", "PGA Tour · LPGA", false), ("gauge", "Formula 1", false),
+  ("exchange", "ProphetX", true), ("soccer", "Bundesliga", false), ("soccer", "Serie A", false),
+  ("soccer", "MLS", false), ("gamepad", "Dota 2 · LoL", false), ("cricket", "Cricket", false),
+  ("soccer", "World Cup 2026", false), ("volleyball", "Volleyball", false), ("stopwatch", "NCAA Track & XC", false),
+] %}
+{% set blurbs = {
+  "Prediction Markets": "Live prices, order books — and the math to read them.",
+  "Football": "Top leagues worldwide with xG, Elo, transfers and forecasts.",
+  "US Sports": "Live layer plus deep analytics backends for the big five.",
+  "College": "NCAA football, basketball, cross country and track.",
+  "Global Sports": "Tennis, golf, F1, cricket, volleyball and esports.",
+  "News & Tools": "Headlines, metadata, writing — and raw ESPN reference.",
+  "Machina": "Premium skills on the Machina platform.",
+} %}
+
 <!-- HERO -->
 <section class="hero">
-  <div class="container">
-    <div class="fade-in">
-      <pre class="ascii-art">
-███████╗██████╗  ██████╗ ██████╗ ████████╗███████╗
-██╔════╝██╔══██╗██╔═══██╗██╔══██╗╚══██╔══╝██╔════╝
-███████╗██████╔╝██║   ██║██████╔╝   ██║   ███████╗
-╚════██║██╔═══╝ ██║   ██║██╔══██╗   ██║   ╚════██║
-███████║██║     ╚██████╔╝██║  ██║   ██║   ███████║
-╚══════╝╚═╝      ╚═════╝ ╚═╝  ╚═╝   ╚═╝   ╚══════╝
-    ███████╗██╗  ██╗██╗██╗     ██╗     ███████╗
-    ██╔════╝██║ ██╔╝██║██║     ██║     ██╔════╝
-    ███████╗█████╔╝ ██║██║     ██║     ███████╗
-    ╚════██║██╔═██╗ ██║██║     ██║     ╚════██║
-    ███████║██║  ██╗██║███████╗███████╗███████║
-    ╚══════╝╚═╝  ╚═╝╚═╝╚══════╝╚══════╝╚══════╝</pre>
+  <div class="hero-bg" aria-hidden="true">
+    <div class="hero-glow"></div>
+    <svg class="hero-pitch" viewBox="0 0 1050 680" fill="none" stroke="currentColor" stroke-width="2">
+      <rect x="5" y="5" width="1040" height="670" rx="3"/>
+      <path d="M525 5v670"/>
+      <circle cx="525" cy="340" r="91.5"/>
+      <circle cx="525" cy="340" r="3" fill="currentColor"/>
+      <rect x="5" y="138.5" width="165" height="403"/>
+      <rect x="5" y="248.5" width="55" height="183"/>
+      <circle cx="115" cy="340" r="3" fill="currentColor"/>
+      <path d="M170 266.9A91.5 91.5 0 0 1 170 413.1"/>
+      <rect x="880" y="138.5" width="165" height="403"/>
+      <rect x="990" y="248.5" width="55" height="183"/>
+      <circle cx="935" cy="340" r="3" fill="currentColor"/>
+      <path d="M880 266.9A91.5 91.5 0 0 0 880 413.1"/>
+      <path d="M5 15A10 10 0 0 0 15 5M1035 5A10 10 0 0 0 1045 15M1045 665A10 10 0 0 0 1035 675M15 675A10 10 0 0 0 5 665"/>
+    </svg>
+  </div>
+
+  <div class="wrap hero-grid">
+    <div class="hero-copy">
+      {% if st.release %}
+      <a class="pill" href="{{ st.release.url }}" target="_blank" rel="noopener">
+        <span class="pill-tag">{{ st.release.tag }}</span><span class="pill-text">{{ st.release.title or "Release notes" }}</span>{{ m.icon("arrow") }}
+      </a>
+      {% elif site and site.version %}
+      <a class="pill" href="https://github.com/machina-sports/sports-skills/releases" target="_blank" rel="noopener">
+        <span class="pill-tag">v{{ site.version }}</span><span class="pill-text">Release notes</span>{{ m.icon("arrow") }}
+      </a>
+      {% endif %}
+
+      <h1 class="h1">The sports data layer for <span class="grad">AI&nbsp;agents</span></h1>
+      <p class="lead">
+        Scores, stats, odds and prediction markets across 30+ leagues — packaged as
+        agent skills and a Python SDK. Open source, zero API keys, one JSON envelope.
+      </p>
+
+      {{ m.install_widget("hero") }}
+
+      <div class="hero-ctas">
+        <a class="btn btn-primary" href="#skills">Browse {{ total_skills }} skills {{ m.icon("arrow", "ico-sm") }}</a>
+        <a class="btn" href="https://github.com/machina-sports/sports-skills" target="_blank" rel="noopener">
+          {{ m.icon("github", "ico-sm") }}Star on GitHub{% if st.stars_label %}<span class="count">{{ st.stars_label }}</span>{% endif %}
+        </a>
+      </div>
+
+      <div class="agents">
+        <span class="agents-label">Works with</span>
+        <span class="agent">Claude Code</span><span class="agent">Cursor</span><span class="agent">Copilot</span>
+        <span class="agent">Gemini CLI</span><span class="agent">OpenClaw</span><span class="agent">Hermes Agent</span>
+        <span class="agent">sportsclaw</span>
+      </div>
     </div>
 
-    <p class="hero-tagline fade-in delay-1">
-      Agent skills for <strong>live sports data</strong>
-      and <strong>prediction markets</strong>.<br>
-      Open source for public feeds. <a href="https://machina.gg" target="_blank" rel="noopener">Machina Pro</a> for licensed sources.
-    </p>
-
-    <div class="fade-in delay-2">
-      <div class="install-box" onclick="copyInstall(this)">
-        <span class="prompt">$</span>
-        <code>npx skills add machina-sports/sports-skills</code>
-        <button class="copy-btn" aria-label="Copy install command">copy</button>
-      </div>
-      <div class="install-hint">
-        Python: <code>pip install sports-skills</code>
+    <div class="hero-visual">
+      <div class="term" data-demo>
+        <div class="term-bar">
+          <div class="term-dots" aria-hidden="true"><i></i><i></i><i></i></div>
+          <div class="term-tabs" role="tablist" aria-label="Example agent sessions">
+            <button class="term-tab" type="button" role="tab" aria-selected="true" data-scene="0">markets</button>
+            <button class="term-tab" type="button" role="tab" aria-selected="false" data-scene="1">history</button>
+            <button class="term-tab" type="button" role="tab" aria-selected="false" data-scene="2">scores</button>
+          </div>
+          <div class="term-meta"><span class="live-dot"></span>agent + sports-skills</div>
+        </div>
+        <div class="term-body" data-demo-body aria-live="polite">
+          <div class="t-row t-ask"><span class="t-gutter">›</span><span>Saints are 52.5¢ on Polymarket and −150 at the book. Any edge?</span></div>
+          <div class="t-row t-call"><span class="t-gutter">$</span><span class="t-cmd">sports-skills <span class="t-mod">polymarket</span> get_todays_events --sport=nfl</span></div>
+          <div class="t-out"><span class="ok">✓</span>Falcons vs. Saints · Saints 0.525 · $1.08M volume</div>
+          <div class="t-row t-call"><span class="t-gutter">$</span><span class="t-cmd">sports-skills <span class="t-mod">betting</span> evaluate_bet --book_odds=-150,+130 --market_prob=0.525</span></div>
+          <div class="t-out"><span class="ok">✓</span>Fair 58.0% · Market 52.5% · Edge 5.48% · Kelly 0.115</div>
+          <div class="t-answer"><span class="who">agent</span>De-vigged, the book implies a <b>58.0%</b> Saints win vs <b>52.5%</b> on Polymarket — a <b>5.48% edge</b> (EV +10.4%). Analysis only: no orders placed.</div>
+        </div>
       </div>
     </div>
+  </div>
+</section>
 
-    <div class="badges fade-in delay-3">
-      <span class="badge">{{ total_skills }} skills</span>
-      <span class="badge">{{ total_commands }}+ commands</span>
+<!-- TICKER -->
+<div class="ticker" role="region" aria-label="Leagues and venues covered">
+  <div class="ticker-track">
+    {% for copy in [0, 1] %}
+    <div class="ticker-group"{% if copy %} aria-hidden="true"{% endif %}>
+      {% for ic, label, mk in ticker %}
+      <span class="ticker-item{% if mk %} mk{% endif %}">{{ m.icon(ic) }}{{ label }}</span>
+      {% endfor %}
+    </div>
+    {% endfor %}
+  </div>
+</div>
+
+<!-- STATS -->
+{% set n_stats = 3 + (1 if st.skill_installs_label else 0) + (1 if st.pypi_downloads_label else 0) + (1 if st.stars else 0) %}
+<div class="wrap" style="margin-top: 56px;">
+  <div class="stats reveal" style="--cols: {{ n_stats + (1 if n_stats < 6 else 0) }};">
+    <div class="stat"><div class="stat-num" data-count="{{ total_skills }}">{{ total_skills }}</div><div class="stat-label">Agent skills</div></div>
+    <div class="stat"><div class="stat-num"><span data-count="{{ total_commands }}">{{ total_commands }}</span><span class="unit">+</span></div><div class="stat-label">Commands</div></div>
+    <div class="stat"><div class="stat-num">30<span class="unit">+</span></div><div class="stat-label">Leagues, tours &amp; venues</div></div>
+    {% if st.skill_installs_label %}
+    <div class="stat"><div class="stat-num">{{ st.skill_installs_label }}</div><div class="stat-label">Skill installs · skills.sh</div></div>
+    {% endif %}
+    {% if st.pypi_downloads_label %}
+    <div class="stat"><div class="stat-num">{{ st.pypi_downloads_label }}</div><div class="stat-label">PyPI downloads · 6 mo</div></div>
+    {% endif %}
+    {% if st.stars %}
+    <div class="stat"><div class="stat-num" data-count="{{ st.stars }}">{{ st.stars }}</div><div class="stat-label">GitHub stars</div></div>
+    {% endif %}
+    {% if n_stats < 6 %}
+    <div class="stat"><div class="stat-num">0</div><div class="stat-label">API keys required</div></div>
+    {% endif %}
+  </div>
+</div>
+
+<!-- WHY -->
+<section class="section" id="why">
+  <div class="wrap">
+    <div class="section-head reveal">
+      <span class="eyebrow">Why sports-skills</span>
+      <h2 class="h2">Built for agents, not dashboards.</h2>
+      <p class="lead">
+        Every skill is a SKILL.md your agent loads on demand, backed by a Python SDK that answers
+        in the same shape for every sport and every venue.
+      </p>
+    </div>
+
+    <div class="bento">
+      <article class="tile span-4 reveal">
+        <div class="tile-ico">{{ m.icon("braces") }}</div>
+        <h3>One envelope, every sport</h3>
+        <p>Scores, standings, play-by-play, odds and order books all come back as <code>status</code>, <code>data</code> and <code>message</code> — so one parser handles {% if site and site.module_count %}{{ site.module_count }}{% else %}every{% endif %} modules.</p>
+        <div class="tile-visual">
+<pre class="code"><span class="p">$</span> sports-skills betting devig --odds=<span class="s">"-150,+130"</span>
+<span class="p">{</span>
+  <span class="k">"status"</span>: <span class="n">true</span>,
+  <span class="k">"data"</span>: <span class="p">{</span> <span class="k">"vig_pct"</span>: <span class="n">3.48</span>, <span class="k">"outcomes"</span>: <span class="p">[ … ]</span> <span class="p">}</span>,
+  <span class="k">"message"</span>: <span class="s">"Vig: 3.48% | Fair probs: 58.0%, 42.0%"</span>
+<span class="p">}</span></pre>
+        </div>
+      </article>
+
+      <article class="tile span-2 reveal">
+        <div class="tile-ico">{{ m.icon("keyoff") }}</div>
+        <h3>Zero keys. Zero signup.</h3>
+        <p>Public feeds only — ESPN, official league APIs, nflverse, Understat and read-only market data. Nothing to configure.</p>
+        <div class="tile-visual"><div class="zero">0<small>API keys</small></div></div>
+      </article>
+
+      <article class="tile span-2 tone-amber reveal">
+        <div class="tile-ico">{{ m.icon("markets") }}</div>
+        <h3>Prediction markets, natively</h3>
+        <p>Prices, order books and history from three venues, matched to real games — plus de-vig, edge, Kelly and arbitrage math.</p>
+        <div class="tile-visual venues">
+          <div class="venue"><b>Kalshi</b><span>CFTC-regulated</span></div>
+          <div class="venue"><b>Polymarket</b><span>moneyline · props</span></div>
+          <div class="venue"><b>ProphetX</b><span>exchange odds</span></div>
+        </div>
+      </article>
+
+      <article class="tile span-4 reveal">
+        <div class="tile-ico">{{ m.icon("history") }}</div>
+        <h3>History, not just headlines</h3>
+        <p>Live scores come from ESPN; the US-sport skills add a second, deeper source — pitch-level MLB, NBA shot coordinates, NHL on-ice x/y and nflverse play-by-play.</p>
+        <div class="tile-visual">
+          <div class="timeline" role="img" aria-label="History depth: MLB from 1901, NHL from 1917, NBA from 1946, NFL from 1999">
+            {% for lg, year in [("MLB", 1901), ("NHL", 1917), ("NBA", 1946), ("NFL", 1999)] %}
+            <div class="tl-row">
+              <span class="tl-lg">{{ lg }}</span>
+              <div class="tl-track"><div class="tl-bar" style="--from: {{ ((year - 1900) / 126 * 100)|round(1) }}%;">{{ year }}+</div></div>
+            </div>
+            {% endfor %}
+            <div class="tl-axis"><span></span><div><span>1900</span><span>1950</span><span>2000</span><span>2026</span></div></div>
+          </div>
+        </div>
+      </article>
+
+      <article class="tile span-2 tone-green reveal">
+        <div class="tile-ico">{{ m.icon("shield") }}</div>
+        <h3>Safe by default</h3>
+        <p>Read-only unless the user asks. Every skill ships risk metadata in <code>catalog.json</code>; trading needs explicit approval.</p>
+        {% set catalogued = skills|selectattr("safety")|list %}
+        {% if catalogued %}
+        <div class="tile-visual risk-list">
+          <div class="risk-row"><span>Read-only data</span><span class="n">{{ catalogued|selectattr("safety.mode", "equalto", "read_only")|list|length }}</span></div>
+          <div class="risk-row"><span>Pure computation</span><span class="n">{{ catalogued|selectattr("safety.mode", "equalto", "compute")|list|length }}</span></div>
+          <div class="risk-row"><span>Premium · confirm first</span><span class="n">{{ catalogued|selectattr("safety.mode", "in", ["premium_mcp", "premium_mcp_read_only"])|list|length }}</span></div>
+          <div class="risk-row"><span>Executes trades · approval</span><span class="n">{{ catalogued|selectattr("safety.money_movement")|list|length }}</span></div>
+        </div>
+        {% endif %}
+      </article>
+
+      <article class="tile span-2 reveal">
+        <div class="tile-ico">{{ m.icon("replay") }}</div>
+        <h3>Record &amp; replay</h3>
+        <p>Capture a run against live sources once, replay it offline forever — deterministic evals and regression tests.</p>
+        <div class="tile-visual">
+<pre class="code"><span class="c"># record once, then replay offline</span>
+SPORTS_SKILLS_REPLAY=<span class="s">replay</span> \
+SPORTS_SKILLS_REPLAY_DIR=<span class="s">./replays</span> \
+  sports-skills nba get_scoreboard</pre>
+        </div>
+      </article>
+
+      <article class="tile span-2 reveal">
+        <div class="tile-ico">{{ m.icon("layers") }}</div>
+        <h3>Canonical when you need it</h3>
+        <p>Opt football events into the Machina Sports Schema — JSON-LD on IPTC Sport Schema 1.1 with a provider-id crosswalk.</p>
+        <div class="tile-visual">
+<pre class="code">sports-skills football scores \
+  --date=2026-03-01 <span class="s">--canonical</span> \
+  --observed-at=2026-03-01T22:05:00+00:00</pre>
+        </div>
+      </article>
     </div>
   </div>
 </section>
 
 <!-- SKILLS -->
-<section id="skills" style="padding-top: 32px;">
-  <div class="container">
-    <div class="search-filter fade-in">
-      <input type="text" class="search-input" placeholder="Search skills..." id="skill-search" autocomplete="off">
-      <div class="filter-tabs" id="filter-tabs">
-        <button class="filter-tab active" data-category="all">All</button>
-        {% for cat in categories %}
-        <button class="filter-tab" data-category="{{ cat }}">{{ cat }}</button>
+<section class="section" id="skills" style="padding-top: 0;">
+  <div class="wrap">
+    <div class="section-head reveal">
+      <span class="eyebrow">Skill directory</span>
+      <h2 class="h2">{{ total_skills }} skills. {{ total_commands }}+ commands.</h2>
+      <p class="lead">Install everything with one command or pick only what your agent needs. Every page is generated from its SKILL.md.</p>
+    </div>
+
+    <div class="dir-tools">
+      <label class="search">
+        {{ m.icon("search") }}
+        <span class="sr-only">Search skills</span>
+        <input type="search" id="skill-search" placeholder="Search sports, sources, commands…" autocomplete="off" spellcheck="false">
+        <kbd>/</kbd>
+      </label>
+      <div class="chips" role="toolbar" aria-label="Filter by category">
+        <button class="chip" type="button" aria-pressed="true" data-category="all">All <span class="n">{{ total_skills }}</span></button>
+        {% for c in cats or [] %}
+        <button class="chip tone-{{ c.tone }}" type="button" aria-pressed="false" data-category="{{ c.name }}">{{ m.icon(c.icon) }}{{ c.name }} <span class="n">{{ c.count }}</span></button>
         {% endfor %}
       </div>
     </div>
 
-    <div class="skills-grid" id="skills-grid">
-      {% for skill in skills %}
-      <a href="/{{ skill.slug }}/" class="skill-card {% if skill.tier == 'pro' %}pro-tier{% endif %}" data-slug="{{ skill.slug }}" data-category="{{ skill.category }}">
-        <div class="skill-name">
-          {{ skill.name }}
-          <span class="skill-tag tag-{{ skill.category_color }}">{{ skill.category }}</span>
-          {% if skill.tier == 'pro' %}
-          <span class="skill-tag tag-cyan">Pro</span>
-          {% endif %}
-        </div>
-        <div class="skill-desc">{{ skill.description }}</div>
-        <div class="skill-meta">
-          <span>{% if skill.command_count %}{{ skill.command_count }} commands{% else %}prompt-only{% endif %}</span>
-          <span>{{ skill.data_source }}</span>
-        </div>
-      </a>
-      {% endfor %}
+    {% for c in cats or [] %}
+    <div class="group tone-{{ c.tone }}" data-group="{{ c.name }}" id="group-{{ c.name|lower|replace(' & ', '-')|replace(' ', '-') }}">
+      <div class="group-head">
+        <h3>{{ m.icon(c.icon) }}{{ c.name }}</h3>
+        <span class="n">{{ c.count }}</span>
+        <p>{{ blurbs[c.name] }}</p>
+      </div>
+      <div class="cards">
+        {% for s in skills if s.category == c.name %}
+        {{ m.skill_card(s) }}
+        {% endfor %}
+      </div>
     </div>
+    {% endfor %}
 
-    <div class="no-results" id="no-results">No skills match your search.</div>
+    <div class="empty" id="no-results">No skills match <b id="no-results-q">your search</b>. Try a sport, a source like “ESPN”, or a command like “get_standings”.</div>
+  </div>
+</section>
 
-    <div class="stats-row fade-in" style="margin-top: 48px;">
-      <div class="stat">
-        <div class="stat-value">{{ total_commands }}+</div>
-        <div class="stat-label">Commands</div>
-      </div>
-      <div class="stat">
-        <div class="stat-value">{{ total_skills }}</div>
-        <div class="stat-label">Skills</div>
-      </div>
-      <div class="stat">
-        <div class="stat-value">13+</div>
-        <div class="stat-label">Leagues</div>
-      </div>
-      <div class="stat">
-        <div class="stat-value">0</div>
-        <div class="stat-label">API Keys</div>
-      </div>
+<!-- USE CASES -->
+<section class="section" id="use-cases" style="padding-top: 24px;">
+  <div class="wrap">
+    <div class="section-head reveal">
+      <span class="eyebrow">What people build</span>
+      <h2 class="h2">From a question to an answer in one prompt.</h2>
+      <p class="lead">Skills compose: your agent picks the data, the market prices and the math, then cites where every number came from. These are the patterns we see in public projects built on sports-skills.</p>
+    </div>
+    <div class="uses">
+      <article class="use reveal tone-amber">
+        <div class="tile-ico">{{ m.icon("exchange") }}</div>
+        <h3>Cross-venue market scanners</h3>
+        <p>Match the same game on Kalshi and Polymarket, line it up against the sportsbook and flag the gaps — read-only by default.</p>
+        <q>Scan today’s NFL games for Kalshi vs Polymarket gaps bigger than 3¢.</q>
+        <div class="stack"><span class="mod">markets</span><span class="mod">kalshi</span><span class="mod">polymarket</span><span class="mod">betting</span></div>
+      </article>
+      <article class="use reveal">
+        <div class="tile-ico">{{ m.icon("globe") }}</div>
+        <h3>Tournament forecasting</h3>
+        <p>World Cup 2026 prediction pools and dashboards that blend fixtures, injuries and xG with market odds.</p>
+        <q>Who’s favored to top Group C, and does the market agree with the xG?</q>
+        <div class="stack"><span class="mod">football-data</span><span class="mod">polymarket</span><span class="mod">betting</span></div>
+      </article>
+      <article class="use reveal">
+        <div class="tile-ico">{{ m.icon("calculator") }}</div>
+        <h3>Value-bet &amp; odds tools</h3>
+        <p>De-vig sportsbook lines, compare them to fair prices and size positions with Kelly — across leagues and props.</p>
+        <q>Is +145 on the Mets tonight a value bet against the Polymarket price?</q>
+        <div class="stack"><span class="mod">betting</span><span class="mod">mlb-data</span><span class="mod">polymarket</span></div>
+      </article>
+      <article class="use reveal">
+        <div class="tile-ico">{{ m.icon("news") }}</div>
+        <h3>Scouting &amp; newsroom bots</h3>
+        <p>Transfer radars, Telegram scouting bots and auto-written previews built on player profiles, market values and headlines.</p>
+        <q>Summarize this week’s transfer news and market values for Ajax’s midfield.</q>
+        <div class="stack"><span class="mod">football-data</span><span class="mod">sports-news</span><span class="mod">sports-reporter</span></div>
+      </article>
     </div>
   </div>
 </section>
 
 <!-- COVERAGE -->
-<section id="coverage" class="commands-section">
-  <div class="container">
-    <h2>Coverage: dedicated skills vs raw reference</h2>
-    <table class="commands-table">
-      <thead>
-        <tr>
-          <th>Layer</th>
-          <th>What you get</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr>
-          <td>Dedicated runtime skills</td>
-          <td>Python package and <code>sports-skills</code> CLI commands returning one JSON envelope, with record/replay for supported public reads. Use these first for the leagues they list. Prompt-only orchestration and premium skills are separate; not every catalog entry is a runtime module or replay-backed.</td>
-        </tr>
-        <tr>
-          <td><a href="/espn-api/">espn-api</a></td>
-          <td>Reference-only, prompt-only: no CLI command or Python module. Endpoint docs, league slugs and observed response shapes for leagues without a dedicated skill, e.g. MMA, lacrosse, rugby, Australian football, NCAA volleyball, field hockey and water polo, NASCAR and IndyCar.</td>
-        </tr>
-      </tbody>
-    </table>
-    <p class="skill-description" style="margin-top: 16px;">
+<section id="coverage" class="section" style="padding-top: 24px;">
+  <div class="wrap">
+    <div class="section-head reveal">
+      <span class="eyebrow">Coverage</span>
+      <h2 class="h2">Dedicated skills first. Raw reference for the long tail.</h2>
+      <p class="lead">Runtime skills normalize the leagues they list. For everything else there is a raw endpoint reference — labelled as exactly that.</p>
+    </div>
+    <div class="coverage-grid">
+      <article class="cov tone-green reveal">
+        <div class="cov-head">
+          <h3>{{ m.icon("terminal") }}Dedicated runtime skills</h3>
+          <span class="badge tone-green">Python package + CLI</span>
+        </div>
+        <p>Python package and <code>sports-skills</code> CLI commands returning one JSON envelope, with record/replay for supported public reads. Use these first for the leagues they list. Prompt-only orchestration and premium skills are separate; not every catalog entry is a runtime module or replay-backed.</p>
+        <div class="tags">
+          {% for t in ["NFL", "NBA", "WNBA", "NHL", "MLB", "NCAA football", "NCAA basketball", "Premier League + top leagues", "ATP · WTA", "PGA · LPGA · DP World", "Formula 1", "Cricket", "Dota 2 · LoL", "Kalshi", "Polymarket", "ProphetX"] %}
+          <span class="tag">{{ t }}</span>
+          {% endfor %}
+        </div>
+      </article>
+      <article class="cov tone-slate reveal">
+        <div class="cov-head">
+          <h3>{{ m.icon("code") }}<a href="/espn-api/">espn-api</a></h3>
+          <span class="badge badge-outline">reference · prompt-only</span>
+        </div>
+        <p>Reference-only, prompt-only: no CLI command or Python module. Endpoint docs, league slugs and observed response shapes for leagues without a dedicated skill, e.g. MMA, lacrosse, rugby, Australian football, NCAA volleyball, field hockey and water polo, NASCAR and IndyCar.</p>
+        <div class="install">
+          <div class="cmdline"><span class="prompt">$</span><code>npx skills add machina-sports/sports-skills@espn-api</code>{{ m.copy_btn("npx skills add machina-sports/sports-skills@espn-api") }}</div>
+        </div>
+      </article>
+    </div>
+    <p class="fine">
       {% if espn_inventory %}
       espn-api documents {{ espn_inventory.leagues }} league slugs across {{ espn_inventory.sports }} sport sections. That is a reference inventory, not a count of integrated, normalized, canonical or live-tested leagues.
       {% endif %}
       It returns raw provider-native ESPN JSON from undocumented endpoints that may change, is not record/replay-backed (its helpers exit when <code>SPORTS_SKILLS_REPLAY</code> is not <code>off</code>), and grants no commercial rights to ESPN data.
     </p>
-    <div class="install-hint">
-      Install: <code>npx skills add machina-sports/sports-skills@espn-api</code>
+  </div>
+</section>
+
+<!-- PRO -->
+<section class="section" id="pro" style="padding-top: 24px;">
+  <div class="wrap">
+    <div class="pro reveal">
+      <div>
+        <span class="eyebrow">Machina Pro</span>
+        <h2 class="h2">Going to production? Bring licensed data.</h2>
+        <p class="lead">
+          Open-source skills wrap public feeds for personal and educational use. Machina Pro runs the same
+          agent workflows on licensed real-time data, official partnerships and production-grade SLAs.
+        </p>
+        <div class="pro-ctas">
+          <a class="btn btn-cyan" href="https://machina.gg" target="_blank" rel="noopener">Talk to Machina {{ m.icon("arrow", "ico-sm") }}</a>
+          <a class="btn" href="/machina/">The machina skill</a>
+        </div>
+      </div>
+      {% if pro_skills %}
+      <div class="pro-list">
+        {% for s in pro_skills %}
+        <a class="pro-item tone-cyan" href="/{{ s.slug }}/">
+          <span class="card-ico">{{ m.icon(s.icon) }}</span>
+          <span><b>{{ s.name }}</b><span>{{ s.highlight or s.description }}</span></span>
+          {{ m.icon("arrow", "ico-sm ico-arrow") }}
+        </a>
+        {% endfor %}
+      </div>
+      {% endif %}
+    </div>
+  </div>
+</section>
+
+<!-- COMMUNITY -->
+<section class="section" id="community" style="padding-top: 24px;">
+  <div class="wrap community">
+    <div class="reveal">
+      <span class="eyebrow">Open source</span>
+      <h2 class="h2">Built in the open.</h2>
+      <p class="lead">
+        MIT-licensed and released continuously{% if st.releases %} — {{ st.releases }} releases since February 2026{% endif %}.
+        Add a sport, a source or a fix: every skill is a SKILL.md plus a small Python module.
+      </p>
+      {% if st.stars or st.contributors %}
+      <div class="facts-row">
+        {% if st.stars %}<span><b>{{ st.stars }}</b> stars</span>{% endif %}
+        {% if st.forks %}<span><b>{{ st.forks }}</b> forks</span>{% endif %}
+        {% if st.contributors %}<span><b>{{ st.contributors|length }}</b> contributors</span>{% endif %}
+        {% if st.pypi_downloads %}<span><b>{{ "{:,}".format(st.pypi_downloads) }}</b> PyPI downloads (6 mo)</span>{% endif %}
+      </div>
+      {% endif %}
+      <div class="hero-ctas" style="margin-top: 28px;">
+        <a class="btn btn-primary" href="https://github.com/machina-sports/sports-skills" target="_blank" rel="noopener">{{ m.icon("github", "ico-sm") }}Contribute on GitHub</a>
+        <a class="btn" href="https://discord.gg/PBYd6FbBSK" target="_blank" rel="noopener">{{ m.icon("chat", "ico-sm") }}Join the Discord</a>
+      </div>
+    </div>
+    {% if st.contributors %}
+    <div class="avatars reveal" aria-label="Contributors">
+      {% for p in st.contributors[:28] %}
+      <a class="avatar" href="{{ p.url }}" title="@{{ p.login }}" target="_blank" rel="noopener"><img src="{{ p.avatar }}{{ '&' if '?' in p.avatar else '?' }}s=104" alt="@{{ p.login }}" width="52" height="52" loading="lazy"></a>
+      {% endfor %}
+    </div>
+    {% endif %}
+  </div>
+</section>
+
+<!-- CTA -->
+<section class="section" style="padding-top: 24px; padding-bottom: 0;">
+  <div class="wrap">
+    <div class="cta reveal">
+      <span class="eyebrow">Get started</span>
+      <h2 class="h2">Give your agent the whole game.</h2>
+      <p class="lead">One command installs every skill. Ask in plain language — get structured, sourced sports data back.</p>
+      {{ m.install_widget("cta") }}
     </div>
   </div>
 </section>
@@ -176,68 +488,160 @@
   // Skill data for client-side filtering
   const SKILLS = {{ skills_json|safe }};
 
-  function copyInstall(el) {
-    const text = 'npx skills add machina-sports/sports-skills';
-    navigator.clipboard.writeText(text).then(() => {
-      const btn = el.querySelector('.copy-btn');
-      btn.textContent = 'copied!';
-      setTimeout(() => { btn.textContent = 'copy'; }, 2000);
-    });
-  }
+  (function () {
+    var reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-  // Search + Filter
-  const searchInput = document.getElementById('skill-search');
-  const grid = document.getElementById('skills-grid');
-  const cards = grid.querySelectorAll('.skill-card');
-  const tabs = document.querySelectorAll('.filter-tab');
-  const noResults = document.getElementById('no-results');
-  let activeCategory = 'all';
+    // ── Directory search + filter ─────────────────────────────────────
+    var input = document.getElementById('skill-search');
+    if (input) {
+      var chips = document.querySelectorAll('.chip[data-category]');
+      var groups = document.querySelectorAll('.group[data-group]');
+      var empty = document.getElementById('no-results');
+      var emptyQ = document.getElementById('no-results-q');
+      var haystack = {};
+      SKILLS.forEach(function (s) {
+        haystack[s.slug] = [s.name, s.description, s.category, s.highlight, s.sources, s.commands.join(' ')].join(' ').toLowerCase();
+      });
+      var active = 'all';
 
-  function filterCards() {
-    const query = searchInput.value.toLowerCase().trim();
-    let visible = 0;
+      function apply() {
+        var terms = input.value.toLowerCase().trim().split(/\s+/).filter(Boolean);
+        var shown = 0;
+        groups.forEach(function (g) {
+          var n = 0;
+          g.querySelectorAll('.card[data-slug]').forEach(function (card) {
+            var hay = haystack[card.dataset.slug] || '';
+            var ok = (active === 'all' || card.dataset.category === active) &&
+              terms.every(function (t) { return hay.indexOf(t) !== -1; });
+            card.hidden = !ok;
+            if (ok) n++;
+          });
+          g.hidden = n === 0;
+          shown += n;
+        });
+        empty.classList.toggle('is-visible', shown === 0);
+        emptyQ.textContent = input.value.trim() ? '“' + input.value.trim() + '”' : 'this filter';
+      }
 
-    cards.forEach((card, i) => {
-      const skill = SKILLS[i];
-      const matchesCategory = activeCategory === 'all' || skill.category === activeCategory;
-      const matchesSearch = !query ||
-        skill.name.toLowerCase().includes(query) ||
-        skill.description.toLowerCase().includes(query) ||
-        skill.commands.some(c => c.toLowerCase().includes(query));
-
-      const show = matchesCategory && matchesSearch;
-      card.style.display = show ? '' : 'none';
-      if (show) visible++;
-    });
-
-    noResults.style.display = visible === 0 ? 'block' : 'none';
-  }
-
-  searchInput.addEventListener('input', filterCards);
-
-  tabs.forEach(tab => {
-    tab.addEventListener('click', () => {
-      tabs.forEach(t => t.classList.remove('active'));
-      tab.classList.add('active');
-      activeCategory = tab.dataset.category;
-      filterCards();
-    });
-  });
-
-  // Fade-in observer
-  if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
-    const observer = new IntersectionObserver((entries) => {
-      entries.forEach(entry => {
-        if (entry.isIntersecting) {
-          entry.target.style.animationPlayState = 'running';
-          observer.unobserve(entry.target);
+      input.addEventListener('input', apply);
+      chips.forEach(function (chip) {
+        chip.addEventListener('click', function () {
+          active = chip.dataset.category;
+          chips.forEach(function (c) { c.setAttribute('aria-pressed', c === chip ? 'true' : 'false'); });
+          apply();
+        });
+      });
+      document.addEventListener('keydown', function (e) {
+        var tag = (document.activeElement && document.activeElement.tagName) || '';
+        var typing = /input|textarea|select/i.test(tag);
+        if (!typing && (e.key === '/' || ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k'))) {
+          e.preventDefault();
+          document.getElementById('skills').scrollIntoView({ behavior: reduce ? 'auto' : 'smooth' });
+          input.focus({ preventScroll: true });
+        } else if (e.key === 'Escape' && document.activeElement === input) {
+          input.value = ''; apply(); input.blur();
         }
       });
-    }, { threshold: 0.1 });
-    document.querySelectorAll('.fade-in').forEach(el => {
-      el.style.animationPlayState = 'paused';
-      observer.observe(el);
-    });
-  }
+    }
+
+    // ── Count-up stats ────────────────────────────────────────────────
+    var counters = document.querySelectorAll('[data-count]');
+    if (!reduce && 'IntersectionObserver' in window) {
+      var co = new IntersectionObserver(function (entries) {
+        entries.forEach(function (e) {
+          if (!e.isIntersecting) return;
+          co.unobserve(e.target);
+          var el = e.target, target = parseInt(el.dataset.count, 10), t0 = null;
+          if (!target) return;
+          function step(ts) {
+            if (!t0) t0 = ts;
+            var p = Math.min(1, (ts - t0) / 1100);
+            el.textContent = Math.round(target * (1 - Math.pow(1 - p, 3))).toLocaleString('en-US');
+            if (p < 1) requestAnimationFrame(step);
+          }
+          requestAnimationFrame(step);
+        });
+      }, { threshold: 0.4 });
+      counters.forEach(function (c) { co.observe(c); });
+    }
+
+    // ── Agent demo ────────────────────────────────────────────────────
+    var demo = document.querySelector('[data-demo]');
+    if (!demo) return;
+    var body = demo.querySelector('[data-demo-body]');
+    var tabs = demo.querySelectorAll('[data-scene]');
+    var SCENES = [
+      {
+        ask: 'Saints are 52.5¢ on Polymarket and −150 at the book. Any edge?',
+        steps: [
+          ['polymarket', 'get_todays_events --sport=nfl', 'Falcons vs. Saints · Saints 0.525 · $1.08M volume'],
+          ['betting', 'evaluate_bet --book_odds=-150,+130 --market_prob=0.525', 'Fair 58.0% · Market 52.5% · Edge 5.48% · Kelly 0.115']
+        ],
+        answer: 'De-vigged, the book implies a <b>58.0%</b> Saints win vs <b>52.5%</b> on Polymarket — a <b>5.48% edge</b> (EV +10.4%). Analysis only: no orders placed.'
+      },
+      {
+        ask: 'Who led MLB in home runs in 1927?',
+        steps: [
+          ['mlb', 'get_mlbstats_leaders --category=homeRuns --season=1927', '1. Babe Ruth (NYY) 60 · 2. Lou Gehrig (NYY) 47 · T3. Cy Williams, Hack Wilson 30']
+        ],
+        answer: '<b>Babe Ruth</b>, with <b>60</b> — ahead of teammate Lou Gehrig’s 47. Both Yankees; source: the official MLB Stats API.'
+      },
+      {
+        ask: 'What’s on the NBA slate tonight? Include the line.',
+        steps: [
+          ['nba', 'get_scoreboard', 'MEM @ ATL · 7:00 PM ET · State Farm Arena · ATL −3.5 · O/U 232.5']
+        ],
+        answer: 'Grizzlies at Hawks, 7:00 PM ET. Atlanta is a <b>3.5-point favorite</b> with the total at <b>232.5</b> (DraftKings, via ESPN).'
+      }
+    ];
+    var run = 0;
+
+    function sleep(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
+    function row(cls, html) { var d = document.createElement('div'); d.className = cls; d.innerHTML = html; body.appendChild(d); return d; }
+
+    async function play(i) {
+      var my = ++run, s = SCENES[i];
+      tabs.forEach(function (t, k) { t.setAttribute('aria-selected', k === i ? 'true' : 'false'); });
+      body.innerHTML = '';
+      var ask = row('t-row t-ask', '<span class="t-gutter">›</span><span class="txt"></span>');
+      var txt = ask.querySelector('.txt');
+      if (reduce) {
+        txt.textContent = s.ask;
+      } else {
+        var caret = document.createElement('span'); caret.className = 'caret'; ask.appendChild(caret);
+        for (var c = 0; c < s.ask.length; c++) {
+          if (my !== run) return;
+          txt.textContent += s.ask[c];
+          await sleep(16 + Math.random() * 26);
+        }
+        caret.remove();
+        await sleep(380);
+      }
+      for (var k = 0; k < s.steps.length; k++) {
+        if (my !== run) return;
+        var st = s.steps[k];
+        row('t-row t-call fade-up', '<span class="t-gutter">$</span><span class="t-cmd">sports-skills <span class="t-mod">' + st[0] + '</span> ' + st[1] + '</span>');
+        var out = row('t-out fade-up', '<span class="t-spin"></span>');
+        if (!reduce) await sleep(700 + Math.random() * 400);
+        if (my !== run) return;
+        out.innerHTML = '<span class="ok">✓</span>' + st[2];
+      }
+      if (!reduce) await sleep(320);
+      if (my !== run) return;
+      row('t-answer fade-up', '<span class="who">agent</span>' + s.answer);
+      if (reduce) return;
+      await sleep(7000);
+      if (my === run) play((i + 1) % SCENES.length);
+    }
+
+    tabs.forEach(function (t, k) { t.addEventListener('click', function () { play(k); }); });
+    if ('IntersectionObserver' in window) {
+      var started = false;
+      var dio = new IntersectionObserver(function (entries) {
+        if (entries[0].isIntersecting && !started) { started = true; dio.disconnect(); play(0); }
+      }, { threshold: 0.35 });
+      dio.observe(demo);
+    }
+  })();
 </script>
 {% endblock %}

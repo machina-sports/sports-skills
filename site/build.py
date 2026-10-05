@@ -1,5 +1,13 @@
 #!/usr/bin/env python3
-"""Build the sports-skills.sh marketplace from SKILL.md files."""
+"""Build the sports-skills.sh marketplace from SKILL.md files.
+
+Environment:
+  SITE_BASE_URL          canonical origin for meta/og/sitemap URLs (default https://sports-skills.sh)
+  SITE_ENV               "staging" adds noindex, a disallow-all robots.txt and a preview badge
+  SITE_FETCH_STATS       "1" fetches GitHub/PyPI numbers at build time (off by default so tests
+                         and offline builds never touch the network); GITHUB_TOKEN is used if set
+  MACHINA_TEMPLATES_DIR  checkout of machina-templates for the Pro tier
+"""
 
 # `dict | None` annotations below must not be evaluated on Python 3.9.
 from __future__ import annotations
@@ -8,16 +16,21 @@ import json
 import os
 import re
 import shutil
+import urllib.request
 from pathlib import Path
 
 import yaml
 from jinja2 import Environment, FileSystemLoader
+from markupsafe import Markup, escape
 
 # ── Paths ──────────────────────────────────────────────────────────────
 ROOT = Path(__file__).resolve().parent.parent  # repo root
 SITE = Path(__file__).resolve().parent         # site/
 TEMPLATES = SITE / "templates"
+STATIC = SITE / "static"
 DIST = SITE / "dist"
+CATALOG = ROOT / "skills" / "catalog.json"
+PACKAGE_INIT = ROOT / "src" / "sports_skills" / "__init__.py"
 
 # Pro-tier source — checked out by CI as a sibling, overridable for local runs
 # that have it in a non-standard location.
@@ -45,6 +58,7 @@ SLUG_TO_CLI_MODULE = {
     "cfb-data": "cfb",
     "cbb-data": "cbb",
     "golf-data": "golf",
+    "cricket-data": "cricket",
     "volleyball-data": "volleyball",
     "xctf-data": "xctf",
     "fastf1": "f1",
@@ -52,9 +66,23 @@ SLUG_TO_CLI_MODULE = {
     "sports-news": "news",
     "kalshi": "kalshi",
     "polymarket": "polymarket",
+    "polymarket-trading": "polymarket-trading",
+    "prophetx": "prophetx",
     "betting": "betting",
     "markets": "markets",
     "metadata": "metadata",
+}
+
+# CLI module → Python import name, where they differ (the CLI routes
+# polymarket-trading to the polymarket package).
+CLI_TO_PY_MODULE = {
+    "polymarket-trading": "polymarket",
+}
+
+# Skills whose Python backend needs a pip extra (see pyproject optional-dependencies).
+PIP_EXTRAS = {
+    "fastf1": "f1",
+    "nfl-data": "nfl",
 }
 
 
@@ -74,84 +102,166 @@ def _cli_registry():
 
 CLI_REGISTRY = _cli_registry()
 
-BASE_URL = "https://sports-skills.sh"
+BASE_URL = os.environ.get("SITE_BASE_URL", "https://sports-skills.sh").rstrip("/")
+SITE_ENV = os.environ.get("SITE_ENV", "production")
+REPO_URL = "https://github.com/machina-sports/sports-skills"
+REPO_API = "https://api.github.com/repos/machina-sports/sports-skills"
 
 # ── Category mapping ───────────────────────────────────────────────────
 CATEGORY_MAP = {
-    "mkn-constructor": "Machina Skills",
-    "polymarket-sync-events": "Machina Skills",
-    "polymarket-sync-series": "Machina Skills",
-    "polymarket-sync-markets": "Machina Skills",
     "kalshi": "Prediction Markets",
     "polymarket": "Prediction Markets",
-    "betting": "Prediction Markets",
+    "prophetx": "Prediction Markets",
     "markets": "Prediction Markets",
+    "betting": "Prediction Markets",
+    "polymarket-trading": "Prediction Markets",
+    "football-data": "Football",
     "nfl-data": "US Sports",
     "nba-data": "US Sports",
     "wnba-data": "US Sports",
     "nhl-data": "US Sports",
     "mlb-data": "US Sports",
-    "football-data": "Football",
     "cfb-data": "College",
     "cbb-data": "College",
-    "tennis-data": "Racquet",
-    "golf-data": "Golf",
-    "fastf1": "Motorsport",
-    "esports": "Esports",
-    "volleyball-data": "Other",
-    "xctf-data": "Other",
-    "sports-news": "Other",
-    "sports-reporter": "Other",
-    "machina": "Machina Skills",
-    "world-cup": "Machina Skills",
-    "metadata": "Other",
-    "espn-api": "Other",
+    "xctf-data": "College",
+    "tennis-data": "Global Sports",
+    "golf-data": "Global Sports",
+    "fastf1": "Global Sports",
+    "cricket-data": "Global Sports",
+    "volleyball-data": "Global Sports",
+    "esports": "Global Sports",
+    "sports-news": "News & Tools",
+    "sports-reporter": "News & Tools",
+    "metadata": "News & Tools",
+    "espn-api": "News & Tools",
+    "machina": "Machina",
+    "world-cup": "Machina",
+    "mkn-constructor": "Machina",
+    "machina-agent-builder": "Machina",
+    "polymarket-sync-events": "Machina",
+    "polymarket-sync-series": "Machina",
+    "polymarket-sync-markets": "Machina",
 }
 
 CATEGORY_ORDER = [
-    "Machina Skills",
     "Prediction Markets",
-    "US Sports",
     "Football",
+    "US Sports",
     "College",
-    "Racquet",
-    "Golf",
-    "Motorsport",
-    "Esports",
+    "Global Sports",
+    "News & Tools",
+    "Machina",
     "Other",
 ]
 
-# Colors for category tag pills (CSS class suffixes)
-CATEGORY_COLORS = {
-    "Machina Skills": "cyan",
-    "Prediction Markets": "amber",
-    "US Sports": "green",
-    "Football": "green",
-    "College": "green",
-    "Racquet": "green",
-    "Golf": "green",
-    "Motorsport": "green",
-    "Esports": "green",
-    "Other": "green",
+# Per-category presentation: icon id (see the sprite in base.html) and tone
+# (CSS class suffix: green = sports data, amber = markets, cyan = Machina).
+CATEGORY_META = {
+    "Prediction Markets": {"icon": "markets", "tone": "amber"},
+    "Football": {"icon": "soccer", "tone": "green"},
+    "US Sports": {"icon": "football", "tone": "green"},
+    "College": {"icon": "college", "tone": "green"},
+    "Global Sports": {"icon": "globe", "tone": "green"},
+    "News & Tools": {"icon": "news", "tone": "slate"},
+    "Machina": {"icon": "spark", "tone": "cyan"},
+    "Other": {"icon": "trophy", "tone": "slate"},
+}
+
+# Kept for templates and callers that still read `category_color`.
+CATEGORY_COLORS = {cat: meta["tone"] for cat, meta in CATEGORY_META.items()}
+
+SKILL_ICONS = {
+    "football-data": "soccer",
+    "nfl-data": "football",
+    "nba-data": "basketball",
+    "wnba-data": "basketball",
+    "nhl-data": "hockey",
+    "mlb-data": "baseball",
+    "cfb-data": "football",
+    "cbb-data": "basketball",
+    "xctf-data": "stopwatch",
+    "tennis-data": "tennis",
+    "golf-data": "golf",
+    "fastf1": "gauge",
+    "cricket-data": "cricket",
+    "volleyball-data": "volleyball",
+    "esports": "gamepad",
+    "kalshi": "candles",
+    "polymarket": "pie",
+    "prophetx": "exchange",
+    "markets": "dashboard",
+    "betting": "calculator",
+    "polymarket-trading": "zap",
+    "sports-news": "news",
+    "sports-reporter": "pen",
+    "metadata": "image",
+    "espn-api": "code",
+    "machina": "spark",
+    "world-cup": "globe",
+    "mkn-constructor": "blocks",
+    "machina-agent-builder": "bot",
+}
+
+# One-line "what's covered" label for cards. Hand-kept like DATA_SOURCES; a
+# missing entry simply falls back to the data source line.
+SKILL_HIGHLIGHTS = {
+    "football-data": "EPL · La Liga · Bundesliga · Serie A · UCL · MLS +",
+    "nfl-data": "NFL · nflverse play-by-play · fantasy trends",
+    "nba-data": "NBA · shot charts · history to 1946",
+    "wnba-data": "WNBA · win probability · transactions",
+    "nhl-data": "NHL · on-ice coordinates · history to 1917",
+    "mlb-data": "MLB · pitch-level data · history to 1901",
+    "cfb-data": "NCAA FBS + FCS · drive context",
+    "cbb-data": "NCAA D-I/II/III · March Madness bracket",
+    "xctf-data": "NCAA cross country & track PRs",
+    "tennis-data": "ATP · WTA · rankings · entry lists",
+    "golf-data": "PGA Tour · LPGA · DP World Tour",
+    "fastf1": "Formula 1 · laps · sectors · tyres",
+    "cricket-data": "Series · ball-by-ball history",
+    "volleyball-data": "Dutch volleyball pyramid",
+    "esports": "Dota 2 · League of Legends",
+    "kalshi": "CFTC-regulated event contracts",
+    "polymarket": "Moneyline · spreads · totals · props",
+    "prophetx": "Exchange markets & odds",
+    "markets": "ESPN × Kalshi × Polymarket",
+    "betting": "De-vig · edge · Kelly · arbitrage",
+    "polymarket-trading": "Wallet-backed orders · approval required",
+    "sports-news": "RSS · Atom · Google News",
+    "sports-reporter": "Previews · recaps · profiles",
+    "metadata": "Logos · player photos · venues",
+    "espn-api": "Raw ESPN reference for long-tail leagues",
+    "machina": "Licensed feeds via machina-cli + MCP",
+    "world-cup": "FIFA World Cup 2026 intelligence",
+    "mkn-constructor": "Deprecated alias of machina-agent-builder",
+    "machina-agent-builder": "Build, validate & install Machina agent templates",
+}
+
+# Skills kept only as compatibility aliases: still listed, badged, and left out
+# of the homepage's Pro showcase.
+DEPRECATED_ALIASES = {
+    "mkn-constructor": "machina-agent-builder",
 }
 
 # ── Data source mapping (per slug, fallback to "Community data") ──────
 DATA_SOURCES = {
     "kalshi": "Kalshi API",
     "polymarket": "Polymarket API",
+    "prophetx": "ProphetX API",
+    "polymarket-trading": "Polymarket CLOB",
     "betting": "Pure computation",
     "markets": "ESPN + Kalshi + Polymarket",
-    "nfl-data": "ESPN",
-    "nba-data": "ESPN",
+    "nfl-data": "ESPN, nflverse, Sleeper",
+    "nba-data": "ESPN, NBA CDN, NBA Stats",
     "wnba-data": "ESPN",
-    "nhl-data": "ESPN",
-    "mlb-data": "ESPN",
-    "football-data": "ESPN, Understat, FPL, Transfermarkt",
-    "cfb-data": "ESPN",
-    "cbb-data": "ESPN",
-    "tennis-data": "ESPN",
+    "nhl-data": "ESPN, NHL API",
+    "mlb-data": "ESPN, MLB Stats API",
+    "football-data": "ESPN, Understat, FPL, Transfermarkt, ClubElo",
+    "cfb-data": "ESPN, NCAA",
+    "cbb-data": "ESPN, NCAA",
+    "tennis-data": "ESPN, WTA",
     "golf-data": "ESPN",
     "fastf1": "FastF1 (open-source)",
+    "cricket-data": "ESPN, Cricsheet",
     "esports": "OpenDota, Leaguepedia (Cargo)",
     "volleyball-data": "Nevobo API",
     "xctf-data": "TFRRS, The Stride Report",
@@ -162,10 +272,21 @@ DATA_SOURCES = {
     "machina": "Machina Platform",
     "world-cup": "Machina Platform",
     "mkn-constructor": "Machina Platform",
+    "machina-agent-builder": "Machina Platform",
     "polymarket-sync-events": "Polymarket API",
     "polymarket-sync-series": "Polymarket API",
     "polymarket-sync-markets": "Polymarket API",
 }
+
+# catalog.json `mode` → badge label and tone.
+MODE_LABELS = {
+    "read_only": ("Read-only", "green"),
+    "compute": ("Pure compute", "slate"),
+    "premium_mcp": ("Premium MCP", "cyan"),
+    "premium_mcp_read_only": ("Premium MCP · read-only", "cyan"),
+    "financial_execution": ("Executes trades", "red"),
+}
+RISK_TONES = {"low": "green", "medium": "amber", "high": "amber", "critical": "red"}
 
 # espn-api's documented slug inventory — a reference list, not runtime coverage.
 ESPN_LEAGUE_SLUGS = ROOT / "skills" / "espn-api" / "references" / "league-slugs.md"
@@ -238,6 +359,9 @@ def extract_commands(body: str) -> list[dict]:
             cells = [c.strip() for c in stripped.split("|")[1:-1]]
             if len(cells) >= 2:
                 name = re.sub(r"`", "", cells[0]).strip()
+                # "get_nbastats_game_log (player rows)" names a variant of a command
+                # already listed; keep the command name only.
+                name = re.sub(r"\s*\(.*\)\s*$", "", name)
                 desc = cells[-1].strip()
                 if name and not name.startswith("---") and name not in seen:
                     commands.append({"name": name, "description": desc})
@@ -316,6 +440,96 @@ def _augment_with_cli(slug: str, commands: list[dict]) -> list[dict]:
     return commands
 
 
+def inline_md(text: str) -> Markup:
+    """Escape text, then render `code` and **bold** spans — enough for SKILL.md table cells."""
+    html = str(escape(text))
+    html = re.sub(r"`([^`]+)`", r"<code>\1</code>", html)
+    html = re.sub(r"\*\*([^*]+)\*\*", r"<strong>\1</strong>", html)
+    return Markup(html)
+
+
+def _attach_params(slug: str, commands: list[dict]) -> list[dict]:
+    """Add the CLI's required/optional parameter names to each command, when known."""
+    module = SLUG_TO_CLI_MODULE.get(slug)
+    spec = (CLI_REGISTRY or {}).get(module or "", {})
+    for cmd in commands:
+        info = spec.get(cmd["name"]) or {}
+        cmd["required"] = list(info.get("required", []))
+        cmd["optional"] = list(info.get("optional", []))
+        cmd["description_html"] = inline_md(cmd["description"])
+    return commands
+
+
+def body_intro(body: str, limit: int = 2) -> list[str]:
+    """The first prose paragraphs of a SKILL.md body (blockquotes included), stopping
+    at the first heading, table, list or code fence that follows them."""
+    paras, cur = [], []
+    for line in body.split("\n"):
+        s = line.strip()
+        if s.startswith(("#", "|", "```", "- ", "* ")):
+            if cur:
+                paras.append(" ".join(cur))
+                cur = []
+            if paras:
+                break
+            continue
+        if not s:
+            if cur:
+                paras.append(" ".join(cur))
+                cur = []
+            continue
+        cur.append(s.lstrip(">").strip())
+    if cur:
+        paras.append(" ".join(cur))
+    return paras[:limit]
+
+
+def _quickstart(commands: list[dict]) -> dict | None:
+    """The Quick Start example: the first command that runs without arguments,
+    else the first command with placeholders for its required parameters."""
+    if not commands:
+        return None
+    cmd = next((c for c in commands if not c.get("required")), commands[0])
+    required = cmd.get("required", [])
+    return {
+        "name": cmd["name"],
+        "cli_args": "".join(f" --{p}=<{p}>" for p in required),
+        "py_args": ", ".join(f'{p}="..."' for p in required),
+    }
+
+
+def load_catalog(path: Path = CATALOG) -> dict:
+    """Per-skill capability and risk metadata from skills/catalog.json ({} when absent)."""
+    if not path.exists():
+        return {}
+    return json.loads(path.read_text(encoding="utf-8")).get("skills", {})
+
+
+CATALOG_SKILLS = load_catalog()
+
+
+def _safety(slug: str) -> dict | None:
+    """Badge-ready view of a skill's catalog.json entry, or None for uncatalogued skills."""
+    entry = CATALOG_SKILLS.get(slug)
+    if not entry:
+        return None
+    mode = entry.get("mode", "")
+    label, tone = MODE_LABELS.get(mode, (mode.replace("_", " ").capitalize(), "slate"))
+    risk = entry.get("risk", "")
+    return {
+        "mode": mode,
+        "mode_label": label,
+        "mode_tone": tone,
+        "risk": risk,
+        "risk_tone": RISK_TONES.get(risk, "slate"),
+        "money_movement": bool(entry.get("money_movement")),
+        "secrets_required": bool(entry.get("secrets_required")),
+        "external_network": bool(entry.get("external_network")),
+        "requires_confirmation": bool(entry.get("requires_explicit_confirmation")),
+        "untrusted_content": bool(entry.get("untrusted_content")),
+    }
+
+
 def load_skill(slug: str, skill_dir: Path, tier: str) -> dict:
     """Load a single skill from its directory."""
     skill_md = skill_dir / "SKILL.md"
@@ -358,16 +572,27 @@ def load_skill(slug: str, skill_dir: Path, tier: str) -> dict:
 
     commands = extract_commands(body)
     commands = _augment_with_cli(slug, commands)
+    commands = _attach_params(slug, commands)
     examples = extract_examples(body)
     category = CATEGORY_MAP.get(slug, "Other")
+    category_meta = CATEGORY_META.get(category, CATEGORY_META["Other"])
+    cli_module = SLUG_TO_CLI_MODULE.get(slug) if commands else None
+    extra = PIP_EXTRAS.get(slug)
 
     return {
         "slug": slug,
         "name": name,
         "description": short_desc,
         "description_human": human_desc,
+        "description_human_html": inline_md(human_desc),
+        # Pro SKILL.md descriptions are agent routing text; their body intro reads better.
+        "intro_html": [inline_md(p) for p in body_intro(body)] if tier == "pro" else [],
         "category": category,
-        "category_color": CATEGORY_COLORS.get(category, "green"),
+        "category_color": category_meta["tone"],
+        "category_icon": category_meta["icon"],
+        "icon": SKILL_ICONS.get(slug, category_meta["icon"]),
+        "highlight": SKILL_HIGHLIGHTS.get(slug, ""),
+        "deprecated_for": DEPRECATED_ALIASES.get(slug),
         "tier": tier,
         "version": meta.get("version", ""),
         "author": meta.get("author", "machina-sports"),
@@ -376,8 +601,16 @@ def load_skill(slug: str, skill_dir: Path, tier: str) -> dict:
         "command_count": len(commands),
         "examples": examples,
         "data_source": DATA_SOURCES.get(slug, "Community data"),
+        "data_sources": [s.strip() for s in re.split(r",|\+", DATA_SOURCES.get(slug, "Community data")) if s.strip()],
+        # CLI module and Python import for the Quick Start; None for prompt-only skills
+        # and for skills whose module is unknown (the template falls back to the slug).
+        "cli_module": cli_module,
+        "py_module": CLI_TO_PY_MODULE.get(cli_module, cli_module) if cli_module else None,
+        "quickstart": _quickstart(commands),
+        "pip_install": f'pip install "sports-skills[{extra}]"' if extra else "pip install sports-skills",
+        "safety": _safety(slug) if tier == "open" else None,
         "url": f"{BASE_URL}/{slug}/",
-        "source_url": f"https://github.com/machina-sports/sports-skills/tree/main/skills/{slug}" if tier == "open" else None,
+        "source_url": f"{REPO_URL}/tree/main/skills/{slug}" if tier == "open" else None,
         "install_command": f"npx skills add machina-sports/sports-skills@{slug}" if tier == "open" else None,
     }
 
@@ -425,6 +658,104 @@ def load_all_skills() -> list[dict]:
     return skills
 
 
+# ── Project facts ──────────────────────────────────────────────────────
+def package_version(path: Path = PACKAGE_INIT) -> str:
+    """The sports_skills __version__, read from source so the build needs no install."""
+    if not path.exists():
+        return ""
+    m = re.search(r'^__version__\s*=\s*["\']([^"\']+)["\']', path.read_text(encoding="utf-8"), re.MULTILINE)
+    return m.group(1) if m else ""
+
+
+def _get_json(url: str, timeout: float = 8.0):
+    headers = {"Accept": "application/json", "User-Agent": "sports-skills-site-build"}
+    token = os.environ.get("GITHUB_TOKEN")
+    if token and url.startswith("https://api.github.com/"):
+        headers["Authorization"] = f"Bearer {token}"
+    with urllib.request.urlopen(urllib.request.Request(url, headers=headers), timeout=timeout) as resp:
+        return json.loads(resp.read().decode("utf-8"))
+
+
+def compact_number(n: int) -> str:
+    """1234 → '1.2k', 52687 → '52.7k'; small numbers stay as-is."""
+    if n >= 1_000_000:
+        return f"{n / 1_000_000:.1f}".rstrip("0").rstrip(".") + "M"
+    if n >= 1_000:
+        return f"{n / 1_000:.1f}".rstrip("0").rstrip(".") + "k"
+    return str(n)
+
+
+def fetch_project_stats() -> dict:
+    """GitHub stars/forks/contributors/latest release and PyPI downloads.
+
+    Only runs with SITE_FETCH_STATS=1. Each source fails independently; a missing
+    value just hides that number on the page.
+    """
+    if os.environ.get("SITE_FETCH_STATS") != "1":
+        return {}
+    stats: dict = {}
+    try:
+        repo = _get_json(REPO_API)
+        stats["stars"] = int(repo.get("stargazers_count", 0))
+        stats["forks"] = int(repo.get("forks_count", 0))
+    except Exception as e:  # noqa: BLE001 — network is best-effort
+        print(f"  ! GitHub repo stats unavailable: {e}")
+    try:
+        people = _get_json(f"{REPO_API}/contributors?per_page=100")
+        stats["contributors"] = [
+            {"login": p["login"], "avatar": p["avatar_url"], "url": p["html_url"], "commits": p["contributions"]}
+            for p in people
+            if p.get("type") == "User" and p.get("login") not in {"claude"}
+        ]
+    except Exception as e:  # noqa: BLE001
+        print(f"  ! GitHub contributors unavailable: {e}")
+    try:
+        releases = 0
+        for page in range(1, 6):
+            batch = _get_json(f"{REPO_API}/releases?per_page=100&page={page}")
+            releases += len(batch)
+            if len(batch) < 100:
+                break
+        stats["releases"] = releases
+    except Exception as e:  # noqa: BLE001
+        print(f"  ! GitHub releases unavailable: {e}")
+    try:
+        rel = _get_json(f"{REPO_API}/releases/latest")
+        tag = rel.get("tag_name", "")
+        title = (rel.get("name") or "").strip()
+        # "v0.35.0 — player game logs, offseason standings, ..." → "player game logs, offseason standings"
+        title = re.sub(rf"^{re.escape(tag)}\s*[—–-]\s*", "", title)
+        if len(title) > 56:
+            title = title[:56].rsplit(",", 1)[0]
+        stats["release"] = {"tag": tag, "title": title, "url": rel.get("html_url", f"{REPO_URL}/releases")}
+    except Exception as e:  # noqa: BLE001
+        print(f"  ! GitHub release unavailable: {e}")
+    try:
+        # skills.sh install counts (the directory behind `npx skills add`).
+        found = _get_json("https://skills.sh/api/search?q=sports-skills&limit=100")
+        installs = {
+            s["skillId"]: int(s.get("installs", 0))
+            for s in found.get("skills", [])
+            if s.get("source") == "machina-sports/sports-skills" and s.get("skillId")
+        }
+        if installs:
+            stats["skill_installs"] = installs
+            stats["skill_installs_label"] = compact_number(sum(installs.values()))
+    except Exception as e:  # noqa: BLE001
+        print(f"  ! skills.sh installs unavailable: {e}")
+    try:
+        overall = _get_json("https://pypistats.org/api/packages/sports-skills/overall?mirrors=false")
+        total = sum(int(r.get("downloads", 0)) for r in overall.get("data", []))
+        if total:
+            stats["pypi_downloads"] = total
+            stats["pypi_downloads_label"] = compact_number(total)
+    except Exception as e:  # noqa: BLE001
+        print(f"  ! PyPI downloads unavailable: {e}")
+    if "stars" in stats:
+        stats["stars_label"] = compact_number(stats["stars"])
+    return stats
+
+
 # ── Rendering ──────────────────────────────────────────────────────────
 def build():
     """Main build entry point."""
@@ -438,6 +769,26 @@ def build():
         if s["category"] not in seen_cats:
             categories.append(s["category"])
             seen_cats.add(s["category"])
+    cats = [{
+        "name": cat,
+        "count": sum(1 for s in skills if s["category"] == cat),
+        **CATEGORY_META.get(cat, CATEGORY_META["Other"]),
+    } for cat in categories]
+
+    stats = fetch_project_stats()
+    for s in skills:
+        n = stats.get("skill_installs", {}).get(s["slug"])
+        s["installs"] = n
+        s["installs_label"] = compact_number(n) if n else None
+    site = {
+        "env": SITE_ENV,
+        "staging": SITE_ENV == "staging",
+        "version": package_version(),
+        "repo_url": REPO_URL,
+        "module_count": len(CLI_REGISTRY) if CLI_REGISTRY else 0,
+    }
+    if stats:
+        print(f"  Stats: {', '.join(k for k in stats)}")
 
     # Set up Jinja2
     env = Environment(
@@ -460,17 +811,23 @@ def build():
     html = tpl_index.render(
         skills=skills,
         categories=categories,
+        cats=cats,
+        pro_skills=[s for s in skills if s["category"] == "Machina" and not s["deprecated_for"]],
         skills_json=json.dumps([{
             "slug": s["slug"],
             "name": s["name"],
             "description": s["description"],
             "category": s["category"],
             "tier": s["tier"],
+            "highlight": s["highlight"],
+            "sources": s["data_source"],
             "commands": [c["name"] for c in s["commands"]],
         } for s in skills]),
         total_skills=len(skills),
         total_commands=total_commands,
         espn_inventory=espn_inventory,
+        stats=stats,
+        site=site,
         base_url=BASE_URL,
     )
     (DIST / "index.html").write_text(html, encoding="utf-8")
@@ -479,12 +836,14 @@ def build():
     print("Rendering skill pages...")
     tpl_skill = env.get_template("skill.html")
     for skill in skills:
-        # Related skills: up to 4 from same category, excluding self
-        related = [s for s in skills if s["category"] == skill["category"] and s["slug"] != skill["slug"]][:4]
+        # Related skills: up to 3 from same category, excluding self
+        related = [s for s in skills if s["category"] == skill["category"] and s["slug"] != skill["slug"]][:3]
         html = tpl_skill.render(
             skill=skill,
             related=related,
             espn_inventory=espn_inventory,
+            stats=stats,
+            site=site,
             base_url=BASE_URL,
         )
         skill_dir = DIST / skill["slug"]
@@ -496,7 +855,7 @@ def build():
     manifest = {
         "name": "sports-skills",
         "description": "Live sports data and prediction markets for AI agents",
-        "repository": "https://github.com/machina-sports/sports-skills",
+        "repository": REPO_URL,
         "install": "npx skills add machina-sports/sports-skills",
         "skills": [{
             "slug": s["slug"],
@@ -510,7 +869,7 @@ def build():
             "url": s["url"],
             "source": s["source_url"],
             "data_sources": [s["data_source"]],
-            "commands": s["commands"],
+            "commands": [{"name": c["name"], "description": c["description"]} for c in s["commands"]],
         } for s in skills],
     }
     (DIST / "skills.json").write_text(json.dumps(manifest, indent=2), encoding="utf-8")
@@ -530,15 +889,20 @@ def build():
     (DIST / "sitemap.xml").write_text(sitemap, encoding="utf-8")
 
     # ── Generate robots.txt ────────────────────────────────────────────
-    robots = f"""User-agent: *
+    if site["staging"]:
+        robots = "User-agent: *\nDisallow: /"
+    else:
+        robots = f"""User-agent: *
 Allow: /
 Sitemap: {BASE_URL}/sitemap.xml"""
     (DIST / "robots.txt").write_text(robots, encoding="utf-8")
 
-    # ── Copy styles.css if it exists alongside templates ───────────────
+    # ── Copy styles.css and static assets ──────────────────────────────
     styles_src = TEMPLATES / "styles.css"
     if styles_src.exists():
         shutil.copy2(styles_src, DIST / "styles.css")
+    if STATIC.exists():
+        shutil.copytree(STATIC, DIST, dirs_exist_ok=True)
 
     print(f"Build complete: {len(skills)} skills -> {DIST}")
 

@@ -54,6 +54,10 @@ jobs:
         working-directory: sports-skills
         env:
           MACHINA_TEMPLATES_DIR: ${{ github.workspace }}/machina-templates
+          # Live GitHub / PyPI / skills.sh numbers for the homepage (best-effort; a
+          # failed fetch only hides that number).
+          SITE_FETCH_STATS: "1"
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           pip install --quiet -e '.[site]'
           python site/build.py

@@ -1,102 +1,256 @@
+{% import "macros.html" as m %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <script>
-    (function() {
-      const stored = localStorage.getItem('theme');
-      const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-      if (stored === 'light' || (!stored && !prefersDark)) {
-        document.documentElement.classList.add('light');
-      } else if (stored === 'dark') {
-        document.documentElement.classList.add('dark');
-      }
+    (function () {
+      var d = document.documentElement, light = false;
+      d.classList.add('js');
+      try {
+        var s = localStorage.getItem('theme');
+        light = s ? s === 'light' : window.matchMedia('(prefers-color-scheme: light)').matches;
+      } catch (e) {}
+      d.classList.add(light ? 'light' : 'dark');
     })();
   </script>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>{% block title %}sports-skills.sh — Live Sports Data for AI Agents{% endblock %}</title>
   <meta name="description" content="{% block meta_description %}Agent skills for live sports data and prediction markets. Open source for public feeds, Machina Pro for licensed sources.{% endblock %}">
+  {% if site and site.staging %}
+  <meta name="robots" content="noindex, nofollow">
+  {% endif %}
+  <meta name="theme-color" content="#050706">
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
   {% block meta_extra %}{% endblock %}
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/styles.css">
   {% block json_ld %}{% endblock %}
 </head>
 <body>
+  <svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+    <!-- ui -->
+    <symbol id="i-prompt" viewBox="0 0 24 24"><path d="M5 7l5 5-5 5M12.5 17H19"/></symbol>
+    <symbol id="i-terminal" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="3"/><path d="M7.5 9.5l3 2.5-3 2.5M12.5 15h4"/></symbol>
+    <symbol id="i-copy" viewBox="0 0 24 24"><rect x="8.5" y="8.5" width="12" height="12" rx="2.5"/><path d="M15.5 8.5V6a2.5 2.5 0 0 0-2.5-2.5H6A2.5 2.5 0 0 0 3.5 6v7A2.5 2.5 0 0 0 6 15.5h2.5"/></symbol>
+    <symbol id="i-download" viewBox="0 0 24 24"><path d="M12 4v11M7 10.5l5 5 5-5M5 20h14"/></symbol>
+    <symbol id="i-check" viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></symbol>
+    <symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.6-3.6"/></symbol>
+    <symbol id="i-arrow" viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></symbol>
+    <symbol id="i-external" viewBox="0 0 24 24"><path d="M14 4h6v6M20 4l-9 9M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5"/></symbol>
+    <symbol id="i-star" viewBox="0 0 24 24"><path d="M12 3.5l2.6 5.3 5.9.9-4.3 4.1 1 5.8L12 16.9l-5.2 2.7 1-5.8-4.3-4.1 5.9-.9z"/></symbol>
+    <symbol id="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2.5v2M12 19.5v2M4.6 4.6L6 6M18 18l1.4 1.4M2.5 12h2M19.5 12h2M4.6 19.4L6 18M18 6l1.4-1.4"/></symbol>
+    <symbol id="i-moon" viewBox="0 0 24 24"><path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z"/></symbol>
+    <symbol id="i-shield" viewBox="0 0 24 24"><path d="M12 3l8 3v6c0 4.5-3.4 8.3-8 9-4.6-.7-8-4.5-8-9V6z"/><path d="M9 12l2 2 4-4"/></symbol>
+    <symbol id="i-keyoff" viewBox="0 0 24 24"><circle cx="8" cy="15" r="4"/><path d="M11 12l8.5-8.5M16 7l2 2M3 3l18 18"/></symbol>
+    <symbol id="i-braces" viewBox="0 0 24 24"><path d="M8 4H7a2 2 0 0 0-2 2v4a2 2 0 0 1-2 2 2 2 0 0 1 2 2v4a2 2 0 0 0 2 2h1M16 4h1a2 2 0 0 1 2 2v4a2 2 0 0 0 2 2 2 2 0 0 0-2 2v4a2 2 0 0 1-2 2h-1"/></symbol>
+    <symbol id="i-history" viewBox="0 0 24 24"><path d="M3.5 12a8.5 8.5 0 1 0 2.5-6L3.5 8.5"/><path d="M3.5 3.5v5h5M12 7.5V12l3 2"/></symbol>
+    <symbol id="i-replay" viewBox="0 0 24 24"><path d="M3.5 12a8.5 8.5 0 1 0 2.5-6L3.5 8.5"/><path d="M3.5 3.5v5h5"/><path d="M10 9l5 3-5 3z"/></symbol>
+    <symbol id="i-layers" viewBox="0 0 24 24"><path d="M12 3l9 5-9 5-9-5z"/><path d="M3 13l9 5 9-5"/></symbol>
+    <symbol id="i-user" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></symbol>
+    <symbol id="i-chat" viewBox="0 0 24 24"><path d="M21 12a8.5 8.5 0 0 1-12.3 7.6L3.5 20.5l1-4.8A8.5 8.5 0 1 1 21 12z"/></symbol>
+    <symbol id="i-package" viewBox="0 0 24 24"><path d="M12 3l8 4.5v9L12 21l-8-4.5v-9z"/><path d="M12 12l8-4.5M12 12v9M12 12L4 7.5"/></symbol>
+    <symbol id="i-github" viewBox="0 0 24 24"><path fill="currentColor" stroke="none" d="M12 .7a11.5 11.5 0 0 0-3.6 22.4c.6.1.8-.3.8-.6v-2c-3.2.7-3.9-1.4-3.9-1.4-.5-1.3-1.3-1.7-1.3-1.7-1-.7.1-.7.1-.7 1.2.1 1.8 1.2 1.8 1.2 1 1.8 2.7 1.3 3.4 1 .1-.8.4-1.3.7-1.6-2.6-.3-5.2-1.3-5.2-5.7 0-1.3.5-2.3 1.2-3.1-.1-.3-.5-1.5.1-3.1 0 0 1-.3 3.2 1.2a11 11 0 0 1 5.8 0c2.2-1.5 3.2-1.2 3.2-1.2.6 1.6.2 2.8.1 3.1.7.8 1.2 1.8 1.2 3.1 0 4.4-2.7 5.4-5.3 5.7.4.4.8 1.1.8 2.2v3.2c0 .3.2.7.8.6A11.5 11.5 0 0 0 12 .7z"/></symbol>
+    <!-- sports -->
+    <symbol id="i-soccer" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7.6l4.2 3-1.6 4.9H9.4l-1.6-4.9z"/><path d="M12 3v4.6M20.6 9.3l-4.4 1.3M17.3 19.3l-2.7-3.8M6.7 19.3l2.7-3.8M3.4 9.3l4.4 1.3"/></symbol>
+    <symbol id="i-football" viewBox="0 0 24 24"><ellipse cx="12" cy="12" rx="10" ry="6" transform="rotate(-45 12 12)"/><path d="M9 15l6-6M9.8 12.4l1.8 1.8M11.6 10.6l1.8 1.8M13.4 8.8l1.8 1.8"/></symbol>
+    <symbol id="i-basketball" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3v18M5.6 5.6a12.5 12.5 0 0 1 0 12.8M18.4 5.6a12.5 12.5 0 0 0 0 12.8"/></symbol>
+    <symbol id="i-baseball" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M6 5.3a11 11 0 0 1 0 13.4M18 5.3a11 11 0 0 0 0 13.4"/><path d="M5 9h2M5 15h2M17 9h2M17 15h2"/></symbol>
+    <symbol id="i-hockey" viewBox="0 0 24 24"><ellipse cx="12" cy="9" rx="8" ry="3.2"/><path d="M4 9v5.5c0 1.8 3.6 3.2 8 3.2s8-1.4 8-3.2V9"/></symbol>
+    <symbol id="i-tennis" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M3.5 9.5A7.5 7.5 0 0 0 9.5 3.4M20.5 14.5a7.5 7.5 0 0 0-6 6.1"/></symbol>
+    <symbol id="i-golf" viewBox="0 0 24 24"><path d="M8 21V3l9 4-9 4"/><path d="M4.5 21h7"/><circle cx="16.5" cy="19" r="1.6"/></symbol>
+    <symbol id="i-gauge" viewBox="0 0 24 24"><path d="M3.5 17.5a9 9 0 1 1 17 0"/><path d="M12 14.5l4.5-5"/><circle cx="12" cy="15" r="1.4"/><path d="M6.2 12.4l1.2.5M12 6.5v1.3M17.8 12.4l-1.2.5"/></symbol>
+    <symbol id="i-cricket" viewBox="0 0 24 24"><path d="M4 20.5l3-3"/><path d="M6 18.5l9.5-9.5 3 3L9 21.5z" transform="translate(-1 -2)"/><circle cx="18.5" cy="5.5" r="2.5"/></symbol>
+    <symbol id="i-volleyball" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 12c0-3.5 1.5-6.8 4-8.6M12 12c3 1.8 6.6 2 9 .9M12 12c-3 1.7-5.1 4.6-5.7 7.8"/></symbol>
+    <symbol id="i-stopwatch" viewBox="0 0 24 24"><circle cx="12" cy="13.5" r="7.5"/><path d="M12 9.5v4l2.5 2M9.5 2.5h5M12 2.5V6M18.5 6.5l1.2-1.2"/></symbol>
+    <symbol id="i-gamepad" viewBox="0 0 24 24"><rect x="2.5" y="6.5" width="19" height="11" rx="5.5"/><path d="M7 12h4M9 10v4M15.5 11h.01M17.5 13h.01"/></symbol>
+    <symbol id="i-college" viewBox="0 0 24 24"><path d="M2 9.5l10-5 10 5-10 5z"/><path d="M6 11.5v4.5c3.5 2.5 8.5 2.5 12 0v-4.5M22 9.5v5"/></symbol>
+    <symbol id="i-globe" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a13.5 13.5 0 0 1 0 18M12 3a13.5 13.5 0 0 0 0 18"/></symbol>
+    <symbol id="i-trophy" viewBox="0 0 24 24"><path d="M8 21h8M12 16.5V21M7 4h10v5a5 5 0 0 1-10 0z"/><path d="M17 5.5h3V7a3 3 0 0 1-3 3M7 5.5H4V7a3 3 0 0 0 3 3"/></symbol>
+    <!-- markets & tools -->
+    <symbol id="i-markets" viewBox="0 0 24 24"><path d="M3 17l6-6 4 4 8-8"/><path d="M15 7h6v6"/></symbol>
+    <symbol id="i-candles" viewBox="0 0 24 24"><path d="M7 3.5v17M17 3.5v17"/><rect x="5" y="7.5" width="4" height="8" rx="1"/><rect x="15" y="5.5" width="4" height="9" rx="1"/></symbol>
+    <symbol id="i-pie" viewBox="0 0 24 24"><path d="M21 12.5A9 9 0 1 1 11.5 3"/><path d="M15 3.3A9 9 0 0 1 20.7 9H15z"/></symbol>
+    <symbol id="i-exchange" viewBox="0 0 24 24"><path d="M4 8h15l-4-4M20 16H5l4 4"/></symbol>
+    <symbol id="i-dashboard" viewBox="0 0 24 24"><rect x="3" y="3" width="7.5" height="9" rx="1.5"/><rect x="13.5" y="3" width="7.5" height="5" rx="1.5"/><rect x="13.5" y="11" width="7.5" height="10" rx="1.5"/><rect x="3" y="15" width="7.5" height="6" rx="1.5"/></symbol>
+    <symbol id="i-calculator" viewBox="0 0 24 24"><rect x="5" y="2.5" width="14" height="19" rx="2.5"/><path d="M8.5 6.5h7M8.5 11h.01M12 11h.01M15.5 11h.01M8.5 14.5h.01M12 14.5h.01M15.5 14.5h.01M8.5 18h.01M12 18h3.5"/></symbol>
+    <symbol id="i-zap" viewBox="0 0 24 24"><path d="M13 2.5L4.5 14H11l-1 7.5L18.5 10H12z"/></symbol>
+    <symbol id="i-news" viewBox="0 0 24 24"><path d="M4 5h12.5v14H6.5A2.5 2.5 0 0 1 4 16.5z"/><path d="M16.5 9H20v7.5a2.5 2.5 0 0 1-2.5 2.5M7.5 9h5.5M7.5 12.5h5.5M7.5 16h3"/></symbol>
+    <symbol id="i-pen" viewBox="0 0 24 24"><path d="M4 20h4L19 9l-4-4L4 16z"/><path d="M13.5 6.5l4 4"/></symbol>
+    <symbol id="i-image" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2.5"/><circle cx="9" cy="10" r="2"/><path d="M21 16l-5-5-9 9"/></symbol>
+    <symbol id="i-code" viewBox="0 0 24 24"><path d="M8 8l-4 4 4 4M16 8l4 4-4 4M13.5 5l-3 14"/></symbol>
+    <symbol id="i-spark" viewBox="0 0 24 24"><path d="M11 3l1.9 5.6L18.5 10.5l-5.6 1.9L11 18l-1.9-5.6L3.5 10.5l5.6-1.9z"/><path d="M18.5 14.5l.8 2.2 2.2.8-2.2.8-.8 2.2-.8-2.2-2.2-.8 2.2-.8z"/></symbol>
+    <symbol id="i-blocks" viewBox="0 0 24 24"><rect x="3" y="3" width="8" height="8" rx="1.5"/><rect x="13" y="13" width="8" height="8" rx="1.5"/><path d="M13 7h4a2 2 0 0 1 2 2v2M11 17H7a2 2 0 0 1-2-2v-2"/></symbol>
+    <symbol id="i-bot" viewBox="0 0 24 24"><rect x="4" y="8" width="16" height="12" rx="3"/><path d="M12 4v4M9 13h.01M15 13h.01M9.5 16.5h5"/></symbol>
+  </svg>
 
-  <!-- NAV -->
-  <nav>
-    <a href="/" class="nav-brand" style="text-decoration:none;">
-      <span class="dot">$</span> sports-skills<span class="dot">.sh</span>
-    </a>
-    <div class="nav-links">
-      <a href="/#skills">Skills</a>
-      <button class="theme-toggle" onclick="toggleTheme()" aria-label="Toggle theme">
-        <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>
-        <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg>
-      </button>
-      <a href="https://github.com/machina-sports/sports-skills" target="_blank" rel="noopener" class="nav-cta">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: -2px; margin-right: 4px;"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>GitHub
+  <header class="nav">
+    <div class="wrap nav-inner">
+      <a href="/" class="brand" aria-label="sports-skills.sh home">
+        <span class="brand-mark">{{ m.icon("prompt") }}</span>
+        <span>sports-skills<span class="tld">.sh</span></span>
       </a>
+      {% if site and site.staging %}<span class="env-badge" title="Staging preview — not indexed">Preview</span>{% endif %}
+      <nav class="nav-links" aria-label="Primary">
+        <a href="/#skills">Skills</a>
+        <a href="/#why">Why</a>
+        <a href="/#coverage">Coverage</a>
+        <a href="/#pro">Machina Pro</a>
+        <a href="https://github.com/machina-sports/sports-skills#readme" target="_blank" rel="noopener">Docs</a>
+      </nav>
+      <div class="nav-right">
+        <button class="btn btn-sm btn-icon theme-toggle" type="button" data-theme-toggle aria-label="Toggle color theme">
+          {{ m.icon("moon", "ico-sm ico-moon") }}{{ m.icon("sun", "ico-sm ico-sun") }}
+        </button>
+        <a href="https://github.com/machina-sports/sports-skills" target="_blank" rel="noopener" class="btn btn-sm">
+          {{ m.icon("github", "ico-sm") }}<span class="gh-label">GitHub</span>{% if stats and stats.stars_label %}<span class="count">★ {{ stats.stars_label }}</span>{% endif %}
+        </a>
+      </div>
     </div>
-  </nav>
+  </header>
 
   <main>
     {% block content %}{% endblock %}
   </main>
 
-  <!-- FOOTER -->
-  <footer>
-    <div class="container">
-      <div class="footer-disclaimer">
-        <strong>Open-source skills</strong> (MIT) wrap publicly available
-        third-party data sources for personal and educational use. Not
-        affiliated with or endorsed by any data provider. You are
-        responsible for complying with each source's terms of service.
-        <br><br>
-        <strong>Machina Pro skills</strong> are proprietary and run on the
-        <a href="https://machina.gg" target="_blank" rel="noopener">Machina</a>
-        platform with licensed data feeds, official partnerships, and
-        production-grade SLAs.
-      </div>
-      <div class="footer-divider">---</div>
-      <div class="footer-inner">
-        <div class="footer-left">
-          Built by <a href="https://machina.gg" target="_blank" rel="noopener">Machina Sports</a>
-          &middot; Open skills MIT licensed &middot; 2026
+  <footer class="footer">
+    <div class="wrap">
+      <div class="footer-grid">
+        <div class="footer-brand">
+          <a href="/" class="brand"><span class="brand-mark">{{ m.icon("prompt") }}</span><span>sports-skills<span class="tld">.sh</span></span></a>
+          <p>Agent skills for live sports data and prediction markets. Built by <a href="https://machina.gg" target="_blank" rel="noopener">Machina Sports</a>.</p>
         </div>
-        <div class="footer-right">
-          <a href="https://github.com/machina-sports/sports-skills" target="_blank" rel="noopener">GitHub</a>
-          <a href="https://discord.gg/PBYd6FbBSK" target="_blank" rel="noopener">Discord</a>
-          <a href="https://machina.gg" target="_blank" rel="noopener">machina.gg</a>
+        <div>
+          <h4>Product</h4>
+          <ul>
+            <li><a href="/#skills">Skill directory</a></li>
+            <li><a href="/#coverage">Coverage</a></li>
+            <li><a href="/#pro">Machina Pro</a></li>
+            <li><a href="/skills.json">skills.json</a></li>
+          </ul>
+        </div>
+        <div>
+          <h4>Developers</h4>
+          <ul>
+            <li><a href="https://github.com/machina-sports/sports-skills" target="_blank" rel="noopener">GitHub</a></li>
+            <li><a href="https://pypi.org/project/sports-skills/" target="_blank" rel="noopener">PyPI</a></li>
+            <li><a href="https://github.com/machina-sports/sports-skills/blob/main/CHANGELOG.md" target="_blank" rel="noopener">Changelog</a></li>
+            <li><a href="https://agentskills.io/specification" target="_blank" rel="noopener">Agent Skills spec</a></li>
+          </ul>
+        </div>
+        <div>
+          <h4>Community</h4>
+          <ul>
+            <li><a href="https://discord.gg/PBYd6FbBSK" target="_blank" rel="noopener">Discord</a></li>
+            <li><a href="https://github.com/machina-sports/sports-skills/graphs/contributors" target="_blank" rel="noopener">Contributors</a></li>
+            <li><a href="https://github.com/machina-sports/sports-skills/issues" target="_blank" rel="noopener">Issues</a></li>
+            <li><a href="https://machina.gg" target="_blank" rel="noopener">machina.gg</a></li>
+          </ul>
         </div>
       </div>
+      <div class="disclaimer">
+        <p>
+          <strong>Open-source skills</strong> (MIT) wrap publicly available
+          third-party data sources for personal and educational use. Not
+          affiliated with or endorsed by any data provider. You are
+          responsible for complying with each source's terms of service.
+        </p>
+        <p>
+          <strong>Machina Pro skills</strong> are proprietary and run on the
+          <a href="https://machina.gg" target="_blank" rel="noopener">Machina</a>
+          platform with licensed data feeds, official partnerships, and
+          production-grade SLAs.
+        </p>
+      </div>
+      <div class="footer-bottom">
+        <span>© 2026 Machina Sports · Open skills MIT licensed</span>
+        <span>{% if site and site.version %}sports-skills v{{ site.version }}{% endif %}</span>
+      </div>
+      <pre class="wordmark" aria-hidden="true">███████╗██████╗  ██████╗ ██████╗ ████████╗███████╗   ███████╗██╗  ██╗██╗██╗     ██╗     ███████╗
+██╔════╝██╔══██╗██╔═══██╗██╔══██╗╚══██╔══╝██╔════╝   ██╔════╝██║ ██╔╝██║██║     ██║     ██╔════╝
+███████╗██████╔╝██║   ██║██████╔╝   ██║   ███████╗   ███████╗█████╔╝ ██║██║     ██║     ███████╗
+╚════██║██╔═══╝ ██║   ██║██╔══██╗   ██║   ╚════██║   ╚════██║██╔═██╗ ██║██║     ██║     ╚════██║
+███████║██║     ╚██████╔╝██║  ██║   ██║   ███████║   ███████║██║  ██╗██║███████╗███████╗███████║
+╚══════╝╚═╝      ╚═════╝ ╚═╝  ╚═╝   ╚═╝   ╚══════╝   ╚══════╝╚═╝  ╚═╝╚═╝╚══════╝╚══════╝╚══════╝</pre>
     </div>
   </footer>
 
   <script>
-    function getThemePreference() {
-      const stored = localStorage.getItem('theme');
-      if (stored) return stored;
-      return window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
-    }
-    function applyTheme(theme) {
-      const html = document.documentElement;
-      html.classList.remove('light', 'dark');
-      html.classList.add(theme);
-    }
-    function toggleTheme() {
-      const html = document.documentElement;
-      const isLight = html.classList.contains('light') ||
-        (!html.classList.contains('dark') && window.matchMedia('(prefers-color-scheme: light)').matches);
-      const newTheme = isLight ? 'dark' : 'light';
-      localStorage.setItem('theme', newTheme);
-      applyTheme(newTheme);
-    }
-    window.matchMedia('(prefers-color-scheme: light)').addEventListener('change', (e) => {
-      if (!localStorage.getItem('theme')) applyTheme(e.matches ? 'light' : 'dark');
-    });
+    (function () {
+      var root = document.documentElement;
+
+      function setTheme(t) { root.classList.remove('light', 'dark'); root.classList.add(t); }
+      document.querySelectorAll('[data-theme-toggle]').forEach(function (b) {
+        b.addEventListener('click', function () {
+          var next = root.classList.contains('light') ? 'dark' : 'light';
+          setTheme(next);
+          try { localStorage.setItem('theme', next); } catch (e) {}
+        });
+      });
+      try {
+        window.matchMedia('(prefers-color-scheme: light)').addEventListener('change', function (e) {
+          var stored = null;
+          try { stored = localStorage.getItem('theme'); } catch (_) {}
+          if (!stored) setTheme(e.matches ? 'light' : 'dark');
+        });
+      } catch (e) {}
+
+      var nav = document.querySelector('.nav');
+      function onScroll() { if (nav) nav.classList.toggle('is-scrolled', window.scrollY > 4); }
+      window.addEventListener('scroll', onScroll, { passive: true });
+      onScroll();
+
+      function copyText(text) {
+        if (navigator.clipboard && window.isSecureContext) return navigator.clipboard.writeText(text);
+        return new Promise(function (resolve, reject) {
+          var ta = document.createElement('textarea');
+          ta.value = text; ta.setAttribute('readonly', '');
+          ta.style.position = 'fixed'; ta.style.opacity = '0';
+          document.body.appendChild(ta); ta.select();
+          try { document.execCommand('copy') ? resolve() : reject(); } catch (e) { reject(e); }
+          finally { ta.remove(); }
+        });
+      }
+      document.addEventListener('click', function (ev) {
+        var btn = ev.target.closest('[data-copy]');
+        if (!btn) return;
+        var label = btn.querySelector('[data-copy-label]');
+        var original = label ? label.textContent : '';
+        copyText(btn.getAttribute('data-copy')).then(function () {
+          btn.classList.add('is-copied');
+          if (label) label.textContent = 'Copied';
+          setTimeout(function () { btn.classList.remove('is-copied'); if (label) label.textContent = original; }, 1600);
+        }, function () {});
+      });
+
+      document.querySelectorAll('[data-tabs]').forEach(function (group) {
+        var tabs = group.querySelectorAll('[role="tab"]');
+        tabs.forEach(function (tab) {
+          tab.addEventListener('click', function () {
+            tabs.forEach(function (t) {
+              var on = t === tab;
+              t.setAttribute('aria-selected', on ? 'true' : 'false');
+              var panel = document.getElementById(t.getAttribute('aria-controls'));
+              if (panel) panel.hidden = !on;
+            });
+          });
+        });
+      });
+
+      var revealed = document.querySelectorAll('.reveal');
+      if ('IntersectionObserver' in window && !window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+        var io = new IntersectionObserver(function (entries) {
+          entries.forEach(function (e) {
+            if (e.isIntersecting) { e.target.classList.add('is-in'); io.unobserve(e.target); }
+          });
+        }, { rootMargin: '0px 0px -6% 0px', threshold: 0.06 });
+        revealed.forEach(function (el) { io.observe(el); });
+      } else {
+        revealed.forEach(function (el) { el.classList.add('is-in'); });
+      }
+    })();
   </script>
   {% block scripts %}{% endblock %}
 </body>
