@@ -3,7 +3,7 @@ name: tennis-data
 description: |
   ATP and WTA tennis data via ESPN public endpoints — tournament scores, season calendars, player rankings, player profiles, and news. Zero config, no API keys.
 
-  Use when: user asks about tennis scores, match results, tournament draws, ATP/WTA rankings, tennis player info, or tennis news.
+  Use when: user asks about tennis scores, match results, tournament draws, ATP/WTA rankings, tennis player info, tennis news, a WTA tournament's entry list, or a WTA player's match history.
   Don't use when: user asks about other sports — use football-data (soccer), nfl-data (NFL), nba-data (NBA), wnba-data (WNBA), nhl-data (NHL), mlb-data (MLB), golf-data (golf), cricket-data (cricket), cfb-data (college football), cbb-data (college basketball), or fastf1 (F1). For betting odds use polymarket or kalshi. For news use sports-news. Don't use for live point-by-point data — scores update after each set/match.
 license: MIT
 metadata:
@@ -22,6 +22,8 @@ Prefer the CLI — it avoids Python import path issues:
 sports-skills tennis get_scoreboard --tour=atp
 sports-skills tennis get_rankings --tour=wta
 sports-skills tennis get_calendar --tour=atp --year=2026
+sports-skills tennis get_wta_entry_list --tournament_id=901 --year=2025
+sports-skills tennis get_wta_player_results --player_id=320760 --year=2025 --limit=10
 ```
 
 ## CRITICAL: Before Any Query
@@ -32,7 +34,7 @@ CRITICAL: Before calling any data endpoint, verify:
 
 ## The `tour` Parameter
 
-Most commands require `--tour=atp` or `--tour=wta`:
+Most ESPN-backed commands require `--tour=atp` or `--tour=wta`:
 - **ATP**: Men's professional tennis tour
 - **WTA**: Women's professional tennis tour
 
@@ -47,8 +49,20 @@ If the user doesn't specify, ask which tour or show both by calling the command 
 | `get_calendar` | Full season tournament calendar |
 | `get_player_info` | Individual tennis player profile |
 | `get_news` | Tennis news articles |
+| `get_wta_entry_list` | WTA entry list (singles players and doubles teams) for one tournament edition — WTA API |
+| `get_wta_player_results` | A WTA player's most recent match results (bounded window), newest first — WTA API |
 
 See `references/api-reference.md` for full parameter lists and return shapes.
+
+## WTA API Commands Use Native WTA IDs
+
+`get_wta_entry_list` and `get_wta_player_results` read the public WTA API (api.wtatennis.com), not ESPN:
+- `tournament_id` and `player_id` are the WTA's own numeric ids, positive decimals with no leading zeros (e.g. tournament `901`, player `320760`). ESPN ids from `get_rankings` / `get_player_info` / `get_scoreboard` do not work here, and there is no id mapping between the two.
+- `get_wta_player_results` returns a **bounded window of the most recent results** (at most `limit`, optionally within one `year`), not a career history. There is no total count: `has_more` only says further matches exist, and `history_complete` is always `false`. Never present `count` as a career or season total.
+- Results are dated by **tournament start date** (`tournament_start_date`), not the day each match was played. Never present it as a match date.
+- Matches within one tournament keep the provider's order, which is not guaranteed to be playing order. Don't claim exact within-tournament chronology.
+- `winner_code` is the provider's raw side code; no win/loss is derived from it. Don't state who won from it.
+- Both commands are WTA-published snapshots (`source.fetched_at`, cached up to 10 minutes). Don't call them complete or live. Under `SPORTS_SKILLS_REPLAY=replay`/`fill`, `source.fetched_at` is `null` and `source.served_at` is only local serving time — not data freshness.
 
 ## Workflows
 
@@ -64,6 +78,14 @@ See `references/api-reference.md` for full parameter lists and return shapes.
 ### Season Calendar
 1. `get_calendar --tour=<atp|wta> --year=<year>`
 2. Filter for specific tournament.
+
+### WTA Entry List
+1. `get_wta_entry_list --tournament_id=<wta_id> --year=<year>`
+2. Present each event (`format`: singles/doubles) with seeds and entry types. It is an entry list, not a draw.
+
+### WTA Player Form
+1. `get_wta_player_results --player_id=<wta_id> --year=<year> --limit=20`
+2. Group by tournament; say these are the most recent `count` matches, and when `has_more` is true that earlier matches exist but were not fetched.
 
 ## Examples
 
@@ -110,6 +132,18 @@ Solution: The command auto-retries previous weeks. If still empty, retry in a fe
 Error: Player profile fails
 Cause: Player ID is incorrect
 Solution: Use `get_rankings` to find player IDs from the current rankings list, or verify via ESPN tennis URLs
+
+Error: `get_wta_entry_list` / `get_wta_player_results` rejects the id or returns HTTP 404
+Cause: An ESPN id (or a non-numeric value) was passed; these commands take native WTA numeric ids only
+Solution: Use the WTA's own tournament/player id. Don't substitute ESPN ids
+
+Error: `get_wta_player_results --year=...` fails with "outside year ... inconclusive"
+Cause: The WTA API returned matches from other years, so it likely ignored the year filter
+Solution: Report that the season's results could not be confirmed. Don't retry without `year` and present those matches as that season
+
+Error: `get_wta_entry_list` succeeds with `count: 0`
+Cause: The WTA has not published an entry list for that tournament and year, or the id/year pair does not exist
+Solution: Read the `note` field and tell the user no entry list is available — don't report an empty field of players
 
 Error: Scores seem delayed or don't update live
 Cause: Scores update after each set/match is completed, not point-by-point
