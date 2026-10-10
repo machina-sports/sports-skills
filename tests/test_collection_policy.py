@@ -14,9 +14,9 @@ def test_non_release_paths_defer_to_other_ignore_hooks():
 
 
 def test_release_proof_is_opt_in(monkeypatch):
-    path = Path("tests/test_release_035.py")
-    monkeypatch.delenv("SPORTS_SKILLS_VERIFY_RELEASE_035", raising=False)
+    path = Path("tests/test_release_036.py")
+    monkeypatch.delenv("SPORTS_SKILLS_VERIFY_RELEASE_036", raising=False)
     assert collection_policy.pytest_ignore_collect(path, None) is True
 
-    monkeypatch.setenv("SPORTS_SKILLS_VERIFY_RELEASE_035", "1")
+    monkeypatch.setenv("SPORTS_SKILLS_VERIFY_RELEASE_036", "1")
     assert collection_policy.pytest_ignore_collect(path, None) is False
