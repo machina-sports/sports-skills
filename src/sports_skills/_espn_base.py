@@ -1152,34 +1152,67 @@ def espn_week_rankings(sport_path, season, week):
 # ============================================================
 
 
+def _as_dict(value):
+    """``value`` when it is a dict, else ``{}`` (ESPN sends null for absent objects)."""
+    return value if isinstance(value, dict) else {}
+
+
 def normalize_injuries(data):
     """Normalize ESPN injuries response (shared across all US sports).
 
     Input: full response from ``espn_request(SPORT_PATH, "injuries")``.
+
+    ``athlete_id`` is ESPN's own ``athlete.id`` (as a string) or None; a
+    record without one is ``unresolved``. Names are never hashed or fuzzily
+    joined into an id.
     """
     teams = []
-    for team_entry in data.get("injuries", []):
+    records = native = 0
+    team_entries = _as_dict(data).get("injuries")
+    for team_entry in team_entries if isinstance(team_entries, list) else []:
+        if not isinstance(team_entry, dict):
+            continue
         injuries = []
-        for inj in team_entry.get("injuries", []):
-            athlete = inj.get("athlete", {})
-            details = inj.get("details", {})
-            inj_type = inj.get("type", {})
+        injury_entries = team_entry.get("injuries")
+        for inj in injury_entries if isinstance(injury_entries, list) else []:
+            if not isinstance(inj, dict):
+                continue
+            athlete = _as_dict(inj.get("athlete"))
+            details = _as_dict(inj.get("details"))
+            inj_type = _as_dict(inj.get("type"))
+            athlete_id = athlete.get("id")
+            athlete_id = str(athlete_id) if type(athlete_id) in (str, int) else None
+            if not athlete_id or athlete_id != athlete_id.strip():
+                athlete_id = None
             injuries.append({
                 "name": athlete.get("displayName", ""),
-                "position": athlete.get("position", {}).get("abbreviation", ""),
+                "position": _as_dict(athlete.get("position")).get("abbreviation", ""),
                 "status": inj.get("status", ""),
                 "type": inj_type.get("description", inj_type.get("name", "")),
                 "detail": details.get("detail", ""),
                 "side": details.get("side", ""),
                 "return_date": details.get("returnDate", ""),
+                "athlete_id": athlete_id,
+                "identity_status": "provider-native" if athlete_id else "unresolved",
+                "id_namespace": "espn" if athlete_id else None,
             })
+            records += 1
+            native += athlete_id is not None
         teams.append({
             "team": team_entry.get("displayName", ""),
             "team_id": str(team_entry.get("id", "")),
             "injuries": injuries,
             "count": len(injuries),
         })
-    return {"teams": teams, "count": len(teams)}
+    return {
+        "teams": teams,
+        "count": len(teams),
+        "identity_summary": {"records": records, "provider_native": native, "unresolved": records - native},
+        "caveats": [
+            "A player absent from this report is not confirmed healthy; it lists only what ESPN publishes.",
+            "Records without athlete_id are unresolved and are not matched to other sources by name.",
+        ],
+    }
 
 
 def normalize_transactions(data):

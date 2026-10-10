@@ -753,7 +753,10 @@ class TestNormalizeInjuries:
         from sports_skills._espn_base import normalize_injuries
 
         result = normalize_injuries({})
-        assert result == {"teams": [], "count": 0}
+        assert result["teams"] == []
+        assert result["count"] == 0
+        assert result["identity_summary"] == {"records": 0, "provider_native": 0, "unresolved": 0}
+        assert any("healthy" in caveat for caveat in result["caveats"])
 
     def test_team_with_no_injuries(self):
         from sports_skills._espn_base import normalize_injuries

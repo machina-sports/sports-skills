@@ -10,6 +10,7 @@ import logging
 from sports_skills._espn_base import (
     _USER_AGENT,
     ESPN_STATUS_MAP,
+    _as_dict,
     _cache_get,
     _cache_set,
     _current_year,
@@ -65,6 +66,42 @@ def _resolve_week_params(week):
             "week": _POSTSEASON_WEEK_MAP.get(week, week - 18),
         }
     return {"week": week}
+
+
+def _bounded_int(value, low, high):
+    """``value`` as an int in [low, high], else None.
+
+    Only ints and digit strings count: booleans and floats are refused rather
+    than coerced, so ``True`` or ``5.5`` never becomes a week.
+    """
+    if isinstance(value, str) and value.strip().isdecimal():
+        value = int(value)
+    if isinstance(value, bool) or not isinstance(value, int):
+        return None
+    return value if low <= value <= high else None
+
+
+def _coverage(raw_events, requested, completeness, reason, warnings=()):
+    """What a schedule response covers.
+
+    Never ``complete``: ESPN publishes no game total to check a response
+    against, so an HTTP 200 (or no game in a week) proves nothing. Seasons and
+    weeks are the ones the returned events carry; weeks use ESPN's numbering,
+    which restarts at 1 in the postseason.
+    """
+    return {
+        "requested": requested,
+        "completeness": completeness,
+        "reason": reason,
+        "warnings": list(warnings),
+        "returned_count": len(raw_events),
+        "seasons_returned": sorted({
+            y for y in (_as_dict(e.get("season")).get("year") for e in raw_events) if type(y) is int
+        }),
+        "weeks_returned": sorted({
+            w for w in (_as_dict(e.get("week")).get("number") for e in raw_events) if type(w) is int
+        }),
+    }
 
 
 # ============================================================
@@ -124,7 +161,7 @@ def _normalize_event(espn_event):
         "competitors": competitors,
         "odds": odds,
         "broadcasts": broadcasts,
-        "week": week_info.get("number") if week_info else None,
+        "week": _as_dict(week_info).get("number"),
     }
 
 
@@ -553,20 +590,30 @@ def get_team_schedule(request_data):
     if data.get("error"):
         return data
 
-    events = []
-    for event in data.get("events", []):
-        events.append(_normalize_event(event))
+    raw_events = list(data.get("events", []))
+    events = [_normalize_event(e) for e in raw_events]
 
     # ESPN defaults to regular season; fetch postseason separately and merge.
     post_params = dict(espn_params)
     post_params["seasontype"] = 3
     post_data = espn_request(SPORT_PATH, resource, post_params, max_retries=0)
-    if not post_data.get("error"):
+    requested = {"season": _echo_season(season, {}) or None, "week": None, "team_id": str(team_id)}
+    if post_data.get("error"):
+        coverage = _coverage(
+            raw_events,
+            requested,
+            "partial",
+            "The postseason request failed; only regular-season games are returned.",
+            [f"postseason schedule unavailable: {post_data.get('message', 'unknown error')}"],
+        )
+    else:
         seen_ids = {e["id"] for e in events}
         for event in post_data.get("events", []):
             norm = _normalize_event(event)
             if norm["id"] not in seen_ids:
                 events.append(norm)
+                raw_events.append(event)
+        coverage = _coverage(raw_events, requested, "unknown", "ESPN team schedule, regular season plus postseason.")
 
     team_info = data.get("team", {})
     return {
@@ -580,6 +627,7 @@ def get_team_schedule(request_data):
         # season regardless of the season filter applied to the events.
         "season": _echo_season(season, data),
         "count": len(events),
+        "coverage": coverage,
     }
 
 
@@ -676,23 +724,60 @@ def get_news(request_data):
 
 
 def get_schedule(request_data):
-    """Get NFL season schedule."""
+    """Get one NFL week (season + week, or week of the current season) or the current window.
+
+    A season alone is refused: ESPN's scoreboard answers ``dates=<year>`` with
+    a capped mix of games from more than one season, not that season.
+    """
     params = request_data.get("params", {})
     season = params.get("season")
     week = params.get("week")
 
+    if season not in (None, ""):
+        season = _bounded_int(season, 1920, 9999)
+        if season is None:
+            return {"error": True, "message": f"Invalid season {params['season']!r}: use a year such as 2026."}
+    else:
+        season = None
+    if week not in (None, ""):
+        week = _bounded_int(week, 1, 23)
+        if week is None:
+            return {
+                "error": True,
+                "message": f"Invalid week {params['week']!r}: use 1-18 (regular season) or 19-23 (postseason).",
+            }
+    else:
+        week = None
+    if season and not week:
+        return {
+            "error": True,
+            "message": (
+                "get_schedule cannot return a whole NFL season: pass a week with the season, "
+                "or use get_team_schedule for a team's full season."
+            ),
+        }
+
     espn_params = {}
     if season:
         espn_params["dates"] = str(season)
-    espn_params.update(_resolve_week_params(week))
+    if week:
+        # Explicit seasontype: without it ESPN may pick the current postseason.
+        espn_params.update({"seasontype": 2, **_resolve_week_params(week)})
 
     data = espn_request(SPORT_PATH, "scoreboard", espn_params or None)
     if data.get("error"):
         return data
 
-    events = [_normalize_event(e) for e in data.get("events", [])]
+    raw_events = data.get("events", [])
+    events = [_normalize_event(e) for e in raw_events]
     season_info = data.get("season", {})
     week_info = data.get("week", {})
+    if season:
+        reason = f"ESPN scoreboard for week {week} of the {season} season."
+    elif week:
+        reason = f"ESPN scoreboard for week {week} of the current season."
+    else:
+        reason = "ESPN's current scoreboard window, not a full season."
 
     return {
         "events": events,
@@ -705,6 +790,9 @@ def get_schedule(request_data):
             "text": week_info.get("text", ""),
         },
         "count": len(events),
+        "coverage": _coverage(
+            raw_events, {"season": season, "week": week, "team_id": None}, "unknown", reason
+        ),
     }
 
 
