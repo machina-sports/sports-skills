@@ -1,15 +1,20 @@
-## [0.36.0]
+## [0.37.0]
 
 ### Added
-- **markets: `compare_market_url` compares a pasted game link.** Accepts `https://polymarket.com/event/<slug>[/<market-slug>]` and `https://kalshi.com/markets/<series>/<slug>/<event-ticker>` for nfl/nba/mlb/nhl/wnba/cfb/cbb single games. The link is never fetched. Exact-host, path and query validation runs before any call, and unknown query keys (possible contract selectors) are refused. The venue API must return the requested slug/ticker with exactly one open full-game two-way moneyline. ESPN scoreboards for the source date ±1 day must yield exactly one game that the existing team/date validators accept. Then `compare_odds` runs once, and its payload is returned with `source_market` metadata and `in_downstream_search`. This maps the same game's moneyline only: no settlement equivalence, no execution guarantee. Novig and ProphetX links are not accepted yet.
-- **markets: direct per-side comparison.** `compare_odds` now exposes admitted home/away `side_prices` and each side's `lowest_reference`, reusing the existing matching and odds conversion with no additional provider calls. References are not executable or fee-adjusted quotes. `normalize_price` accepts Novig probabilities.
+- **novig: credential-free public exchange data** (#187). Eight read-only commands cover events, markets and order books. Ordinary Requests uses a bounded timeout and never sends netrc credentials; redirects, 403 and 429 fail without retries. Two-outcome derived asks are cached reference snapshots, not guaranteed fills.
+- **markets: compare a market link** (#187). `compare_market_url` accepts supported Kalshi and Polymarket full-game two-way moneyline URLs for nfl/nba/mlb/nhl/wnba/cfb/cbb. URLs are parsed, never fetched; ambiguous identities and unsupported markets are refused. Novig and ProphetX input URLs and EPL three-way markets are not supported.
+- **markets: per-side reference comparison** (#187). Novig joins comparison/search/today; `side_prices` and `lowest_reference` expose admitted home/away references without extra provider calls. Coverage varies by event. Prices are not fee-adjusted, executable quotes or proof of settlement equivalence.
 
 ### Fixed
-- **polymarket: `search_markets` returned closed markets and other sports.** An open event's nested markets were all returned, closed ones included. Every search branch now keeps only markets whose own `active` is `true` and `closed` is not `true`, and de-duplicates before applying `limit`. A `sport` search no longer tops up its results from the unscoped `/markets` listing (which returned every sport). A sport code that cannot be resolved returns an error. `get_event_details` still returns closed markets.
-- **markets Kalshi browsing:** reuse the provider's multi-series sport search instead of a single series. CLI schema now declares scalar `price` and `fee_per_contract` as numbers; skill instructions explain the existing CLI fee parameter and reference comparison.
+- **markets: wrong-game prices** (#187). Novig and ProphetX require exactly equal scheduled instants after timezone normalization. Missing timestamps, schedule drift and ambiguous identical-time candidates abstain rather than mixing adjacent games or doubleheaders.
+- **polymarket: search filtering** (#187). Exclude closed/inactive nested markets, deduplicate before limits and prevent sport searches from being filled with unrelated markets.
+- **markets: Kalshi browsing and numeric schema** (#187). Reuse multi-series sport search; declare scalar price and fee parameters as numbers.
+- **site: Novig quickstart** (#187). Register the actual Novig CLI module rather than falling back to football examples.
 
-### Added
-- **novig: read-only Novig exchange module.** `get_sports_config`, `get_events`, `get_event`, `get_markets`, `get_market`, `get_order_book`, `search_markets` and `get_todays_events` on the public v3 API: GET only, no key. Catalog markets carry no prices. `get_order_book` returns the best bid per outcome (a probability, for contracts that pay $0.01) and, for two-outcome markets, `derived_ask` = 1 − best opposite bid, labelled a cached snapshot. `markets.search_entity`, `get_todays_markets` and `compare_odds` now include Novig. `compare_odds` admits a Novig price only from a priced full-game `MONEY` book on the same game date with both team labels identified. Requests go through `requests` (now a core dependency) with a 20 s timeout. A redirect, 403 or 429 is returned as an error and not retried, and `~/.netrc` credentials are never sent.
+### Docs
+- **world-cup: standalone ZeroClick discovery** (#185, #186). Credential-free discovery links to existing hosted offerings; companion skills are optional and spending still requires explicit approval.
+
+## [0.36.0]
 
 ### Changed
 - **nfl schedules now expose their coverage and reject unsafe season-only queries.** `get_schedule(season=…)` previously returned a truncated, season-mixed scoreboard window. It now requires `week` with `season`, sends explicit regular/postseason semantics, and schedule responses add a `coverage` block that never claims completeness. Injury records also expose provider-native versus unresolved identity and preserve every unresolved record instead of inviting name-only assumptions (#183).
