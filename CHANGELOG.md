@@ -1,3 +1,8 @@
+## [Unreleased]
+
+### Changed
+- **nfl schedules now expose their coverage and reject unsafe season-only queries.** `get_schedule(season=…)` previously returned a truncated, season-mixed scoreboard window. It now requires `week` with `season`, sends explicit regular/postseason semantics, and schedule responses add a `coverage` block that never claims completeness. Injury records also expose provider-native versus unresolved identity and preserve every unresolved record instead of inviting name-only assumptions.
+
 ## [0.35.0]
 
 ### Changed

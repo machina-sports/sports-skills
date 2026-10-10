@@ -183,6 +183,30 @@ Its helpers are not record/replay-backed and exit with an error when
 `SPORTS_SKILLS_REPLAY` is set to anything but `off`. It grants no commercial or
 redistribution rights to ESPN data; for licensed data see [machina.gg](https://machina.gg).
 
+#### NFL schedule coverage
+
+`nfl get_schedule` returns one week or ESPN's current window, never a whole season:
+
+- `season` + `week` → that week (weeks 1-18 regular season, 19-23 postseason). `week` alone → that week of the current season. Neither → ESPN's current scoreboard window.
+- `season` alone is refused with an error pointing at `get_team_schedule` (ESPN answers a bare year with a capped mix of games from more than one season). Invalid seasons/weeks, including booleans and floats, are refused before any request.
+
+`get_schedule` and `get_team_schedule` add a `coverage` object; every other field is unchanged:
+
+| Field | Meaning |
+|-------|---------|
+| `requested` | `{season, week, team_id}` as asked (`null` when not given) |
+| `completeness` | `unknown`, or `partial` when a team's postseason request failed. Never `complete`: ESPN publishes no game total to check against, so an HTTP 200 or a week with no games proves nothing (a missing team is not a bye) |
+| `reason`, `warnings` | Why, in words; `warnings` names any failed request |
+| `returned_count` | Events returned |
+| `seasons_returned`, `weeks_returned` | Distinct season years and week numbers the returned events carry. Weeks use ESPN's numbering, which restarts at 1 in the postseason |
+
+There is no "updated at": ESPN does not stamp these responses, and a local clock or cache time would not be the provider's.
+
+#### ESPN injury identity
+
+ESPN injury records (NFL, NBA, WNBA, NHL, MLB and CFB) add `athlete_id` (ESPN's `athlete.id` as a string, or `null`), `identity_status` (`provider-native` when ESPN sent an id, else `unresolved`) and `id_namespace` (`espn`, or `null` when unresolved). The response adds `identity_summary: {records, provider_native, unresolved}` and `caveats`; the top-level `count` is still the number of teams. ESPN's injury feed frequently omits `athlete.id`, so expect `unresolved` records. Names are never hashed into ids or fuzzily joined, and a player absent from the report is not confirmed healthy.
+
+
 ---
 
 ## Quick Start

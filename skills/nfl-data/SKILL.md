@@ -79,14 +79,14 @@ Derive the current year from the system prompt's date (e.g., `currentDate: 2026-
 | `get_standings` | Standings by conference and division |
 | `get_teams` | All 32 NFL teams |
 | `get_team_roster` | Full roster for a team |
-| `get_team_schedule` | Schedule for a specific team |
+| `get_team_schedule` | Schedule for a specific team; reports coverage limits |
 | `get_game_summary` | Detailed box score and scoring plays |
 | `get_leaders` | NFL statistical leaders |
 | `get_news` | NFL news articles |
 | `get_play_by_play` | Full play-by-play for a game |
 | `get_win_probability` | Win probability chart data |
-| `get_schedule` | Season schedule by week |
-| `get_injuries` | Injury reports across all teams |
+| `get_schedule` | One season week or ESPN's current window; never a whole season |
+| `get_injuries` | Injury reports with provider-native or unresolved identity |
 | `get_transactions` | Recent transactions |
 | `get_futures` | Futures/odds markets |
 | `get_depth_chart` | Depth chart for a team |
@@ -100,6 +100,12 @@ Derive the current year from the system prompt's date (e.g., `currentDate: 2026-
 | `get_fantasy_trending` | Sleeper fantasy trending adds/drops (popularity counts, Sleeper player IDs) |
 
 See `references/api-reference.md` for full parameter lists and return shapes.
+
+Do not infer a bye from an empty `get_schedule` response: inspect its
+`coverage` block, whose completeness is `unknown` or `partial`, never
+`complete`. For a whole team season use `get_team_schedule`; season-only
+`get_schedule` is refused because ESPN's scoreboard mixes and truncates it.
+An absent or unresolved injury record is not evidence that a player is healthy.
 
 ## Fantasy Trending (Sleeper)
 
@@ -116,6 +122,7 @@ sports-skills nfl get_fantasy_trending --trend_type=drop
 - Player IDs are `sleeper_player_id`, Sleeper's own namespace — keep them as the identifier. There is no mapping to ESPN athlete IDs or nflverse GSIS IDs: do not attach one, and do not present a name or team match against another provider as the same confirmed player.
 - `name_resolved: false` means Sleeper's player catalog had no name for that ID. `team` and `position` are resolved separately and may still be filled in. If the catalog itself could not be fetched, `catalog_status` is `unavailable` and `warnings[]` says why; counts and IDs are still valid.
 - Report freshness from `source.trending_fetched_at`. Trending results are cached in memory for 5 minutes, within one process only — each new CLI call fetches them again. Sleeper's player catalog (trimmed to IDs, names, teams and positions) is also saved under `$XDG_CACHE_HOME/sports-skills/sleeper/` (default `~/.cache/...`) and reused across processes until 24 hours after it was fetched, since Sleeper asks clients to fetch it at most once a day. That disk cache is best effort: if it cannot be written, the call still succeeds and the next process fetches the catalog again.
+
 
 ## Shaping Wide nflverse Results
 

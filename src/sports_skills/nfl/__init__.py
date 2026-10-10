@@ -154,11 +154,14 @@ def get_news(*, team_id: str | None = None) -> dict:
 
 
 def get_schedule(*, season: int | None = None, week: int | None = None) -> dict:
-    """Get NFL season schedule.
+    """Get one NFL week or ESPN's current scoreboard window, with coverage limits.
+
+    A season without a week is refused; use get_team_schedule for a team's
+    season. No arguments request the current window, not a complete season.
 
     Args:
-        season: Season year. Defaults to current.
-        week: NFL week number. Defaults to current week.
+        season: Optional season year; requires week when provided.
+        week: Optional week (1-18 regular season, 19-23 postseason).
     """
     return wrap(_get_schedule(_params(season=season, week=week)))
 

@@ -32,7 +32,9 @@ Get schedule for a specific team.
 - `team_id` (str, required): ESPN team ID
 - `season` (int, optional): Season year
 
-Returns `events[]` with opponent, date, score (if played), and venue.
+Returns `events[]` with opponent, date, score (if played), and venue, plus a
+`coverage` block. Coverage is `unknown` even when both regular- and
+postseason requests succeed; a failed postseason request is `partial`.
 
 ### get_game_summary
 Get detailed box score and scoring plays.
@@ -70,16 +72,24 @@ Get win probability chart data for a game.
 Returns timestamped home/away win probability percentages throughout the game.
 
 ### get_schedule
-Get NFL season schedule by week.
+Get one NFL season week, or ESPN's current window when no arguments are given.
 - `season` (int, optional): Season year
 - `week` (int, optional): Week number (1-18 regular season, 19-23 postseason)
 
-Returns `events[]` for the specified week/season.
+`season` without `week` is refused because ESPN's scoreboard does not return a
+complete season. Returns `events[]` plus `coverage` with the requested scope,
+returned count, observed seasons/weeks, warnings, and completeness
+(`unknown` or `partial`, never `complete`). An empty week is not proof of a bye.
 
 ### get_injuries
 Get current NFL injury reports across all teams. No parameters.
 
-Returns `teams[]` with per-team injury lists including player name, position, status (Out/Doubtful/Questionable/Day-To-Day), injury type, and detail.
+Returns `teams[]` with per-team injury lists including player name, position,
+status (Out/Doubtful/Questionable/Day-To-Day), injury type, and detail. Each
+record has `athlete_id`, `id_namespace`, and `identity_status`
+(`provider-native` or `unresolved`); top-level `identity_summary` accounts for
+all records. An unmatched or absent report does not establish that a player is
+healthy.
 
 ### get_transactions
 Get recent NFL transactions (trades, signings, waivers).
