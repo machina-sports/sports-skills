@@ -288,13 +288,13 @@
       "untrusted_content": true
     },
     "world-cup": {
-      "description": "Premium FIFA World Cup 2026 market & match intelligence — a hosted, read-only layer that fuses official match truth (fixtures, standings, squads, injuries, player performance) with live prediction markets (Kalshi + Polymarket: prices, order",
+      "description": "World Cup free-data entry point and optional hosted match context, forecasts and finished content through Machina's ZeroClick storefront; inspect current coverage and pricing before approved premium calls.",
       "external_network": true,
-      "mode": "premium_mcp_read_only",
+      "mode": "read_only",
       "money_movement": false,
       "requires_explicit_confirmation": true,
       "risk": "high",
-      "secrets_required": true,
+      "secrets_required": false,
       "skill_path": "skills/world-cup/SKILL.md",
       "untrusted_content": true
     },
