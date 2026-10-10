@@ -4041,6 +4041,7 @@ version = "0.36.0"
 source = { editable = "." }
 dependencies = [
     { name = "feedparser" },
+    { name = "requests" },
     { name = "tzdata", marker = "sys_platform == 'win32'" },
 ]
 
@@ -4105,6 +4106,7 @@ requires-dist = [
     { name = "pyarrow", marker = "extra == 'dev'", specifier = ">=14" },
     { name = "pytest", marker = "extra == 'dev'", specifier = ">=8.0" },
     { name = "pyyaml", marker = "extra == 'site'", specifier = ">=6.0" },
+    { name = "requests", specifier = ">=2.32.3" },
     { name = "ruff", marker = "extra == 'dev'", specifier = ">=0.9" },
     { name = "tzdata", marker = "sys_platform == 'win32'" },
 ]

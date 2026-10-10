@@ -555,6 +555,126 @@ def _search_prophetx(entity: str, sport: str | None = None, report: dict | None 
     return results
 
 
+# Book enrichment costs two requests per market; keep it to a handful.
+_NOVIG_MAX_BOOKS = 3
+
+
+def _search_novig(entity: str, sport: str | None = None, report: dict | None = None) -> list[dict]:
+    """Novig full-game MONEY markets for a query, priced from a few order books.
+
+    The catalog carries no prices. Up to ``_NOVIG_MAX_BOOKS`` MONEY markets get
+    their book; ``derived_ask`` (1 - best opposite bid, a probability) is the
+    reference price to buy each side. A market is ``priced`` only when both
+    sides of a two-way book have one.
+    """
+    try:
+        from sports_skills import novig
+    except ImportError:
+        _note(report, "error", "novig module not available")
+        return []
+
+    try:
+        kwargs = {"query": entity, "market_type": "MONEY"}
+        if sport:
+            kwargs["league"] = sport
+        result = novig.search_markets(**kwargs)
+    except Exception as exc:
+        logger.warning("Novig search failed: %s", exc)
+        _note(report, "error", str(exc))
+        return []
+
+    if not result.get("status"):
+        _note(report, "error", result.get("message", "Novig search returned an error"))
+        return []
+    _note(report, "ok")
+
+    data = result.get("data") or {}
+    # Partial coverage (failed pages/books, truncation, skipped books) rides
+    # out of band so an incomplete answer never reads as a clean one.
+    coverage = list(data.get("warnings") or [])
+    if data.get("truncated"):
+        coverage.append({"stage": "search", "message": "Novig search truncated; markets may be missing"})
+
+    events_map: dict[str, dict] = {}
+    books_left = _NOVIG_MAX_BOOKS
+    for m in data.get("markets") or []:
+        event_id = m.get("event_id")
+        event = events_map.setdefault(
+            event_id,
+            {
+                "source": "novig",
+                "event_id": event_id,
+                "title": m.get("event_name", ""),
+                "scheduled": m.get("event_start_time") or "",
+                "league": m.get("league", ""),
+                "markets": [],
+            },
+        )
+        entry = {
+            "market_id": m.get("id"),
+            "title": m.get("name", ""),
+            "type": m.get("type", ""),
+            "status": m.get("status", ""),
+            "fee": m.get("fee"),
+            "voids": m.get("voids"),
+            "priced": False,
+            "execution_guaranteed": False,
+            # Catalog labels; prices only ever come from a fetched book.
+            "outcomes": [
+                {"id": o.get("id"), "outcome": o.get("name", ""), "best_bid": None, "derived_ask": None}
+                for o in m.get("outcomes") or []
+            ],
+        }
+        if entry["type"] != "MONEY":
+            entry["book_status"] = "not_requested"
+        elif books_left <= 0:
+            entry["book_status"] = "skipped_budget"
+            coverage.append(
+                {
+                    "stage": "book",
+                    "market_id": entry["market_id"],
+                    "message": f"Novig book not fetched (limit {_NOVIG_MAX_BOOKS} books per search)",
+                }
+            )
+        else:
+            books_left -= 1
+            try:
+                book = novig.get_order_book(market_id=entry["market_id"])
+            except Exception as exc:
+                book = {"status": False, "message": str(exc)}
+            if book.get("status"):
+                book_data = book["data"]
+                entry["outcomes"] = [
+                    {"id": o["id"], "outcome": o["name"], "best_bid": o["best_bid"], "derived_ask": o["derived_ask"]}
+                    for o in book_data["outcomes"]
+                ]
+                entry["priced"] = len(entry["outcomes"]) == 2 and all(
+                    o["derived_ask"] is not None for o in entry["outcomes"]
+                )
+                entry["book_status"] = "ok" if entry["priced"] else "empty"
+                for key in ("seq", "price_basis", "retrieved_at", "note"):
+                    entry[key] = book_data.get(key)
+            else:
+                entry["book_status"] = "error"
+                coverage.append({"stage": "book", "market_id": entry["market_id"], "message": book.get("message", "")})
+        event["markets"].append(entry)
+
+    results = list(events_map.values())
+    for event in results:
+        if not any(m["priced"] for m in event["markets"]):
+            event["note"] = "catalog only — no priced two-way order book fetched for this event"
+    if report is not None and coverage:
+        report["warnings"] = coverage
+    return results
+
+
+def _novig_warnings(report: dict, query: str) -> list[str]:
+    """Discovery warnings from a ``_search_novig`` report: errors and partial coverage."""
+    if report.get("transport") == "error":
+        return [f"Novig search failed for '{query}': {report.get('detail', '')}"]
+    return [f"Novig partial coverage for '{query}': {w.get('message', '')}" for w in report.get("warnings", [])]
+
+
 # ============================================================
 # 2E. Odds Normalization
 # ============================================================
@@ -569,10 +689,11 @@ def _normalize_price(price: float, source: str) -> dict:
     source="prophetx":   price is American odds (exchange odds — from public
                          selections when an order book is exposed, or from the
                          authenticated Affiliate surface)
+    source="novig":      price is 0-1 probability (order-book derived ask)
     """
     from sports_skills.betting._calcs import convert_odds
 
-    if source == "polymarket":
+    if source in ("polymarket", "novig"):
         if price <= 0 or price >= 1:
             return {"implied_probability": price, "american": 0.0, "decimal": 0.0, "source": source}
         result = convert_odds({"params": {"odds": price, "from_format": "probability"}})
@@ -608,7 +729,10 @@ _REFERENCE_NOTE = "reference price (last trade / midpoint) — not an executable
 
 _COMPARE_REFERENCE_NOTE = (
     "Every price compared here is a reference price (sportsbook line, exchange last trade "
-    "or midpoint), not an executable quote — no size or fill is implied."
+    "or midpoint, or a Novig ask derived as the complement of the best opposite bid in a "
+    "cached order-book snapshot), not an executable quote — no size or fill is implied. "
+    "side_prices.lowest_reference is the lowest such reference per side: not executable, "
+    "not fee-adjusted, and not a bet recommendation."
 )
 
 _ARB_REFERENCE_NOTE = (
@@ -889,10 +1013,7 @@ def _kalshi_ticker_identity(ticker: str, sport: str, identity: dict, side: str) 
     if not date:
         return f"Kalshi ticker '{ticker}' carries no parseable event date"
     if date not in identity["dates"]:
-        return (
-            f"Kalshi ticker '{ticker}' is dated {date}; this game is played "
-            f"{' / '.join(sorted(identity['dates']))}"
-        )
+        return f"Kalshi ticker '{ticker}' is dated {date}; this game is played {' / '.join(sorted(identity['dates']))}"
 
     want = identity[side]["abbreviation"]
     if parts[2] != want:
@@ -940,10 +1061,7 @@ def _poly_market_identity(market: dict, identity: dict, side: str) -> str:
 
     date = match.group(1)
     if date not in identity["dates"]:
-        return (
-            f"Polymarket '{slug}' is dated {date}; this game is played "
-            f"{' / '.join(sorted(identity['dates']))}"
-        )
+        return f"Polymarket '{slug}' is dated {date}; this game is played {' / '.join(sorted(identity['dates']))}"
 
     if _poly_side_outcome(market, identity, "home") is None or _poly_side_outcome(market, identity, "away") is None:
         labels = ", ".join(str(o.get("outcome") or "?") for o in market.get("outcomes") or []) or "none"
@@ -1005,7 +1123,7 @@ def _find_poly_game_market(sport: str, identity: dict, side: str, report: dict) 
 
 
 def get_todays_markets(request_data: dict) -> dict:
-    """Fetch ESPN schedule, search both exchanges, return unified dashboard.
+    """Fetch ESPN schedule, search Kalshi, Polymarket, ProphetX and Novig, return unified dashboard.
 
     Params:
         sport (str): Sport key (nba, nfl, etc.). Omit for all sports.
@@ -1058,11 +1176,20 @@ def get_todays_markets(request_data: dict) -> dict:
         except Exception as exc:
             warnings.append(f"ProphetX search failed for '{search_query}': {exc}")
 
+        novig_matches = []
+        novig_report: dict = {}
+        try:
+            novig_matches = _search_novig(search_query, game["sport"], report=novig_report)
+        except Exception as exc:
+            warnings.append(f"Novig search failed for '{search_query}': {exc}")
+        warnings.extend(_novig_warnings(novig_report, search_query))
+
         game_entry = {
             **game,
             "kalshi_markets": kalshi_matches,
             "polymarket_markets": poly_matches,
             "prophetx_markets": prophetx_matches,
+            "novig_markets": novig_matches,
         }
         dashboard.append(game_entry)
 
@@ -1078,7 +1205,7 @@ def get_todays_markets(request_data: dict) -> dict:
 
 
 def search_entity(request_data: dict) -> dict:
-    """Search Kalshi + Polymarket for a team/player/event name.
+    """Search Kalshi, Polymarket, ProphetX and Novig for a team/player/event name.
 
     Params:
         query (str): Search query (team name, player name, etc.).
@@ -1114,7 +1241,15 @@ def search_entity(request_data: dict) -> dict:
     except Exception as exc:
         warnings.append(f"ProphetX search failed: {exc}")
 
-    total = len(kalshi_results) + len(poly_results) + len(prophetx_results)
+    novig_results = []
+    novig_report: dict = {}
+    try:
+        novig_results = _search_novig(query, sport, report=novig_report)
+    except Exception as exc:
+        warnings.append(f"Novig search failed: {exc}")
+    warnings.extend(_novig_warnings(novig_report, query))
+
+    total = len(kalshi_results) + len(poly_results) + len(prophetx_results) + len(novig_results)
 
     return _success_partial(
         {
@@ -1123,6 +1258,7 @@ def search_entity(request_data: dict) -> dict:
             "kalshi": kalshi_results,
             "polymarket": poly_results,
             "prophetx": prophetx_results,
+            "novig": novig_results,
             "total_results": total,
         },
         warnings,
@@ -1200,6 +1336,7 @@ def compare_odds(request_data: dict) -> dict:
         ("kalshi", _search_kalshi),
         ("polymarket", _search_polymarket),
         ("prophetx", _search_prophetx),
+        ("novig", _search_novig),
     ):
         transport: dict = {}
         try:
@@ -1221,10 +1358,13 @@ def compare_odds(request_data: dict) -> dict:
             "detail": transport.get("detail", ""),
             "count": len(results),
         }
+        if transport.get("warnings"):
+            sources[name]["warnings"] = transport["warnings"]
 
     kalshi_matches = found["kalshi"]
     poly_matches = found["polymarket"]
     prophetx_matches = found["prophetx"]
+    novig_matches = found["novig"]
 
     # Check for arbitrage if we have matching market prices
     arb_check = None
@@ -1234,14 +1374,10 @@ def compare_odds(request_data: dict) -> dict:
     # real cross-venue arbitrage.
     side_prices = {"home": [], "away": []}
     if espn_comparison.get("home") and espn_comparison["home"]["implied_probability"] > 0:
-        side_prices["home"].append(
-            (espn_comparison["home"]["implied_probability"], f"espn_{home_team}")
-        )
+        side_prices["home"].append((espn_comparison["home"]["implied_probability"], f"espn_{home_team}"))
 
     if espn_comparison.get("away") and espn_comparison["away"]["implied_probability"] > 0:
-        side_prices["away"].append(
-            (espn_comparison["away"]["implied_probability"], f"espn_{away_team}")
-        )
+        side_prices["away"].append((espn_comparison["away"]["implied_probability"], f"espn_{away_team}"))
 
     def _side_for_label(label):
         normalized = _normalize_name(str(label or ""))
@@ -1279,9 +1415,7 @@ def compare_odds(request_data: dict) -> dict:
     for outcome in poly_outcomes:
         side = _side_for_label(outcome.get("outcome"))
         if side:
-            side_prices[side].append(
-                (outcome["price"], f"poly_{outcome.get('outcome', '')}")
-            )
+            side_prices[side].append((outcome["price"], f"poly_{outcome.get('outcome', '')}"))
 
     # ProphetX exposes odds only when a public order book exists. Only the
     # exact full-game "Moneyline" of a date-compatible event joins the pool:
@@ -1318,9 +1452,65 @@ def compare_odds(request_data: dict) -> dict:
             prob = outcome.get("implied_probability") or 0
             side = _side_for_label(outcome.get("outcome"))
             if side and 0 < prob < 1:
-                side_prices[side].append(
-                    (prob, f"prophetx_{outcome.get('outcome', '')}")
-                )
+                side_prices[side].append((prob, f"prophetx_{outcome.get('outcome', '')}"))
+
+    # Novig: exactly ONE full-game MONEY market of a date-compatible event,
+    # with both outcome labels naming distinct sides of this game (labels are
+    # team abbreviations, so match ESPN's before names). Two candidates — a
+    # doubleheader — are different bets; mixing their best legs manufactures
+    # arbitrage, so that case is refused rather than pooled.
+    def _novig_side(label):
+        label = str(label or "").strip().upper()
+        for side in ("home", "away"):
+            if label and label == identity[side]["abbreviation"]:
+                return side
+        return _side_for_label(label)
+
+    novig_candidates, novig_rejections = [], []
+    for nv in novig_matches:
+        title = nv.get("title") or nv.get("event_id")
+        if not _calendar_days(nv.get("scheduled")) & identity["dates"]:
+            novig_rejections.append(
+                f"Novig event '{title}' starts {nv.get('scheduled') or 'at an unstated time'}; this game is "
+                f"played {' / '.join(sorted(identity['dates'])) or 'at an unstated time'}"
+            )
+            continue
+        matching = [
+            m
+            for m in nv.get("markets", [])
+            if m.get("type") == "MONEY"
+            and len(m.get("outcomes") or []) == 2
+            and {_novig_side(o.get("outcome")) for o in m["outcomes"]} == {"home", "away"}
+        ]
+        if not matching:
+            novig_rejections.append(
+                f"Novig event '{title}' has no full-game MONEY market whose outcomes name {away_team} "
+                f"and {home_team} (spreads and period markets are not compared)"
+            )
+        novig_candidates.extend(matching)
+
+    if len(novig_candidates) > 1:
+        ids = ", ".join(str(m.get("market_id")) for m in novig_candidates)
+        _reject("novig", f"ambiguous full-game candidates: {ids} — refusing to pool separate Novig games")
+    elif novig_candidates:
+        game_ml = novig_candidates[0]
+        legs = {}
+        if game_ml.get("priced"):
+            for outcome in game_ml["outcomes"]:
+                prob = _normalize_price(float(outcome["derived_ask"]), "novig")["implied_probability"]
+                if 0 < prob < 1:
+                    legs[_novig_side(outcome.get("outcome"))] = (prob, f"novig_{outcome.get('outcome', '')}")
+        if len(legs) == 2:
+            for side, leg in legs.items():
+                side_prices[side].append(leg)
+        else:
+            _reject(
+                "novig",
+                f"Novig market {game_ml.get('market_id')} has no priced two-way book "
+                f"(book {game_ml.get('book_status', 'unknown')}; catalog-only markets are not compared)",
+            )
+    for reason in novig_rejections:
+        _reject("novig", reason)
 
     # Kalshi prices each side as its own contract, so both sides must validate
     # as this game's full-game winner market before either becomes a reference
@@ -1390,9 +1580,24 @@ def compare_odds(request_data: dict) -> dict:
     # A source counts as usable only if it actually priced one of this game's
     # sides — transport success and a non-empty market list do not.
     contributed = {label.split("_", 1)[0] for prices in side_prices.values() for _prob, label in prices}
-    for venue, prefix in (("polymarket", "poly"), ("prophetx", "prophetx"), ("kalshi", "kalshi")):
+    for venue, prefix in (("polymarket", "poly"), ("prophetx", "prophetx"), ("kalshi", "kalshi"), ("novig", "novig")):
         if prefix in contributed:
             sources[venue]["outcome"] = "ok"
+
+    # The admitted legs, per side, for direct comparison. Ties keep the first
+    # admitted quote (gathering order: espn, polymarket, prophetx, novig, kalshi).
+    def _side_view(side: str, team: str) -> dict:
+        quotes = [
+            {
+                "venue": "polymarket" if label.startswith("poly_") else label.split("_", 1)[0],
+                "implied_probability": probability,
+                "price_basis": "reference",
+                "execution_guaranteed": False,
+            }
+            for probability, label in side_prices[side]
+        ]
+        lowest = min(quotes, key=lambda quote: quote["implied_probability"], default=None)
+        return {"team": team, "quotes": quotes, "lowest_reference": lowest}
 
     usable = [name for name, report in sources.items() if report["outcome"] == "ok"]
     data = {
@@ -1405,7 +1610,9 @@ def compare_odds(request_data: dict) -> dict:
         "kalshi_markets": kalshi_matches,
         "polymarket_markets": poly_matches,
         "prophetx_markets": prophetx_matches,
+        "novig_markets": novig_matches,
         "arbitrage_check": arb_check,
+        "side_prices": {"home": _side_view("home", home_team), "away": _side_view("away", away_team)},
         # Nothing compared here is a quote anyone has committed to fill.
         "price_basis": "reference",
         "price_basis_note": _COMPARE_REFERENCE_NOTE,
@@ -1429,11 +1636,373 @@ def compare_odds(request_data: dict) -> dict:
     return _success_partial(data, warnings, f"Odds comparison for {away_team} @ {home_team}.")
 
 
+# ============================================================
+# Pasted venue URL -> same-game comparison
+# ============================================================
+
+# Exact hosts only: a netloc carrying credentials or a port never matches.
+_URL_HOSTS = {
+    "polymarket.com": "polymarket",
+    "www.polymarket.com": "polymarket",
+    "kalshi.com": "kalshi",
+    "www.kalshi.com": "kalshi",
+}
+# Plain slug/ticker segments; '%', '.', and empty segments are all refused.
+_URL_SEGMENT_RE = re.compile(r"^[A-Za-z0-9]+(?:-[A-Za-z0-9]+)*$")
+# Query keys that only track the click. Any other key might select a
+# different contract, so it is refused rather than silently dropped.
+_URL_TRACKING_KEYS = {"tid", "ref", "referrer", "via", "fbclid", "gclid"}
+
+_URL_SCOPE_NOTE = (
+    "Link resolution maps the source to the same game's full-game moneyline only; "
+    "venues may settle ties, postponements and overtime differently."
+)
+
+
+def _url_date_ok(date: str) -> bool:
+    """A real calendar day whose ±1 day scoreboard window is representable."""
+    from datetime import date as _date
+    from datetime import timedelta
+
+    try:
+        day = _date.fromisoformat(date)
+        day - timedelta(days=1), day + timedelta(days=1)
+    except (ValueError, OverflowError):
+        return False
+    return True
+
+
+def _parse_market_url(url) -> tuple[dict | None, str]:
+    """Validated venue identifiers from a pasted URL, or a refusal. No I/O."""
+    from urllib.parse import parse_qsl, urlsplit
+
+    unsupported = (
+        "Unsupported URL: paste https://polymarket.com/event/<slug> or "
+        "https://kalshi.com/markets/<series>/<slug>/<event-ticker> (no credentials or ports)"
+    )
+    if not isinstance(url, str) or not url.strip() or len(url) > 512:
+        return None, unsupported
+    # urlsplit silently deletes tab/CR/LF, so a split host or path would pass.
+    if any(ord(c) < 32 or ord(c) == 127 for c in url.strip()):
+        return None, "Malformed URL: contains control characters"
+    try:
+        parts = urlsplit(url.strip())
+    except ValueError as exc:
+        return None, f"Malformed URL: {exc}"
+    venue = _URL_HOSTS.get(parts.netloc.lower())
+    if parts.scheme.lower() != "https" or venue is None:
+        return None, unsupported
+    if parts.fragment:
+        return None, "Unsupported URL: remove the '#' fragment"
+    for key, _value in parse_qsl(parts.query, keep_blank_values=True):
+        if not (key.lower().startswith("utm_") or key.lower() in _URL_TRACKING_KEYS):
+            return None, (
+                f"Unsupported query parameter '{key}': it may select a different contract. Paste the plain event URL."
+            )
+    segments = parts.path.split("/")[1:]
+    if segments and segments[-1] == "":
+        segments.pop()
+    if not segments or not all(_URL_SEGMENT_RE.match(s) for s in segments):
+        return None, f"Malformed URL path '{parts.path}'"
+
+    if venue == "polymarket":
+        if segments[0] != "event" or len(segments) not in (2, 3):
+            return None, unsupported
+        event_slug = segments[1]
+        match = _POLY_FULL_GAME_SLUG_RE.match(event_slug)
+        league = event_slug.split("-", 1)[0]
+        sport = next((s for s in sorted(SCOREBOARD_SPORTS) if POLYMARKET_SPORTS.get(s) == league), None)
+        if not match or sport is None:
+            return None, (
+                f"Unsupported Polymarket event '{event_slug}': only single games of "
+                f"{', '.join(sorted(SCOREBOARD_SPORTS))} ({{league}}-{{away}}-{{home}}-{{date}}) are supported"
+            )
+        if not _url_date_ok(match.group(1)):
+            return None, f"Polymarket event '{event_slug}' carries an invalid date '{match.group(1)}'"
+        market_slug = segments[2] if len(segments) == 3 else ""
+        canonical = f"https://polymarket.com/event/{event_slug}" + (f"/{market_slug}" if market_slug else "")
+        return {
+            "venue": venue,
+            "sport": sport,
+            "date": match.group(1),
+            "url": canonical,
+            "event_slug": event_slug,
+            "market_slug": market_slug,
+        }, ""
+
+    if segments[0] != "markets" or len(segments) != 4:
+        return None, unsupported
+    series, ticker = segments[1].upper(), segments[3].upper()
+    if "-" not in ticker or ticker.split("-", 1)[0] != series:
+        return None, f"Kalshi event ticker '{ticker}' does not belong to series '{series}'"
+    sport = next((s for s in sorted(SCOREBOARD_SPORTS) if f"{KALSHI_SERIES[s]}GAME" == series), None)
+    date, _pair = _kalshi_event_date_pair(ticker.split("-", 1)[1])
+    if sport is None or not date:
+        return None, (
+            f"Unsupported Kalshi series '{series}' / ticker '{ticker}': only dated game-winner events of "
+            f"{', '.join(sorted(SCOREBOARD_SPORTS))} are supported"
+        )
+    if not _url_date_ok(date):
+        return None, f"Kalshi event ticker '{ticker}' carries an invalid date '{date}'"
+    return {
+        "venue": venue,
+        "sport": sport,
+        "date": date,
+        "url": f"https://kalshi.com/markets/{series.lower()}/{segments[2].lower()}/{ticker.lower()}",
+        "event_ticker": ticker,
+    }, ""
+
+
+def _resolve_poly_source(ref: dict):
+    """(source metadata, identity check, "") for one open full-game moneyline, or (None, None, reason)."""
+    from sports_skills import polymarket
+
+    slug = ref["event_slug"]
+    try:
+        result = polymarket.get_event_details(slug=slug)
+    except Exception as exc:
+        return None, None, f"Polymarket event fetch failed for '{slug}': {exc}"
+    if not result.get("status"):
+        return None, None, f"Polymarket event fetch failed for '{slug}': {result.get('message', '')}"
+    event = result.get("data") or {}
+    if event.get("slug") != slug:
+        return None, None, f"Polymarket returned event '{event.get('slug')}', not the requested '{slug}'"
+    if event.get("status") != "active":
+        return (
+            None,
+            None,
+            f"Polymarket event '{slug}' is {event.get('status') or 'not active'}; only open markets compare",
+        )
+
+    nested = event.get("markets") or []
+    if ref["market_slug"]:
+        pool = [m for m in nested if m.get("slug") == ref["market_slug"]]
+        if not pool:
+            return None, None, f"Polymarket event '{slug}' has no market '{ref['market_slug']}'"
+        if pool[0].get("sports_market_type") != "moneyline":
+            return (
+                None,
+                None,
+                (
+                    f"Polymarket market '{ref['market_slug']}' is a '{pool[0].get('sports_market_type') or 'untyped'}' "
+                    "market; only the full-game moneyline is supported"
+                ),
+            )
+    else:
+        pool = [m for m in nested if m.get("sports_market_type") == "moneyline"]
+        if not pool:
+            return None, None, f"Polymarket event '{slug}' has no full-game moneyline market"
+    open_pool = [m for m in pool if m.get("status") == "active"]
+    if not open_pool:
+        statuses = ", ".join(f"{m.get('slug')} is {m.get('status')}" for m in pool)
+        return None, None, f"Polymarket moneyline not open ({statuses}); only open markets compare"
+    if len(open_pool) > 1:
+        slugs = ", ".join(str(m.get("slug")) for m in open_pool)
+        return (
+            None,
+            None,
+            f"Ambiguous Polymarket event '{slug}': several open moneylines ({slugs}); paste the market URL",
+        )
+    market = open_pool[0]
+    # The full-game moneyline carries the event's own slug; anything else
+    # (suffixed, other league/date/teams) is not this event's game market.
+    if market.get("slug") != slug:
+        return (
+            None,
+            None,
+            f"Polymarket moneyline '{market.get('slug')}' is not the full-game market of event '{slug}'",
+        )
+    outcomes = market.get("outcomes") or []
+    if len(outcomes) != 2:
+        return (
+            None,
+            None,
+            f"Polymarket market '{market.get('slug')}' has {len(outcomes)} outcomes, not a two-way moneyline",
+        )
+
+    view = {
+        "title": market.get("question", ""),
+        "slug": market.get("slug", ""),
+        "sports_market_type": "moneyline",
+        "outcomes": [{"outcome": o.get("name", "")} for o in outcomes],
+    }
+    source = {
+        "venue": "polymarket",
+        "url": ref["url"],
+        "sport": ref["sport"],
+        "event_id": event.get("id", ""),
+        "event_slug": slug,
+        "title": event.get("title", ""),
+        "market_id": market.get("id", ""),
+        "market_slug": market.get("slug", ""),
+        "question": market.get("question", ""),
+        "status": market.get("status", ""),
+        "outcomes": [o.get("name", "") for o in outcomes],
+    }
+    return source, lambda identity: _poly_market_identity(view, identity, "home"), ""
+
+
+def _resolve_kalshi_source(ref: dict):
+    """(source metadata, identity check, "") for one open game-winner event, or (None, None, reason)."""
+    from sports_skills import kalshi
+
+    ticker, sport = ref["event_ticker"], ref["sport"]
+    try:
+        result = kalshi.get_event(event_ticker=ticker, with_nested_markets=True)
+    except Exception as exc:
+        return None, None, f"Kalshi event fetch failed for '{ticker}': {exc}"
+    if not result.get("status"):
+        return None, None, f"Kalshi event fetch failed for '{ticker}': {result.get('message', '')}"
+    data = result.get("data") or {}
+    event = data.get("event") or {}
+    if str(event.get("event_ticker") or "").upper() != ticker:
+        return None, None, f"Kalshi returned event '{event.get('event_ticker')}', not the requested '{ticker}'"
+    series = ticker.split("-", 1)[0]
+    if event.get("series_ticker") and str(event["series_ticker"]).upper() != series:
+        return None, None, f"Kalshi event '{ticker}' declares series '{event['series_ticker']}', not '{series}'"
+    contracts = event.get("markets") or data.get("markets") or []
+    if len(contracts) != 2:
+        return None, None, f"Kalshi event '{ticker}' has {len(contracts)} markets, not the two sides of one game"
+    for m in contracts:
+        child = str(m.get("ticker") or "").upper()
+        declared = str(m.get("event_ticker") or "").upper()
+        if child.rsplit("-", 1)[0] != ticker or (declared and declared != ticker):
+            return (
+                None,
+                None,
+                f"Kalshi market '{m.get('ticker')}' (event '{m.get('event_ticker') or 'undeclared'}') "
+                f"does not belong to the requested event '{ticker}'",
+            )
+    for m in contracts:
+        if m.get("status") != "active":
+            return (
+                None,
+                None,
+                f"Kalshi market '{m.get('ticker')}' is {m.get('status') or 'not active'}; only open markets compare",
+            )
+
+    def check(identity):
+        sides = set()
+        for m in contracts:
+            ok = [s for s in ("home", "away") if not _kalshi_ticker_identity(m.get("ticker"), sport, identity, s)]
+            if len(ok) != 1:
+                return _kalshi_ticker_identity(m.get("ticker"), sport, identity, "home") or "ticker names both sides"
+            sides.add(ok[0])
+        return "" if sides == {"home", "away"} else f"Kalshi event '{ticker}' does not price both sides"
+
+    source = {
+        "venue": "kalshi",
+        "url": ref["url"],
+        "sport": sport,
+        "event_id": ticker,
+        "series_ticker": event.get("series_ticker", ""),
+        "title": event.get("title", ""),
+        "market_tickers": [m.get("ticker", "") for m in contracts],
+        "status": "active",
+    }
+    return source, check, ""
+
+
+def _resolve_espn_game(sport: str, date: str, check) -> tuple[str | None, str]:
+    """The ONE ESPN event the source market validates against, from date±1 scoreboards."""
+    from datetime import date as _date
+    from datetime import timedelta
+
+    mod = _load_sport_module(sport)
+    if mod is None:
+        return None, f"Could not load module for sport '{sport}'"
+
+    day = _date.fromisoformat(date)
+    failures, matches = [], {}
+    for offset in (-1, 0, 1):
+        when = (day + timedelta(days=offset)).isoformat()
+        try:
+            board = mod.get_scoreboard(date=when)
+        except Exception as exc:
+            board = {"status": False, "message": str(exc)}
+        if not board.get("status"):
+            failures.append(f"{when}: {board.get('message') or 'unknown error'}")
+            continue
+        for event in (board.get("data") or {}).get("events") or []:
+            identity = _game_identity(
+                {"competitors": event.get("competitors"), "game_info": {"start_time": event.get("start_time")}}
+            )
+            # Keyed by ESPN id: the same game shows up on adjacent days.
+            if identity and not check(identity):
+                raw_id = event.get("id")
+                if isinstance(raw_id, int) and not isinstance(raw_id, bool) and raw_id > 0:
+                    event_id = str(raw_id)
+                elif isinstance(raw_id, str) and raw_id.isascii() and raw_id.isdigit():
+                    event_id = raw_id
+                else:
+                    return None, (
+                        f"An ESPN {sport} event on {when} matches this market but has no usable event id "
+                        f"({raw_id!r}); cannot confirm which game to compare"
+                    )
+                matches[event_id] = event
+
+    if len(matches) > 1:
+        return None, f"Ambiguous: ESPN {sport} events {', '.join(sorted(matches))} all match this market"
+    if failures:
+        return (
+            None,
+            f"ESPN {sport} scoreboard failed ({'; '.join(failures)}); cannot confirm which game this market prices",
+        )
+    if not matches:
+        return None, f"No ESPN {sport} game on or around {date} matches this market's teams and date"
+    return next(iter(matches)), ""
+
+
+def compare_market_url(request_data: dict) -> dict:
+    """Pasted Polymarket/Kalshi game URL -> compare_odds for the same ESPN game.
+
+    The URL itself is never fetched: only validated identifiers reach the
+    fixed-host venue adapters, and the venue's own metadata decides the game.
+
+    Params:
+        url (str): https://polymarket.com/event/<slug>[/<market-slug>] or
+            https://kalshi.com/markets/<series>/<slug>/<event-ticker>.
+    """
+    params = request_data.get("params", {})
+    ref, reason = _parse_market_url(params.get("url"))
+    if ref is None:
+        return _error(reason)
+
+    resolve = _resolve_poly_source if ref["venue"] == "polymarket" else _resolve_kalshi_source
+    source, check, reason = resolve(ref)
+    if source is None:
+        return _error(reason)
+    source["match_scope"] = _URL_SCOPE_NOTE
+
+    event_id, reason = _resolve_espn_game(ref["sport"], ref["date"], check)
+    if event_id is None:
+        return _error(reason, {"source_market": source})
+    source["espn_event_id"] = event_id
+
+    result = compare_odds({"params": {"sport": ref["sport"], "event_id": event_id}})
+    data = result.get("data") if isinstance(result.get("data"), dict) else {}
+    found_key = f"{ref['venue']}_markets"
+    source["in_downstream_search"] = None
+    if found_key in data:
+        if ref["venue"] == "polymarket":
+            present = any(str(m.get("market_id")) == str(source["market_id"]) for m in data[found_key] or [])
+        else:
+            present = any(str(e.get("event_ticker", "")).upper() == source["event_id"] for e in data[found_key] or [])
+        source["in_downstream_search"] = present
+        if not present:
+            data.setdefault("warnings", []).append(
+                f"Source {ref['venue']} market {source.get('market_id') or source['event_id']} was not returned by "
+                "the comparison's venue search; its price is not in side_prices"
+            )
+    data["source_market"] = source
+    return {**result, "data": data}
+
+
 def _get_meta_sport_markets(sport: str, status: str, limit: int) -> dict:
     """Fan-out aggregator for sports that span multiple leagues + tournaments.
 
-    A single-league lookup (`sport="epl"`) hits one Kalshi series and one
-    Polymarket sport code. A meta-sport lookup (`sport="football"`) unions:
+    A single-league lookup (`sport="epl"`) runs one Kalshi sport search and
+    one Polymarket sport code. A meta-sport lookup (`sport="football"`) unions:
       - every per-league code in ``META_SPORTS[sport]["leagues"]``
       - every keyword in ``META_SPORTS[sport]["polymarket_keywords"]`` —
         used to surface tournament markets that aren't sport-tagged on the
@@ -1457,15 +2026,13 @@ def _get_meta_sport_markets(sport: str, status: str, limit: int) -> dict:
             try:
                 from sports_skills import kalshi
 
-                result = kalshi.get_markets(
-                    series_ticker=KALSHI_SERIES[league],
-                    status=status,
-                    limit=limit,
-                )
+                result = kalshi.search_markets(sport=league, status=status, limit=limit)
                 if result.get("status"):
                     items = result.get("data", {}).get("markets", []) or []
                     if isinstance(items, list):
                         kalshi_markets.extend(items)
+                else:
+                    warnings.append(f"Kalshi {league} fetch failed: {result.get('message', '')}")
             except Exception as exc:
                 warnings.append(f"Kalshi {league} fetch failed: {exc}")
 
@@ -1521,7 +2088,7 @@ def _get_meta_sport_markets(sport: str, status: str, limit: int) -> dict:
 
 
 def get_sport_markets(request_data: dict) -> dict:
-    """Sports-filtered market listing on both platforms.
+    """Sports-filtered market listing on Kalshi and Polymarket.
 
     Params:
         sport (str): Sport key (nba, nfl, etc.). Also accepts meta-sport
@@ -1549,20 +2116,20 @@ def get_sport_markets(request_data: dict) -> dict:
     kalshi_markets = []
     poly_markets = []
 
-    # Kalshi: filter by series_ticker
+    # Kalshi: every series the kalshi module maps for this sport (game
+    # winners, spreads, totals, futures), not just the one series here.
     if sport in KALSHI_SERIES:
         try:
             from sports_skills import kalshi
 
-            result = kalshi.get_markets(
-                series_ticker=KALSHI_SERIES[sport],
-                status=status,
-                limit=limit,
-            )
+            result = kalshi.search_markets(sport=sport, status=status, limit=limit)
             if result.get("status"):
                 kalshi_markets = result.get("data", {}).get("markets", [])
                 if not isinstance(kalshi_markets, list):
                     kalshi_markets = []
+                kalshi_markets = kalshi_markets[:limit]
+            else:
+                warnings.append(f"Kalshi fetch failed: {result.get('message', '')}")
         except Exception as exc:
             warnings.append(f"Kalshi fetch failed: {exc}")
 
@@ -1628,7 +2195,7 @@ def normalize_price(request_data: dict) -> dict:
 
     Params:
         price (float): The price/odds value.
-        source (str): Source platform — "polymarket", "kalshi", "espn", or
+        source (str): Source platform — "polymarket", "novig", "kalshi", "espn", or
             "prophetx" (American odds, from public selections when an order
             book is exposed or from the authenticated Affiliate surface).
     """
@@ -1640,8 +2207,8 @@ def normalize_price(request_data: dict) -> dict:
         return _error(f"Invalid price: {e}")
 
     source = str(params.get("source", "")).lower()
-    if source not in ("polymarket", "kalshi", "espn", "prophetx"):
-        return _error(f"Unknown source '{source}'. Use 'polymarket', 'kalshi', 'espn', or 'prophetx'.")
+    if source not in ("polymarket", "novig", "kalshi", "espn", "prophetx"):
+        return _error(f"Unknown source '{source}'. Use 'polymarket', 'novig', 'kalshi', 'espn', or 'prophetx'.")
 
     result = _normalize_price(price, source)
     return _success(result, f"Normalized {source} price {price}")
@@ -2795,9 +3362,7 @@ def _resolve_kalshi_game_market(
     # so series without an embedded time still resolve.
     if start_utc is not None:
         candidates = [
-            c
-            for c in candidates
-            if c[1] is None or abs((c[1] - start_utc).total_seconds()) <= _MAX_MARKET_START_SKEW
+            c for c in candidates if c[1] is None or abs((c[1] - start_utc).total_seconds()) <= _MAX_MARKET_START_SKEW
         ]
         if not candidates:
             return None

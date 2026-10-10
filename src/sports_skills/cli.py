@@ -195,6 +195,17 @@ _REGISTRY = {
         "get_todays_events": {"optional": ["sport", "limit"]},
         "get_sports_config": {},
     },
+    "novig": {
+        # Public read-only catalog + order books (prices only on books).
+        "get_sports_config": {},
+        "get_events": {"optional": ["league", "limit", "after"]},
+        "get_event": {"required": ["event_id"]},
+        "get_markets": {"optional": ["event_id", "league", "market_type", "limit", "after"]},
+        "get_market": {"required": ["market_id"]},
+        "get_order_book": {"required": ["market_id"], "optional": ["depth"]},
+        "search_markets": {"optional": ["query", "league", "market_type", "limit"]},
+        "get_todays_events": {"optional": ["league", "limit"]},
+    },
     "esports": {
         "get_pro_matches": {"optional": ["limit", "less_than_match_id"]},
         "get_leagues": {"optional": ["tier", "limit"]},
@@ -235,6 +246,7 @@ _REGISTRY = {
         "get_todays_markets": {"optional": ["sport", "date"]},
         "search_entity": {"required": ["query"], "optional": ["sport"]},
         "compare_odds": {"required": ["sport", "event_id"]},
+        "compare_market_url": {"required": ["url"]},
         "get_sport_markets": {"required": ["sport"], "optional": ["status", "limit"]},
         "get_sport_schedule": {"optional": ["sport", "date"]},
         "normalize_price": {"required": ["price", "source"]},
@@ -378,16 +390,10 @@ _REGISTRY = {
         "get_live_playbyplay": {"required": ["game_id"], "optional": ["limit", "scoring_only"]},
         "get_player_live_stats": {"required": ["player_name"]},
         "find_nba_player": {"required": ["name"]},
-        "get_nbastats_game_log": {
-            "optional": ["season", "team", "season_type", "player_or_team", "player", *_SHAPING]
-        },
+        "get_nbastats_game_log": {"optional": ["season", "team", "season_type", "player_or_team", "player", *_SHAPING]},
         "get_nbastats_player_career": {"optional": ["player_id", "player", "per_mode"]},
-        "get_nbastats_team_stats": {
-            "optional": ["season", "team", "measure", "per_mode", "season_type", *_SHAPING]
-        },
-        "get_nbastats_shot_chart": {
-            "optional": ["player_id", "player", "season", "season_type", *_SHAPING]
-        },
+        "get_nbastats_team_stats": {"optional": ["season", "team", "measure", "per_mode", "season_type", *_SHAPING]},
+        "get_nbastats_shot_chart": {"optional": ["player_id", "player", "season", "season_type", *_SHAPING]},
         "get_nbastats_play_by_play": {"required": ["game_id"], "optional": ["limit"]},
         "get_nbastats_advanced_boxscore": {"required": ["game_id"]},
     },
@@ -428,15 +434,11 @@ _REGISTRY = {
         "find_nhl_player": {"required": ["name"]},
         "get_nhlstats_schedule": {"optional": ["date", "season", "team"]},
         "get_nhlstats_player_stats": {"optional": ["player_id", "player"]},
-        "get_nhlstats_player_game_log": {
-            "optional": ["player_id", "player", "season", "season_type", *_SHAPING]
-        },
+        "get_nhlstats_player_game_log": {"optional": ["player_id", "player", "season", "season_type", *_SHAPING]},
         "get_nhlstats_play_by_play": {"required": ["game_id"], "optional": ["limit"]},
         "get_nhlstats_boxscore": {"required": ["game_id"]},
         "get_nhlstats_standings": {"optional": ["date"]},
-        "get_nhlstats_leaders": {
-            "optional": ["category", "position", "season", "season_type", "limit"]
-        },
+        "get_nhlstats_leaders": {"optional": ["category", "position", "season", "season_type", "limit"]},
     },
     "mlb": {
         "get_scoreboard": {"optional": ["date"]},
@@ -608,6 +610,7 @@ _INT_PARAMS = {
     "window_seconds",
     "lookback_hours",
     "max_seasons",
+    "depth",
 }
 
 # Int params that also accept documented string forms (see _parse_value).
@@ -629,6 +632,10 @@ _FLOAT_PARAMS = {
     "bpi_b",
     "fee_per_contract",
 }
+
+# Float params that are always one number. The rest of _FLOAT_PARAMS also
+# accept comma-separated lists (e.g. devig `odds`) and stay "string" in schemas.
+_SCALAR_FLOAT_PARAMS = {"price", "fee_per_contract"}
 
 # Params that should be parsed as list (comma-separated)
 _LIST_PARAMS = {"tm_player_ids", "token_ids"}
@@ -688,6 +695,10 @@ def _load_module(name):
         from sports_skills import prophetx
 
         return prophetx
+    elif name == "novig":
+        from sports_skills import novig
+
+        return novig
     elif name == "esports":
         from sports_skills import esports
 
@@ -903,6 +914,8 @@ def _param_type(name):
         return "boolean"
     if name in _INT_PARAMS:
         return "integer"
+    if name in _SCALAR_FLOAT_PARAMS:
+        return "number"
     if name in _LIST_PARAMS:
         return "array"
     return "string"
@@ -1112,11 +1125,11 @@ def main():
         description="Lightweight CLI for sports data — football, F1, NFL, NBA, WNBA, NHL, MLB, tennis, cricket, CFB, CBB, golf, volleyball, prediction markets, betting analysis, metadata, and news.",
     )
     parser.add_argument(
-        "module", nargs="?", help="Module name: football, f1, nfl, nba, wnba, nhl, mlb, tennis, cricket, cfb, cbb, golf, volleyball, xctf, esports, polymarket, polymarket-trading, kalshi, prophetx, betting, markets, metadata, news"
+        "module",
+        nargs="?",
+        help="Module name: football, f1, nfl, nba, wnba, nhl, mlb, tennis, cricket, cfb, cbb, golf, volleyball, xctf, esports, polymarket, polymarket-trading, kalshi, prophetx, novig, betting, markets, metadata, news",
     )
-    parser.add_argument(
-        "command", nargs="?", help="Command name (e.g., get_season_standings)"
-    )
+    parser.add_argument("command", nargs="?", help="Command name (e.g., get_season_standings)")
     parser.add_argument("--version", action="store_true", help="Show version")
     parser.add_argument(
         "--canonical",
@@ -1230,8 +1243,7 @@ def main():
     if canonical_mode:
         kwargs.pop("format", None)
     else:
-        for flag, value in (("--observed-at", args.observed_at),
-                            ("--consumer-tier", args.consumer_tier)):
+        for flag, value in (("--observed-at", args.observed_at), ("--consumer-tier", args.consumer_tier)):
             if value is not None:
                 _cli_error(
                     f"{flag} only applies to --format={_CANONICAL_FORMAT} output. "

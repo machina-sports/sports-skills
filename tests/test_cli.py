@@ -46,9 +46,7 @@ class TestParseCliKwargs:
         # `odds` is a float for convert_odds but a comma-separated string
         # for devig — previously float() rejected the multi-outcome form
         # and devig was unusable through the CLI.
-        assert _parse_cli_kwargs(["--odds=-230,+330,+750"]) == {
-            "odds": "-230,+330,+750"
-        }
+        assert _parse_cli_kwargs(["--odds=-230,+330,+750"]) == {"odds": "-230,+330,+750"}
 
     def test_float_param_comma_separated_space_form(self):
         assert _parse_cli_kwargs(["--odds", "-110,-110"]) == {"odds": "-110,-110"}
@@ -114,3 +112,21 @@ class TestDualFormIntParams:
 
         with pytest.raises(ValueError):
             _parse_value("limit", "many")
+
+
+class TestParamSchemaTypes:
+    """Scalar float params advertise "number"; polymorphic ones stay strings."""
+
+    def test_markets_scalar_floats_are_numbers(self):
+        from sports_skills.cli import _generate_schema
+
+        tools = {t["command"]: t for t in _generate_schema("markets")["tools"]}
+        assert tools["normalize_price"]["parameters"]["properties"]["price"]["type"] == "number"
+        fee = tools["evaluate_market"]["parameters"]["properties"]["fee_per_contract"]
+        assert fee["type"] == "number"
+
+    def test_comma_list_float_params_stay_strings(self):
+        from sports_skills.cli import _param_type
+
+        # `odds` is a scalar for convert_odds but a comma list for devig.
+        assert _param_type("odds") == "string"

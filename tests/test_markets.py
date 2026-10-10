@@ -33,6 +33,14 @@ from sports_skills.markets._connector import (
     search_entity,
 )
 
+
+@pytest.fixture(autouse=True)
+def _no_novig():
+    """Keep the Novig venue offline; these tests pin the other venues."""
+    with patch("sports_skills.markets._connector._search_novig", return_value=[]):
+        yield
+
+
 # ============================================================
 # Name Normalization
 # ============================================================
@@ -653,7 +661,9 @@ class TestCompareOddsMocked:
                         "title": "1st Half Moneyline",
                         "type": "moneyline",
                         "selections_available": True,
-                        "outcomes": [{"outcome": "Celtics 1H -120", "odds_american": -120, "implied_probability": 0.5455}],
+                        "outcomes": [
+                            {"outcome": "Celtics 1H -120", "odds_american": -120, "implied_probability": 0.5455}
+                        ],
                     },
                     {
                         "market_key": "19742:258",
@@ -683,9 +693,7 @@ class TestCompareOddsMocked:
     @patch("sports_skills.markets._connector._search_polymarket")
     @patch("sports_skills.markets._connector._search_kalshi")
     @patch("sports_skills.markets._connector._load_sport_module")
-    def test_cross_venue_arb_uses_best_price_per_side(
-        self, mock_load, mock_kalshi, mock_poly, mock_prophetx
-    ):
+    def test_cross_venue_arb_uses_best_price_per_side(self, mock_load, mock_kalshi, mock_poly, mock_prophetx):
         mock_mod = MagicMock()
         mock_mod.get_game_summary.return_value = {
             "status": True,
@@ -930,9 +938,7 @@ class TestEvaluateMarketMocked:
     @patch("sports_skills.markets._connector._search_polymarket")
     @patch("sports_skills.kalshi")
     @patch("sports_skills.markets._connector._load_sport_module")
-    def test_unusable_ticker_does_not_fall_through_to_another_market(
-        self, mock_load, mock_kalshi, mock_poly_search
-    ):
+    def test_unusable_ticker_does_not_fall_through_to_another_market(self, mock_load, mock_kalshi, mock_poly_search):
         # A ticker the caller named explicitly is refused on its own terms.
         # Silently searching up a substitute answered a question nobody asked.
         mock_mod = MagicMock()
@@ -1060,6 +1066,49 @@ class TestGetSportMarketsMocked:
         result = get_sport_markets({"params": {}})
         assert result["status"] is False
 
+    @patch("sports_skills.polymarket")
+    @patch("sports_skills.kalshi")
+    def test_kalshi_uses_sport_search_and_enforces_limit(self, mock_kalshi, mock_poly):
+        # search_markets covers every series for the sport, so full-game
+        # winner markets (KXNFLGAME) surface — not just KXNFL futures.
+        mock_kalshi.search_markets.return_value = {
+            "status": True,
+            "data": {
+                "markets": [
+                    {"ticker": "KXNFLGAME-26SEP21NYGLAR-LAR"},
+                    {"ticker": "KXNFLGAME-26SEP21NYGLAR-NYG"},
+                    {"ticker": "KXNFL-27-LAR"},
+                ]
+            },
+        }
+        mock_poly.search_markets.return_value = {"status": True, "data": {"markets": []}}
+
+        result = get_sport_markets({"params": {"sport": "nfl", "limit": 2}})
+
+        mock_kalshi.search_markets.assert_called_once_with(sport="nfl", status="open", limit=2)
+        mock_kalshi.get_markets.assert_not_called()
+        assert result["data"]["kalshi_count"] == 2
+        assert result["data"]["kalshi"][0]["ticker"] == "KXNFLGAME-26SEP21NYGLAR-LAR"
+
+    @patch("sports_skills.polymarket")
+    @patch("sports_skills.kalshi")
+    def test_failed_kalshi_response_is_a_warning(self, mock_kalshi, mock_poly):
+        mock_kalshi.search_markets.return_value = {"status": False, "data": None, "message": "HTTP 503 from kalshi"}
+        mock_poly.search_markets.return_value = {"status": True, "data": {"markets": [{"id": "P1"}]}}
+
+        result = get_sport_markets({"params": {"sport": "nfl"}})
+
+        assert result["status"] is True
+        assert result["data"]["kalshi_count"] == 0
+        assert any("HTTP 503 from kalshi" in w for w in result["data"].get("warnings", []))
+
+    def test_every_kalshi_code_is_known_to_the_kalshi_module(self):
+        # An unknown code makes kalshi.search_markets scan the global feed.
+        from sports_skills.kalshi._connector import KALSHI_SERIES as KALSHI_MODULE_SERIES
+
+        codes = set(KALSHI_SERIES) | set(META_SPORTS["football"]["leagues"])
+        assert codes <= set(KALSHI_MODULE_SERIES)
+
 
 # ============================================================
 # Meta-Sports (football fan-out)
@@ -1110,7 +1159,7 @@ class TestGetSportMarketsMeta:
     @patch("sports_skills.kalshi")
     def test_football_fans_out_across_leagues_and_fifa_keyword(self, mock_kalshi, mock_poly):
         # Kalshi returns one market per league lookup.
-        mock_kalshi.get_markets.return_value = {
+        mock_kalshi.search_markets.return_value = {
             "status": True,
             "data": {"markets": [{"ticker": "MKT_K", "title": "EPL game"}]},
         }
@@ -1134,8 +1183,12 @@ class TestGetSportMarketsMeta:
         assert result["status"] is True
         assert result["data"]["sport"] == "football"
         # 8 leagues in META_SPORTS["football"]["leagues"] (7 club leagues
-        # + worldcup) → 8 kalshi calls.
-        assert mock_kalshi.get_markets.call_count == 8
+        # + worldcup) → 8 kalshi calls, one per league code.
+        assert mock_kalshi.search_markets.call_count == 8
+        assert [c.kwargs["sport"] for c in mock_kalshi.search_markets.call_args_list] == META_SPORTS["football"][
+            "leagues"
+        ]
+        mock_kalshi.get_markets.assert_not_called()
         # 8 league calls + 1 FIFA keyword call = 9 polymarket calls.
         assert mock_poly.search_markets.call_count == 9
         # All 8 kalshi markets surface (one per league).
@@ -1146,7 +1199,7 @@ class TestGetSportMarketsMeta:
     @patch("sports_skills.polymarket")
     @patch("sports_skills.kalshi")
     def test_soccer_alias_resolves_to_football(self, mock_kalshi, mock_poly):
-        mock_kalshi.get_markets.return_value = {"status": True, "data": {"markets": []}}
+        mock_kalshi.search_markets.return_value = {"status": True, "data": {"markets": []}}
         mock_poly.search_markets.return_value = {"status": True, "data": {"markets": []}}
 
         soccer_result = get_sport_markets({"params": {"sport": "soccer"}})
@@ -1160,7 +1213,7 @@ class TestGetSportMarketsMeta:
     @patch("sports_skills.kalshi")
     def test_dedupe_collapses_duplicate_polymarket_ids(self, mock_kalshi, mock_poly):
         # Kalshi unused for this assertion.
-        mock_kalshi.get_markets.return_value = {"status": True, "data": {"markets": []}}
+        mock_kalshi.search_markets.return_value = {"status": True, "data": {"markets": []}}
         # Every polymarket call returns the SAME market id — dedupe should keep
         # only the first occurrence even across 8 fan-out calls.
         mock_poly.search_markets.return_value = {
@@ -1176,7 +1229,7 @@ class TestGetSportMarketsMeta:
     @patch("sports_skills.kalshi")
     def test_meta_sport_tolerates_per_venue_errors(self, mock_kalshi, mock_poly):
         # Kalshi raises on every call; polymarket keeps working.
-        mock_kalshi.get_markets.side_effect = Exception("kalshi down")
+        mock_kalshi.search_markets.side_effect = Exception("kalshi down")
         mock_poly.search_markets.return_value = {
             "status": True,
             "data": {"markets": [{"id": "P1", "title": "x"}]},
@@ -1191,6 +1244,23 @@ class TestGetSportMarketsMeta:
         assert result["data"]["polymarket_count"] >= 1
         warnings = result["data"].get("warnings", [])
         assert any("kalshi" in w.lower() for w in warnings)
+
+    @patch("sports_skills.polymarket")
+    @patch("sports_skills.kalshi")
+    def test_meta_sport_limit_caps_the_kalshi_union(self, mock_kalshi, mock_poly):
+        calls = {"n": 0}
+
+        def kalshi_side_effect(**kwargs):
+            calls["n"] += 1
+            return {"status": True, "data": {"markets": [{"ticker": f"K{calls['n']}"}]}}
+
+        mock_kalshi.search_markets.side_effect = kalshi_side_effect
+        mock_poly.search_markets.return_value = {"status": True, "data": {"markets": []}}
+
+        result = get_sport_markets({"params": {"sport": "football", "limit": 3}})
+
+        assert all(c.kwargs["limit"] == 3 for c in mock_kalshi.search_markets.call_args_list)
+        assert result["data"]["kalshi_count"] == 3
 
 
 # ============================================================
@@ -1248,8 +1318,16 @@ def _winner_market(event_tail, suffix, yes_bid, status="active", last_price=0, s
     }
 
 
-def _game_summary(home_abbr, home_name, home_loc, away_abbr, away_name, away_loc,
-                   event_date="2026-07-17T17:35Z", short_detail="Mid 6th"):
+def _game_summary(
+    home_abbr,
+    home_name,
+    home_loc,
+    away_abbr,
+    away_name,
+    away_loc,
+    event_date="2026-07-17T17:35Z",
+    short_detail="Mid 6th",
+):
     """Raw ESPN summary header, parametrized over sport/teams for cross-sport tests."""
     return {
         "header": {
@@ -1529,37 +1607,62 @@ class TestResolveGameMarketMocked:
 
 CROSS_SPORT_GAMES = [
     pytest.param(
-        "nba", "KXNBAGAME",
-        "BOS", "Boston Celtics", "Boston",
-        "MIA", "Miami Heat", "Miami",
+        "nba",
+        "KXNBAGAME",
+        "BOS",
+        "Boston Celtics",
+        "Boston",
+        "MIA",
+        "Miami Heat",
+        "Miami",
         "MIABOS",
         id="nba",
     ),
     pytest.param(
-        "nhl", "KXNHLGAME",
-        "TOR", "Toronto Maple Leafs", "Toronto",
-        "BOS", "Boston Bruins", "Boston",
+        "nhl",
+        "KXNHLGAME",
+        "TOR",
+        "Toronto Maple Leafs",
+        "Toronto",
+        "BOS",
+        "Boston Bruins",
+        "Boston",
         "BOSTOR",
         id="nhl",
     ),
     pytest.param(
-        "wnba", "KXWNBAGAME",
-        "IND", "Indiana Fever", "Indiana",
-        "SEA", "Seattle Storm", "Seattle",
+        "wnba",
+        "KXWNBAGAME",
+        "IND",
+        "Indiana Fever",
+        "Indiana",
+        "SEA",
+        "Seattle Storm",
+        "Seattle",
         "SEAIND",
         id="wnba",
     ),
     pytest.param(
-        "cfb", "KXCFBGAME",
-        "OSU", "Ohio State Buckeyes", "Ohio State",
-        "MICH", "Michigan Wolverines", "Michigan",
+        "cfb",
+        "KXCFBGAME",
+        "OSU",
+        "Ohio State Buckeyes",
+        "Ohio State",
+        "MICH",
+        "Michigan Wolverines",
+        "Michigan",
         "MICHOSU",
         id="cfb",
     ),
     pytest.param(
-        "cbb", "KXCBBGAME",
-        "DUKE", "Duke Blue Devils", "Duke",
-        "UNC", "North Carolina Tar Heels", "North Carolina",
+        "cbb",
+        "KXCBBGAME",
+        "DUKE",
+        "Duke Blue Devils",
+        "Duke",
+        "UNC",
+        "North Carolina Tar Heels",
+        "North Carolina",
         "UNCDUKE",
         id="cbb",
     ),
@@ -1574,12 +1677,20 @@ class TestGetLiveTickCrossSport:
     @patch("sports_skills.markets._connector._kalshi_game_search")
     @patch("sports_skills._espn_base.espn_summary")
     def test_shape_conversion_per_sport(
-        self, mock_summary, mock_kalshi,
-        sport, series, home_abbr, home_name, home_loc, away_abbr, away_name, away_loc, pair,
+        self,
+        mock_summary,
+        mock_kalshi,
+        sport,
+        series,
+        home_abbr,
+        home_name,
+        home_loc,
+        away_abbr,
+        away_name,
+        away_loc,
+        pair,
     ):
-        mock_summary.return_value = _game_summary(
-            home_abbr, home_name, home_loc, away_abbr, away_name, away_loc
-        )
+        mock_summary.return_value = _game_summary(home_abbr, home_name, home_loc, away_abbr, away_name, away_loc)
         event_tail = f"26JUL171335{pair}"
         mock_kalshi.return_value = [
             _winner_market(event_tail, away_abbr, 37, series=series),
@@ -1610,11 +1721,26 @@ class TestResolveGameMarketCrossSport:
     @patch("sports_skills.markets._connector._kalshi_game_search")
     @patch("sports_skills._espn_base.espn_summary")
     def test_settled_market_resolves_per_sport(
-        self, mock_summary, mock_kalshi,
-        sport, series, home_abbr, home_name, home_loc, away_abbr, away_name, away_loc, pair,
+        self,
+        mock_summary,
+        mock_kalshi,
+        sport,
+        series,
+        home_abbr,
+        home_name,
+        home_loc,
+        away_abbr,
+        away_name,
+        away_loc,
+        pair,
     ):
         mock_summary.return_value = _game_summary(
-            home_abbr, home_name, home_loc, away_abbr, away_name, away_loc,
+            home_abbr,
+            home_name,
+            home_loc,
+            away_abbr,
+            away_name,
+            away_loc,
             short_detail="Final",
         )
         event_tail = f"26JUL171335{pair}"

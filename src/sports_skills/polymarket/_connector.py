@@ -258,16 +258,11 @@ def _normalize_market(market):
         "end_date": market.get("endDate", ""),
         "created_at": market.get("createdAt", ""),
         "updated_at": market.get("updatedAt", ""),
-        "event_id": market.get("events", [{}])[0].get("id", "")
-        if market.get("events")
-        else "",
+        "event_id": market.get("events", [{}])[0].get("id", "") if market.get("events") else "",
         "sports_market_type": market.get("sportsMarketType", ""),
         "game_id": market.get("gameId", ""),
         "clob_token_ids": clob_token_ids,
-        "tags": [
-            t.get("label", "") if isinstance(t, dict) else t
-            for t in (market.get("tags") or [])
-        ],
+        "tags": [t.get("label", "") if isinstance(t, dict) else t for t in (market.get("tags") or [])],
     }
 
 
@@ -294,10 +289,7 @@ def _normalize_event(event):
         "competitive": event.get("competitive", 0),
         "market_count": len(markets),
         "markets": [_normalize_market(m) for m in markets] if markets else [],
-        "tags": [
-            t.get("label", "") if isinstance(t, dict) else t
-            for t in event.get("tags", [])
-        ],
+        "tags": [t.get("label", "") if isinstance(t, dict) else t for t in event.get("tags", [])],
         "series_id": event.get("seriesId", ""),
     }
 
@@ -355,11 +347,7 @@ def get_sports_markets(request_data):
             return err
 
         # Response is a list of markets
-        markets = (
-            response
-            if isinstance(response, list)
-            else response.get("markets", response)
-        )
+        markets = response if isinstance(response, list) else response.get("markets", response)
         if not isinstance(markets, list):
             markets = []
 
@@ -411,9 +399,7 @@ def get_sports_events(request_data):
         if err:
             return err
 
-        events = (
-            response if isinstance(response, list) else response.get("events", response)
-        )
+        events = response if isinstance(response, list) else response.get("events", response)
         if not isinstance(events, list):
             events = []
 
@@ -448,9 +434,7 @@ def get_series(request_data):
         if err:
             return err
 
-        series_list = (
-            response if isinstance(response, list) else response.get("series", response)
-        )
+        series_list = response if isinstance(response, list) else response.get("series", response)
         if not isinstance(series_list, list):
             series_list = []
 
@@ -503,9 +487,7 @@ def get_market_details(request_data):
 
         normalized = _normalize_market(response)
 
-        return _success(
-            normalized, f"Retrieved market: {normalized.get('question', '')}"
-        )
+        return _success(normalized, f"Retrieved market: {normalized.get('question', '')}")
 
     except Exception as e:
         return _error(f"Error fetching market details: {str(e)}")
@@ -571,22 +553,14 @@ def get_market_prices(request_data):
             if err:
                 return err
 
-            buy_price = _clob_request(
-                "/price", params={"token_id": token_id, "side": "BUY"}
-            )
-            sell_price = _clob_request(
-                "/price", params={"token_id": token_id, "side": "SELL"}
-            )
+            buy_price = _clob_request("/price", params={"token_id": token_id, "side": "BUY"})
+            sell_price = _clob_request("/price", params={"token_id": token_id, "side": "SELL"})
 
             price_data = {
                 "token_id": token_id,
                 "midpoint": _safe_float(midpoint.get("mid")),
-                "buy_price": _safe_float(buy_price.get("price"))
-                if not _check_error(buy_price)
-                else None,
-                "sell_price": _safe_float(sell_price.get("price"))
-                if not _check_error(sell_price)
-                else None,
+                "buy_price": _safe_float(buy_price.get("price")) if not _check_error(buy_price) else None,
+                "sell_price": _safe_float(sell_price.get("price")) if not _check_error(sell_price) else None,
             }
 
             return _success(price_data, "Price data retrieved")
@@ -639,18 +613,12 @@ def get_order_book(request_data):
         # best bid is the highest bid, best ask is the lowest ask. Returned
         # arrays are sorted best-first so consumers reading [0] get the touch.
         norm_bids = sorted(
-            (
-                {"price": _safe_float(b.get("price")), "size": _safe_float(b.get("size"))}
-                for b in bids
-            ),
+            ({"price": _safe_float(b.get("price")), "size": _safe_float(b.get("size"))} for b in bids),
             key=lambda level: level["price"],
             reverse=True,
         )
         norm_asks = sorted(
-            (
-                {"price": _safe_float(a.get("price")), "size": _safe_float(a.get("size"))}
-                for a in asks
-            ),
+            ({"price": _safe_float(a.get("price")), "size": _safe_float(a.get("size"))} for a in asks),
             key=lambda level: level["price"],
         )
         best_bid = norm_bids[0]["price"] if norm_bids else 0
@@ -668,9 +636,7 @@ def get_order_book(request_data):
             "ask_depth": len(asks),
         }
 
-        return _success(
-            book, f"Order book retrieved ({len(bids)} bids, {len(asks)} asks)"
-        )
+        return _success(book, f"Order book retrieved ({len(bids)} bids, {len(asks)} asks)")
 
     except Exception as e:
         return _error(f"Error fetching order book: {str(e)}")
@@ -720,8 +686,19 @@ def search_markets(request_data):
         if sport and not series_id:
             config = _get_sports_config()
             series_id = config.get(sport, {}).get("series")
+            if not series_id:
+                # Never widen a league search to every sport.
+                return _error(f"Could not resolve Polymarket sport '{sport}' to a series; see get_sports_config()")
 
         all_markets = []
+        seen_ids = set()
+
+        def _add(m):
+            # An open event can hold closed markets: each market's own flags
+            # decide, and only real booleans count.
+            if m.get("active") is True and m.get("closed") is not True and m.get("id", "") not in seen_ids:
+                seen_ids.add(m.get("id", ""))
+                all_markets.append(_normalize_market(m))
 
         # Strategy 1: If we have a series_id (from sport param), query events for that league.
         # Order by VOLUME, not startDate: many Polymarket events carry placeholder
@@ -739,19 +716,24 @@ def search_markets(request_data):
                 "ascending": "false",
             }
             response = _gamma_request("/events", params=event_params, ttl=60)
-            if not _check_error(response):
-                events = response if isinstance(response, list) else response.get("events", response)
-                if isinstance(events, list):
-                    for e in events:
-                        if query and not _text_match(query, e):
-                            continue
-                        markets = e.get("markets", [])
-                        if smt:
-                            markets = [m for m in markets if m.get("sportsMarketType", "") == smt]
-                        all_markets.extend([_normalize_market(m) for m in markets])
+            # Sole source for a league search: a provider error is not "no markets".
+            err = _check_error(response)
+            if err:
+                return err
+            events = response if isinstance(response, list) else response.get("events", response)
+            if isinstance(events, list):
+                for e in events:
+                    if query and not _text_match(query, e):
+                        continue
+                    markets = e.get("markets", [])
+                    if smt:
+                        markets = [m for m in markets if m.get("sportsMarketType", "") == smt]
+                    for m in markets:
+                        _add(m)
 
-        # Strategy 2: Query /markets directly (returns single-game markets by volume)
-        if len(all_markets) < limit:
+        # Strategy 2: Query /markets directly (returns single-game markets by volume).
+        # Unscoped by league, so it never refills a league-filtered search.
+        if not series_id and len(all_markets) < limit:
             market_params = {
                 "tag_id": params.get("tag_id", SPORTS_TAG_ID),
                 "limit": 100,
@@ -767,13 +749,10 @@ def search_markets(request_data):
             if not _check_error(response):
                 markets = response if isinstance(response, list) else response.get("markets", response)
                 if isinstance(markets, list):
-                    seen_ids = {m["id"] for m in all_markets}
                     for m in markets:
-                        if m.get("id", "") in seen_ids:
-                            continue
                         if query and not _text_match_market(query, m):
                             continue
-                        all_markets.append(_normalize_market(m))
+                        _add(m)
 
         # Strategy 3: If query provided but no sport, also search /events by volume
         # to find single-game events by name (volume-desc, not startDate — placeholder
@@ -791,7 +770,6 @@ def search_markets(request_data):
             if not _check_error(response):
                 events = response if isinstance(response, list) else response.get("events", response)
                 if isinstance(events, list):
-                    seen_ids = {m["id"] for m in all_markets}
                     for e in events:
                         if not _text_match(query, e):
                             continue
@@ -799,9 +777,7 @@ def search_markets(request_data):
                         if smt:
                             markets = [m for m in markets if m.get("sportsMarketType", "") == smt]
                         for m in markets:
-                            if m.get("id", "") not in seen_ids:
-                                all_markets.append(_normalize_market(m))
-                                seen_ids.add(m.get("id", ""))
+                            _add(m)
 
         return _success(
             {
@@ -867,11 +843,13 @@ def get_sports_config(request_data):
 
         sports = []
         for code, info in sorted(config.items()):
-            sports.append({
-                "sport": code,
-                "series_id": info.get("series", ""),
-                "tags": info.get("tags", ""),
-            })
+            sports.append(
+                {
+                    "sport": code,
+                    "series_id": info.get("series", ""),
+                    "tags": info.get("tags", ""),
+                }
+            )
 
         return _success(
             {"sports": sports, "count": len(sports)},
@@ -932,9 +910,7 @@ def get_todays_events(request_data):
         series_id = config.get(sport, {}).get("series")
         if not series_id:
             available = ", ".join(sorted(config.keys()))
-            return _error(
-                f"Unknown sport '{sport}'. Available: {available}"
-            )
+            return _error(f"Unknown sport '{sport}'. Available: {available}")
 
         # Order by VOLUME, not startDate: Polymarket events often carry placeholder
         # start dates (a World Cup 1X2 event for a June game shows an April date), so
@@ -995,9 +971,7 @@ def get_price_history(request_data):
         if err:
             return err
 
-        history = (
-            response.get("history", []) if isinstance(response, dict) else response
-        )
+        history = response.get("history", []) if isinstance(response, dict) else response
         if not isinstance(history, list):
             history = []
 
@@ -1023,9 +997,7 @@ def get_last_trade_price(request_data):
         if not token_id:
             return _error("token_id is required")
 
-        response = _clob_request(
-            "/last-trade-price", params={"token_id": token_id}, ttl=15
-        )
+        response = _clob_request("/last-trade-price", params={"token_id": token_id}, ttl=15)
         err = _check_error(response)
         if err:
             return err
@@ -1065,19 +1037,14 @@ def get_esports_events(request_data):
         err = _check_error(response)
         if err:
             return err
-        events = (
-            response if isinstance(response, list) else response.get("events", response)
-        )
+        events = response if isinstance(response, list) else response.get("events", response)
         if not isinstance(events, list):
             events = []
         # Skip non-dict entries so one malformed element can't abort the batch.
         normalized = [_normalize_event(e) for e in events if isinstance(e, dict)]
         if query:
             normalized = [
-                e
-                for e in normalized
-                if query in e.get("title", "").lower()
-                or query in e.get("slug", "").lower()
+                e for e in normalized if query in e.get("title", "").lower() or query in e.get("slug", "").lower()
             ]
         return _success(
             {"events": normalized, "count": len(normalized)},

@@ -67,7 +67,7 @@ If the user explicitly asks to place/cancel orders or manage a wallet, stop and 
 
 ### Find Single-Game Markets for a Sport
 1. `search_markets --sport=nba` (or epl, nfl, bun, etc.)
-2. Each market includes outcomes with prices (price = probability).
+2. Each market includes outcomes with prices (price = probability). `search_markets` returns only open markets (its own `active` true and `closed` not true, even when the event is open). A `sport` search stays inside that league, and a sport code that cannot be resolved returns an error, never every sport. Use `get_event_details` to see closed markets.
 3. For detailed prices, use `get_market_prices --token_id=<clob_token_id>`.
 
 ### Today's Events for a League

@@ -10,6 +10,9 @@ No extra dependencies — uses existing sport modules and prediction market modu
 from __future__ import annotations
 
 from sports_skills.markets._connector import (
+    compare_market_url as _compare_market_url,
+)
+from sports_skills.markets._connector import (
     compare_odds as _compare_odds,
 )
 from sports_skills.markets._connector import (
@@ -59,7 +62,7 @@ def _req(**kwargs):
 
 
 def get_todays_markets(*, sport: str | None = None, date: str | None = None) -> dict:
-    """Fetch ESPN schedule, search both exchanges, return unified dashboard.
+    """Fetch ESPN schedule, search Kalshi, Polymarket, ProphetX and Novig, return unified dashboard.
 
     Args:
         sport: Sport key (nba, nfl, mlb, nhl, wnba, cfb, cbb). Omit for all sports.
@@ -69,7 +72,7 @@ def get_todays_markets(*, sport: str | None = None, date: str | None = None) -> 
 
 
 def search_entity(*, query: str, sport: str | None = None) -> dict:
-    """Search Kalshi + Polymarket for a team, player, or event name.
+    """Search Kalshi, Polymarket, ProphetX and Novig for a team, player, or event name.
 
     Args:
         query: Search query (e.g. "Lakers", "Patrick Mahomes", "Super Bowl").
@@ -81,11 +84,31 @@ def search_entity(*, query: str, sport: str | None = None) -> dict:
 def compare_odds(*, sport: str, event_id: str) -> dict:
     """ESPN odds + prediction market prices, normalized side-by-side + arb check.
 
+    Searches Kalshi, Polymarket, ProphetX and Novig. ``side_prices`` lists, per
+    side, only the quotes admitted as this game's full-game moneyline, with the
+    lowest as ``lowest_reference`` — a reference price, not an executable or
+    fee-adjusted quote. Raw ``*_markets`` lists are discovery only.
+
     Args:
         sport: Sport key (nba, nfl, etc.).
         event_id: ESPN event ID (from get_scoreboard or get_sport_schedule).
     """
     return _compare_odds(_req(sport=sport, event_id=event_id))
+
+
+def compare_market_url(*, url: str) -> dict:
+    """Paste a Polymarket or Kalshi game link, get compare_odds for that same game.
+
+    The link is never fetched. Its validated slug/ticker is resolved through
+    the venue API to ONE open full-game moneyline, matched to ONE ESPN game by
+    teams and date, then compared via compare_odds (Kalshi, Polymarket,
+    ProphetX, Novig). ``source_market`` carries the resolved source and
+    ``in_downstream_search``. Same-game moneyline only, no settlement equivalence.
+
+    Args:
+        url: https://polymarket.com/event/<slug>[/<market-slug>] or https://kalshi.com/markets/<series>/<slug>/<event-ticker>.
+    """
+    return _compare_market_url(_req(url=url))
 
 
 def get_sport_markets(*, sport: str, status: str | None = None, limit: int | None = None) -> dict:
@@ -268,7 +291,7 @@ def normalize_price(*, price: float, source: str) -> dict:
 
     Args:
         price: The price/odds value to normalize.
-        source: Source platform — "polymarket", "kalshi", or "espn".
+        source: Source platform — "polymarket", "novig", "kalshi", "espn", or "prophetx".
     """
     return _normalize_price(_req(price=price, source=source))
 

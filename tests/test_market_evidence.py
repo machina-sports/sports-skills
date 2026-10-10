@@ -278,9 +278,7 @@ class TestEvaluateMarketPricing:
             return evaluate_market({"params": request})
 
     def test_away_side_prices_the_away_ticker_at_ask_plus_fee(self):
-        result = self._evaluate(
-            {"kalshi_ticker": KALSHI_AWAY_TICKER, "outcome": 1, "fee_per_contract": 0.005}
-        )
+        result = self._evaluate({"kalshi_ticker": KALSHI_AWAY_TICKER, "outcome": 1, "fee_per_contract": 0.005})
         assert result["status"] is True, result["message"]
         assert result["data"]["side"] == "away"
         assert result["data"]["team"] == "New York Giants"
@@ -312,12 +310,8 @@ class TestEvaluateMarketPricing:
         assert result["data"]["team"] == "New York Giants"
 
     def test_fee_can_flip_a_gross_positive_edge_negative(self):
-        gross = self._evaluate(
-            {"kalshi_ticker": KALSHI_AWAY_TICKER, "outcome": 1, "fee_per_contract": 0.0}
-        )
-        net = self._evaluate(
-            {"kalshi_ticker": KALSHI_AWAY_TICKER, "outcome": 1, "fee_per_contract": 0.02}
-        )
+        gross = self._evaluate({"kalshi_ticker": KALSHI_AWAY_TICKER, "outcome": 1, "fee_per_contract": 0.0})
+        net = self._evaluate({"kalshi_ticker": KALSHI_AWAY_TICKER, "outcome": 1, "fee_per_contract": 0.02})
         assert gross["data"]["evaluation"]["edge"]["edge"] > 0
         assert net["data"]["evaluation"]["edge"]["edge"] < 0
         assert net["data"]["evaluation"]["recommendation"] == "no bet"
@@ -361,9 +355,7 @@ class TestEvaluateMarketPricing:
         assert "depth" in result["message"].lower()
 
     def test_fee_pushing_cost_to_or_past_one_refuses(self):
-        result = self._evaluate(
-            {"kalshi_ticker": KALSHI_AWAY_TICKER, "outcome": 1, "fee_per_contract": 0.8}
-        )
+        result = self._evaluate({"kalshi_ticker": KALSHI_AWAY_TICKER, "outcome": 1, "fee_per_contract": 0.8})
         assert result["data"]["evaluation"] is None
         assert "cost" in result["message"].lower()
 
@@ -631,15 +623,16 @@ class TestNflTeamNews:
 # ============================================================
 
 
-def _compare(summary, kalshi=None, poly=None, prophetx=None):
+def _compare(summary, kalshi=None, poly=None, prophetx=None, novig=None):
     with (
         patch("sports_skills.markets._connector._load_sport_module") as load,
         patch("sports_skills.markets._connector._search_kalshi") as k,
         patch("sports_skills.markets._connector._search_polymarket") as p,
         patch("sports_skills.markets._connector._search_prophetx") as px,
+        patch("sports_skills.markets._connector._search_novig") as nv,
     ):
         load.return_value = _sport_module(summary)
-        for mock, value in ((k, kalshi), (p, poly), (px, prophetx)):
+        for mock, value in ((k, kalshi), (p, poly), (px, prophetx), (nv, novig)):
             if isinstance(value, Exception):
                 mock.side_effect = value
             else:
@@ -748,6 +741,28 @@ PROPHETX_FIRST_HALF_MARKET = {
 }
 
 
+# `_search_novig` shape: a priced two-way MONEY book, outcomes labelled by abbreviation.
+NOVIG_GAME_EVENT = {
+    "source": "novig",
+    "event_id": "01a0f000-0000-7000-8000-000000000001",
+    "title": "New York Giants @ Los Angeles Rams",
+    "scheduled": "2026-09-22T00:15:00Z",
+    "league": "NFL",
+    "markets": [
+        {
+            "market_id": "01a0f000-0000-7000-8000-000000000002",
+            "title": "LAR",
+            "type": "MONEY",
+            "priced": True,
+            "outcomes": [
+                {"outcome": "LAR", "best_bid": 0.72, "derived_ask": 0.74},
+                {"outcome": "NYG", "best_bid": 0.26, "derived_ask": 0.28},
+            ],
+        }
+    ],
+}
+
+
 def _prophetx_event(markets, scheduled="2026-09-22T00:15:00Z"):
     event = {
         "source": "prophetx",
@@ -784,6 +799,51 @@ def _labels(result):
 
 def _dateless_summary(start_time=""):
     return dict(NFL_SUMMARY, game_info=dict(NFL_SUMMARY["game_info"], start_time=start_time))
+
+
+class TestSidePrices:
+    """Admitted per-side reference quotes, exposed for direct comparison."""
+
+    def test_each_side_lists_admitted_venues_and_the_lowest_reference(self):
+        result = _compare(NFL_SUMMARY, kalshi=[_kalshi_event()], poly=[POLY_GAME_MARKET], novig=[NOVIG_GAME_EVENT])
+        home = result["data"]["side_prices"]["home"]
+        away = result["data"]["side_prices"]["away"]
+        assert home["team"] == "Los Angeles Rams"
+        assert away["team"] == "New York Giants"
+        assert [q["venue"] for q in home["quotes"]] == ["espn", "polymarket", "novig", "kalshi"]
+        assert [q["implied_probability"] for q in away["quotes"][1:]] == [0.265, 0.28, 0.26]
+        assert all(q["price_basis"] == "reference" and q["execution_guaranteed"] is False for q in home["quotes"])
+        assert home["lowest_reference"] == home["quotes"][3]
+        assert away["lowest_reference"]["venue"] == "kalshi"
+        # Existing payloads are untouched.
+        assert result["data"]["polymarket_markets"] == [POLY_GAME_MARKET]
+        assert result["data"]["arbitrage_check"]["price_basis"] == "reference"
+
+    def test_rejected_wrong_game_market_is_excluded(self):
+        result = _compare(NFL_SUMMARY, poly=[POLY_WRONG_DATE_MARKET])
+        for side in ("home", "away"):
+            assert [q["venue"] for q in result["data"]["side_prices"][side]["quotes"]] == ["espn"]
+
+    def test_side_without_quotes_has_null_lowest(self):
+        result = _compare(dict(NFL_SUMMARY, odds=None))
+        assert result["data"]["side_prices"]["home"] == {
+            "team": "Los Angeles Rams",
+            "quotes": [],
+            "lowest_reference": None,
+        }
+
+    def test_ties_keep_the_first_admitted_quote(self):
+        # Polymarket and Kalshi both price the Rams at 0.73; gathering order
+        # (polymarket before kalshi) decides.
+        poly = dict(
+            POLY_GAME_MARKET,
+            outcomes=[
+                {"token_id": "111", "outcome": "Giants", "price": 0.27},
+                {"token_id": "222", "outcome": "Rams", "price": 0.73},
+            ],
+        )
+        result = _compare(dict(NFL_SUMMARY, odds=None), kalshi=[_kalshi_event()], poly=[poly])
+        assert result["data"]["side_prices"]["home"]["lowest_reference"]["venue"] == "polymarket"
 
 
 class TestPolymarketDateAdmission:
@@ -888,11 +948,13 @@ class TestKalshiReferenceLegs:
             kalshi=[_kalshi_event()],
             poly=[POLY_GAME_MARKET],
             prophetx=[_prophetx_event([PROPHETX_FULL_GAME_MARKET])],
+            novig=[NOVIG_GAME_EVENT],
         )
         assert result["data"]["completeness"]["complete"] is True
         assert sorted(result["data"]["completeness"]["usable_sources"]) == [
             "espn",
             "kalshi",
+            "novig",
             "polymarket",
             "prophetx",
         ]
@@ -903,9 +965,7 @@ class TestKalshiReferenceLegs:
         assert result["data"]["arbitrage_check"] is None
 
     def test_one_validated_side_is_not_half_a_market(self):
-        one_side = _kalshi_event(
-            markets=[{"ticker": "KXNFLGAME-26SEP21NYGLAR-LAR", "yes_price": 73}]
-        )
+        one_side = _kalshi_event(markets=[{"ticker": "KXNFLGAME-26SEP21NYGLAR-LAR", "yes_price": 73}])
         result = _compare(dict(NFL_SUMMARY, odds=None), kalshi=[one_side])
         assert result["data"]["sources"]["kalshi"]["outcome"] == "unmatched"
         assert result["data"]["arbitrage_check"] is None
@@ -960,9 +1020,7 @@ class TestEvaluateMarketRequiresADate:
     def test_an_undated_event_refuses_the_matching_ticker_too(self):
         # Fail closed: without a date nothing distinguishes this ticker from
         # the December one above.
-        result, _ = self._evaluate(
-            {"kalshi_ticker": KALSHI_AWAY_TICKER, "outcome": 1}, _dateless_summary()
-        )
+        result, _ = self._evaluate({"kalshi_ticker": KALSHI_AWAY_TICKER, "outcome": 1}, _dateless_summary())
         assert result["status"] is False
         assert "start time" in result["message"].lower()
 
@@ -972,9 +1030,7 @@ class TestEvaluateMarketRequiresADate:
         assert "start time" in result["message"].lower()
 
     def test_a_december_ticker_is_refused_on_a_dated_event(self):
-        result, _ = self._evaluate(
-            {"kalshi_ticker": "KXNFLGAME-26DEC21NYGLAR-NYG", "outcome": 1}, NFL_SUMMARY
-        )
+        result, _ = self._evaluate({"kalshi_ticker": "KXNFLGAME-26DEC21NYGLAR-NYG", "outcome": 1}, NFL_SUMMARY)
         assert result["status"] is False
         assert "2026-12-21" in result["message"]
 
@@ -1013,9 +1069,11 @@ class TestPickcenterNullShapes:
         summary = {
             "pickcenter": [
                 {"provider": "unexpected", "moneyline": None},
-                {"provider": {"id": "100", "name": "Draft Kings", "priority": 1},
-                 "homeTeamOdds": {"moneyLine": -298},
-                 "awayTeamOdds": {"moneyLine": 240}},
+                {
+                    "provider": {"id": "100", "name": "Draft Kings", "priority": 1},
+                    "homeTeamOdds": {"moneyLine": -298},
+                    "awayTeamOdds": {"moneyLine": 240},
+                },
             ]
         }
         odds = normalize_summary_odds(summary)
@@ -1027,13 +1085,17 @@ class TestPickcenterNullShapes:
 
         summary = {
             "pickcenter": [
-                {"provider": {"id": "38", "name": "Caesars", "priority": 1},
-                 "moneyline": None,
-                 "homeTeamOdds": {"moneyLine": -310},
-                 "awayTeamOdds": None},
-                {"provider": {"id": "100", "name": "Draft Kings", "priority": 2},
-                 "homeTeamOdds": {"moneyLine": -298},
-                 "awayTeamOdds": {"moneyLine": 240}},
+                {
+                    "provider": {"id": "38", "name": "Caesars", "priority": 1},
+                    "moneyline": None,
+                    "homeTeamOdds": {"moneyLine": -310},
+                    "awayTeamOdds": None,
+                },
+                {
+                    "provider": {"id": "100", "name": "Draft Kings", "priority": 2},
+                    "homeTeamOdds": {"moneyLine": -298},
+                    "awayTeamOdds": {"moneyLine": 240},
+                },
             ]
         }
         odds = normalize_summary_odds(summary)
@@ -1045,10 +1107,12 @@ class TestPickcenterNullShapes:
 
         summary = {
             "pickcenter": [
-                {"provider": {"id": "100", "name": "Draft Kings", "priority": 1},
-                 "moneyline": {"home": {"close": {"odds": "-298"}}, "away": {"close": {"odds": "+240"}}},
-                 "homeTeamOdds": {"moneyLine": -375},
-                 "awayTeamOdds": {"moneyLine": 295}},
+                {
+                    "provider": {"id": "100", "name": "Draft Kings", "priority": 1},
+                    "moneyline": {"home": {"close": {"odds": "-298"}}, "away": {"close": {"odds": "+240"}}},
+                    "homeTeamOdds": {"moneyLine": -375},
+                    "awayTeamOdds": {"moneyLine": 295},
+                },
             ]
         }
         odds = normalize_summary_odds(summary)
