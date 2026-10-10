@@ -1,7 +1,19 @@
-## [Unreleased]
+## [0.36.0]
 
 ### Changed
-- **nfl schedules now expose their coverage and reject unsafe season-only queries.** `get_schedule(season=…)` previously returned a truncated, season-mixed scoreboard window. It now requires `week` with `season`, sends explicit regular/postseason semantics, and schedule responses add a `coverage` block that never claims completeness. Injury records also expose provider-native versus unresolved identity and preserve every unresolved record instead of inviting name-only assumptions.
+- **nfl schedules now expose their coverage and reject unsafe season-only queries.** `get_schedule(season=…)` previously returned a truncated, season-mixed scoreboard window. It now requires `week` with `season`, sends explicit regular/postseason semantics, and schedule responses add a `coverage` block that never claims completeness. Injury records also expose provider-native versus unresolved identity and preserve every unresolved record instead of inviting name-only assumptions (#183).
+
+### Fixed
+- **football: season schedules left out upcoming fixtures** (#182). ESPN team schedules return only played matches, so a season in progress lacked its remaining fixtures. They are now added from ESPN's `fixture=true` feed, after results, so a played match is never replaced. That feed ignores `season`, so a fixture is kept only when the feed's and the event's season both match the requested one; a feed for another season is skipped.
+- **schema probe: no checked source no longer reads as "no drift"** (#180). The nightly schema check (`scripts/nightly_improve.py`) now reports `inconclusive` when no source could be checked and `baseline_error` when the reviewed baseline is missing or invalid, with checked / failed / inconclusive counts. The reviewed `scripts/schema_baseline.json` is never modified by the job; new sources are proposed in the report for review.
+
+### Added
+- **nfl: `get_fantasy_trending`** (#178). Players trending in Sleeper fantasy adds or drops (`trend_type` `add` / `drop`, `lookback_hours` 1-168, `limit` 1-100), from Sleeper's public API, no key. `count` is Sleeper's add/drop tally for the window: popularity, not a projection or betting edge. Players carry `sleeper_player_id` (not an ESPN id), with name, team and position from Sleeper's player catalog and `name_resolved: false` where it has no match.
+- **tennis: `get_wta_entry_list` and `get_wta_player_results`** (#179). The entry list (singles players and doubles teams) for one WTA tournament edition, and a player's most recent matches, newest first (`limit` 1-200, optional `year`; a bounded window, not full history). Both take native WTA ids, not ESPN ids.
+
+### Docs and site
+- **espn-api is a reference skill, not runtime coverage** (#175, #176). README and catalog copy say the prompt-only `espn-api` skill has no CLI command or Python module, returns raw provider-native ESPN JSON, and its league-slug list is a reference inventory, not integrated leagues.
+- **site** (#177, #181). The site build workflow can be run by hand (`workflow_dispatch`), and sports-skills.sh has a redesigned site. Neither changes the Python package.
 
 ## [0.35.0]
 
