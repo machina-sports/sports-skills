@@ -862,6 +862,99 @@ class TestCompareOddsMocked:
         assert result["status"] is False
 
 
+def _compare_prophetx_at(scheduled, espn_start="2026-01-15T00:30Z"):
+    """compare_odds for an ESPN Lakers @ Celtics game against one ProphetX event."""
+    mock_mod = MagicMock()
+    mock_mod.get_game_summary.return_value = {
+        "status": True,
+        "data": {
+            "game_info": {"start_time": espn_start},
+            "competitors": [
+                {"team": {"name": "Boston Celtics"}, "home_away": "home"},
+                {"team": {"name": "Los Angeles Lakers"}, "home_away": "away"},
+            ],
+            "odds": {},
+        },
+    }
+    event = {
+        "source": "prophetx",
+        "event_id": 19742,
+        "title": "Lakers at Celtics",
+        "scheduled": scheduled,
+        "markets": [
+            {
+                "market_key": "19742:219",
+                "title": "Moneyline",
+                "type": "moneyline",
+                "selections_available": True,
+                # Full team names so BOTH legs map to a side; "Lakers +130"
+                # falls below MATCH_THRESHOLD against "Los Angeles Lakers".
+                "outcomes": [
+                    {"outcome": "Boston Celtics", "odds_american": -150, "implied_probability": 0.6},
+                    {"outcome": "Los Angeles Lakers", "odds_american": 130, "implied_probability": 0.4348},
+                ],
+            }
+        ],
+    }
+    with (
+        patch("sports_skills.markets._connector._load_sport_module", return_value=mock_mod),
+        patch("sports_skills.markets._connector._search_kalshi", return_value=[]),
+        patch("sports_skills.markets._connector._search_polymarket", return_value=[]),
+        patch("sports_skills.markets._connector._search_prophetx", return_value=[event]),
+    ):
+        return compare_odds({"params": {"sport": "nba", "event_id": "123"}})["data"]
+
+
+def _prophetx_quotes(data):
+    return [q for side in ("home", "away") for q in data["side_prices"][side]["quotes"] if q["venue"] == "prophetx"]
+
+
+@pytest.mark.parametrize(
+    "scheduled",
+    ["2026-01-16T00:30:00Z", "2026-01-14T00:30:00Z"],
+    ids=["next-day", "previous-day"],
+)
+def test_prophetx_adjacent_day_same_teams_never_prices(scheduled):
+    # UTC/ET day sets of games exactly one day apart still share a day.
+    data = _compare_prophetx_at(scheduled)
+    assert _prophetx_quotes(data) == []
+    for side in ("home", "away"):
+        lowest = data["side_prices"][side]["lowest_reference"]
+        assert lowest is None or lowest["venue"] != "prophetx"
+    assert data["sources"]["prophetx"]["outcome"] == "unmatched"
+    assert "ProphetX event" in data["sources"]["prophetx"]["detail"]
+
+
+@pytest.mark.parametrize(
+    "espn_start, scheduled",
+    [
+        pytest.param("2026-10-20T17:05:00Z", "2026-10-20T22:05:00Z", id="doubleheader-other-game-only"),
+        pytest.param("2026-10-20T03:00:00Z", "2026-10-20T14:00:00Z", id="same-utc-day-11h"),
+        pytest.param("2026-10-20T16:00:00Z", "2026-10-21T04:00:00Z", id="next-utc-day-12h"),
+    ],
+)
+def test_prophetx_same_teams_at_other_start_never_prices(espn_start, scheduled):
+    # Same teams, same or adjacent day, different start instant: a different game.
+    data = _compare_prophetx_at(scheduled, espn_start)
+    assert _prophetx_quotes(data) == []
+    for side in ("home", "away"):
+        lowest = data["side_prices"][side]["lowest_reference"]
+        assert lowest is None or lowest["venue"] != "prophetx"
+    assert data["sources"]["prophetx"]["outcome"] == "unmatched"
+    assert "ProphetX event" in data["sources"]["prophetx"]["detail"]
+
+
+@pytest.mark.parametrize(
+    "scheduled",
+    ["2026-01-15T00:30:00Z", "2026-01-14T19:30:00-05:00"],
+    ids=["same-instant-utc", "same-instant-other-offset"],
+)
+def test_prophetx_same_instant_overnight_game_prices(scheduled):
+    data = _compare_prophetx_at(scheduled)
+    assert data["sources"]["prophetx"]["outcome"] == "ok"
+    assert sorted(q["implied_probability"] for q in _prophetx_quotes(data)) == [0.4348, 0.6]
+
+
 # ============================================================
 # Mocked: Evaluate Market
 # ============================================================

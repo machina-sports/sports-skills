@@ -907,6 +907,21 @@ def _calendar_days(start) -> set[str]:
     }
 
 
+def _same_start(scheduled, start_utc) -> bool:
+    """Require the same scheduled instant, not a nearby same-team game.
+
+    Normalize offsets, but abstain on schedule drift: no tolerance has been
+    established that safely distinguishes a lone wrong doubleheader game.
+    """
+    if not scheduled or start_utc is None:
+        return False
+    try:
+        moment = _parse_iso_utc(scheduled)
+    except (ValueError, TypeError):
+        return False
+    return moment == start_utc
+
+
 # Every cross-venue match is proven by team pair AND date. With no ESPN start
 # time the date leg is missing, and a repeat meeting of the same matchup would
 # validate exactly as well as this one — so nothing validates.
@@ -1423,12 +1438,12 @@ def compare_odds(request_data: dict) -> dict:
     # share the type, and falling back to whichever came first prices a
     # different proposition than the ESPN home/away odds.
     for px in prophetx_matches:
-        if not _calendar_days(px.get("scheduled")) & identity["dates"]:
+        if not _same_start(px.get("scheduled"), identity["start_utc"]):
             _reject(
                 "prophetx",
                 f"ProphetX event '{px.get('title') or px.get('event_id')}' is scheduled "
-                f"{px.get('scheduled') or 'at an unstated time'}; this game is played "
-                f"{' / '.join(sorted(identity['dates'])) or 'at an unstated time'}",
+                f"{px.get('scheduled') or 'at an unstated time'}; this game starts "
+                f"{identity['start'] if identity['start_utc'] is not None else 'at an unstated time'}",
             )
             continue
         game_ml = next(
@@ -1469,10 +1484,10 @@ def compare_odds(request_data: dict) -> dict:
     novig_candidates, novig_rejections = [], []
     for nv in novig_matches:
         title = nv.get("title") or nv.get("event_id")
-        if not _calendar_days(nv.get("scheduled")) & identity["dates"]:
+        if not _same_start(nv.get("scheduled"), identity["start_utc"]):
             novig_rejections.append(
-                f"Novig event '{title}' starts {nv.get('scheduled') or 'at an unstated time'}; this game is "
-                f"played {' / '.join(sorted(identity['dates'])) or 'at an unstated time'}"
+                f"Novig event '{title}' starts {nv.get('scheduled') or 'at an unstated time'}; this game "
+                f"starts {identity['start'] if identity['start_utc'] is not None else 'at an unstated time'}"
             )
             continue
         matching = [

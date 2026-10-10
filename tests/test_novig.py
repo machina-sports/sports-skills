@@ -787,14 +787,14 @@ def test_compare_odds_catalog_only_market_is_not_usable_pricing(upstream, peers_
     assert "novig" not in result["data"]["completeness"]["usable_sources"]
 
 
-def _mlb_doubleheader(upstream, asks):
-    """Two same-day Red Sox @ Yankees Novig events, one MONEY book each."""
+def _mlb_doubleheader(upstream, asks, gap_ms=5 * 3600 * 1000):
+    """Red Sox @ Yankees Novig events ``gap_ms`` apart, one MONEY book each."""
     start = 1792515900000  # 2026-10-20T17:05:00Z
     events, markets = [], []
     for n, (nyy_bid, bos_bid) in enumerate(asks):
         event_id = f"01a112eb-3333-7000-8000-00000000000{n}"
         market_id = f"01a112eb-4444-7000-8000-00000000000{n}"
-        starts = start + n * 5 * 3600 * 1000
+        starts = start + n * gap_ms
         events.append(
             {
                 "eventId": event_id,
@@ -835,8 +835,10 @@ def _mlb_doubleheader(upstream, asks):
 
 
 def test_compare_odds_refuses_to_pool_same_day_doubleheader(upstream, peers_silent):
-    # Best legs from different games: NYY ask 0.45 (game 2) + BOS ask 0.40 (game 1).
-    summary = _mlb_doubleheader(upstream, (("0.6", "0.3"), ("0.35", "0.55")))
+    # Two distinct markets both at ESPN's exact start: nothing tells them
+    # apart, so neither is chosen. Best legs from different games would be
+    # NYY ask 0.45 (game 2) + BOS ask 0.40 (game 1).
+    summary = _mlb_doubleheader(upstream, (("0.6", "0.3"), ("0.35", "0.55")), gap_ms=0)
     espn = types.SimpleNamespace(get_game_summary=lambda event_id: summary)
     with patch.object(peers_silent, "_load_sport_module", return_value=espn):
         result = peers_silent.compare_odds({"params": {"sport": "mlb", "event_id": "401"}})
@@ -844,6 +846,25 @@ def test_compare_odds_refuses_to_pool_same_day_doubleheader(upstream, peers_sile
     assert data["sources"]["novig"]["outcome"] != "ok"
     assert "ambiguous" in data["sources"]["novig"]["detail"]
     assert data["arbitrage_check"] is None
+    assert _novig_quotes(data) == []
+
+
+@pytest.mark.parametrize(
+    "espn_start, expected",
+    [("2026-10-20T17:05:00Z", [0.4, 0.7]), ("2026-10-20T22:05:00Z", [0.45, 0.65])],
+    ids=["game-1", "game-2"],
+)
+def test_compare_odds_doubleheader_selects_exact_start_game(upstream, peers_silent, espn_start, expected):
+    # Game 1 asks NYY 0.70 / BOS 0.40; game 2 asks NYY 0.45 / BOS 0.65. Only
+    # the game starting at ESPN's exact instant may price; the other is
+    # another game, not an ambiguity.
+    summary = _mlb_doubleheader(upstream, (("0.6", "0.3"), ("0.35", "0.55")))
+    summary["data"]["game_info"]["start_time"] = espn_start
+    espn = types.SimpleNamespace(get_game_summary=lambda event_id: summary)
+    with patch.object(peers_silent, "_load_sport_module", return_value=espn):
+        data = peers_silent.compare_odds({"params": {"sport": "mlb", "event_id": "401"}})["data"]
+    assert data["sources"]["novig"]["outcome"] == "ok"
+    assert sorted(round(q["implied_probability"], 4) for q in _novig_quotes(data)) == expected
 
 
 def test_search_entity_keeps_novig_book_provenance(upstream, peers_silent):
@@ -895,3 +916,78 @@ def test_compare_note_acknowledges_novig_complement_ask(upstream, peers_silent):
     note = _compare(peers_silent)["data"]["price_basis_note"].lower()
     assert "novig" in note
     assert "complement" in note
+
+
+# ESPN kicks off 2026-10-10T01:00Z (Oct 9 evening ET). UTC and ET day sets of
+# a game exactly one day away still share a calendar day, so day intersection
+# alone admits the same teams' adjacent game.
+_OVERNIGHT_MS = 1791594000000  # 2026-10-10T01:00:00Z
+_DAY_MS = 24 * 3600 * 1000
+
+
+def _compare_at(upstream, mc, espn_start, novig_ms):
+    """compare_odds with one priced Novig MONEY book (SF ask 0.55, WSH ask 0.48)."""
+    event = dict(SF_EVENT, startsTs=novig_ms)
+    market = dict(copy.deepcopy(SF_MONEY), startsTs=novig_ms)
+    _serve_game(upstream, event=event, markets=(market,), books={SF_MARKET_ID: _book_for(market, ("0.52", "0.45"))})
+    espn = types.SimpleNamespace(get_game_summary=lambda event_id: _summary(espn_start))
+    with patch.object(mc, "_load_sport_module", return_value=espn):
+        return _compare(mc)
+
+
+def _novig_quotes(data):
+    return [q for side in ("home", "away") for q in data["side_prices"][side]["quotes"] if q["venue"] == "novig"]
+
+
+@pytest.mark.parametrize(
+    "novig_ms",
+    [_OVERNIGHT_MS + _DAY_MS, _OVERNIGHT_MS - _DAY_MS],
+    ids=["next-day", "previous-day"],
+)
+def test_compare_odds_excludes_adjacent_day_same_teams(upstream, peers_silent, novig_ms):
+    data = _compare_at(upstream, peers_silent, "2026-10-10T01:00:00Z", novig_ms)["data"]
+    assert _novig_quotes(data) == []
+    for side in ("home", "away"):
+        lowest = data["side_prices"][side]["lowest_reference"]
+        assert lowest is None or lowest["venue"] != "novig"
+    novig = data["sources"]["novig"]
+    assert novig["outcome"] == "unmatched"
+    assert "Novig event" in novig["detail"]
+    assert "novig" not in data["completeness"]["usable_sources"]
+
+
+@pytest.mark.parametrize(
+    "espn_start",
+    ["2026-10-10T01:00:00Z", "2026-10-09T21:00:00-04:00"],
+    ids=["same-instant-utc", "same-instant-other-offset"],
+)
+def test_compare_odds_admits_same_instant_overnight_game(upstream, peers_silent, espn_start):
+    data = _compare_at(upstream, peers_silent, espn_start, _OVERNIGHT_MS)["data"]
+    assert data["sources"]["novig"]["outcome"] == "ok"
+    assert sorted(round(q["implied_probability"], 4) for q in _novig_quotes(data)) == [0.48, 0.55]
+
+
+# Same teams, same or adjacent day, different start instant: a different game.
+_WRONG_START = [
+    pytest.param("2026-10-20T17:05:00Z", "2026-10-20T22:05:00Z", id="doubleheader-other-game-only"),
+    pytest.param("2026-10-20T03:00:00Z", "2026-10-20T14:00:00Z", id="same-utc-day-11h"),
+    pytest.param("2026-10-20T16:00:00Z", "2026-10-21T04:00:00Z", id="next-utc-day-12h"),
+]
+
+
+@pytest.mark.parametrize("espn_start, novig_start", _WRONG_START)
+def test_compare_odds_excludes_same_teams_at_other_start(upstream, peers_silent, espn_start, novig_start):
+    data = _compare_at(upstream, peers_silent, espn_start, _ms(_parse(novig_start)))["data"]
+    assert _novig_quotes(data) == []
+    for side in ("home", "away"):
+        lowest = data["side_prices"][side]["lowest_reference"]
+        assert lowest is None or lowest["venue"] != "novig"
+    assert data["sources"]["novig"]["outcome"] == "unmatched"
+    assert "Novig event" in data["sources"]["novig"]["detail"]
+
+
+def test_compare_odds_novig_abstains_without_espn_start(upstream, peers_silent):
+    data = _compare_at(upstream, peers_silent, "", _OVERNIGHT_MS)["data"]
+    assert _novig_quotes(data) == []
+    assert data["sources"]["novig"]["outcome"] == "unmatched"
+    assert data["sources"]["novig"]["detail"]
