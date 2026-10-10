@@ -2618,6 +2618,29 @@ def get_season_schedule(request_data):
                     all_events[eid] = _normalize_espn_event(e, slug)
         if len(all_events) >= expected_total:
             break
+    # Upcoming fixtures need fixture=true, which ignores `season` and answers
+    # for the current season. Results were collected first, so a played match
+    # is never replaced by a stale fixture copy. A fixture is kept only with
+    # positive season evidence that matches: an unknown season must not leak
+    # into a historical schedule.
+    for tid in team_ids:
+        if len(all_events) >= expected_total:
+            break
+        data = _espn_request(
+            espn_slug, f"teams/{tid}/schedule", {"season": str(year), "fixture": "true"}
+        )
+        if data.get("error"):
+            continue
+        feed_season = (data.get("requestedSeason") or {}).get("year")
+        if feed_season and str(feed_season) != str(year):
+            break  # every team's fixture feed is the same other season
+        for e in data.get("events", []):
+            eid = e.get("id", "")
+            if not eid or eid in all_events:
+                continue
+            seasons = [s for s in (feed_season, (e.get("season") or {}).get("year")) if s]
+            if seasons and all(str(s) == str(year) for s in seasons):
+                all_events[eid] = _normalize_espn_event(e, slug)
     if all_events:
         return {
             "schedules": sorted(
