@@ -21,6 +21,7 @@ from sports_skills._espn_base import (
     fetch_season,
     normalize_boxscore,
     normalize_core_stats,
+    normalize_football_drives,
     normalize_futures,
     normalize_injuries,
     normalize_odds,
@@ -631,56 +632,8 @@ def get_schedule(request_data):
 
 
 def _normalize_drives(summary_data):
-    """Normalize college football drive-by-play data from ESPN summary."""
-    drives_raw = summary_data.get("drives", {})
-    previous = drives_raw.get("previous", [])
-
-    drives = []
-    for d in previous:
-        plays = []
-        for p in d.get("plays", []):
-            play_type = p.get("type", {})
-            plays.append({
-                "id": str(p.get("id", "")),
-                "text": p.get("text", ""),
-                "type": play_type.get("text", ""),
-                "period": p.get("period", {}).get("number", ""),
-                "clock": p.get("clock", {}).get("displayValue", ""),
-                "home_score": p.get("homeScore", ""),
-                "away_score": p.get("awayScore", ""),
-                "scoring_play": p.get("scoringPlay", False),
-                "yards": p.get("statYardage", 0),
-                "is_turnover": p.get("isTurnover", False),
-            })
-        team = d.get("team", {})
-        drives.append({
-            "id": str(d.get("id", "")),
-            "description": d.get("description", ""),
-            "team": {
-                "id": str(team.get("id", "")),
-                "name": team.get("displayName", team.get("name", "")),
-                "abbreviation": team.get("abbreviation", ""),
-            },
-            "result": d.get("displayResult", d.get("result", "")),
-            "is_score": d.get("isScore", False),
-            "yards": d.get("yards", 0),
-            "plays_count": d.get("offensivePlays", len(plays)),
-            "time_elapsed": d.get("timeElapsed", {}).get("displayValue", ""),
-            "start": {
-                "period": d.get("start", {}).get("period", {}).get("number", ""),
-                "clock": d.get("start", {}).get("clock", {}).get("displayValue", ""),
-                "yard_line": d.get("start", {}).get("yardLine", ""),
-                "text": d.get("start", {}).get("text", ""),
-            },
-            "end": {
-                "period": d.get("end", {}).get("period", {}).get("number", ""),
-                "clock": d.get("end", {}).get("clock", {}).get("displayValue", ""),
-                "yard_line": d.get("end", {}).get("yardLine", ""),
-            },
-            "plays": plays,
-        })
-
-    return {"drives": drives, "count": len(drives)}
+    """Normalize college football drive-by-play data from ESPN summary, the drive in progress included."""
+    return normalize_football_drives(summary_data)
 
 
 def get_play_by_play(request_data):

@@ -1,3 +1,12 @@
+## [Unreleased]
+
+### Fixed
+- **nfl, cfb: play-by-play now includes the drive being played.** `get_play_by_play` read only ESPN's `drives.previous` and ignored `drives.current`, so during a game the plays of the drive in progress were missing until the drive ended, and a summary carrying only `current` returned no drives. Drives and plays are now merged by ESPN ID (never by description or clock): a drive repeated in `previous` and `current` appears once, a revised play keeps its most recently `modified` copy, and the drive in progress is flagged `is_current` with `current_drive_id` at the top level.
+- **espn: live game summaries are no longer cached for five minutes.** `espn_summary` now caches a game in progress (`state: in`) for 10 seconds; finished and scheduled games keep 5 minutes. Each summary records `retrieved_at`, the time sports-skills received it, separately from ESPN's own play times.
+
+### Added
+- **nfl, cfb: situation and source times on each play.** Plays add `sequence_number`, `is_penalty`, `start` / `end` down-distance-field-position (`null` when ESPN sends none; a 0 stays 0), and ESPN's `wallclock` and `modified`. The response adds `game_state` and `retrieved_at`.
+
 ## [0.37.1]
 
 ### Fixed

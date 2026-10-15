@@ -1,0 +1,3675 @@
+{
+ "header": {
+  "id": "401872994",
+  "competitions": [
+   {
+    "id": "401872994",
+    "date": "2026-10-13T00:15Z",
+    "status": {
+     "type": {
+      "id": "3",
+      "name": "STATUS_FINAL",
+      "state": "post",
+      "completed": true,
+      "description": "Final",
+      "detail": "Final/OT",
+      "shortDetail": "Final/OT",
+      "altDetail": "OT"
+     },
+     "isTBDFlex": false
+    },
+    "competitors": [
+     {
+      "id": "14",
+      "homeAway": "home",
+      "score": "34",
+      "team": {
+       "id": "14",
+       "abbreviation": "LAR",
+       "displayName": "Los Angeles Rams"
+      }
+     },
+     {
+      "id": "2",
+      "homeAway": "away",
+      "score": "37",
+      "team": {
+       "id": "2",
+       "abbreviation": "BUF",
+       "displayName": "Buffalo Bills"
+      }
+     }
+    ]
+   }
+  ]
+ },
+ "drives": {
+  "previous": [
+   {
+    "id": "4018729941",
+    "description": "4 plays, -5 yards, 1:37",
+    "team": {
+     "id": "2",
+     "name": "Bills",
+     "abbreviation": "BUF",
+     "displayName": "Buffalo Bills",
+     "shortDisplayName": "Bills",
+     "logos": [
+      {
+       "href": "https://a.espncdn.com/i/teamlogos/nfl/500/buf.png",
+       "width": 500,
+       "height": 500,
+       "alt": "",
+       "rel": [
+        "full",
+        "default"
+       ],
+       "lastUpdated": "2024-06-25T18:45Z"
+      },
+      {
+       "href": "https://a.espncdn.com/i/teamlogos/nfl/500-dark/buf.png",
+       "width": 500,
+       "height": 500,
+       "alt": "",
+       "rel": [
+        "full",
+        "dark"
+       ],
+       "lastUpdated": "2024-06-25T18:45Z"
+      },
+      {
+       "href": "https://a.espncdn.com/i/teamlogos/nfl/500/scoreboard/buf.png",
+       "width": 500,
+       "height": 500,
+       "alt": "",
+       "rel": [
+        "full",
+        "scoreboard"
+       ],
+       "lastUpdated": "2024-06-25T18:45Z"
+      },
+      {
+       "href": "https://a.espncdn.com/i/teamlogos/nfl/500-dark/scoreboard/buf.png",
+       "width": 500,
+       "height": 500,
+       "alt": "",
+       "rel": [
+        "full",
+        "scoreboard",
+        "dark"
+       ],
+       "lastUpdated": "2024-06-25T18:45Z"
+      },
+      {
+       "href": "https://a.espncdn.com/guid/232afaf2-01ac-fcc2-8bd6-66550df1703a/logos/grayscale.png",
+       "width": 500,
+       "height": 500,
+       "alt": "",
+       "rel": [
+        "full",
+        "grayscale"
+       ],
+       "lastUpdated": "2026-03-31T12:53Z"
+      },
+      {
+       "href": "https://a.espncdn.com/guid/232afaf2-01ac-fcc2-8bd6-66550df1703a/logos/primary_logo_on_white_color.png",
+       "width": 4096,
+       "height": 4096,
+       "alt": "",
+       "rel": [
+        "full",
+        "primary_logo_on_white_color"
+       ],
+       "lastUpdated": "2026-07-22T20:30Z"
+      },
+      {
+       "href": "https://a.espncdn.com/guid/232afaf2-01ac-fcc2-8bd6-66550df1703a/logos/primary_logo_on_black_color.png",
+       "width": 4096,
+       "height": 4096,
+       "alt": "",
+       "rel": [
+        "full",
+        "primary_logo_on_black_color"
+       ],
+       "lastUpdated": "2026-07-22T20:30Z"
+      },
+      {
+       "href": "https://a.espncdn.com/guid/232afaf2-01ac-fcc2-8bd6-66550df1703a/logos/primary_logo_on_primary_color.png",
+       "width": 4096,
+       "height": 4096,
+       "alt": "",
+       "rel": [
+        "full",
+        "primary_logo_on_primary_color"
+       ],
+       "lastUpdated": "2026-07-22T20:30Z"
+      },
+      {
+       "href": "https://a.espncdn.com/guid/232afaf2-01ac-fcc2-8bd6-66550df1703a/logos/primary_logo_on_secondary_color.png",
+       "width": 4096,
+       "height": 4096,
+       "alt": "",
+       "rel": [
+        "full",
+        "primary_logo_on_secondary_color"
+       ],
+       "lastUpdated": "2026-07-22T20:30Z"
+      },
+      {
+       "href": "https://a.espncdn.com/guid/232afaf2-01ac-fcc2-8bd6-66550df1703a/logos/primary_logo_black.png",
+       "width": 4096,
+       "height": 4096,
+       "alt": "",
+       "rel": [
+        "full",
+        "primary_logo_black"
+       ],
+       "lastUpdated": "2026-07-22T20:30Z"
+      },
+      {
+       "href": "https://a.espncdn.com/guid/232afaf2-01ac-fcc2-8bd6-66550df1703a/logos/primary_logo_white.png",
+       "width": 4096,
+       "height": 4096,
+       "alt": "",
+       "rel": [
+        "full",
+        "primary_logo_white"
+       ],
+       "lastUpdated": "2026-07-22T20:30Z"
+      },
+      {
+       "href": "https://a.espncdn.com/guid/232afaf2-01ac-fcc2-8bd6-66550df1703a/logos/secondary_logo_on_white_color.png",
+       "width": 4096,
+       "height": 4096,
+       "alt": "",
+       "rel": [
+        "full",
+        "secondary_logo_on_white_color"
+       ],
+       "lastUpdated": "2026-07-22T20:30Z"
+      },
+      {
+       "href": "https://a.espncdn.com/guid/232afaf2-01ac-fcc2-8bd6-66550df1703a/logos/secondary_logo_on_black_color.png",
+       "width": 4096,
+       "height": 4096,
+       "alt": "",
+       "rel": [
+        "full",
+        "secondary_logo_on_black_color"
+       ],
+       "lastUpdated": "2026-07-22T20:30Z"
+      },
+      {
+       "href": "https://a.espncdn.com/guid/232afaf2-01ac-fcc2-8bd6-66550df1703a/logos/secondary_logo_on_primary_color.png",
+       "width": 4096,
+       "height": 4096,
+       "alt": "",
+       "rel": [
+        "full",
+        "secondary_logo_on_primary_color"
+       ],
+       "lastUpdated": "2026-07-22T20:30Z"
+      },
+      {
+       "href": "https://a.espncdn.com/guid/232afaf2-01ac-fcc2-8bd6-66550df1703a/logos/secondary_logo_on_secondary_color.png",
+       "width": 4096,
+       "height": 4096,
+       "alt": "",
+       "rel": [
+        "full",
+        "secondary_logo_on_secondary_color"
+       ],
+       "lastUpdated": "2026-07-22T20:30Z"
+      },
+      {
+       "href": "https://a.espncdn.com/guid/232afaf2-01ac-fcc2-8bd6-66550df1703a/logos/secondary_logo_black.png",
+       "width": 4096,
+       "height": 4096,
+       "alt": "",
+       "rel": [
+        "full",
+        "secondary_logo_black"
+       ],
+       "lastUpdated": "2026-07-22T20:30Z"
+      },
+      {
+       "href": "https://a.espncdn.com/guid/232afaf2-01ac-fcc2-8bd6-66550df1703a/logos/secondary_logo_white.png",
+       "width": 4096,
+       "height": 4096,
+       "alt": "",
+       "rel": [
+        "full",
+        "secondary_logo_white"
+       ],
+       "lastUpdated": "2026-07-22T20:30Z"
+      }
+     ]
+    },
+    "start": {
+     "period": {
+      "type": "quarter",
+      "number": 1
+     },
+     "clock": {
+      "displayValue": "15:00"
+     },
+     "yardLine": 26,
+     "text": "LAR 26"
+    },
+    "end": {
+     "period": {
+      "type": "quarter",
+      "number": 1
+     },
+     "clock": {
+      "displayValue": "13:23"
+     },
+     "yardLine": 31,
+     "text": "LAR 31"
+    },
+    "timeElapsed": {
+     "displayValue": "1:37"
+    },
+    "yards": -5,
+    "isScore": true,
+    "offensivePlays": 4,
+    "result": "FG",
+    "shortDisplayResult": "FG",
+    "displayResult": "Field Goal",
+    "plays": [
+     {
+      "id": "40187299440",
+      "sequenceNumber": "4000",
+      "type": {
+       "id": "53",
+       "text": "Kickoff",
+       "abbreviation": "K"
+      },
+      "text": "E.Evans kicks 61 yards from LA 35 to BUF 4. R.Davis pushed ob at LA 26 for 70 yards (E.Evans).",
+      "awayScore": 0,
+      "homeScore": 0,
+      "period": {
+       "number": 1
+      },
+      "clock": {
+       "displayValue": "15:00"
+      },
+      "scoringPlay": false,
+      "priority": false,
+      "modified": "2026-10-13T04:18Z",
+      "wallclock": "2026-10-13T00:15:44Z",
+      "isPenalty": false,
+      "statYardage": 70,
+      "start": {
+       "down": 0,
+       "distance": 0,
+       "yardLine": 35,
+       "yardsToEndzone": 65,
+       "team": {
+        "id": "14"
+       }
+      },
+      "end": {
+       "down": 1,
+       "distance": 10,
+       "yardLine": 26,
+       "yardsToEndzone": 26,
+       "downDistanceText": "1st & 10 at LAR 26",
+       "shortDownDistanceText": "1st & 10",
+       "possessionText": "LAR 26",
+       "team": {
+        "id": "2"
+       }
+      },
+      "isTurnover": false
+     },
+     {
+      "id": "40187299468",
+      "sequenceNumber": "6800",
+      "type": {
+       "id": "5",
+       "text": "Rush",
+       "abbreviation": "RUSH"
+      },
+      "text": "J.Cook up the middle to LA 23 for 3 yards (N.Landman).",
+      "awayScore": 0,
+      "homeScore": 0,
+      "period": {
+       "number": 1
+      },
+      "clock": {
+       "displayValue": "14:50"
+      },
+      "scoringPlay": false,
+      "priority": false,
+      "modified": "2026-10-13T04:18Z",
+      "wallclock": "2026-10-13T00:16:48Z",
+      "isPenalty": false,
+      "statYardage": 3,
+      "start": {
+       "down": 1,
+       "distance": 10,
+       "yardLine": 26,
+       "yardsToEndzone": 26,
+       "downDistanceText": "1st & 10 at LAR 26",
+       "shortDownDistanceText": "1st & 10",
+       "possessionText": "LAR 26",
+       "team": {
+        "id": "2"
+       }
+      },
+      "end": {
+       "down": 2,
+       "distance": 7,
+       "yardLine": 23,
+       "yardsToEndzone": 23,
+       "downDistanceText": "2nd & 7 at LAR 23",
+       "shortDownDistanceText": "2nd & 7",
+       "possessionText": "LAR 23",
+       "team": {
+        "id": "2"
+       }
+      },
+      "isTurnover": false
+     },
+     {
+      "id": "40187299490",
+      "sequenceNumber": "9000",
+      "type": {
+       "id": "3",
+       "text": "Pass Incompletion"
+      },
+      "text": "(Shotgun) J.Allen pass incomplete deep middle to D.Knox.",
+      "awayScore": 0,
+      "homeScore": 0,
+      "period": {
+       "number": 1
+      },
+      "clock": {
+       "displayValue": "14:13"
+      },
+      "scoringPlay": false,
+      "priority": false,
+      "modified": "2026-10-13T04:18Z",
+      "wallclock": "2026-10-13T00:17:25Z",
+      "isPenalty": false,
+      "statYardage": 0,
+      "start": {
+       "down": 2,
+       "distance": 7,
+       "yardLine": 23,
+       "yardsToEndzone": 23,
+       "downDistanceText": "2nd & 7 at LAR 23",
+       "shortDownDistanceText": "2nd & 7",
+       "possessionText": "LAR 23",
+       "team": {
+        "id": "2"
+       }
+      },
+      "end": {
+       "down": 3,
+       "distance": 7,
+       "yardLine": 23,
+       "yardsToEndzone": 23,
+       "downDistanceText": "3rd & 7 at LAR 23",
+       "shortDownDistanceText": "3rd & 7",
+       "possessionText": "LAR 23",
+       "team": {
+        "id": "2"
+       }
+      },
+      "isTurnover": false
+     },
+     {
+      "id": "401872994113",
+      "sequenceNumber": "11300",
+      "type": {
+       "id": "7",
+       "text": "Sack"
+      },
+      "text": "(Shotgun) J.Allen sacked at LA 31 for -8 yards (J.Stewart).",
+      "awayScore": 0,
+      "homeScore": 0,
+      "period": {
+       "number": 1
+      },
+      "clock": {
+       "displayValue": "14:08"
+      },
+      "scoringPlay": false,
+      "priority": false,
+      "modified": "2026-10-13T04:18Z",
+      "wallclock": "2026-10-13T00:18:06Z",
+      "isPenalty": false,
+      "statYardage": -8,
+      "start": {
+       "down": 3,
+       "distance": 7,
+       "yardLine": 23,
+       "yardsToEndzone": 23,
+       "downDistanceText": "3rd & 7 at LAR 23",
+       "shortDownDistanceText": "3rd & 7",
+       "possessionText": "LAR 23",
+       "team": {
+        "id": "2"
+       }
+      },
+      "end": {
+       "down": 4,
+       "distance": 15,
+       "yardLine": 31,
+       "yardsToEndzone": 31,
+       "downDistanceText": "4th & 15 at LAR 31",
+       "shortDownDistanceText": "4th & 15",
+       "possessionText": "LAR 31",
+       "team": {
+        "id": "2"
+       }
+      },
+      "isTurnover": false
+     },
+     {
+      "id": "401872994133",
+      "sequenceNumber": "13300",
+      "type": {
+       "id": "59",
+       "text": "Field Goal Good",
+       "abbreviation": "FG"
+      },
+      "text": "T.Bass 49 yard field goal is GOOD, Center-R.Ferguson, Holder-T.Doman.",
+      "awayScore": 3,
+      "homeScore": 0,
+      "period": {
+       "number": 1
+      },
+      "clock": {
+       "displayValue": "13:23"
+      },
+      "scoringPlay": true,
+      "priority": false,
+      "modified": "2026-10-13T04:18Z",
+      "wallclock": "2026-10-13T00:18:47Z",
+      "isPenalty": false,
+      "statYardage": 49,
+      "start": {
+       "down": 4,
+       "distance": 15,
+       "yardLine": 31,
+       "yardsToEndzone": 31,
+       "downDistanceText": "4th & 15 at LAR 31",
+       "shortDownDistanceText": "4th & 15",
+       "possessionText": "LAR 31",
+       "team": {
+        "id": "2"
+       }
+      },
+      "end": {
+       "down": -1,
+       "distance": 10,
+       "yardLine": 0,
+       "yardsToEndzone": 0,
+       "team": {
+        "id": "2"
+       }
+      },
+      "scoringType": {
+       "name": "field-goal",
+       "displayName": "Field Goal",
+       "abbreviation": "FG"
+      },
+      "isTurnover": false
+     },
+     {
+      "id": "401872994143",
+      "sequenceNumber": "14300",
+      "type": {
+       "id": "74",
+       "text": "Official Timeout",
+       "abbreviation": "Off TO"
+      },
+      "text": "Official Timeout at 13:23.",
+      "awayScore": 3,
+      "homeScore": 0,
+      "period": {
+       "number": 1
+      },
+      "clock": {
+       "displayValue": "13:23"
+      },
+      "scoringPlay": false,
+      "priority": false,
+      "modified": "2026-10-13T04:18Z",
+      "wallclock": "2026-10-13T00:19:12Z",
+      "isPenalty": false,
+      "statYardage": 0,
+      "start": {
+       "down": -1,
+       "distance": 0,
+       "yardLine": 65,
+       "yardsToEndzone": 0,
+       "downDistanceText": " & Goal at BUF 35",
+       "shortDownDistanceText": " & Goal",
+       "possessionText": "BUF 35",
+       "team": {
+        "id": "2"
+       }
+      },
+      "end": {
+       "down": -1,
+       "distance": 0,
+       "yardLine": 65,
+       "yardsToEndzone": 0,
+       "team": {
+        "id": "2"
+       }
+      },
+      "isTurnover": false
+     }
+    ]
+   },
+   {
+    "id": "4018729942",
+    "description": "14 plays, 38 yards, 7:48",
+    "team": {
+     "id": "14",
+     "name": "Rams",
+     "abbreviation": "LAR",
+     "displayName": "Los Angeles Rams",
+     "shortDisplayName": "Rams",
+     "logos": [
+      {
+       "href": "https://a.espncdn.com/i/teamlogos/nfl/500/lar.png",
+       "width": 500,
+       "height": 500,
+       "alt": "",
+       "rel": [
+        "full",
+        "default"
+       ],
+       "lastUpdated": "2026-04-24T14:36Z"
+      },
+      {
+       "href": "https://a.espncdn.com/i/teamlogos/nfl/500-dark/lar.png",
+       "width": 500,
+       "height": 500,
+       "alt": "",
+       "rel": [
+        "full",
+        "dark"
+       ],
+       "lastUpdated": "2026-04-24T14:27Z"
+      },
+      {
+       "href": "https://a.espncdn.com/i/teamlogos/nfl/500/scoreboard/lar.png",
+       "width": 500,
+       "height": 500,
+       "alt": "",
+       "rel": [
+        "full",
+        "scoreboard"
+       ],
+       "lastUpdated": "2026-04-24T14:36Z"
+      },
+      {
+       "href": "https://a.espncdn.com/i/teamlogos/nfl/500-dark/scoreboard/lar.png",
+       "width": 500,
+       "height": 500,
+       "alt": "",
+       "rel": [
+        "full",
+        "scoreboard",
+        "dark"
+       ],
+       "lastUpdated": "2026-04-24T14:27Z"
+      },
+      {
+       "href": "https://a.espncdn.com/guid/2e1473b2-e269-fd7a-1137-c1edacb85986/logos/grayscale.png",
+       "width": 500,
+       "height": 500,
+       "alt": "",
+       "rel": [
+        "full",
+        "grayscale"
+       ],
+       "lastUpdated": "2026-03-31T12:52Z"
+      },
+      {
+       "href": "https://a.espncdn.com/guid/2e1473b2-e269-fd7a-1137-c1edacb85986/logos/primary_logo_on_white_color.png",
+       "width": 4096,
+       "height": 4096,
+       "alt": "",
+       "rel": [
+        "full",
+        "primary_logo_on_white_color"
+       ],
+       "lastUpdated": "2026-07-22T20:30Z"
+      },
+      {
+       "href": "https://a.espncdn.com/guid/2e1473b2-e269-fd7a-1137-c1edacb85986/logos/primary_logo_on_black_color.png",
+       "width": 4096,
+       "height": 4096,
+       "alt": "",
+       "rel": [
+        "full",
+        "primary_logo_on_black_color"
+       ],
+       "lastUpdated": "2026-07-22T20:30Z"
+      },
+      {
+       "href": "https://a.espncdn.com/guid/2e1473b2-e269-fd7a-1137-c1edacb85986/logos/primary_logo_on_primary_color.png",
+       "width": 4096,
+       "height": 4096,
+       "alt": "",
+       "rel": [
+        "full",
+        "primary_logo_on_primary_color"
+       ],
+       "lastUpdated": "2026-07-22T20:30Z"
+      },
+      {
+       "href": "https://a.espncdn.com/guid/2e1473b2-e269-fd7a-1137-c1edacb85986/logos/primary_logo_on_secondary_color.png",
+       "width": 4096,
+       "height": 4096,
+       "alt": "",
+       "rel": [
+        "full",
+        "primary_logo_on_secondary_color"
+       ],
+       "lastUpdated": "2026-07-22T20:30Z"
+      },
+      {
+       "href": "https://a.espncdn.com/guid/2e1473b2-e269-fd7a-1137-c1edacb85986/logos/primary_logo_black.png",
+       "width": 4096,
+       "height": 4096,
+       "alt": "",
+       "rel": [
+        "full",
+        "primary_logo_black"
+       ],
+       "lastUpdated": "2026-07-22T20:30Z"
+      },
+      {
+       "href": "https://a.espncdn.com/guid/2e1473b2-e269-fd7a-1137-c1edacb85986/logos/primary_logo_white.png",
+       "width": 4096,
+       "height": 4096,
+       "alt": "",
+       "rel": [
+        "full",
+        "primary_logo_white"
+       ],
+       "lastUpdated": "2026-07-22T20:30Z"
+      },
+      {
+       "href": "https://a.espncdn.com/guid/2e1473b2-e269-fd7a-1137-c1edacb85986/logos/secondary_logo_on_white_color.png",
+       "width": 4096,
+       "height": 4096,
+       "alt": "",
+       "rel": [
+        "full",
+        "secondary_logo_on_white_color"
+       ],
+       "lastUpdated": "2026-07-22T20:30Z"
+      },
+      {
+       "href": "https://a.espncdn.com/guid/2e1473b2-e269-fd7a-1137-c1edacb85986/logos/secondary_logo_on_black_color.png",
+       "width": 4096,
+       "height": 4096,
+       "alt": "",
+       "rel": [
+        "full",
+        "secondary_logo_on_black_color"
+       ],
+       "lastUpdated": "2026-07-22T20:30Z"
+      },
+      {
+       "href": "https://a.espncdn.com/guid/2e1473b2-e269-fd7a-1137-c1edacb85986/logos/secondary_logo_on_primary_color.png",
+       "width": 4096,
+       "height": 4096,
+       "alt": "",
+       "rel": [
+        "full",
+        "secondary_logo_on_primary_color"
+       ],
+       "lastUpdated": "2026-07-22T20:30Z"
+      },
+      {
+       "href": "https://a.espncdn.com/guid/2e1473b2-e269-fd7a-1137-c1edacb85986/logos/secondary_logo_on_secondary_color.png",
+       "width": 4096,
+       "height": 4096,
+       "alt": "",
+       "rel": [
+        "full",
+        "secondary_logo_on_secondary_color"
+       ],
+       "lastUpdated": "2026-07-22T20:30Z"
+      },
+      {
+       "href": "https://a.espncdn.com/guid/2e1473b2-e269-fd7a-1137-c1edacb85986/logos/secondary_logo_black.png",
+       "width": 4096,
+       "height": 4096,
+       "alt": "",
+       "rel": [
+        "full",
+        "secondary_logo_black"
+       ],
+       "lastUpdated": "2026-07-22T20:30Z"
+      },
+      {
+       "href": "https://a.espncdn.com/guid/2e1473b2-e269-fd7a-1137-c1edacb85986/logos/secondary_logo_white.png",
+       "width": 4096,
+       "height": 4096,
+       "alt": "",
+       "rel": [
+        "full",
+        "secondary_logo_white"
+       ],
+       "lastUpdated": "2026-07-22T20:30Z"
+      }
+     ]
+    },
+    "start": {
+     "period": {
+      "type": "quarter",
+      "number": 1
+     },
+     "clock": {
+      "displayValue": "13:23"
+     },
+     "yardLine": 30,
+     "text": "LAR 30"
+    },
+    "end": {
+     "period": {
+      "type": "quarter",
+      "number": 1
+     },
+     "clock": {
+      "displayValue": "5:35"
+     },
+     "yardLine": 68,
+     "text": "BUF 32"
+    },
+    "timeElapsed": {
+     "displayValue": "7:48"
+    },
+    "yards": 38,
+    "isScore": false,
+    "offensivePlays": 14,
+    "result": "MISSED FG",
+    "shortDisplayResult": "MISSED FG",
+    "displayResult": "Missed FG",
+    "plays": [
+     {
+      "id": "401872994153",
+      "sequenceNumber": "15300",
+      "type": {
+       "id": "53",
+       "text": "Kickoff",
+       "abbreviation": "K"
+      },
+      "text": "T.Bass kicks 58 yards from BUF 35 to LA 7. A.Bachman to LA 30 for 23 yards (J.Solomon).",
+      "awayScore": 3,
+      "homeScore": 0,
+      "period": {
+       "number": 1
+      },
+      "clock": {
+       "displayValue": "13:23"
+      },
+      "scoringPlay": false,
+      "priority": false,
+      "modified": "2026-10-13T04:18Z",
+      "wallclock": "2026-10-13T00:21:43Z",
+      "isPenalty": false,
+      "statYardage": 23,
+      "start": {
+       "down": 0,
+       "distance": 0,
+       "yardLine": 65,
+       "yardsToEndzone": 65,
+       "team": {
+        "id": "2"
+       }
+      },
+      "end": {
+       "down": 1,
+       "distance": 10,
+       "yardLine": 30,
+       "yardsToEndzone": 70,
+       "downDistanceText": "1st & 10 at LAR 30",
+       "shortDownDistanceText": "1st & 10",
+       "possessionText": "LAR 30",
+       "team": {
+        "id": "14"
+       }
+      },
+      "isTurnover": false
+     },
+     {
+      "id": "401872994183",
+      "sequenceNumber": "18300",
+      "type": {
+       "id": "24",
+       "text": "Pass Reception",
+       "abbreviation": "REC"
+      },
+      "text": "(Shotgun) M.Stafford pass short left to C.Parkinson pushed ob at LA 33 for 3 yards (C.Benford).",
+      "awayScore": 3,
+      "homeScore": 0,
+      "period": {
+       "number": 1
+      },
+      "clock": {
+       "displayValue": "13:18"
+      },
+      "scoringPlay": false,
+      "priority": false,
+      "modified": "2026-10-13T04:18Z",
+      "wallclock": "2026-10-13T00:22:21Z",
+      "isPenalty": false,
+      "statYardage": 3,
+      "start": {
+       "down": 1,
+       "distance": 10,
+       "yardLine": 30,
+       "yardsToEndzone": 70,
+       "downDistanceText": "1st & 10 at LAR 30",
+       "shortDownDistanceText": "1st & 10",
+       "possessionText": "LAR 30",
+       "team": {
+        "id": "14"
+       }
+      },
+      "end": {
+       "down": 2,
+       "distance": 7,
+       "yardLine": 33,
+       "yardsToEndzone": 67,
+       "downDistanceText": "2nd & 7 at LAR 33",
+       "shortDownDistanceText": "2nd & 7",
+       "possessionText": "LAR 33",
+       "team": {
+        "id": "14"
+       }
+      },
+      "yardsAfterCatch": 2,
+      "isTurnover": false
+     },
+     {
+      "id": "401872994213",
+      "sequenceNumber": "21300",
+      "type": {
+       "id": "24",
+       "text": "Pass Reception",
+       "abbreviation": "REC"
+      },
+      "text": "M.Stafford pass short left to P.Nacua to LA 37 for 4 yards (C.Benford).",
+      "awayScore": 3,
+      "homeScore": 0,
+      "period": {
+       "number": 1
+      },
+      "clock": {
+       "displayValue": "12:41"
+      },
+      "scoringPlay": false,
+      "priority": false,
+      "modified": "2026-10-13T04:18Z",
+      "wallclock": "2026-10-13T00:23:04Z",
+      "isPenalty": false,
+      "statYardage": 4,
+      "start": {
+       "down": 2,
+       "distance": 7,
+       "yardLine": 33,
+       "yardsToEndzone": 67,
+       "downDistanceText": "2nd & 7 at LAR 33",
+       "shortDownDistanceText": "2nd & 7",
+       "possessionText": "LAR 33",
+       "team": {
+        "id": "14"
+       }
+      },
+      "end": {
+       "down": 3,
+       "distance": 3,
+       "yardLine": 37,
+       "yardsToEndzone": 63,
+       "downDistanceText": "3rd & 3 at LAR 37",
+       "shortDownDistanceText": "3rd & 3",
+       "possessionText": "LAR 37",
+       "team": {
+        "id": "14"
+       }
+      },
+      "yardsAfterCatch": 1,
+      "isTurnover": false
+     },
+     {
+      "id": "401872994238",
+      "sequenceNumber": "23800",
+      "type": {
+       "id": "24",
+       "text": "Pass Reception",
+       "abbreviation": "REC"
+      },
+      "text": "(Shotgun) M.Stafford pass short left to P.Nacua to LA 41 for 4 yards (C.Benford).",
+      "awayScore": 3,
+      "homeScore": 0,
+      "period": {
+       "number": 1
+      },
+      "clock": {
+       "displayValue": "12:02"
+      },
+      "scoringPlay": false,
+      "priority": false,
+      "modified": "2026-10-13T04:18Z",
+      "wallclock": "2026-10-13T00:23:43Z",
+      "isPenalty": false,
+      "statYardage": 4,
+      "start": {
+       "down": 3,
+       "distance": 3,
+       "yardLine": 37,
+       "yardsToEndzone": 63,
+       "downDistanceText": "3rd & 3 at LAR 37",
+       "shortDownDistanceText": "3rd & 3",
+       "possessionText": "LAR 37",
+       "team": {
+        "id": "14"
+       }
+      },
+      "end": {
+       "down": 1,
+       "distance": 10,
+       "yardLine": 41,
+       "yardsToEndzone": 59,
+       "downDistanceText": "1st & 10 at LAR 41",
+       "shortDownDistanceText": "1st & 10",
+       "possessionText": "LAR 41",
+       "team": {
+        "id": "14"
+       }
+      },
+      "yardsAfterCatch": 0,
+      "isTurnover": false
+     },
+     {
+      "id": "401872994263",
+      "sequenceNumber": "26300",
+      "type": {
+       "id": "8",
+       "text": "Penalty",
+       "abbreviation": "PEN"
+      },
+      "text": "PENALTY on LA-K.Dotson, False Start, 5 yards, enforced at LA 41 - No Play.",
+      "awayScore": 3,
+      "homeScore": 0,
+      "period": {
+       "number": 1
+      },
+      "clock": {
+       "displayValue": "11:25"
+      },
+      "scoringPlay": false,
+      "priority": false,
+      "modified": "2026-10-13T04:18Z",
+      "wallclock": "2026-10-13T00:24:20Z",
+      "isPenalty": true,
+      "statYardage": -5,
+      "start": {
+       "down": 1,
+       "distance": 10,
+       "yardLine": 41,
+       "yardsToEndzone": 59,
+       "downDistanceText": "1st & 10 at LAR 41",
+       "shortDownDistanceText": "1st & 10",
+       "possessionText": "LAR 41",
+       "team": {
+        "id": "14"
+       }
+      },
+      "end": {
+       "down": 1,
+       "distance": 15,
+       "yardLine": 36,
+       "yardsToEndzone": 64,
+       "downDistanceText": "1st & 15 at LAR 36",
+       "shortDownDistanceText": "1st & 15",
+       "possessionText": "LAR 36",
+       "team": {
+        "id": "14"
+       }
+      },
+      "penalty": {
+       "yards": 5,
+       "type": {
+        "slug": "false-start",
+        "text": "False Start"
+       },
+       "status": {
+        "slug": "accepted",
+        "text": "Accepted"
+       }
+      },
+      "isTurnover": false
+     },
+     {
+      "id": "401872994287",
+      "sequenceNumber": "28700",
+      "type": {
+       "id": "5",
+       "text": "Rush",
+       "abbreviation": "RUSH"
+      },
+      "text": "K.Williams up the middle to LA 43 for 7 yards (C.Gardner-Johnson).",
+      "awayScore": 3,
+      "homeScore": 0,
+      "period": {
+       "number": 1
+      },
+      "clock": {
+       "displayValue": "11:11"
+      },
+      "scoringPlay": false,
+      "priority": false,
+      "modified": "2026-10-13T04:18Z",
+      "wallclock": "2026-10-13T00:24:56Z",
+      "isPenalty": false,
+      "statYardage": 7,
+      "start": {
+       "down": 1,
+       "distance": 15,
+       "yardLine": 36,
+       "yardsToEndzone": 64,
+       "downDistanceText": "1st & 15 at LAR 36",
+       "shortDownDistanceText": "1st & 15",
+       "possessionText": "LAR 36",
+       "team": {
+        "id": "14"
+       }
+      },
+      "end": {
+       "down": 2,
+       "distance": 8,
+       "yardLine": 43,
+       "yardsToEndzone": 57,
+       "downDistanceText": "2nd & 8 at LAR 43",
+       "shortDownDistanceText": "2nd & 8",
+       "possessionText": "LAR 43",
+       "team": {
+        "id": "14"
+       }
+      },
+      "isTurnover": false
+     },
+     {
+      "id": "401872994309",
+      "sequenceNumber": "30900",
+      "type": {
+       "id": "24",
+       "text": "Pass Reception",
+       "abbreviation": "REC"
+      },
+      "text": "M.Stafford pass short right to P.Nacua ran ob at BUF 48 for 9 yards.",
+      "awayScore": 3,
+      "homeScore": 0,
+      "period": {
+       "number": 1
+      },
+      "clock": {
+       "displayValue": "10:31"
+      },
+      "scoringPlay": false,
+      "priority": false,
+      "modified": "2026-10-13T04:18Z",
+      "wallclock": "2026-10-13T00:25:35Z",
+      "isPenalty": false,
+      "statYardage": 9,
+      "start": {
+       "down": 2,
+       "distance": 8,
+       "yardLine": 43,
+       "yardsToEndzone": 57,
+       "downDistanceText": "2nd & 8 at LAR 43",
+       "shortDownDistanceText": "2nd & 8",
+       "possessionText": "LAR 43",
+       "team": {
+        "id": "14"
+       }
+      },
+      "end": {
+       "down": 1,
+       "distance": 10,
+       "yardLine": 52,
+       "yardsToEndzone": 48,
+       "downDistanceText": "1st & 10 at BUF 48",
+       "shortDownDistanceText": "1st & 10",
+       "possessionText": "BUF 48",
+       "team": {
+        "id": "14"
+       }
+      },
+      "yardsAfterCatch": 0,
+      "isTurnover": false
+     },
+     {
+      "id": "401872994339",
+      "sequenceNumber": "33900",
+      "type": {
+       "id": "24",
+       "text": "Pass Reception",
+       "abbreviation": "REC"
+      },
+      "text": "(Shotgun) M.Stafford pass short right to K.Williams pushed ob at BUF 48 for no gain (C.Benford; T.Parker).",
+      "awayScore": 3,
+      "homeScore": 0,
+      "period": {
+       "number": 1
+      },
+      "clock": {
+       "displayValue": "9:54"
+      },
+      "scoringPlay": false,
+      "priority": false,
+      "modified": "2026-10-13T04:18Z",
+      "wallclock": "2026-10-13T00:26:20Z",
+      "isPenalty": false,
+      "statYardage": 0,
+      "start": {
+       "down": 1,
+       "distance": 10,
+       "yardLine": 52,
+       "yardsToEndzone": 48,
+       "downDistanceText": "1st & 10 at BUF 48",
+       "shortDownDistanceText": "1st & 10",
+       "possessionText": "BUF 48",
+       "team": {
+        "id": "14"
+       }
+      },
+      "end": {
+       "down": 2,
+       "distance": 10,
+       "yardLine": 52,
+       "yardsToEndzone": 48,
+       "downDistanceText": "2nd & 10 at BUF 48",
+       "shortDownDistanceText": "2nd & 10",
+       "possessionText": "BUF 48",
+       "team": {
+        "id": "14"
+       }
+      },
+      "yardsAfterCatch": 6,
+      "isTurnover": false
+     },
+     {
+      "id": "401872994364",
+      "sequenceNumber": "36400",
+      "type": {
+       "id": "24",
+       "text": "Pass Reception",
+       "abbreviation": "REC"
+      },
+      "text": "(Shotgun) M.Stafford pass short right to T.Higbee to BUF 39 for 9 yards (T.Bernard).",
+      "awayScore": 3,
+      "homeScore": 0,
+      "period": {
+       "number": 1
+      },
+      "clock": {
+       "displayValue": "9:20"
+      },
+      "scoringPlay": false,
+      "priority": false,
+      "modified": "2026-10-13T04:18Z",
+      "wallclock": "2026-10-13T00:27:02Z",
+      "isPenalty": false,
+      "statYardage": 9,
+      "start": {
+       "down": 2,
+       "distance": 10,
+       "yardLine": 52,
+       "yardsToEndzone": 48,
+       "downDistanceText": "2nd & 10 at BUF 48",
+       "shortDownDistanceText": "2nd & 10",
+       "possessionText": "BUF 48",
+       "team": {
+        "id": "14"
+       }
+      },
+      "end": {
+       "down": 3,
+       "distance": 1,
+       "yardLine": 61,
+       "yardsToEndzone": 39,
+       "downDistanceText": "3rd & 1 at BUF 39",
+       "shortDownDistanceText": "3rd & 1",
+       "possessionText": "BUF 39",
+       "team": {
+        "id": "14"
+       }
+      },
+      "yardsAfterCatch": 4,
+      "isTurnover": false
+     },
+     {
+      "id": "401872994389",
+      "sequenceNumber": "38900",
+      "type": {
+       "id": "5",
+       "text": "Rush",
+       "abbreviation": "RUSH"
+      },
+      "text": "(Shotgun) K.Williams up the middle to BUF 39 for no gain (T.Bernard; T.Sanders).",
+      "awayScore": 3,
+      "homeScore": 0,
+      "period": {
+       "number": 1
+      },
+      "clock": {
+       "displayValue": "8:40"
+      },
+      "scoringPlay": false,
+      "priority": false,
+      "modified": "2026-10-13T04:18Z",
+      "wallclock": "2026-10-13T00:27:42Z",
+      "isPenalty": false,
+      "statYardage": 0,
+      "start": {
+       "down": 3,
+       "distance": 1,
+       "yardLine": 61,
+       "yardsToEndzone": 39,
+       "downDistanceText": "3rd & 1 at BUF 39",
+       "shortDownDistanceText": "3rd & 1",
+       "possessionText": "BUF 39",
+       "team": {
+        "id": "14"
+       }
+      },
+      "end": {
+       "down": 4,
+       "distance": 1,
+       "yardLine": 61,
+       "yardsToEndzone": 39,
+       "downDistanceText": "4th & 1 at BUF 39",
+       "shortDownDistanceText": "4th & 1",
+       "possessionText": "BUF 39",
+       "team": {
+        "id": "14"
+       }
+      },
+      "isTurnover": false
+     },
+     {
+      "id": "401872994411",
+      "sequenceNumber": "41100",
+      "type": {
+       "id": "5",
+       "text": "Rush",
+       "abbreviation": "RUSH"
+      },
+      "text": "K.Williams left guard to BUF 37 for 2 yards (C.Bishop; D.Igbinosun).",
+      "awayScore": 3,
+      "homeScore": 0,
+      "period": {
+       "number": 1
+      },
+      "clock": {
+       "displayValue": "8:00"
+      },
+      "scoringPlay": false,
+      "priority": false,
+      "modified": "2026-10-13T04:18Z",
+      "wallclock": "2026-10-13T00:28:22Z",
+      "isPenalty": false,
+      "statYardage": 2,
+      "start": {
+       "down": 4,
+       "distance": 1,
+       "yardLine": 61,
+       "yardsToEndzone": 39,
+       "downDistanceText": "4th & 1 at BUF 39",
+       "shortDownDistanceText": "4th & 1",
+       "possessionText": "BUF 39",
+       "team": {
+        "id": "14"
+       }
+      },
+      "end": {
+       "down": 1,
+       "distance": 10,
+       "yardLine": 63,
+       "yardsToEndzone": 37,
+       "downDistanceText": "1st & 10 at BUF 37",
+       "shortDownDistanceText": "1st & 10",
+       "possessionText": "BUF 37",
+       "team": {
+        "id": "14"
+       }
+      },
+      "isTurnover": false
+     },
+     {
+      "id": "401872994433",
+      "sequenceNumber": "43300",
+      "type": {
+       "id": "24",
+       "text": "Pass Reception",
+       "abbreviation": "REC"
+      },
+      "text": "(No Huddle) M.Stafford pass short middle to P.Nacua to BUF 30 for 7 yards (D.Williams; C.Gardner-Johnson).",
+      "awayScore": 3,
+      "homeScore": 0,
+      "period": {
+       "number": 1
+      },
+      "clock": {
+       "displayValue": "7:27"
+      },
+      "scoringPlay": false,
+      "priority": false,
+      "modified": "2026-10-13T04:18Z",
+      "wallclock": "2026-10-13T00:28:54Z",
+      "isPenalty": false,
+      "statYardage": 7,
+      "start": {
+       "down": 1,
+       "distance": 10,
+       "yardLine": 63,
+       "yardsToEndzone": 37,
+       "downDistanceText": "1st & 10 at BUF 37",
+       "shortDownDistanceText": "1st & 10",
+       "possessionText": "BUF 37",
+       "team": {
+        "id": "14"
+       }
+      },
+      "end": {
+       "down": 2,
+       "distance": 3,
+       "yardLine": 70,
+       "yardsToEndzone": 30,
+       "downDistanceText": "2nd & 3 at BUF 30",
+       "shortDownDistanceText": "2nd & 3",
+       "possessionText": "BUF 30",
+       "team": {
+        "id": "14"
+       }
+      },
+      "yardsAfterCatch": 3,
+      "isTurnover": false
+     },
+     {
+      "id": "401872994458",
+      "sequenceNumber": "45800",
+      "type": {
+       "id": "5",
+       "text": "Rush",
+       "abbreviation": "RUSH"
+      },
+      "text": "K.Williams up the middle to BUF 21 for 9 yards (T.Parker).PENALTY on LA-T.Higbee, Offensive Holding, 10 yards, enforced at BUF 25.",
+      "awayScore": 3,
+      "homeScore": 0,
+      "period": {
+       "number": 1
+      },
+      "clock": {
+       "displayValue": "6:51"
+      },
+      "scoringPlay": false,
+      "priority": false,
+      "modified": "2026-10-13T04:18Z",
+      "wallclock": "2026-10-13T00:29:31Z",
+      "isPenalty": true,
+      "statYardage": -15,
+      "start": {
+       "down": 2,
+       "distance": 3,
+       "yardLine": 70,
+       "yardsToEndzone": 30,
+       "downDistanceText": "2nd & 3 at BUF 30",
+       "shortDownDistanceText": "2nd & 3",
+       "possessionText": "BUF 30",
+       "team": {
+        "id": "14"
+       }
+      },
+      "end": {
+       "down": 2,
+       "distance": 8,
+       "yardLine": 65,
+       "yardsToEndzone": 35,
+       "downDistanceText": "2nd & 8 at BUF 35",
+       "shortDownDistanceText": "2nd & 8",
+       "possessionText": "BUF 35",
+       "team": {
+        "id": "14"
+       }
+      },
+      "penalty": {
+       "yards": 10,
+       "type": {
+        "slug": "offensive-holding",
+        "text": "Offensive Holding"
+       },
+       "status": {
+        "slug": "accepted",
+        "text": "Accepted"
+       }
+      },
+      "isTurnover": false
+     },
+     {
+      "id": "401872994491",
+      "sequenceNumber": "49100",
+      "type": {
+       "id": "5",
+       "text": "Rush",
+       "abbreviation": "RUSH"
+      },
+      "text": "(Shotgun) B.Corum up the middle to BUF 32 for 3 yards (D.Williams; M.Hoecht).",
+      "awayScore": 3,
+      "homeScore": 0,
+      "period": {
+       "number": 1
+      },
+      "clock": {
+       "displayValue": "6:25"
+      },
+      "scoringPlay": false,
+      "priority": false,
+      "modified": "2026-10-13T04:18Z",
+      "wallclock": "2026-10-13T00:30:45Z",
+      "isPenalty": false,
+      "statYardage": 3,
+      "start": {
+       "down": 2,
+       "distance": 8,
+       "yardLine": 65,
+       "yardsToEndzone": 35,
+       "downDistanceText": "2nd & 8 at BUF 35",
+       "shortDownDistanceText": "2nd & 8",
+       "possessionText": "BUF 35",
+       "team": {
+        "id": "14"
+       }
+      },
+      "end": {
+       "down": 3,
+       "distance": 5,
+       "yardLine": 68,
+       "yardsToEndzone": 32,
+       "downDistanceText": "3rd & 5 at BUF 32",
+       "shortDownDistanceText": "3rd & 5",
+       "possessionText": "BUF 32",
+       "team": {
+        "id": "14"
+       }
+      },
+      "isTurnover": false
+     },
+     {
+      "id": "401872994513",
+      "sequenceNumber": "51300",
+      "type": {
+       "id": "3",
+       "text": "Pass Incompletion"
+      },
+      "text": "(Shotgun) M.Stafford pass incomplete short middle to P.Nacua.",
+      "awayScore": 3,
+      "homeScore": 0,
+      "period": {
+       "number": 1
+      },
+      "clock": {
+       "displayValue": "5:44"
+      },
+      "scoringPlay": false,
+      "priority": false,
+      "modified": "2026-10-13T04:18Z",
+      "wallclock": "2026-10-13T00:31:25Z",
+      "isPenalty": false,
+      "statYardage": 0,
+      "start": {
+       "down": 3,
+       "distance": 5,
+       "yardLine": 68,
+       "yardsToEndzone": 32,
+       "downDistanceText": "3rd & 5 at BUF 32",
+       "shortDownDistanceText": "3rd & 5",
+       "possessionText": "BUF 32",
+       "team": {
+        "id": "14"
+       }
+      },
+      "end": {
+       "down": 4,
+       "distance": 5,
+       "yardLine": 68,
+       "yardsToEndzone": 32,
+       "downDistanceText": "4th & 5 at BUF 32",
+       "shortDownDistanceText": "4th & 5",
+       "possessionText": "BUF 32",
+       "team": {
+        "id": "14"
+       }
+      },
+      "isTurnover": false
+     },
+     {
+      "id": "401872994536",
+      "sequenceNumber": "53600",
+      "type": {
+       "id": "60",
+       "text": "Field Goal Missed",
+       "abbreviation": "FGM"
+      },
+      "text": "H.Mevis 50 yard field goal is No Good, Wide Left, Center-J.Cardona, Holder-E.Evans.",
+      "awayScore": 3,
+      "homeScore": 0,
+      "period": {
+       "number": 1
+      },
+      "clock": {
+       "displayValue": "5:40"
+      },
+      "scoringPlay": false,
+      "priority": false,
+      "modified": "2026-10-13T04:18Z",
+      "wallclock": "2026-10-13T00:32:05Z",
+      "isPenalty": false,
+      "statYardage": 50,
+      "start": {
+       "down": 4,
+       "distance": 5,
+       "yardLine": 68,
+       "yardsToEndzone": 32,
+       "downDistanceText": "4th & 5 at BUF 32",
+       "shortDownDistanceText": "4th & 5",
+       "possessionText": "BUF 32",
+       "team": {
+        "id": "14"
+       }
+      },
+      "end": {
+       "down": 1,
+       "distance": 10,
+       "yardLine": 68,
+       "yardsToEndzone": 68,
+       "downDistanceText": "1st & 10 at BUF 32",
+       "shortDownDistanceText": "1st & 10",
+       "possessionText": "BUF 32",
+       "team": {
+        "id": "2"
+       }
+      },
+      "isTurnover": false
+     },
+     {
+      "id": "401872994549",
+      "sequenceNumber": "54900",
+      "type": {
+       "id": "74",
+       "text": "Official Timeout",
+       "abbreviation": "Off TO"
+      },
+      "text": "Official Timeout at 05:35.",
+      "awayScore": 3,
+      "homeScore": 0,
+      "period": {
+       "number": 1
+      },
+      "clock": {
+       "displayValue": "5:35"
+      },
+      "scoringPlay": false,
+      "priority": false,
+      "modified": "2026-10-13T04:18Z",
+      "wallclock": "2026-10-13T00:32:26Z",
+      "isPenalty": false,
+      "statYardage": 0,
+      "start": {
+       "down": 1,
+       "distance": 10,
+       "yardLine": 60,
+       "yardsToEndzone": 0,
+       "downDistanceText": "1st & 10 at BUF 40",
+       "shortDownDistanceText": "1st & 10",
+       "possessionText": "BUF 40",
+       "team": {
+        "id": "2"
+       }
+      },
+      "end": {
+       "down": 1,
+       "distance": 10,
+       "yardLine": 60,
+       "yardsToEndzone": 60,
+       "downDistanceText": "1st & 10 at BUF 40",
+       "shortDownDistanceText": "1st & 10",
+       "possessionText": "BUF 40",
+       "team": {
+        "id": "2"
+       }
+      },
+      "isTurnover": false
+     }
+    ]
+   },
+   {
+    "id": "4018729943",
+    "description": "10 plays, 55 yards, 5:25",
+    "team": {
+     "id": "2",
+     "name": "Bills",
+     "abbreviation": "BUF",
+     "displayName": "Buffalo Bills",
+     "shortDisplayName": "Bills",
+     "logos": [
+      {
+       "href": "https://a.espncdn.com/i/teamlogos/nfl/500/buf.png",
+       "width": 500,
+       "height": 500,
+       "alt": "",
+       "rel": [
+        "full",
+        "default"
+       ],
+       "lastUpdated": "2024-06-25T18:45Z"
+      },
+      {
+       "href": "https://a.espncdn.com/i/teamlogos/nfl/500-dark/buf.png",
+       "width": 500,
+       "height": 500,
+       "alt": "",
+       "rel": [
+        "full",
+        "dark"
+       ],
+       "lastUpdated": "2024-06-25T18:45Z"
+      },
+      {
+       "href": "https://a.espncdn.com/i/teamlogos/nfl/500/scoreboard/buf.png",
+       "width": 500,
+       "height": 500,
+       "alt": "",
+       "rel": [
+        "full",
+        "scoreboard"
+       ],
+       "lastUpdated": "2024-06-25T18:45Z"
+      },
+      {
+       "href": "https://a.espncdn.com/i/teamlogos/nfl/500-dark/scoreboard/buf.png",
+       "width": 500,
+       "height": 500,
+       "alt": "",
+       "rel": [
+        "full",
+        "scoreboard",
+        "dark"
+       ],
+       "lastUpdated": "2024-06-25T18:45Z"
+      },
+      {
+       "href": "https://a.espncdn.com/guid/232afaf2-01ac-fcc2-8bd6-66550df1703a/logos/grayscale.png",
+       "width": 500,
+       "height": 500,
+       "alt": "",
+       "rel": [
+        "full",
+        "grayscale"
+       ],
+       "lastUpdated": "2026-03-31T12:53Z"
+      },
+      {
+       "href": "https://a.espncdn.com/guid/232afaf2-01ac-fcc2-8bd6-66550df1703a/logos/primary_logo_on_white_color.png",
+       "width": 4096,
+       "height": 4096,
+       "alt": "",
+       "rel": [
+        "full",
+        "primary_logo_on_white_color"
+       ],
+       "lastUpdated": "2026-07-22T20:30Z"
+      },
+      {
+       "href": "https://a.espncdn.com/guid/232afaf2-01ac-fcc2-8bd6-66550df1703a/logos/primary_logo_on_black_color.png",
+       "width": 4096,
+       "height": 4096,
+       "alt": "",
+       "rel": [
+        "full",
+        "primary_logo_on_black_color"
+       ],
+       "lastUpdated": "2026-07-22T20:30Z"
+      },
+      {
+       "href": "https://a.espncdn.com/guid/232afaf2-01ac-fcc2-8bd6-66550df1703a/logos/primary_logo_on_primary_color.png",
+       "width": 4096,
+       "height": 4096,
+       "alt": "",
+       "rel": [
+        "full",
+        "primary_logo_on_primary_color"
+       ],
+       "lastUpdated": "2026-07-22T20:30Z"
+      },
+      {
+       "href": "https://a.espncdn.com/guid/232afaf2-01ac-fcc2-8bd6-66550df1703a/logos/primary_logo_on_secondary_color.png",
+       "width": 4096,
+       "height": 4096,
+       "alt": "",
+       "rel": [
+        "full",
+        "primary_logo_on_secondary_color"
+       ],
+       "lastUpdated": "2026-07-22T20:30Z"
+      },
+      {
+       "href": "https://a.espncdn.com/guid/232afaf2-01ac-fcc2-8bd6-66550df1703a/logos/primary_logo_black.png",
+       "width": 4096,
+       "height": 4096,
+       "alt": "",
+       "rel": [
+        "full",
+        "primary_logo_black"
+       ],
+       "lastUpdated": "2026-07-22T20:30Z"
+      },
+      {
+       "href": "https://a.espncdn.com/guid/232afaf2-01ac-fcc2-8bd6-66550df1703a/logos/primary_logo_white.png",
+       "width": 4096,
+       "height": 4096,
+       "alt": "",
+       "rel": [
+        "full",
+        "primary_logo_white"
+       ],
+       "lastUpdated": "2026-07-22T20:30Z"
+      },
+      {
+       "href": "https://a.espncdn.com/guid/232afaf2-01ac-fcc2-8bd6-66550df1703a/logos/secondary_logo_on_white_color.png",
+       "width": 4096,
+       "height": 4096,
+       "alt": "",
+       "rel": [
+        "full",
+        "secondary_logo_on_white_color"
+       ],
+       "lastUpdated": "2026-07-22T20:30Z"
+      },
+      {
+       "href": "https://a.espncdn.com/guid/232afaf2-01ac-fcc2-8bd6-66550df1703a/logos/secondary_logo_on_black_color.png",
+       "width": 4096,
+       "height": 4096,
+       "alt": "",
+       "rel": [
+        "full",
+        "secondary_logo_on_black_color"
+       ],
+       "lastUpdated": "2026-07-22T20:30Z"
+      },
+      {
+       "href": "https://a.espncdn.com/guid/232afaf2-01ac-fcc2-8bd6-66550df1703a/logos/secondary_logo_on_primary_color.png",
+       "width": 4096,
+       "height": 4096,
+       "alt": "",
+       "rel": [
+        "full",
+        "secondary_logo_on_primary_color"
+       ],
+       "lastUpdated": "2026-07-22T20:30Z"
+      },
+      {
+       "href": "https://a.espncdn.com/guid/232afaf2-01ac-fcc2-8bd6-66550df1703a/logos/secondary_logo_on_secondary_color.png",
+       "width": 4096,
+       "height": 4096,
+       "alt": "",
+       "rel": [
+        "full",
+        "secondary_logo_on_secondary_color"
+       ],
+       "lastUpdated": "2026-07-22T20:30Z"
+      },
+      {
+       "href": "https://a.espncdn.com/guid/232afaf2-01ac-fcc2-8bd6-66550df1703a/logos/secondary_logo_black.png",
+       "width": 4096,
+       "height": 4096,
+       "alt": "",
+       "rel": [
+        "full",
+        "secondary_logo_black"
+       ],
+       "lastUpdated": "2026-07-22T20:30Z"
+      },
+      {
+       "href": "https://a.espncdn.com/guid/232afaf2-01ac-fcc2-8bd6-66550df1703a/logos/secondary_logo_white.png",
+       "width": 4096,
+       "height": 4096,
+       "alt": "",
+       "rel": [
+        "full",
+        "secondary_logo_white"
+       ],
+       "lastUpdated": "2026-07-22T20:30Z"
+      }
+     ]
+    },
+    "start": {
+     "period": {
+      "type": "quarter",
+      "number": 1
+     },
+     "clock": {
+      "displayValue": "5:35"
+     },
+     "yardLine": 60,
+     "text": "BUF 40"
+    },
+    "end": {
+     "period": {
+      "type": "quarter",
+      "number": 1
+     },
+     "clock": {
+      "displayValue": "0:10"
+     },
+     "yardLine": 5,
+     "text": "LAR 5"
+    },
+    "timeElapsed": {
+     "displayValue": "5:25"
+    },
+    "yards": 55,
+    "isScore": true,
+    "offensivePlays": 10,
+    "result": "FG",
+    "shortDisplayResult": "FG",
+    "displayResult": "Field Goal",
+    "plays": [
+     {
+      "id": "401872994562",
+      "sequenceNumber": "56200",
+      "type": {
+       "id": "24",
+       "text": "Pass Reception",
+       "abbreviation": "REC"
+      },
+      "text": "J.Allen pass short left to J.Cook ran ob at BUF 47 for 7 yards (D.Johnson; T.McDuffie).",
+      "awayScore": 3,
+      "homeScore": 0,
+      "period": {
+       "number": 1
+      },
+      "clock": {
+       "displayValue": "5:35"
+      },
+      "scoringPlay": false,
+      "priority": false,
+      "modified": "2026-10-13T04:18Z",
+      "wallclock": "2026-10-13T00:34:59Z",
+      "isPenalty": false,
+      "statYardage": 7,
+      "start": {
+       "down": 1,
+       "distance": 10,
+       "yardLine": 60,
+       "yardsToEndzone": 60,
+       "downDistanceText": "1st & 10 at BUF 40",
+       "shortDownDistanceText": "1st & 10",
+       "possessionText": "BUF 40",
+       "team": {
+        "id": "2"
+       }
+      },
+      "end": {
+       "down": 2,
+       "distance": 3,
+       "yardLine": 53,
+       "yardsToEndzone": 53,
+       "downDistanceText": "2nd & 3 at BUF 47",
+       "shortDownDistanceText": "2nd & 3",
+       "possessionText": "BUF 47",
+       "team": {
+        "id": "2"
+       }
+      },
+      "yardsAfterCatch": 5,
+      "isTurnover": false
+     },
+     {
+      "id": "401872994599",
+      "sequenceNumber": "59900",
+      "type": {
+       "id": "5",
+       "text": "Rush",
+       "abbreviation": "RUSH"
+      },
+      "text": "J.Cook right guard to LA 47 for 6 yards (B.Young; Q.Lake).",
+      "awayScore": 3,
+      "homeScore": 0,
+      "period": {
+       "number": 1
+      },
+      "clock": {
+       "displayValue": "5:03"
+      },
+      "scoringPlay": false,
+      "priority": false,
+      "modified": "2026-10-13T04:18Z",
+      "wallclock": "2026-10-13T00:35:39Z",
+      "isPenalty": false,
+      "statYardage": 6,
+      "start": {
+       "down": 2,
+       "distance": 3,
+       "yardLine": 53,
+       "yardsToEndzone": 53,
+       "downDistanceText": "2nd & 3 at BUF 47",
+       "shortDownDistanceText": "2nd & 3",
+       "possessionText": "BUF 47",
+       "team": {
+        "id": "2"
+       }
+      },
+      "end": {
+       "down": 1,
+       "distance": 10,
+       "yardLine": 47,
+       "yardsToEndzone": 47,
+       "downDistanceText": "1st & 10 at LAR 47",
+       "shortDownDistanceText": "1st & 10",
+       "possessionText": "LAR 47",
+       "team": {
+        "id": "2"
+       }
+      },
+      "isTurnover": false
+     },
+     {
+      "id": "401872994621",
+      "sequenceNumber": "62100",
+      "type": {
+       "id": "5",
+       "text": "Rush",
+       "abbreviation": "RUSH"
+      },
+      "text": "(Shotgun) J.Allen scrambles left end ran ob at LA 39 for 8 yards (J.Watson).",
+      "awayScore": 3,
+      "homeScore": 0,
+      "period": {
+       "number": 1
+      },
+      "clock": {
+       "displayValue": "4:24"
+      },
+      "scoringPlay": false,
+      "priority": false,
+      "modified": "2026-10-13T04:18Z",
+      "wallclock": "2026-10-13T00:36:18Z",
+      "isPenalty": false,
+      "statYardage": 8,
+      "start": {
+       "down": 1,
+       "distance": 10,
+       "yardLine": 47,
+       "yardsToEndzone": 47,
+       "downDistanceText": "1st & 10 at LAR 47",
+       "shortDownDistanceText": "1st & 10",
+       "possessionText": "LAR 47",
+       "team": {
+        "id": "2"
+       }
+      },
+      "end": {
+       "down": 2,
+       "distance": 2,
+       "yardLine": 39,
+       "yardsToEndzone": 39,
+       "downDistanceText": "2nd & 2 at LAR 39",
+       "shortDownDistanceText": "2nd & 2",
+       "possessionText": "LAR 39",
+       "team": {
+        "id": "2"
+       }
+      },
+      "isTurnover": false
+     },
+     {
+      "id": "401872994648",
+      "sequenceNumber": "64800",
+      "type": {
+       "id": "5",
+       "text": "Rush",
+       "abbreviation": "RUSH"
+      },
+      "text": "J.Cook right tackle to LA 36 for 3 yards (K.Turner; N.Landman).",
+      "awayScore": 3,
+      "homeScore": 0,
+      "period": {
+       "number": 1
+      },
+      "clock": {
+       "displayValue": "3:50"
+      },
+      "scoringPlay": false,
+      "priority": false,
+      "modified": "2026-10-13T04:18Z",
+      "wallclock": "2026-10-13T00:37:00Z",
+      "isPenalty": false,
+      "statYardage": 3,
+      "start": {
+       "down": 2,
+       "distance": 2,
+       "yardLine": 39,
+       "yardsToEndzone": 39,
+       "downDistanceText": "2nd & 2 at LAR 39",
+       "shortDownDistanceText": "2nd & 2",
+       "possessionText": "LAR 39",
+       "team": {
+        "id": "2"
+       }
+      },
+      "end": {
+       "down": 1,
+       "distance": 10,
+       "yardLine": 36,
+       "yardsToEndzone": 36,
+       "downDistanceText": "1st & 10 at LAR 36",
+       "shortDownDistanceText": "1st & 10",
+       "possessionText": "LAR 36",
+       "team": {
+        "id": "2"
+       }
+      },
+      "isTurnover": false
+     },
+     {
+      "id": "401872994670",
+      "sequenceNumber": "67000",
+      "type": {
+       "id": "8",
+       "text": "Penalty",
+       "abbreviation": "PEN"
+      },
+      "text": "(Shotgun) J.Allen sacked at LA 46 for -10 yards (A.Donald).PENALTY on LA-T.McDuffie, Illegal Contact, 5 yards, enforced at LA 36 - No Play.",
+      "awayScore": 3,
+      "homeScore": 0,
+      "period": {
+       "number": 1
+      },
+      "clock": {
+       "displayValue": "3:10"
+      },
+      "scoringPlay": false,
+      "priority": false,
+      "modified": "2026-10-13T04:18Z",
+      "wallclock": "2026-10-13T00:37:40Z",
+      "isPenalty": true,
+      "statYardage": 5,
+      "start": {
+       "down": 1,
+       "distance": 10,
+       "yardLine": 36,
+       "yardsToEndzone": 36,
+       "downDistanceText": "1st & 10 at LAR 36",
+       "shortDownDistanceText": "1st & 10",
+       "possessionText": "LAR 36",
+       "team": {
+        "id": "2"
+       }
+      },
+      "end": {
+       "down": 1,
+       "distance": 10,
+       "yardLine": 31,
+       "yardsToEndzone": 31,
+       "downDistanceText": "1st & 10 at LAR 31",
+       "shortDownDistanceText": "1st & 10",
+       "possessionText": "LAR 31",
+       "team": {
+        "id": "2"
+       }
+      },
+      "penalty": {
+       "yards": 5,
+       "type": {
+        "slug": "illegal-contact",
+        "text": "Illegal Contact"
+       },
+       "status": {
+        "slug": "accepted",
+        "text": "Accepted"
+       }
+      },
+      "isTurnover": false
+     },
+     {
+      "id": "401872994701",
+      "sequenceNumber": "70100",
+      "type": {
+       "id": "5",
+       "text": "Rush",
+       "abbreviation": "RUSH"
+      },
+      "text": "J.Cook left tackle to LA 27 for 4 yards (N.Landman; O.Speights).",
+      "awayScore": 3,
+      "homeScore": 0,
+      "period": {
+       "number": 1
+      },
+      "clock": {
+       "displayValue": "3:00"
+      },
+      "scoringPlay": false,
+      "priority": false,
+      "modified": "2026-10-13T04:18Z",
+      "wallclock": "2026-10-13T00:38:43Z",
+      "isPenalty": false,
+      "statYardage": 4,
+      "start": {
+       "down": 1,
+       "distance": 10,
+       "yardLine": 31,
+       "yardsToEndzone": 31,
+       "downDistanceText": "1st & 10 at LAR 31",
+       "shortDownDistanceText": "1st & 10",
+       "possessionText": "LAR 31",
+       "team": {
+        "id": "2"
+       }
+      },
+      "end": {
+       "down": 2,
+       "distance": 6,
+       "yardLine": 27,
+       "yardsToEndzone": 27,
+       "downDistanceText": "2nd & 6 at LAR 27",
+       "shortDownDistanceText": "2nd & 6",
+       "possessionText": "LAR 27",
+       "team": {
+        "id": "2"
+       }
+      },
+      "isTurnover": false
+     },
+     {
+      "id": "401872994723",
+      "sequenceNumber": "72300",
+      "type": {
+       "id": "5",
+       "text": "Rush",
+       "abbreviation": "RUSH"
+      },
+      "text": "(Shotgun) J.Cook up the middle to LA 12 for 15 yards (K.Kinchens).",
+      "awayScore": 3,
+      "homeScore": 0,
+      "period": {
+       "number": 1
+      },
+      "clock": {
+       "displayValue": "2:25"
+      },
+      "scoringPlay": false,
+      "priority": false,
+      "modified": "2026-10-13T04:18Z",
+      "wallclock": "2026-10-13T00:39:18Z",
+      "isPenalty": false,
+      "statYardage": 15,
+      "start": {
+       "down": 2,
+       "distance": 6,
+       "yardLine": 27,
+       "yardsToEndzone": 27,
+       "downDistanceText": "2nd & 6 at LAR 27",
+       "shortDownDistanceText": "2nd & 6",
+       "possessionText": "LAR 27",
+       "team": {
+        "id": "2"
+       }
+      },
+      "end": {
+       "down": 1,
+       "distance": 10,
+       "yardLine": 12,
+       "yardsToEndzone": 12,
+       "downDistanceText": "1st & 10 at LAR 12",
+       "shortDownDistanceText": "1st & 10",
+       "possessionText": "LAR 12",
+       "team": {
+        "id": "2"
+       }
+      },
+      "isTurnover": false
+     },
+     {
+      "id": "401872994745",
+      "sequenceNumber": "74500",
+      "type": {
+       "id": "5",
+       "text": "Rush",
+       "abbreviation": "RUSH"
+      },
+      "text": " J.Cook left guard to LA 11 for 1 yard (A.Donald).",
+      "awayScore": 3,
+      "homeScore": 0,
+      "period": {
+       "number": 1
+      },
+      "clock": {
+       "displayValue": "1:45"
+      },
+      "scoringPlay": false,
+      "priority": false,
+      "modified": "2026-10-13T04:18Z",
+      "wallclock": "2026-10-13T00:39:58Z",
+      "isPenalty": false,
+      "statYardage": 1,
+      "start": {
+       "down": 1,
+       "distance": 10,
+       "yardLine": 12,
+       "yardsToEndzone": 12,
+       "downDistanceText": "1st & 10 at LAR 12",
+       "shortDownDistanceText": "1st & 10",
+       "possessionText": "LAR 12",
+       "team": {
+        "id": "2"
+       }
+      },
+      "end": {
+       "down": 2,
+       "distance": 9,
+       "yardLine": 11,
+       "yardsToEndzone": 11,
+       "downDistanceText": "2nd & 9 at LAR 11",
+       "shortDownDistanceText": "2nd & 9",
+       "possessionText": "LAR 11",
+       "team": {
+        "id": "2"
+       }
+      },
+      "isTurnover": false
+     },
+     {
+      "id": "401872994767",
+      "sequenceNumber": "76700",
+      "type": {
+       "id": "5",
+       "text": "Rush",
+       "abbreviation": "RUSH"
+      },
+      "text": "J.Allen scrambles left end to LA 5 for 6 yards (A.Donald; K.Curl).",
+      "awayScore": 3,
+      "homeScore": 0,
+      "period": {
+       "number": 1
+      },
+      "clock": {
+       "displayValue": "1:05"
+      },
+      "scoringPlay": false,
+      "priority": false,
+      "modified": "2026-10-13T04:18Z",
+      "wallclock": "2026-10-13T00:40:38Z",
+      "isPenalty": false,
+      "statYardage": 6,
+      "start": {
+       "down": 2,
+       "distance": 9,
+       "yardLine": 11,
+       "yardsToEndzone": 11,
+       "downDistanceText": "2nd & 9 at LAR 11",
+       "shortDownDistanceText": "2nd & 9",
+       "possessionText": "LAR 11",
+       "team": {
+        "id": "2"
+       }
+      },
+      "end": {
+       "down": 3,
+       "distance": 3,
+       "yardLine": 5,
+       "yardsToEndzone": 5,
+       "downDistanceText": "3rd & 3 at LAR 5",
+       "shortDownDistanceText": "3rd & 3",
+       "possessionText": "LAR 5",
+       "team": {
+        "id": "2"
+       }
+      },
+      "isTurnover": false
+     },
+     {
+      "id": "401872994789",
+      "sequenceNumber": "78900",
+      "type": {
+       "id": "3",
+       "text": "Pass Incompletion"
+      },
+      "text": "(Shotgun) J.Allen pass incomplete short left to D.Knox.",
+      "awayScore": 3,
+      "homeScore": 0,
+      "period": {
+       "number": 1
+      },
+      "clock": {
+       "displayValue": "0:19"
+      },
+      "scoringPlay": false,
+      "priority": false,
+      "modified": "2026-10-13T04:18Z",
+      "wallclock": "2026-10-13T00:41:24Z",
+      "isPenalty": false,
+      "statYardage": 0,
+      "start": {
+       "down": 3,
+       "distance": 3,
+       "yardLine": 5,
+       "yardsToEndzone": 5,
+       "downDistanceText": "3rd & 3 at LAR 5",
+       "shortDownDistanceText": "3rd & 3",
+       "possessionText": "LAR 5",
+       "team": {
+        "id": "2"
+       }
+      },
+      "end": {
+       "down": 4,
+       "distance": 3,
+       "yardLine": 5,
+       "yardsToEndzone": 5,
+       "downDistanceText": "4th & 3 at LAR 5",
+       "shortDownDistanceText": "4th & 3",
+       "possessionText": "LAR 5",
+       "team": {
+        "id": "2"
+       }
+      },
+      "isTurnover": false
+     },
+     {
+      "id": "401872994812",
+      "sequenceNumber": "81200",
+      "type": {
+       "id": "59",
+       "text": "Field Goal Good",
+       "abbreviation": "FG"
+      },
+      "text": "T.Bass 23 yard field goal is GOOD, Center-R.Ferguson, Holder-T.Doman.",
+      "awayScore": 6,
+      "homeScore": 0,
+      "period": {
+       "number": 1
+      },
+      "clock": {
+       "displayValue": "0:10"
+      },
+      "scoringPlay": true,
+      "priority": false,
+      "modified": "2026-10-13T04:18Z",
+      "wallclock": "2026-10-13T00:42:11Z",
+      "isPenalty": false,
+      "statYardage": 23,
+      "start": {
+       "down": 4,
+       "distance": 3,
+       "yardLine": 5,
+       "yardsToEndzone": 5,
+       "downDistanceText": "4th & 3 at LAR 5",
+       "shortDownDistanceText": "4th & 3",
+       "possessionText": "LAR 5",
+       "team": {
+        "id": "2"
+       }
+      },
+      "end": {
+       "down": -1,
+       "distance": 10,
+       "yardLine": 0,
+       "yardsToEndzone": 0,
+       "team": {
+        "id": "2"
+       }
+      },
+      "scoringType": {
+       "name": "field-goal",
+       "displayName": "Field Goal",
+       "abbreviation": "FG"
+      },
+      "isTurnover": false
+     },
+     {
+      "id": "401872994822",
+      "sequenceNumber": "82200",
+      "type": {
+       "id": "74",
+       "text": "Official Timeout",
+       "abbreviation": "Off TO"
+      },
+      "text": "Official Timeout at 00:10.",
+      "awayScore": 6,
+      "homeScore": 0,
+      "period": {
+       "number": 1
+      },
+      "clock": {
+       "displayValue": "0:10"
+      },
+      "scoringPlay": false,
+      "priority": false,
+      "modified": "2026-10-13T04:18Z",
+      "wallclock": "2026-10-13T00:42:33Z",
+      "isPenalty": false,
+      "statYardage": 0,
+      "start": {
+       "down": -1,
+       "distance": 0,
+       "yardLine": 65,
+       "yardsToEndzone": 0,
+       "downDistanceText": " & Goal at BUF 35",
+       "shortDownDistanceText": " & Goal",
+       "possessionText": "BUF 35",
+       "team": {
+        "id": "2"
+       }
+      },
+      "end": {
+       "down": -1,
+       "distance": 0,
+       "yardLine": 65,
+       "yardsToEndzone": 0,
+       "team": {
+        "id": "2"
+       }
+      },
+      "isTurnover": false
+     }
+    ]
+   },
+   {
+    "id": "4018729944",
+    "description": "14 plays, 71 yards, 7:10",
+    "team": {
+     "id": "14",
+     "name": "Rams",
+     "abbreviation": "LAR",
+     "displayName": "Los Angeles Rams",
+     "shortDisplayName": "Rams",
+     "logos": [
+      {
+       "href": "https://a.espncdn.com/i/teamlogos/nfl/500/lar.png",
+       "width": 500,
+       "height": 500,
+       "alt": "",
+       "rel": [
+        "full",
+        "default"
+       ],
+       "lastUpdated": "2026-04-24T14:36Z"
+      },
+      {
+       "href": "https://a.espncdn.com/i/teamlogos/nfl/500-dark/lar.png",
+       "width": 500,
+       "height": 500,
+       "alt": "",
+       "rel": [
+        "full",
+        "dark"
+       ],
+       "lastUpdated": "2026-04-24T14:27Z"
+      },
+      {
+       "href": "https://a.espncdn.com/i/teamlogos/nfl/500/scoreboard/lar.png",
+       "width": 500,
+       "height": 500,
+       "alt": "",
+       "rel": [
+        "full",
+        "scoreboard"
+       ],
+       "lastUpdated": "2026-04-24T14:36Z"
+      },
+      {
+       "href": "https://a.espncdn.com/i/teamlogos/nfl/500-dark/scoreboard/lar.png",
+       "width": 500,
+       "height": 500,
+       "alt": "",
+       "rel": [
+        "full",
+        "scoreboard",
+        "dark"
+       ],
+       "lastUpdated": "2026-04-24T14:27Z"
+      },
+      {
+       "href": "https://a.espncdn.com/guid/2e1473b2-e269-fd7a-1137-c1edacb85986/logos/grayscale.png",
+       "width": 500,
+       "height": 500,
+       "alt": "",
+       "rel": [
+        "full",
+        "grayscale"
+       ],
+       "lastUpdated": "2026-03-31T12:52Z"
+      },
+      {
+       "href": "https://a.espncdn.com/guid/2e1473b2-e269-fd7a-1137-c1edacb85986/logos/primary_logo_on_white_color.png",
+       "width": 4096,
+       "height": 4096,
+       "alt": "",
+       "rel": [
+        "full",
+        "primary_logo_on_white_color"
+       ],
+       "lastUpdated": "2026-07-22T20:30Z"
+      },
+      {
+       "href": "https://a.espncdn.com/guid/2e1473b2-e269-fd7a-1137-c1edacb85986/logos/primary_logo_on_black_color.png",
+       "width": 4096,
+       "height": 4096,
+       "alt": "",
+       "rel": [
+        "full",
+        "primary_logo_on_black_color"
+       ],
+       "lastUpdated": "2026-07-22T20:30Z"
+      },
+      {
+       "href": "https://a.espncdn.com/guid/2e1473b2-e269-fd7a-1137-c1edacb85986/logos/primary_logo_on_primary_color.png",
+       "width": 4096,
+       "height": 4096,
+       "alt": "",
+       "rel": [
+        "full",
+        "primary_logo_on_primary_color"
+       ],
+       "lastUpdated": "2026-07-22T20:30Z"
+      },
+      {
+       "href": "https://a.espncdn.com/guid/2e1473b2-e269-fd7a-1137-c1edacb85986/logos/primary_logo_on_secondary_color.png",
+       "width": 4096,
+       "height": 4096,
+       "alt": "",
+       "rel": [
+        "full",
+        "primary_logo_on_secondary_color"
+       ],
+       "lastUpdated": "2026-07-22T20:30Z"
+      },
+      {
+       "href": "https://a.espncdn.com/guid/2e1473b2-e269-fd7a-1137-c1edacb85986/logos/primary_logo_black.png",
+       "width": 4096,
+       "height": 4096,
+       "alt": "",
+       "rel": [
+        "full",
+        "primary_logo_black"
+       ],
+       "lastUpdated": "2026-07-22T20:30Z"
+      },
+      {
+       "href": "https://a.espncdn.com/guid/2e1473b2-e269-fd7a-1137-c1edacb85986/logos/primary_logo_white.png",
+       "width": 4096,
+       "height": 4096,
+       "alt": "",
+       "rel": [
+        "full",
+        "primary_logo_white"
+       ],
+       "lastUpdated": "2026-07-22T20:30Z"
+      },
+      {
+       "href": "https://a.espncdn.com/guid/2e1473b2-e269-fd7a-1137-c1edacb85986/logos/secondary_logo_on_white_color.png",
+       "width": 4096,
+       "height": 4096,
+       "alt": "",
+       "rel": [
+        "full",
+        "secondary_logo_on_white_color"
+       ],
+       "lastUpdated": "2026-07-22T20:30Z"
+      },
+      {
+       "href": "https://a.espncdn.com/guid/2e1473b2-e269-fd7a-1137-c1edacb85986/logos/secondary_logo_on_black_color.png",
+       "width": 4096,
+       "height": 4096,
+       "alt": "",
+       "rel": [
+        "full",
+        "secondary_logo_on_black_color"
+       ],
+       "lastUpdated": "2026-07-22T20:30Z"
+      },
+      {
+       "href": "https://a.espncdn.com/guid/2e1473b2-e269-fd7a-1137-c1edacb85986/logos/secondary_logo_on_primary_color.png",
+       "width": 4096,
+       "height": 4096,
+       "alt": "",
+       "rel": [
+        "full",
+        "secondary_logo_on_primary_color"
+       ],
+       "lastUpdated": "2026-07-22T20:30Z"
+      },
+      {
+       "href": "https://a.espncdn.com/guid/2e1473b2-e269-fd7a-1137-c1edacb85986/logos/secondary_logo_on_secondary_color.png",
+       "width": 4096,
+       "height": 4096,
+       "alt": "",
+       "rel": [
+        "full",
+        "secondary_logo_on_secondary_color"
+       ],
+       "lastUpdated": "2026-07-22T20:30Z"
+      },
+      {
+       "href": "https://a.espncdn.com/guid/2e1473b2-e269-fd7a-1137-c1edacb85986/logos/secondary_logo_black.png",
+       "width": 4096,
+       "height": 4096,
+       "alt": "",
+       "rel": [
+        "full",
+        "secondary_logo_black"
+       ],
+       "lastUpdated": "2026-07-22T20:30Z"
+      },
+      {
+       "href": "https://a.espncdn.com/guid/2e1473b2-e269-fd7a-1137-c1edacb85986/logos/secondary_logo_white.png",
+       "width": 4096,
+       "height": 4096,
+       "alt": "",
+       "rel": [
+        "full",
+        "secondary_logo_white"
+       ],
+       "lastUpdated": "2026-07-22T20:30Z"
+      }
+     ]
+    },
+    "start": {
+     "period": {
+      "type": "quarter",
+      "number": 1
+     },
+     "clock": {
+      "displayValue": "0:10"
+     },
+     "yardLine": 29,
+     "text": "LAR 29"
+    },
+    "end": {
+     "period": {
+      "type": "quarter",
+      "number": 2
+     },
+     "clock": {
+      "displayValue": "8:00"
+     },
+     "yardLine": 100,
+     "text": "BUF 0"
+    },
+    "timeElapsed": {
+     "displayValue": "7:10"
+    },
+    "yards": 71,
+    "isScore": true,
+    "offensivePlays": 14,
+    "result": "TD",
+    "shortDisplayResult": "TD",
+    "displayResult": "Touchdown",
+    "plays": [
+     {
+      "id": "401872994832",
+      "sequenceNumber": "83200",
+      "type": {
+       "id": "53",
+       "text": "Kickoff",
+       "abbreviation": "K"
+      },
+      "text": "T.Bass kicks 60 yards from BUF 35 to LA 5. J.Whittington to LA 29 for 24 yards (T.Parker).",
+      "awayScore": 6,
+      "homeScore": 0,
+      "period": {
+       "number": 1
+      },
+      "clock": {
+       "displayValue": "0:10"
+      },
+      "scoringPlay": false,
+      "priority": false,
+      "modified": "2026-10-13T04:18Z",
+      "wallclock": "2026-10-13T00:43:29Z",
+      "isPenalty": false,
+      "statYardage": 24,
+      "start": {
+       "down": 0,
+       "distance": 0,
+       "yardLine": 65,
+       "yardsToEndzone": 65,
+       "team": {
+        "id": "2"
+       }
+      },
+      "end": {
+       "down": 1,
+       "distance": 10,
+       "yardLine": 29,
+       "yardsToEndzone": 71,
+       "downDistanceText": "1st & 10 at LAR 29",
+       "shortDownDistanceText": "1st & 10",
+       "possessionText": "LAR 29",
+       "team": {
+        "id": "14"
+       }
+      },
+      "isTurnover": false
+     },
+     {
+      "id": "401872994862",
+      "sequenceNumber": "86200",
+      "type": {
+       "id": "24",
+       "text": "Pass Reception",
+       "abbreviation": "REC"
+      },
+      "text": "M.Stafford pass short right to T.Higbee pushed ob at LA 35 for 6 yards (C.Benford).",
+      "awayScore": 6,
+      "homeScore": 0,
+      "period": {
+       "number": 1
+      },
+      "clock": {
+       "displayValue": "0:05"
+      },
+      "scoringPlay": false,
+      "priority": false,
+      "modified": "2026-10-13T04:18Z",
+      "wallclock": "2026-10-13T00:44:14Z",
+      "isPenalty": false,
+      "statYardage": 6,
+      "start": {
+       "down": 1,
+       "distance": 10,
+       "yardLine": 29,
+       "yardsToEndzone": 71,
+       "downDistanceText": "1st & 10 at LAR 29",
+       "shortDownDistanceText": "1st & 10",
+       "possessionText": "LAR 29",
+       "team": {
+        "id": "14"
+       }
+      },
+      "end": {
+       "down": 2,
+       "distance": 4,
+       "yardLine": 35,
+       "yardsToEndzone": 65,
+       "downDistanceText": "2nd & 4 at LAR 35",
+       "shortDownDistanceText": "2nd & 4",
+       "possessionText": "LAR 35",
+       "team": {
+        "id": "14"
+       }
+      },
+      "yardsAfterCatch": 1,
+      "isTurnover": false
+     },
+     {
+      "id": "401872994892",
+      "sequenceNumber": "89200",
+      "type": {
+       "id": "2",
+       "text": "End Period",
+       "abbreviation": "EP"
+      },
+      "text": "END QUARTER 1",
+      "awayScore": 6,
+      "homeScore": 0,
+      "period": {
+       "number": 1
+      },
+      "clock": {
+       "displayValue": "0:00"
+      },
+      "scoringPlay": false,
+      "priority": false,
+      "modified": "2026-10-13T04:18Z",
+      "wallclock": "2026-10-13T00:44:14Z",
+      "isPenalty": false,
+      "statYardage": 0,
+      "start": {
+       "down": 2,
+       "distance": 4,
+       "yardLine": 35,
+       "yardsToEndzone": 65,
+       "team": {
+        "id": "14"
+       }
+      },
+      "end": {
+       "down": 2,
+       "distance": 4,
+       "yardLine": 35,
+       "yardsToEndzone": 65,
+       "downDistanceText": "2nd & 4 at LAR 35",
+       "shortDownDistanceText": "2nd & 4",
+       "possessionText": "LAR 35",
+       "team": {
+        "id": "14"
+       }
+      },
+      "isTurnover": false
+     },
+     {
+      "id": "401872994912",
+      "sequenceNumber": "91200",
+      "type": {
+       "id": "5",
+       "text": "Rush",
+       "abbreviation": "RUSH"
+      },
+      "text": "P.Nacua left end to LA 35 for no gain (D.Williams; C.Gardner-Johnson).",
+      "awayScore": 6,
+      "homeScore": 0,
+      "period": {
+       "number": 2
+      },
+      "clock": {
+       "displayValue": "15:00"
+      },
+      "scoringPlay": false,
+      "priority": false,
+      "modified": "2026-10-13T04:18Z",
+      "wallclock": "2026-10-13T00:47:15Z",
+      "isPenalty": false,
+      "statYardage": 0,
+      "start": {
+       "down": 2,
+       "distance": 4,
+       "yardLine": 35,
+       "yardsToEndzone": 65,
+       "downDistanceText": "2nd & 4 at LAR 35",
+       "shortDownDistanceText": "2nd & 4",
+       "possessionText": "LAR 35",
+       "team": {
+        "id": "14"
+       }
+      },
+      "end": {
+       "down": 3,
+       "distance": 4,
+       "yardLine": 35,
+       "yardsToEndzone": 65,
+       "downDistanceText": "3rd & 4 at LAR 35",
+       "shortDownDistanceText": "3rd & 4",
+       "possessionText": "LAR 35",
+       "team": {
+        "id": "14"
+       }
+      },
+      "isTurnover": false
+     },
+     {
+      "id": "401872994934",
+      "sequenceNumber": "93400",
+      "type": {
+       "id": "8",
+       "text": "Penalty",
+       "abbreviation": "PEN"
+      },
+      "text": "(Shotgun) PENALTY on BUF-M.Hoecht, Neutral Zone Infraction, 5 yards, enforced at LA 35 - No Play.",
+      "awayScore": 6,
+      "homeScore": 0,
+      "period": {
+       "number": 2
+      },
+      "clock": {
+       "displayValue": "14:27"
+      },
+      "scoringPlay": false,
+      "priority": false,
+      "modified": "2026-10-13T04:18Z",
+      "wallclock": "2026-10-13T00:47:50Z",
+      "isPenalty": true,
+      "statYardage": 5,
+      "start": {
+       "down": 3,
+       "distance": 4,
+       "yardLine": 35,
+       "yardsToEndzone": 65,
+       "downDistanceText": "3rd & 4 at LAR 35",
+       "shortDownDistanceText": "3rd & 4",
+       "possessionText": "LAR 35",
+       "team": {
+        "id": "14"
+       }
+      },
+      "end": {
+       "down": 1,
+       "distance": 10,
+       "yardLine": 40,
+       "yardsToEndzone": 60,
+       "downDistanceText": "1st & 10 at LAR 40",
+       "shortDownDistanceText": "1st & 10",
+       "possessionText": "LAR 40",
+       "team": {
+        "id": "14"
+       }
+      },
+      "penalty": {
+       "yards": 5,
+       "type": {
+        "slug": "neutral-zone-infraction",
+        "text": "Neutral Zone Infraction"
+       },
+       "status": {
+        "slug": "accepted",
+        "text": "Accepted"
+       }
+      },
+      "isTurnover": false
+     },
+     {
+      "id": "401872994958",
+      "sequenceNumber": "95800",
+      "type": {
+       "id": "24",
+       "text": "Pass Reception",
+       "abbreviation": "REC"
+      },
+      "text": "M.Stafford pass short left to B.Corum pushed ob at 50 for 10 yards (C.Bishop).  The first down was assisted by replay.",
+      "awayScore": 6,
+      "homeScore": 0,
+      "period": {
+       "number": 2
+      },
+      "clock": {
+       "displayValue": "14:13"
+      },
+      "scoringPlay": false,
+      "priority": false,
+      "modified": "2026-10-13T04:18Z",
+      "wallclock": "2026-10-13T00:48:24Z",
+      "isPenalty": false,
+      "statYardage": 10,
+      "start": {
+       "down": 1,
+       "distance": 10,
+       "yardLine": 40,
+       "yardsToEndzone": 60,
+       "downDistanceText": "1st & 10 at LAR 40",
+       "shortDownDistanceText": "1st & 10",
+       "possessionText": "LAR 40",
+       "team": {
+        "id": "14"
+       }
+      },
+      "end": {
+       "down": 1,
+       "distance": 10,
+       "yardLine": 50,
+       "yardsToEndzone": 50,
+       "downDistanceText": "1st & 10 at 50",
+       "shortDownDistanceText": "1st & 10",
+       "possessionText": "50",
+       "team": {
+        "id": "14"
+       }
+      },
+      "yardsAfterCatch": 5,
+      "isTurnover": false
+     },
+     {
+      "id": "401872994988",
+      "sequenceNumber": "98800",
+      "type": {
+       "id": "5",
+       "text": "Rush",
+       "abbreviation": "RUSH"
+      },
+      "text": "B.Corum up the middle to BUF 47 for 3 yards (D.Walker).",
+      "awayScore": 6,
+      "homeScore": 0,
+      "period": {
+       "number": 2
+      },
+      "clock": {
+       "displayValue": "13:42"
+      },
+      "scoringPlay": false,
+      "priority": false,
+      "modified": "2026-10-13T04:18Z",
+      "wallclock": "2026-10-13T00:49:03Z",
+      "isPenalty": false,
+      "statYardage": 3,
+      "start": {
+       "down": 1,
+       "distance": 10,
+       "yardLine": 50,
+       "yardsToEndzone": 50,
+       "downDistanceText": "1st & 10 at 50",
+       "shortDownDistanceText": "1st & 10",
+       "possessionText": "50",
+       "team": {
+        "id": "14"
+       }
+      },
+      "end": {
+       "down": 2,
+       "distance": 7,
+       "yardLine": 53,
+       "yardsToEndzone": 47,
+       "downDistanceText": "2nd & 7 at BUF 47",
+       "shortDownDistanceText": "2nd & 7",
+       "possessionText": "BUF 47",
+       "team": {
+        "id": "14"
+       }
+      },
+      "isTurnover": false
+     },
+     {
+      "id": "4018729941010",
+      "sequenceNumber": "101000",
+      "type": {
+       "id": "5",
+       "text": "Rush",
+       "abbreviation": "RUSH"
+      },
+      "text": "(Shotgun) B.Corum up the middle to BUF 37 for 10 yards (C.Benford; C.Bishop).",
+      "awayScore": 6,
+      "homeScore": 0,
+      "period": {
+       "number": 2
+      },
+      "clock": {
+       "displayValue": "13:00"
+      },
+      "scoringPlay": false,
+      "priority": false,
+      "modified": "2026-10-13T04:18Z",
+      "wallclock": "2026-10-13T00:49:46Z",
+      "isPenalty": false,
+      "statYardage": 10,
+      "start": {
+       "down": 2,
+       "distance": 7,
+       "yardLine": 53,
+       "yardsToEndzone": 47,
+       "downDistanceText": "2nd & 7 at BUF 47",
+       "shortDownDistanceText": "2nd & 7",
+       "possessionText": "BUF 47",
+       "team": {
+        "id": "14"
+       }
+      },
+      "end": {
+       "down": 1,
+       "distance": 10,
+       "yardLine": 63,
+       "yardsToEndzone": 37,
+       "downDistanceText": "1st & 10 at BUF 37",
+       "shortDownDistanceText": "1st & 10",
+       "possessionText": "BUF 37",
+       "team": {
+        "id": "14"
+       }
+      },
+      "isTurnover": false
+     },
+     {
+      "id": "4018729941034",
+      "sequenceNumber": "103400",
+      "type": {
+       "id": "24",
+       "text": "Pass Reception",
+       "abbreviation": "REC"
+      },
+      "text": "M.Stafford pass short right to B.Corum pushed ob at BUF 28 for 9 yards (T.Bernard).",
+      "awayScore": 6,
+      "homeScore": 0,
+      "period": {
+       "number": 2
+      },
+      "clock": {
+       "displayValue": "12:23"
+      },
+      "scoringPlay": false,
+      "priority": false,
+      "modified": "2026-10-13T04:18Z",
+      "wallclock": "2026-10-13T00:50:23Z",
+      "isPenalty": false,
+      "statYardage": 9,
+      "start": {
+       "down": 1,
+       "distance": 10,
+       "yardLine": 63,
+       "yardsToEndzone": 37,
+       "downDistanceText": "1st & 10 at BUF 37",
+       "shortDownDistanceText": "1st & 10",
+       "possessionText": "BUF 37",
+       "team": {
+        "id": "14"
+       }
+      },
+      "end": {
+       "down": 2,
+       "distance": 1,
+       "yardLine": 72,
+       "yardsToEndzone": 28,
+       "downDistanceText": "2nd & 1 at BUF 28",
+       "shortDownDistanceText": "2nd & 1",
+       "possessionText": "BUF 28",
+       "team": {
+        "id": "14"
+       }
+      },
+      "yardsAfterCatch": 11,
+      "isTurnover": false
+     },
+     {
+      "id": "4018729941064",
+      "sequenceNumber": "106400",
+      "type": {
+       "id": "5",
+       "text": "Rush",
+       "abbreviation": "RUSH"
+      },
+      "text": "K.Williams left tackle to BUF 27 for 1 yard (D.Carter; C.Gardner-Johnson).",
+      "awayScore": 6,
+      "homeScore": 0,
+      "period": {
+       "number": 2
+      },
+      "clock": {
+       "displayValue": "11:45"
+      },
+      "scoringPlay": false,
+      "priority": false,
+      "modified": "2026-10-13T04:18Z",
+      "wallclock": "2026-10-13T00:51:09Z",
+      "isPenalty": false,
+      "statYardage": 1,
+      "start": {
+       "down": 2,
+       "distance": 1,
+       "yardLine": 72,
+       "yardsToEndzone": 28,
+       "downDistanceText": "2nd & 1 at BUF 28",
+       "shortDownDistanceText": "2nd & 1",
+       "possessionText": "BUF 28",
+       "team": {
+        "id": "14"
+       }
+      },
+      "end": {
+       "down": 1,
+       "distance": 10,
+       "yardLine": 73,
+       "yardsToEndzone": 27,
+       "downDistanceText": "1st & 10 at BUF 27",
+       "shortDownDistanceText": "1st & 10",
+       "possessionText": "BUF 27",
+       "team": {
+        "id": "14"
+       }
+      },
+      "isTurnover": false
+     },
+     {
+      "id": "4018729941075",
+      "sequenceNumber": "107500",
+      "type": {
+       "id": "21",
+       "text": "Timeout",
+       "abbreviation": "TO"
+      },
+      "text": "Timeout #1 by LA at 11:02.",
+      "awayScore": 6,
+      "homeScore": 0,
+      "period": {
+       "number": 2
+      },
+      "clock": {
+       "displayValue": "11:02"
+      },
+      "scoringPlay": false,
+      "priority": false,
+      "modified": "2026-10-13T04:18Z",
+      "wallclock": "2026-10-13T00:51:54Z",
+      "isPenalty": false,
+      "statYardage": 0,
+      "start": {
+       "down": 1,
+       "distance": 10,
+       "yardLine": 73,
+       "yardsToEndzone": 0,
+       "downDistanceText": "1st & 10 at BUF 27",
+       "shortDownDistanceText": "1st & 10",
+       "possessionText": "BUF 27",
+       "team": {
+        "id": "14"
+       }
+      },
+      "end": {
+       "down": 1,
+       "distance": 10,
+       "yardLine": 73,
+       "yardsToEndzone": 27,
+       "downDistanceText": "1st & 10 at BUF 27",
+       "shortDownDistanceText": "1st & 10",
+       "possessionText": "BUF 27",
+       "team": {
+        "id": "14"
+       }
+      },
+      "isTurnover": false
+     },
+     {
+      "id": "4018729941086",
+      "sequenceNumber": "108600",
+      "type": {
+       "id": "5",
+       "text": "Rush",
+       "abbreviation": "RUSH"
+      },
+      "text": "K.Williams right tackle to BUF 24 for 3 yards (G.Gaines; D.Williams).",
+      "awayScore": 6,
+      "homeScore": 0,
+      "period": {
+       "number": 2
+      },
+      "clock": {
+       "displayValue": "11:02"
+      },
+      "scoringPlay": false,
+      "priority": false,
+      "modified": "2026-10-13T04:18Z",
+      "wallclock": "2026-10-13T00:54:45Z",
+      "isPenalty": false,
+      "statYardage": 3,
+      "start": {
+       "down": 1,
+       "distance": 10,
+       "yardLine": 73,
+       "yardsToEndzone": 27,
+       "downDistanceText": "1st & 10 at BUF 27",
+       "shortDownDistanceText": "1st & 10",
+       "possessionText": "BUF 27",
+       "team": {
+        "id": "14"
+       }
+      },
+      "end": {
+       "down": 2,
+       "distance": 7,
+       "yardLine": 76,
+       "yardsToEndzone": 24,
+       "downDistanceText": "2nd & 7 at BUF 24",
+       "shortDownDistanceText": "2nd & 7",
+       "possessionText": "BUF 24",
+       "team": {
+        "id": "14"
+       }
+      },
+      "isTurnover": false
+     },
+     {
+      "id": "4018729941115",
+      "sequenceNumber": "111500",
+      "type": {
+       "id": "3",
+       "text": "Pass Incompletion"
+      },
+      "text": "M.Stafford pass incomplete short right to P.Nacua.",
+      "awayScore": 6,
+      "homeScore": 0,
+      "period": {
+       "number": 2
+      },
+      "clock": {
+       "displayValue": "10:23"
+      },
+      "scoringPlay": false,
+      "priority": false,
+      "modified": "2026-10-13T04:18Z",
+      "wallclock": "2026-10-13T00:55:24Z",
+      "isPenalty": false,
+      "statYardage": 0,
+      "start": {
+       "down": 2,
+       "distance": 7,
+       "yardLine": 76,
+       "yardsToEndzone": 24,
+       "downDistanceText": "2nd & 7 at BUF 24",
+       "shortDownDistanceText": "2nd & 7",
+       "possessionText": "BUF 24",
+       "team": {
+        "id": "14"
+       }
+      },
+      "end": {
+       "down": 3,
+       "distance": 7,
+       "yardLine": 76,
+       "yardsToEndzone": 24,
+       "downDistanceText": "3rd & 7 at BUF 24",
+       "shortDownDistanceText": "3rd & 7",
+       "possessionText": "BUF 24",
+       "team": {
+        "id": "14"
+       }
+      },
+      "isTurnover": false
+     },
+     {
+      "id": "4018729941138",
+      "sequenceNumber": "113800",
+      "type": {
+       "id": "24",
+       "text": "Pass Reception",
+       "abbreviation": "REC"
+      },
+      "text": "(Shotgun) M.Stafford pass short middle to P.Nacua to BUF 16 for 8 yards (T.Bernard).",
+      "awayScore": 6,
+      "homeScore": 0,
+      "period": {
+       "number": 2
+      },
+      "clock": {
+       "displayValue": "10:19"
+      },
+      "scoringPlay": false,
+      "priority": false,
+      "modified": "2026-10-13T04:18Z",
+      "wallclock": "2026-10-13T00:56:08Z",
+      "isPenalty": false,
+      "statYardage": 8,
+      "start": {
+       "down": 3,
+       "distance": 7,
+       "yardLine": 76,
+       "yardsToEndzone": 24,
+       "downDistanceText": "3rd & 7 at BUF 24",
+       "shortDownDistanceText": "3rd & 7",
+       "possessionText": "BUF 24",
+       "team": {
+        "id": "14"
+       }
+      },
+      "end": {
+       "down": 1,
+       "distance": 10,
+       "yardLine": 84,
+       "yardsToEndzone": 16,
+       "downDistanceText": "1st & 10 at BUF 16",
+       "shortDownDistanceText": "1st & 10",
+       "possessionText": "BUF 16",
+       "team": {
+        "id": "14"
+       }
+      },
+      "yardsAfterCatch": 4,
+      "isTurnover": false
+     },
+     {
+      "id": "4018729941163",
+      "sequenceNumber": "116300",
+      "type": {
+       "id": "3",
+       "text": "Pass Incompletion"
+      },
+      "text": "M.Stafford pass incomplete deep left to D.Adams.",
+      "awayScore": 6,
+      "homeScore": 0,
+      "period": {
+       "number": 2
+      },
+      "clock": {
+       "displayValue": "9:39"
+      },
+      "scoringPlay": false,
+      "priority": false,
+      "modified": "2026-10-13T04:18Z",
+      "wallclock": "2026-10-13T00:56:48Z",
+      "isPenalty": false,
+      "statYardage": 0,
+      "start": {
+       "down": 1,
+       "distance": 10,
+       "yardLine": 84,
+       "yardsToEndzone": 16,
+       "downDistanceText": "1st & 10 at BUF 16",
+       "shortDownDistanceText": "1st & 10",
+       "possessionText": "BUF 16",
+       "team": {
+        "id": "14"
+       }
+      },
+      "end": {
+       "down": 2,
+       "distance": 10,
+       "yardLine": 84,
+       "yardsToEndzone": 16,
+       "downDistanceText": "2nd & 10 at BUF 16",
+       "shortDownDistanceText": "2nd & 10",
+       "possessionText": "BUF 16",
+       "team": {
+        "id": "14"
+       }
+      },
+      "isTurnover": false
+     },
+     {
+      "id": "4018729941186",
+      "sequenceNumber": "118600",
+      "type": {
+       "id": "5",
+       "text": "Rush",
+       "abbreviation": "RUSH"
+      },
+      "text": "P.Nacua left end to BUF 7 for 9 yards (D.Hamlin; D.Williams).",
+      "awayScore": 6,
+      "homeScore": 0,
+      "period": {
+       "number": 2
+      },
+      "clock": {
+       "displayValue": "9:35"
+      },
+      "scoringPlay": false,
+      "priority": false,
+      "modified": "2026-10-13T04:18Z",
+      "wallclock": "2026-10-13T00:57:27Z",
+      "isPenalty": false,
+      "statYardage": 9,
+      "start": {
+       "down": 2,
+       "distance": 10,
+       "yardLine": 84,
+       "yardsToEndzone": 16,
+       "downDistanceText": "2nd & 10 at BUF 16",
+       "shortDownDistanceText": "2nd & 10",
+       "possessionText": "BUF 16",
+       "team": {
+        "id": "14"
+       }
+      },
+      "end": {
+       "down": 3,
+       "distance": 1,
+       "yardLine": 93,
+       "yardsToEndzone": 7,
+       "downDistanceText": "3rd & 1 at BUF 7",
+       "shortDownDistanceText": "3rd & 1",
+       "possessionText": "BUF 7",
+       "team": {
+        "id": "14"
+       }
+      },
+      "isTurnover": false
+     },
+     {
+      "id": "4018729941215",
+      "sequenceNumber": "121500",
+      "type": {
+       "id": "24",
+       "text": "Pass Reception",
+       "abbreviation": "REC"
+      },
+      "text": "M.Stafford pass short right to D.Allen to BUF 4 for 3 yards (C.Gardner-Johnson).",
+      "awayScore": 6,
+      "homeScore": 0,
+      "period": {
+       "number": 2
+      },
+      "clock": {
+       "displayValue": "8:50"
+      },
+      "scoringPlay": false,
+      "priority": false,
+      "modified": "2026-10-13T04:18Z",
+      "wallclock": "2026-10-13T00:58:12Z",
+      "isPenalty": false,
+      "statYardage": 3,
+      "start": {
+       "down": 3,
+       "distance": 1,
+       "yardLine": 93,
+       "yardsToEndzone": 7,
+       "downDistanceText": "3rd & 1 at BUF 7",
+       "shortDownDistanceText": "3rd & 1",
+       "possessionText": "BUF 7",
+       "team": {
+        "id": "14"
+       }
+      },
+      "end": {
+       "down": 1,
+       "distance": 4,
+       "yardLine": 96,
+       "yardsToEndzone": 4,
+       "downDistanceText": "1st & Goal at BUF 4",
+       "shortDownDistanceText": "1st & Goal",
+       "possessionText": "BUF 4",
+       "team": {
+        "id": "14"
+       }
+      },
+      "yardsAfterCatch": 1,
+      "isTurnover": false
+     },
+     {
+      "id": "4018729941240",
+      "sequenceNumber": "124000",
+      "type": {
+       "id": "67",
+       "text": "Passing Touchdown",
+       "abbreviation": "TD"
+      },
+      "text": "(Shotgun) M.Stafford pass short left to D.Adams for 4 yards, TOUCHDOWN. H.Mevis extra point is GOOD, Center-J.Cardona, Holder-E.Evans.",
+      "awayScore": 6,
+      "homeScore": 7,
+      "period": {
+       "number": 2
+      },
+      "clock": {
+       "displayValue": "8:00"
+      },
+      "scoringPlay": true,
+      "priority": false,
+      "modified": "2026-10-13T04:18Z",
+      "wallclock": "2026-10-13T00:58:58Z",
+      "isPenalty": false,
+      "statYardage": 4,
+      "start": {
+       "down": 1,
+       "distance": 4,
+       "yardLine": 96,
+       "yardsToEndzone": 4,
+       "downDistanceText": "1st & Goal at BUF 4",
+       "shortDownDistanceText": "1st & Goal",
+       "possessionText": "BUF 4",
+       "team": {
+        "id": "14"
+       }
+      },
+      "end": {
+       "down": -1,
+       "distance": 10,
+       "yardLine": 100,
+       "yardsToEndzone": 0,
+       "team": {
+        "id": "14"
+       }
+      },
+      "scoringType": {
+       "name": "touchdown",
+       "displayName": "Touchdown",
+       "abbreviation": "TD"
+      },
+      "pointAfterAttempt": {
+       "id": 61,
+       "text": "Extra Point Good",
+       "abbreviation": "Extra Point Good",
+       "value": 1
+      },
+      "yardsAfterCatch": 0,
+      "isTurnover": false
+     },
+     {
+      "id": "4018729941274",
+      "sequenceNumber": "127400",
+      "type": {
+       "id": "74",
+       "text": "Official Timeout",
+       "abbreviation": "Off TO"
+      },
+      "text": "Official Timeout at 08:00.",
+      "awayScore": 6,
+      "homeScore": 7,
+      "period": {
+       "number": 2
+      },
+      "clock": {
+       "displayValue": "8:00"
+      },
+      "scoringPlay": false,
+      "priority": false,
+      "modified": "2026-10-13T04:18Z",
+      "wallclock": "2026-10-13T00:59:59Z",
+      "isPenalty": false,
+      "statYardage": 0,
+      "start": {
+       "down": -1,
+       "distance": 0,
+       "yardLine": 85,
+       "yardsToEndzone": 0,
+       "downDistanceText": " & Goal at BUF 15",
+       "shortDownDistanceText": " & Goal",
+       "possessionText": "BUF 15",
+       "team": {
+        "id": "14"
+       }
+      },
+      "end": {
+       "down": -1,
+       "distance": 0,
+       "yardLine": 85,
+       "yardsToEndzone": 0,
+       "team": {
+        "id": "14"
+       }
+      },
+      "isTurnover": false
+     }
+    ]
+   }
+  ]
+ }
+}

@@ -489,6 +489,24 @@ def espn_fitt_request(sport_path, resource, params=None):
         return {"error": True, "message": "ESPN FITT API returned invalid JSON"}
 
 
+#: Seconds to cache the summary of a game in progress. A drive can finish inside
+#: the five minutes we cache a finished game for, so a live summary must expire
+#: fast enough for a poller to see the drive while it is still being played.
+_LIVE_SUMMARY_TTL = 10
+
+#: Key ``espn_summary`` stamps on each payload with the UTC time we received it.
+SUMMARY_RETRIEVED_AT_KEY = "_retrieved_at"
+
+
+def summary_game_state(summary_data):
+    """ESPN's ``pre`` / ``in`` / ``post`` state for a summary, or None when absent."""
+    competitions = _as_dict(_as_dict(summary_data).get("header")).get("competitions") or []
+    if not competitions or not isinstance(competitions[0], dict):
+        return None
+    state = _as_dict(_as_dict(competitions[0].get("status")).get("type")).get("state")
+    return state or None
+
+
 def espn_summary(sport_path, event_id, max_retries=_MAX_RETRIES):
     """ESPN game summary endpoint (box score, stats, play-by-play summary).
 
@@ -497,7 +515,9 @@ def espn_summary(sport_path, event_id, max_retries=_MAX_RETRIES):
         event_id: ESPN event ID.
         max_retries: Set to 0 for exploratory requests.
 
-    Returns parsed JSON dict on success, None on failure.
+    Returns parsed JSON dict on success, None on failure. The dict carries
+    ``SUMMARY_RETRIEVED_AT_KEY``: when we received it, not when anything in it happened.
+    A game in progress is cached for ``_LIVE_SUMMARY_TTL`` seconds instead of five minutes.
     """
     if not event_id:
         return None
@@ -524,11 +544,18 @@ def espn_summary(sport_path, event_id, max_retries=_MAX_RETRIES):
         return None
     try:
         data = json.loads(raw.decode())
-        _cache_set(cache_key, data, ttl=300)
-        return data
     except (json.JSONDecodeError, ValueError):
         _cache_set(cache_key, {}, ttl=60)
         return None
+    if not isinstance(data, dict):
+        _cache_set(cache_key, {}, ttl=60)
+        return None
+    data[SUMMARY_RETRIEVED_AT_KEY] = datetime.datetime.now(datetime.timezone.utc).strftime(
+        "%Y-%m-%dT%H:%M:%SZ"
+    )
+    ttl = _LIVE_SUMMARY_TTL if summary_game_state(data) == "in" else 300
+    _cache_set(cache_key, data, ttl=ttl)
+    return data
 
 
 # ============================================================
@@ -1500,6 +1527,170 @@ def normalize_scoring_plays(summary_data, competitors=None):
             "away_score": sp.get("awayScore", ""),
         })
     return scoring_plays
+
+
+def _int_or_none(value):
+    try:
+        return int(value)
+    except (TypeError, ValueError):
+        return None
+
+
+def _football_situation(raw):
+    """Down, distance and field position at one end of a play, or None when ESPN sent none.
+
+    Missing values stay None: a kickoff has no down, and 0 is a real distance.
+    """
+    raw = _as_dict(raw)
+    if not raw:
+        return None
+    team_id = _as_dict(raw.get("team")).get("id")
+    return {
+        "down": raw.get("down"),
+        "distance": raw.get("distance"),
+        "yard_line": raw.get("yardLine"),
+        "yards_to_endzone": raw.get("yardsToEndzone"),
+        "down_distance_text": raw.get("downDistanceText") or None,
+        "possession_text": raw.get("possessionText") or None,
+        "team_id": str(team_id) if team_id not in (None, "") else None,
+    }
+
+
+def _football_play(p):
+    play_type = _as_dict(p.get("type"))
+    return {
+        "id": str(p.get("id", "")),
+        "sequence_number": _int_or_none(p.get("sequenceNumber")),
+        "text": p.get("text", ""),
+        "type": play_type.get("text", ""),
+        "period": _as_dict(p.get("period")).get("number", ""),
+        "clock": _as_dict(p.get("clock")).get("displayValue", ""),
+        "home_score": p.get("homeScore", ""),
+        "away_score": p.get("awayScore", ""),
+        "scoring_play": p.get("scoringPlay", False),
+        "yards": p.get("statYardage", 0),
+        "is_turnover": p.get("isTurnover", False),
+        "is_penalty": p.get("isPenalty"),
+        "start": _football_situation(p.get("start")),
+        "end": _football_situation(p.get("end")),
+        # ESPN's own times. ``wallclock`` is when the play happened at the stadium and
+        # ``modified`` when ESPN last revised the record; neither is when we received it.
+        "wallclock": p.get("wallclock") or None,
+        "modified": p.get("modified") or None,
+    }
+
+
+def _football_drive(d, plays, is_current):
+    team = _as_dict(d.get("team"))
+    start = _as_dict(d.get("start"))
+    end = _as_dict(d.get("end"))
+    return {
+        "id": str(d.get("id", "")),
+        "is_current": is_current,
+        "description": d.get("description", ""),
+        "team": {
+            "id": str(team.get("id", "")),
+            "name": team.get("displayName", team.get("name", "")),
+            "abbreviation": team.get("abbreviation", ""),
+        },
+        "result": d.get("displayResult", d.get("result", "")),
+        "is_score": d.get("isScore", False),
+        "yards": d.get("yards", 0),
+        "plays_count": d.get("offensivePlays", len(plays)),
+        "time_elapsed": _as_dict(d.get("timeElapsed")).get("displayValue", ""),
+        "start": {
+            "period": _as_dict(start.get("period")).get("number", ""),
+            "clock": _as_dict(start.get("clock")).get("displayValue", ""),
+            "yard_line": start.get("yardLine", ""),
+            "text": start.get("text", ""),
+        },
+        "end": {
+            "period": _as_dict(end.get("period")).get("number", ""),
+            "clock": _as_dict(end.get("clock")).get("displayValue", ""),
+            "yard_line": end.get("yardLine", ""),
+        },
+        "plays": plays,
+    }
+
+
+def _fresher(new, old):
+    """True when ``new`` is the copy of one play to keep over ``old``.
+
+    ESPN revises a play in place (tacklers added, yardage corrected) and bumps
+    ``modified``. A copy without ``modified``, or a tie, goes to the later sighting,
+    which for a repeated drive is ``drives.current``.
+    """
+    if new["modified"] and old["modified"]:
+        return new["modified"] >= old["modified"]
+    return True
+
+
+def normalize_football_drives(summary_data):
+    """Normalize drive-by-drive play-by-play from an ESPN football summary (NFL, CFB).
+
+    ESPN splits drives between ``drives.previous`` (a list) and ``drives.current``
+    (one drive object, present only while a game is in progress). A live feed may
+    carry the drive in progress in ``current`` only, or repeat it as the last entry
+    of ``previous``, sometimes with fresher text in one copy. Drives merge by drive
+    ID and plays by play ID; descriptions and clocks are never used to match. The
+    drive in progress is flagged ``is_current``.
+    """
+    drives_raw = _as_dict(_as_dict(summary_data).get("drives"))
+    previous = drives_raw.get("previous")
+    sources = [(d, False) for d in previous if isinstance(d, dict)] if isinstance(previous, list) else []
+    current = drives_raw.get("current")
+    current_id = None
+    if isinstance(current, dict) and current:
+        sources.append((current, True))
+        if current.get("id") not in (None, ""):
+            current_id = str(current["id"])
+
+    merged = {}  # key -> {"raw": latest drive object, "plays": {play_id: play}, "order": [...]}
+    drive_order = []
+    for index, (raw, is_current) in enumerate(sources):
+        drive_id = raw.get("id")
+        key = str(drive_id) if drive_id not in (None, "") else f"#{index}"
+        entry = merged.get(key)
+        if entry is None:
+            entry = merged[key] = {"raw": raw, "plays": {}, "order": []}
+            drive_order.append(key)
+        elif is_current:
+            # The drive in progress: its own object holds the live totals.
+            entry["raw"] = raw
+        for play_index, raw_play in enumerate(raw.get("plays") or []):
+            if not isinstance(raw_play, dict):
+                continue
+            play = _football_play(raw_play)
+            play_key = play["id"] or f"#{index}.{play_index}"
+            old = entry["plays"].get(play_key)
+            if old is None:
+                entry["order"].append(play_key)
+                entry["plays"][play_key] = play
+            elif _fresher(play, old):
+                entry["plays"][play_key] = play
+
+    # A play ID sits in one drive only. Should ESPN list it under two, keep it
+    # in the later drive, which is the newer placement.
+    seen_plays = set()
+    drives = []
+    for key in reversed(drive_order):
+        entry = merged[key]
+        plays = [entry["plays"][k] for k in entry["order"] if k not in seen_plays]
+        seen_plays.update(entry["order"])
+        sequence = [p["sequence_number"] for p in plays]
+        if None not in sequence:
+            plays.sort(key=lambda p: p["sequence_number"])
+        drive_id = str(entry["raw"].get("id", ""))
+        drives.append(_football_drive(entry["raw"], plays, drive_id == current_id and current_id is not None))
+    drives.reverse()
+
+    return {
+        "drives": drives,
+        "count": len(drives),
+        "current_drive_id": current_id,
+        "game_state": summary_game_state(summary_data),
+        "retrieved_at": _as_dict(summary_data).get(SUMMARY_RETRIEVED_AT_KEY),
+    }
 
 
 def _resolve_leaders(categories: list) -> list:

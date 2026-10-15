@@ -64,6 +64,15 @@ Get full play-by-play data for a game.
 - `event_id` (str, required): ESPN event ID
 
 Returns `drives[]` with play-by-play detail including down, distance, yard line, play description, and scoring plays.
+During a game the drive being played is included and flagged `is_current: true`; `current_drive_id` names it.
+Drives and plays are merged by ESPN ID, so a drive ESPN repeats in `previous` and `current` appears once,
+with the most recently modified copy of each play.
+
+Each play adds `sequence_number`, `is_penalty`, and `start` / `end` situations (`down`, `distance`, `yard_line`,
+`yards_to_endzone`, `down_distance_text`, `possession_text`, `team_id`; `null` when ESPN sends none).
+`wallclock` is when ESPN says the play happened and `modified` when ESPN last revised it. The response's
+`retrieved_at` is when sports-skills received the summary, and `game_state` is ESPN's `pre` / `in` / `post`.
+A game in progress is cached for 10 seconds, a finished one for 5 minutes.
 
 ### get_win_probability
 Get win probability chart data for a game.

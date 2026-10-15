@@ -3,17 +3,22 @@
 import os
 from pathlib import Path
 
-RELEASE_036_TEST = "test_release_036.py"
+#: Each published release's proof, and the variable that opts back into it.
+HISTORICAL_RELEASE_TESTS = {
+    "test_release_036.py": "SPORTS_SKILLS_VERIFY_RELEASE_036",
+    "test_release_037.py": "SPORTS_SKILLS_VERIFY_RELEASE_037",
+}
 
 
 def pytest_ignore_collect(collection_path, config):
-    """Keep the v0.36 proof opt-in after that immutable release.
+    """Keep each proof opt-in after its immutable release.
 
     The historical checksum test rebuilds the current source tree, so any later
     feature correctly changes its artifacts. Release verification can enable the
     frozen proof explicitly without disabling pytest's other ignore hooks.
     """
     path = Path(str(collection_path))
-    if path.name != RELEASE_036_TEST:
+    variable = HISTORICAL_RELEASE_TESTS.get(path.name)
+    if variable is None:
         return None
-    return os.environ.get("SPORTS_SKILLS_VERIFY_RELEASE_036") != "1"
+    return os.environ.get(variable) != "1"
