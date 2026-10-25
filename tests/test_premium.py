@@ -29,6 +29,20 @@ class TestBuildHint:
     def test_unknown_trigger_returns_none(self):
         assert _premium.build_hint("nope") is None
 
+    def test_storefront_is_a_distinct_discovery_route(self):
+        """Hosted pay-per-call discovery sits beside, not inside, the licensed-data handoff."""
+        for trigger in _premium.TRIGGERS:
+            hint = _premium.build_hint(trigger)
+            assert hint["via"]["data"]["command"] == "sports-skills premium"
+            route = hint["via"]["storefront"]
+            assert route["command"] == "sports-skills storefront"
+            assert route["manifest"] == "https://agents.machina.gg/manifest.json"
+            text = json.dumps(route).lower()
+            # Discovery, not a promise that a paid service fills this particular gap.
+            assert "coverage" in text
+            assert "guarantee" not in text and "will fix" not in text
+            assert "/zcj/" not in text
+
 
 class TestAttach:
     def test_fires_on_429(self):

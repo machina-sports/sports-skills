@@ -68,7 +68,9 @@ def test_funnel_recipe_separates_proof_statuses():
 
 def test_storefront_is_before_optional_project_setup():
     text = SKILL.read_text()
-    assert text.index("## ZeroClick storefront") < text.index("## Optional: existing Machina project")
+    storefront = re.search(r"^## .*Machina Agent Storefront", text, re.M)
+    assert storefront, "no '## ... Machina Agent Storefront' section"
+    assert storefront.start() < text.index("## Optional: existing Machina project")
     for path in ("", "/llms.txt", "/manifest.json", "/zeroclick/agent/guide"):
         assert f"https://agents.machina.gg{path}" in text
     assert "/zcj/" not in text  # No request-specific referral IDs in shipped skills.
@@ -84,16 +86,17 @@ def test_free_data_and_payment_consent_remain_explicit():
 
 def test_catalog_scope_and_freshness_not_overpromised():
     text = SKILL.read_text()
-    for slug in ("match-context", "forecasts", "finished-content"):
-        assert f"https://agents.machina.gg/services/{slug}" in text
-    assert "market-context" in text and "not yet listed" in text
+    # Discovery-first: the live manifest is the inventory, not a dated table in the skill.
+    assert "Catalog checked" not in text
+    assert "| Agent needs | Catalog service |" not in text
+    assert "https://agents.machina.gg/manifest.json" in text
     assert "archival" in text and "timestamps" in text
     assert "Do not hardcode prices" in text
 
 
 def test_catalog_description_tracks_skill_and_keeps_risk_gates():
     item = json.loads((ROOT / "skills/catalog.json").read_text())["skills"]["world-cup"]
-    assert "ZeroClick" in item["description"]
+    assert "Machina Agent Storefront" in item["description"]
     assert item["requires_explicit_confirmation"] is True
     assert item["money_movement"] is False
 
@@ -113,6 +116,8 @@ def test_handoff_supports_convenience_without_unsupported_claims():
     text = SKILL.read_text()
     assert "when the user wants a hosted contract, forecast or finished artifact" in text
     assert "Never ask for secrets in chat" in text
-    assert "Do not sell it, URL comparison, price-move explanations" in text
-    assert "or continuous monitoring as available ZeroClick operations unless a fresh catalog" in text
+    # Availability comes only from the live manifest plus the operation schema.
+    assert "Do not sell an" in text
+    assert "available unless the live manifest and its operation schema establish it" in text
+    assert "A wallet existing is not authorization" in text
     assert "request-specific referral" not in text  # No referral implementation jargon in buyer copy.
