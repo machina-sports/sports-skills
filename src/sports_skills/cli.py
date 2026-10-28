@@ -18,7 +18,7 @@ import argparse
 import json
 import sys
 
-from sports_skills import _premium
+from sports_skills import _premium, _storefront
 
 # Optional row-shaping params for wide/long endpoints (see sports_skills._shaping)
 _SHAPING = ["sort_by", "descending", "limit", "fields"]
@@ -1127,7 +1127,31 @@ def build_catalog():
             "open": {"modules": list(modules), "license": "MIT", "use": "personal, non-commercial"},
             "premium": _premium.premium_tier(),
         },
+        # Additive, static pointer; `sports-skills storefront` fetches the live catalog.
+        "storefront": _storefront.metadata(),
     }
+
+
+def _storefront_discovery(args, remaining):
+    """Handle ``sports-skills storefront [--json]``: read-only live manifest discovery."""
+    if (
+        args.command
+        or args.canonical
+        or args.observed_at
+        or args.consumer_tier
+        or any(a != "--json" for a in remaining)
+    ):
+        _cli_error(
+            "Usage: sports-skills storefront [--json]. It always reads the fixed public manifest "
+            f"({_storefront.MANIFEST_URL}); no other arguments are accepted."
+        )
+    result = _storefront.discover()
+    if not result["status"]:
+        _cli_error(result["message"])
+    if "--json" in remaining:
+        print(json.dumps(result, indent=2, ensure_ascii=True))
+    else:
+        _storefront.print_human(result["data"])
 
 
 def main():
@@ -1176,6 +1200,10 @@ def main():
         print(
             "Need licensed or real-time data? Run: sports-skills premium  — connect to premium feeds via machina-cli."
         )
+        print(
+            f"{_storefront.TITLE}: run sports-skills storefront  — read-only live list of optional "
+            "hosted pay-per-call services, prices and schemas."
+        )
         return
 
     # Reserved "catalog" command: return all available modules
@@ -1190,6 +1218,11 @@ def main():
     # already depends on sports-skills).
     if args.module == "deploy":
         _deploy_handoff(remaining)
+        return
+
+    # Reserved "storefront" command: read-only Machina Agent Storefront discovery.
+    if args.module == "storefront":
+        _storefront_discovery(args, remaining)
         return
 
     # Reserved "premium" command.

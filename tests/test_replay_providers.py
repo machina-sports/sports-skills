@@ -131,7 +131,7 @@ _WAITS = (
     (kalshi_conn._RateLimiter, "acquire"),
     (polymarket_conn._RateLimiter, "acquire"),
     (esports_conn._RateLimiter, "acquire"),
-    (metadata_conn._RateLimiter, "acquire"),
+    (metadata_conn._limiter, "acquire"),
     (prophetx_conn._RateLimiter, "acquire"),
     (football_conn._RateLimiter, "acquire"),
     (_espn_base.RateLimiter, "acquire"),
@@ -142,7 +142,8 @@ _WAITS = (
 
 def _allow_waits(monkeypatch):
     for owner, name in _WAITS:
-        monkeypatch.setattr(owner, name, lambda *a, **k: None)
+        # TheSportsDB checks acquire's boolean result; a no-wait success is True.
+        monkeypatch.setattr(owner, name, lambda *a, **k: True)
 
 
 def _refuse_waits(monkeypatch):
@@ -153,6 +154,16 @@ def _refuse_waits(monkeypatch):
 
     for owner, name in _WAITS:
         monkeypatch.setattr(owner, name, refuse)
+
+
+def test_metadata_wait_controls_cover_shadowed_instance_method(monkeypatch):
+    # Other tests can restore acquire as an instance attribute, shadowing its class.
+    monkeypatch.setattr(metadata_conn._limiter, "acquire", lambda: False)
+    _allow_waits(monkeypatch)
+    assert metadata_conn._limiter.acquire() is True
+    _refuse_waits(monkeypatch)
+    with pytest.raises(AssertionError, match="rate-limit wait during replay"):
+        metadata_conn._limiter.acquire()
 
 
 def _set_mode(monkeypatch, mode, directory=None):

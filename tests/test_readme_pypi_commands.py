@@ -19,7 +19,7 @@ README_PYPI = Path(__file__).resolve().parent.parent / "README_PYPI.md"
 TEXT = README_PYPI.read_text(encoding="utf-8")
 
 #: Handled by `main()` before the registry lookup, so they are not registry entries.
-RESERVED_MODULES = {"catalog", "deploy", "premium"}
+RESERVED_MODULES = {"catalog", "deploy", "premium", "storefront"}
 RESERVED_COMMANDS = {"schema"}
 
 #: `sports-skills <module> <command>` at the start of a documented shell line. Lines

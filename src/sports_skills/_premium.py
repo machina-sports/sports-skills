@@ -6,6 +6,8 @@ import shutil
 import subprocess
 import sys
 
+from sports_skills import _storefront
+
 DOCS_URL = "https://docs.machina.gg/"
 SITE_URL = "https://machina.gg"
 MACHINA_INSTALL = "pipx install machina-cli  # or: uv tool install machina-cli"
@@ -78,6 +80,15 @@ def build_hint(trigger, surface="hint"):
                 "docs": _tagged(DOCS_URL, surface),
             },
             "deploy": {"command": "sports-skills deploy"},
+            # Separate from the licensed-data handoff: optional hosted pay-per-call services.
+            "storefront": {
+                "command": _storefront.COMMAND,
+                "manifest": _storefront.MANIFEST_URL,
+                "note": (
+                    "Optional hosted services; check the live manifest and operation schema "
+                    "for coverage of this request before suggesting one."
+                ),
+            },
         },
         "x402": None,
     }

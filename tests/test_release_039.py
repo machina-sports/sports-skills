@@ -2,6 +2,7 @@
 
 import email
 import hashlib
+import io
 import json
 import os
 import re
@@ -20,6 +21,13 @@ VERSION = "0.39.0"
 TAG = f"v{VERSION}"
 REVIEWED_SOURCE_COMMIT = "7511c724559045e39aa9d0c5ce84c447532ed4e1"
 REVIEWED_SOURCE_TREE = "382e033ea55ac7392a86f5bbfde49be20bf290fb"
+# The published v0.39.0 tag. REVIEWED_SOURCE_COMMIT is the reviewed code *before* the
+# release-metadata overlay (provenance URL, checksum authority, receipt) was committed on
+# top; the immutable checksums were produced from this tag's tree. They are reproduced
+# from it here, not from the current tree, which later features legitimately change.
+PUBLISHED_SOURCE_COMMIT = "0784ab06b04f1198a0aaf2ca4c5f73de6e39de95"
+# Every input the wheel and sdist are built from (see [tool.hatch.build.targets.*]).
+BUILD_INPUTS = (".gitignore", "LICENSE", "README_PYPI.md", "pyproject.toml", "src/sports_skills", "packaging/release.py")
 SOURCE_DATE_EPOCH = 1792797037
 AUTHORITY = ROOT / "release" / VERSION / "SHA256SUMS"
 REVIEW_RECEIPT = ROOT / "release" / VERSION / "review-receipt.json"
@@ -43,17 +51,46 @@ def _authority_rows():
     return dict(parsed)
 
 
-def _build(output):
+def _build(output, source_root=ROOT):
     env = os.environ.copy()
     env["SOURCE_DATE_EPOCH"] = str(SOURCE_DATE_EPOCH)
     subprocess.run(
-        [sys.executable, str(ROOT / "packaging/release.py"), str(ROOT), str(output)],
+        [sys.executable, str(source_root / "packaging/release.py"), str(source_root), str(output)],
         check=True,
-        cwd=ROOT,
+        cwd=source_root,
         env=env,
     )
     assert sorted(path.name for path in output.iterdir()) == sorted([SDIST_NAME, WHEEL_NAME])
     return output / WHEEL_NAME, output / SDIST_NAME
+
+
+def _safe_extract(payload, destination):
+    """Extract a tar we produced, refusing anything but plain files/dirs inside ``destination``.
+
+    Explicit per-member checks rather than ``tarfile``'s ``filter=``, which Python 3.9 lacks.
+    """
+    root = destination.resolve()
+    with tarfile.open(fileobj=io.BytesIO(payload), mode="r:") as archive:
+        for member in archive.getmembers():
+            parts = Path(member.name).parts
+            target = (root / member.name).resolve()
+            if Path(member.name).is_absolute() or ".." in parts or (target != root and root not in target.parents):
+                raise AssertionError(f"unsafe archive member path: {member.name!r}")
+            if member.isdir():
+                target.mkdir(parents=True, exist_ok=True)
+            elif member.isfile():
+                target.parent.mkdir(parents=True, exist_ok=True)
+                target.write_bytes(archive.extractfile(member).read())
+                target.chmod(0o755 if member.mode & 0o111 else 0o644)
+            else:
+                raise AssertionError(f"unexpected archive member type: {member.name!r}")
+
+
+def _assert_checksum_file_is_not_an_artifact_input(wheel, sdist):
+    with zipfile.ZipFile(wheel) as archive:
+        assert not any(name.endswith("SHA256SUMS") for name in archive.namelist())
+    with tarfile.open(sdist, "r:gz") as archive:
+        assert not any(name.endswith("SHA256SUMS") for name in archive.getnames())
 
 
 @pytest.fixture(scope="session")
@@ -61,6 +98,20 @@ def release_builds(tmp_path_factory):
     first = tmp_path_factory.mktemp("release-build-a")
     second = tmp_path_factory.mktemp("release-build-b")
     return _build(first), _build(second)
+
+
+@pytest.fixture(scope="session")
+def published_build(tmp_path_factory):
+    """Build the exact published tag from a local `git archive` (no network, no checkout)."""
+    source = tmp_path_factory.mktemp("published-source")
+    payload = subprocess.run(
+        ["git", "-C", str(ROOT), "archive", "--format=tar", PUBLISHED_SOURCE_COMMIT, "--", *BUILD_INPUTS],
+        check=True,
+        capture_output=True,
+    ).stdout
+    _safe_extract(payload, source)
+    wheel, sdist = _build(tmp_path_factory.mktemp("published-build"), source)
+    return source, wheel, sdist
 
 
 def test_every_active_version_surface_is_0390():
@@ -107,14 +158,32 @@ def test_release_source_and_epoch_match_review_receipt():
 
 
 def test_checksum_authority_is_two_basename_rows_and_not_an_artifact_input(release_builds):
-    authority = _authority_rows()
+    _authority_rows()
     wheel, sdist = release_builds[0]
-    assert authority == {_sha256(wheel): WHEEL_NAME, _sha256(sdist): SDIST_NAME}
+    _assert_checksum_file_is_not_an_artifact_input(wheel, sdist)
 
+
+def test_published_tag_reproduces_the_immutable_checksum_authority(published_build):
+    source, wheel, sdist = published_build
+    assert _authority_rows() == {_sha256(wheel): WHEEL_NAME, _sha256(sdist): SDIST_NAME}
+    _assert_checksum_file_is_not_an_artifact_input(wheel, sdist)
+
+    # The frozen source carries the release version and reviewed-source provenance.
+    pyproject = (source / "pyproject.toml").read_text(encoding="utf-8")
+    assert re.search(r'^version = "0\.39\.0"$', pyproject, re.MULTILINE)
+    assert (
+        f'"Reviewed source" = "https://github.com/machina-sports/sports-skills/tree/{REVIEWED_SOURCE_COMMIT}"'
+    ) in pyproject
+    release_source = (source / "packaging/release.py").read_text(encoding="utf-8")
+    assert f'REVIEWED_SOURCE_COMMIT = "{REVIEWED_SOURCE_COMMIT}"' in release_source
+    assert f"SOURCE_DATE_EPOCH = {SOURCE_DATE_EPOCH}" in release_source
     with zipfile.ZipFile(wheel) as archive:
-        assert not any(name.endswith("SHA256SUMS") for name in archive.namelist())
-    with tarfile.open(sdist, "r:gz") as archive:
-        assert not any(name.endswith("SHA256SUMS") for name in archive.getnames())
+        metadata_name = next(name for name in archive.namelist() if name.endswith(".dist-info/METADATA"))
+        metadata = email.message_from_bytes(archive.read(metadata_name))
+    assert metadata["Version"] == VERSION
+    assert metadata.get_all("Project-URL") == [
+        f"Reviewed source, https://github.com/machina-sports/sports-skills/tree/{REVIEWED_SOURCE_COMMIT}"
+    ]
 
 
 def test_two_clean_builds_are_byte_identical(release_builds):
