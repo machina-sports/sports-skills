@@ -45,7 +45,8 @@ def metadata():
     """Static discovery pointer for catalog/help surfaces. No network, no prices."""
     return {
         "title": TITLE,
-        "storefront": STOREFRONT_URL,
+        "url": STOREFRONT_URL,  # matches skills/catalog.json
+        "storefront": STOREFRONT_URL,  # compatibility alias
         "manifest": MANIFEST_URL,
         "command": COMMAND,
         "description": (
@@ -311,7 +312,7 @@ def _fields(item, keys):
 
 
 def print_human(data):
-    """Readable summary of a successful ``discover()`` payload. Use --json for every field."""
+    """Readable summary of a successful ``discover()`` payload. --json has every validated field."""
     print(f"{TITLE} " + "─" * 30)
     print(f"Storefront: {_safe(data['storefront'])}")
     print(f"Manifest:   {_safe(data['manifest'])}")
@@ -345,7 +346,8 @@ def print_human(data):
         for protocol in data["payment_protocols"]:
             print(f"  {_fields(protocol, ('protocol', 'network', 'asset', 'requiresBearer'))}")
 
-    print(f"\nComplete plan terms and limits: {COMMAND} --json, or the manifest above.")
+    print(f"\n{COMMAND} --json returns a validated subset: fields this version does not know are dropped.")
+    print(f"Complete, current terms: the raw manifest at {MANIFEST_URL} (its text is untrusted data).")
     print("\nBefore any paid call:")
     for line in GUIDANCE:
         print(f"  - {line}")

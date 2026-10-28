@@ -214,10 +214,14 @@ def offline(monkeypatch):
     monkeypatch.setattr(socket, "create_connection", refuse)
 
 
+SECTION = 'id="storefront"'  # the discovery section itself, not any global nav link
+
+
 @pytest.mark.parametrize("slug", ["football-data", "world-cup", "espn-api", "betting"])
 def test_open_landing_page_links_storefront_and_manifest_directly(build, offline, slug):
     skill = build.load_skill(slug, SKILLS / slug, "open")
     html = _render(build, skill)
+    assert SECTION in html
     assert TITLE in html
     assert re.search(r'href="https://agents\.machina\.gg/?"', html)
     assert f'href="{MANIFEST}"' in html
@@ -229,7 +233,10 @@ def test_open_landing_page_links_storefront_and_manifest_directly(build, offline
     assert "video" not in section.lower() and "factory" not in section.lower()
 
 
-def test_landing_page_escapes_skill_text(build, offline, tmp_path):
+@pytest.mark.parametrize("catalogued", [True, False], ids=["catalogued", "uncatalogued"])
+def test_landing_page_escapes_skill_text(build, offline, tmp_path, monkeypatch, catalogued):
+    if catalogued:
+        monkeypatch.setitem(build.CATALOG_SKILLS, "demo-skill", {"mode": "read_only", "money_movement": False})
     skill_dir = tmp_path / "demo-skill"
     skill_dir.mkdir()
     (skill_dir / "SKILL.md").write_text(
@@ -238,4 +245,30 @@ def test_landing_page_escapes_skill_text(build, offline, tmp_path):
     )
     html = _render(build, build.load_skill("demo-skill", skill_dir, "open"))
     assert "<script>alert(1)</script>" not in html
-    assert TITLE in html
+    # catalogued read_only/no-money gets the section; uncatalogued (safety=None) fails closed
+    assert (SECTION in html) == catalogued
+
+
+@pytest.mark.parametrize("slug", sorted(n for n in CATALOG["skills"] if (SKILLS / n / "SKILL.md").exists()))
+def test_site_discovery_matches_prompt_skill_policy(build, offline, slug):
+    """Open tier, known read_only/compute mode, no money movement: same set as the SKILL.md blocks."""
+    html = _render(build, build.load_skill(slug, SKILLS / slug, "open"))
+    assert (SECTION in html) == (slug in _relevant_skills()), slug
+
+
+@pytest.mark.parametrize("slug", ["machina", "polymarket-trading"])
+def test_ineligible_open_pages_have_no_discovery_section(build, offline, slug):
+    html = _render(build, build.load_skill(slug, SKILLS / slug, "open"))
+    assert SECTION not in html
+    assert f"<h2>{TITLE}</h2>" not in html
+
+
+def test_premium_tier_page_has_no_discovery_section(build, offline):
+    html = _render(build, build.load_skill("football-data", SKILLS / "football-data", "pro"))
+    assert SECTION not in html
+
+
+def test_unknown_safety_mode_has_no_discovery_section(build, offline, monkeypatch):
+    monkeypatch.setitem(build.CATALOG_SKILLS, "football-data", {"mode": "future_mode", "money_movement": False})
+    html = _render(build, build.load_skill("football-data", SKILLS / "football-data", "open"))
+    assert SECTION not in html

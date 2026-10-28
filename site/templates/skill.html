@@ -204,7 +204,8 @@
     </section>
     {% endif %}
 
-    {% if open and not (safety and safety.money_movement) %}
+    {# Same policy as the SKILL.md discovery blocks; uncatalogued or unknown modes fail closed. #}
+    {% if open and safety and safety.mode in ['read_only', 'compute'] and not safety.money_movement %}
     <!-- AGENT STOREFRONT (static links; the build never fetches the manifest) -->
     <section class="sk-sec" id="storefront">
       <h2>Discover the Machina Agent Storefront</h2>
