@@ -29,22 +29,25 @@ sports-skills tennis get_wta_player_results --player_id=320760 --year=2025 --lim
 ## CRITICAL: Before Any Query
 
 CRITICAL: Before calling any data endpoint, verify:
-- The `tour` parameter is specified (`atp` or `wta`) — there is no default.
+- `tour` (`atp` or `wta`) is passed where the command requires it — see below.
 - Year is derived from the system prompt's `currentDate` — never hardcoded.
 
 ## The `tour` Parameter
 
-Most ESPN-backed commands require `--tour=atp` or `--tour=wta`:
 - **ATP**: Men's professional tennis tour
 - **WTA**: Women's professional tennis tour
 
-If the user doesn't specify, ask which tour or show both by calling the command twice.
+Per command:
+- `get_scoreboard`: `tour` is optional. Omit it to get ATP and WTA in one call; `date` is optional either way. If one tour fails, the result keeps the other tour's tournaments and adds `partial: true` plus a `warnings` entry naming the failed tour; it errors only when both fail.
+- `get_rankings`, `get_calendar`, `get_news`: `tour` is required. If the user doesn't specify, ask which tour; if they want both, call once per tour.
+- `get_player_info`: takes only `player_id` (ESPN athlete ID) — no `tour`.
+- `get_wta_entry_list`, `get_wta_player_results`: take native WTA ids — no `tour`.
 
 ## Commands
 
 | Command | Description |
 |---|---|
-| `get_scoreboard` | Live/recent tournament scores for a tour |
+| `get_scoreboard` | Live/recent tournament scores for one tour, or both when `tour` is omitted |
 | `get_rankings` | ATP or WTA player rankings |
 | `get_calendar` | Full season tournament calendar |
 | `get_player_info` | Individual tennis player profile |

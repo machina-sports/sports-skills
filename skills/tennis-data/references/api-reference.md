@@ -3,8 +3,9 @@
 ## Commands
 
 ### get_scoreboard
-Get live/recent tennis scores for a tour.
-- `tour` (str, required): "atp" or "wta"
+Get live/recent tennis scores for one tour, or both ATP and WTA in one call when `tour` is omitted.
+- `tour` (str, optional): "atp" or "wta". Omit to fetch both tours.
+- `date` (str, optional): Date in YYYY-MM-DD format. Defaults to today.
 
 Returns current tournament info with matches organized by round including player names, set scores, and match status.
 
@@ -27,7 +28,6 @@ ESPN has no light calendar endpoint: the only source is the full-year scoreboard
 ### get_player_info
 Get individual tennis player profile.
 - `player_id` (str, required): ESPN athlete ID
-- `tour` (str, optional): "atp" or "wta". Defaults to "atp".
 
 Returns player details: name, nationality, birthplace, height, turned pro year, career titles, and recent match history.
 
@@ -109,7 +109,10 @@ Returns:
 - **ATP**: Men's professional tennis tour
 - **WTA**: Women's professional tennis tour
 
-If the user just says "tennis" without specifying a tour, ask which one or show both by calling the command twice.
+- `get_scoreboard`: optional. Omit it to fetch ATP and WTA in one call. If one tour fails, the result keeps the other tour's tournaments and adds `partial: true` plus a `warnings` entry naming the failed tour; it errors only when both fail.
+- `get_rankings`, `get_calendar`, `get_news`: required. If the user just says "tennis", ask which tour; if they want both, call once per tour.
+- `get_player_info`: not accepted — takes only `player_id`.
+- `get_wta_entry_list`, `get_wta_player_results`: not accepted — take native WTA ids.
 
 ## Notable Tournaments
 
