@@ -41,15 +41,17 @@ sports-skills nba get_teams
 ## CRITICAL: Before Any Query
 
 CRITICAL: Before calling any data endpoint, verify:
-- Season year is derived from the system prompt's `currentDate` — never hardcoded.
+- For the current season, omit `season`/`season_year` on ESPN commands — never hardcode one.
 - If only a team name is provided, call `get_teams` to resolve the team ID before using team-specific commands.
 
 ## Choosing the Season
 
-Derive the current year from the system prompt's date (e.g., `currentDate: 2026-02-18` → current year is 2026).
+ESPN names an NBA season by the year it ends: 2026-27 is `2027`, so in February 2026 the current season is `2026`.
 
-- **If the user specifies a season**, use it as-is.
-- **If the user says "current", "this season", or doesn't specify**: The NBA season runs October–June. If the current month is October–December, the active season year matches the current year. If January–June, the active season started the previous calendar year (use that year as the season).
+- **If the user says "current", "this season", or doesn't specify**: omit `season`/`season_year`. For `get_leaders`, `get_futures`, `get_team_stats` and `get_player_stats`, the default is a calendar-selected ending year, not necessarily a season with games yet: from October 1 the season ending next year, before October the one ending this year.
+- **Between October 1 and opening night** the default season may have no data. `get_leaders` can return empty or unavailable and does not fall back. `get_futures`, `get_team_stats` and `get_player_stats` retry the prior season only when ESPN returns an error (with a `warnings` note), not when it returns an empty successful payload.
+- **If the user names a past season**: pass its ending year (2024-25 → `2025`). An explicitly requested season never falls back.
+- The `get_nbastats_*` commands use the starting year instead (see "Using ESPN and NBA Stats Together").
 
 ## Commands
 
@@ -151,9 +153,8 @@ Result: All live and recent NBA games with scores and status
 Example 2: Conference standings
 User says: "Show me the Western Conference standings"
 Actions:
-1. Derive season year from `currentDate`
-2. Call `get_standings(season=<derived_year>)`
-3. Filter results for Western Conference
+1. Call `get_standings()` (omit season; check which season the response returns)
+2. Filter results for Western Conference
 Result: Western Conference standings table with W-L, PCT, GB per team
 
 Example 3: Team roster
@@ -179,8 +180,7 @@ Result: Lakers injury list with player name, position, status, and injury type
 Example 6: Player statistics
 User says: "Show me LeBron's stats this season"
 Actions:
-1. Derive season year from `currentDate`
-2. Call `get_player_stats(player_id="1966", season_year=<derived_year>)`
+1. Call `get_player_stats(player_id="1966")` (omit season_year; check the returned season_year and any warnings)
 Result: Season stats by category with value, rank, and per-game averages
 
 ## Commands that DO NOT exist — never call these

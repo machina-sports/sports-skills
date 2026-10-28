@@ -851,6 +851,20 @@ def _current_year():
     return datetime.datetime.utcnow().year
 
 
+def _end_year_season():
+    """Return the current season for leagues ESPN names by the year they end.
+
+    ESPN calls the NBA, NHL and college basketball 2026-27 season ``2027``.
+    The NBA and NHL open in October and college basketball in November. From
+    October 1 the default targets the season ending next year, before October
+    the one ending this year, so the target can precede opening night. Only
+    callers going through fetch_season step back a year, and only when ESPN
+    returns an error; an empty successful payload is returned as is.
+    """
+    now = datetime.datetime.utcnow()
+    return now.year + 1 if now.month >= 10 else now.year
+
+
 def fill_team_divisions(groups, division_data):
     """Set ``division`` on each standings entry from a ``level=3`` standings payload.
 
@@ -1026,12 +1040,12 @@ def standings_fields(data, requested, defaulted_from):
 def fetch_season(loader, season_year, explicit):
     """Fetch a season-scoped resource, stepping back a year for an implied season.
 
-    Season-scoped stats endpoints are empty until a season has been played, so a
-    season derived from the calendar (rather than requested by the caller) points
-    at a year with no data for months every offseason. When the season was
-    implied, retry the prior year and report the substitution; when the caller
-    named a season, return its error untouched rather than answering about a
-    different year.
+    A season derived from the calendar (rather than requested by the caller) can
+    point at a year ESPN does not serve yet. When the season was implied and the
+    loader returns an error dict, retry the prior year and report the
+    substitution. A successful payload, even an empty one, is returned as is;
+    when the caller named a season, its error is returned untouched rather than
+    answering about a different year.
 
     Args:
         loader: callable taking a year and returning an ESPN response dict.

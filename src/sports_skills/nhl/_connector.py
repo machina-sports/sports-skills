@@ -12,7 +12,7 @@ from sports_skills._espn_base import (
     ESPN_STATUS_MAP,
     _cache_get,
     _cache_set,
-    _current_year,
+    _end_year_season,
     _http_fetch,
     _resolve_leaders,
     default_standings_season,
@@ -495,21 +495,13 @@ def get_game_summary(request_data):
     return _normalize_game_summary(data)
 
 
-def _nhl_current_season():
-    """Detect the most recent active NHL season year (season starts Oct, ends Jun)."""
-    import datetime
-    now = datetime.datetime.utcnow()
-    # NHL season starts in October; if Oct-Dec use current year, else previous year
-    return now.year if now.month >= 10 else now.year - 1
-
-
 def get_leaders(request_data):
     """Get NHL statistical leaders via ESPN core API."""
     params = request_data.get("params", {})
     season = params.get("season")
 
     # Always use season-scoped URL with regular season type (2) for reliability.
-    resolved = season or _nhl_current_season()
+    resolved = season or _end_year_season()
     url = f"https://sports.core.api.espn.com/v2/sports/hockey/leagues/nhl/seasons/{resolved}/types/2/leaders"
 
     cache_key = f"nhl_leaders:{resolved}"
@@ -528,7 +520,7 @@ def get_leaders(request_data):
 
     result = {
         "categories": _resolve_leaders(data.get("categories", [])),
-        "season": data.get("season", {}).get("year", season or ""),
+        "season": data.get("season", {}).get("year", resolved),
     }
     _cache_set(cache_key, result, ttl=300)
     return result
@@ -658,7 +650,7 @@ def get_futures(request_data=None):
     params = (request_data or {}).get("params", {})
     limit = params.get("limit", 10)
     requested_season = params.get("season_year")
-    season_year = requested_season or _current_year()
+    season_year = requested_season or _end_year_season()
     data, season_year, season_note = fetch_season(
         lambda yr: espn_core_request(SPORT_PATH, f"seasons/{yr}/futures"),
         season_year,
@@ -680,7 +672,7 @@ def get_team_stats(request_data):
     if not team_id:
         return {"error": True, "message": "team_id is required"}
     requested_season = params.get("season_year")
-    season_year = requested_season or _current_year()
+    season_year = requested_season or _end_year_season()
     season_type = params.get("season_type", 2)
     data, season_year, season_note = fetch_season(
         lambda yr: espn_core_request(
@@ -708,7 +700,7 @@ def get_player_stats(request_data):
     if not player_id:
         return {"error": True, "message": "player_id is required"}
     requested_season = params.get("season_year")
-    season_year = requested_season or _current_year()
+    season_year = requested_season or _end_year_season()
     season_type = params.get("season_type", 2)
     data, season_year, season_note = fetch_season(
         lambda yr: espn_core_request(
