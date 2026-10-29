@@ -43,8 +43,8 @@ pip install "sports-skills[dev]"
 
 - **Football (Soccer)**: ESPN, Understat, FPL, Transfermarkt, football-data.co.uk, ClubElo — 25 commands across 30 leagues
 - **US Sports**: NFL, NBA, WNBA, NHL, MLB, College Football (CFB), College Basketball (CBB) — live scores, standings, depth charts, injuries, and leaders
-- **NBA G League** (`gleague`, ESPN): scores, standings, current rosters, team schedules by phase (Tip-Off Tournament, regular season, playoffs), game summaries, play-by-play, and news. G League team ids are separate from NBA ids; no NBA CDN / NBA Stats coverage
-- **Analytics backends** (same modules, second source): nflverse for NFL (EPA, weekly tables, 1999+), NBA Stats for NBA (shot charts, advanced ratings, 1946+), the official MLB Stats API (pitch-level velocity/spin/exit-velocity, 1901+), the official NHL API (coordinate play-by-play, 1917+), and the NCAA's own endpoints for college (FCS/D2/D3 scoreboards, March Madness bracket)
+- **NBA G League** (`gleague`, ESPN + NBA Stats `LeagueID=20` + cdn-gleague.nba.com): scores, standings, current rosters, team schedules by phase (Tip-Off Tournament, regular season, playoffs), game summaries, play-by-play, and news from ESPN, plus NBA-shaped official game logs, careers, team stats, shot charts, advanced box scores, leaders, and CDN box scores / play-by-play. ESPN G League ids and official NBA.com ids are separate from NBA ids and from each other; no G League live scoreboard
+- **Analytics backends** (same modules, second source): nflverse for NFL (EPA, weekly tables, 1999+), NBA Stats for NBA (shot charts, advanced ratings, 1946+) and the G League (`LeagueID=20`), the official MLB Stats API (pitch-level velocity/spin/exit-velocity, 1901+), the official NHL API (coordinate play-by-play, 1917+), and the NCAA's own endpoints for college (FCS/D2/D3 scoreboards, March Madness bracket)
 - **Tennis**: ATP and WTA tournament scores, rankings, calendars, and player profiles
 - **Golf**: PGA, LPGA, and DP World tour scorecards and leaderboards
 - **College XC/TF**: NCAA cross country and track & field — athlete profiles, personal records, meet results, and news via The Stride Report

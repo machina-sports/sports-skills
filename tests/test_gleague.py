@@ -48,10 +48,30 @@ EXPECTED_COMMANDS = {
     "get_game_summary": {"required": ["event_id"]},
     "get_play_by_play": {"required": ["event_id"]},
     "get_news": {"optional": ["limit"]},
+    # Official sources (NBA Stats LeagueID 20, cdn-gleague.nba.com); see test_gleague_official.py.
+    "get_live_boxscore": {"required": ["game_id"]},
+    "get_live_playbyplay": {"required": ["game_id"], "optional": ["limit", "scoring_only"]},
+    "find_nba_player": {"required": ["name"]},
+    "get_nbastats_game_log": {
+        "optional": ["season", "team", "season_type", "player_or_team", "player", "sort_by", "descending", "limit", "fields"]
+    },
+    "get_nbastats_player_career": {"optional": ["player_id", "player", "per_mode"]},
+    "get_nbastats_team_stats": {
+        "optional": ["season", "team", "measure", "per_mode", "season_type", "sort_by", "descending", "limit", "fields"]
+    },
+    "get_nbastats_shot_chart": {
+        "optional": ["player_id", "player", "season", "season_type", "sort_by", "descending", "limit", "fields"]
+    },
+    "get_nbastats_play_by_play": {"required": ["game_id"], "optional": ["limit"]},
+    "get_nbastats_advanced_boxscore": {"required": ["game_id"]},
+    "get_nbastats_leaders": {
+        "optional": ["season", "season_type", "per_mode", "stat_category", "sort_by", "descending", "limit", "fields"]
+    },
 }
 
 # NBA commands with no verified G League source: teams/{id}/statistics is HTTP 404,
-# the summary has no winprobability block, and the rest were not probed.
+# the summary has no winprobability block, cdn-gleague.nba.com's schedule answered 403,
+# and the rest were not probed.
 UNSUPPORTED = [
     "get_team_stats",
     "get_player_stats",
@@ -62,8 +82,8 @@ UNSUPPORTED = [
     "get_depth_chart",
     "get_win_probability",
     "get_live_scoreboard",
-    "get_live_boxscore",
-    "get_live_playbyplay",
+    "get_player_live_stats",
+    "get_nba_game_matchup",
 ]
 
 
