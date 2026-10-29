@@ -81,6 +81,7 @@ npx skills add machina-sports/sports-skills@nba-data
 | [`football-data`](https://skills.sh/machina-sports/sports-skills/football-data) | Football (Soccer) | 25 | ESPN, FPL, Understat, Transfermarkt, football-data.co.uk, ClubElo |
 | [`nfl-data`](https://skills.sh/machina-sports/sports-skills/nfl-data) | NFL | 22 | ESPN, nflverse |
 | [`nba-data`](https://skills.sh/machina-sports/sports-skills/nba-data) | NBA | 28 | ESPN, NBA CDN, NBA Stats (stats.nba.com) |
+| [`gleague-data`](https://skills.sh/machina-sports/sports-skills/gleague-data) | NBA G League | 19 | ESPN, NBA Stats (stats.nba.com, LeagueID 20), G League CDN (cdn-gleague.nba.com) |
 | [`wnba-data`](https://skills.sh/machina-sports/sports-skills/wnba-data) | WNBA | 16 | ESPN |
 | [`nhl-data`](https://skills.sh/machina-sports/sports-skills/nhl-data) | NHL | 22 | ESPN, NHL API (api-web.nhle.com) |
 | [`mlb-data`](https://skills.sh/machina-sports/sports-skills/mlb-data) | MLB | 23 | ESPN, MLB Stats API (statsapi.mlb.com) |
@@ -126,6 +127,7 @@ one JSON envelope:
 |-------|-------------|------------------------|---------|
 | `nfl-data` | nflverse | Season/weekly stat tables, EPA & win probability per play, betting lines, ESPN-id bridge | 1999+ |
 | `nba-data` | NBA Stats (stats.nba.com) | Advanced ratings/pace, per-shot court coordinates, play-by-play with locations, career splits, all-era player registry | 1946+ |
+| `gleague-data` | NBA Stats (`LeagueID=20`), G League CDN | The same NBA-shaped game logs, careers, team stats, shot charts, advanced box scores and play-by-play, plus leaders and CDN box scores / play-by-play; no live scoreboard | — |
 | `mlb-data` | MLB Stats API (official) | Pitch-level data — velocity, spin, plate coordinates, exit velocity, launch angle — career splits by stat group, league leaders | 1901+ |
 | `nhl-data` | NHL API (official) | Play-by-play with on-ice x/y coordinates, cross-league career rows, skater/goalie leaders, historical standings | 1917+ |
 | `cfb-data` | NCAA (official) | **FCS scoreboards**, official game detail, drive-context play-by-play, scoring summaries, schools index | — |
@@ -134,7 +136,8 @@ one JSON envelope:
 The two sources in each skill use unrelated id systems — every skill documents the join
 recipe (game date + team abbreviations/names), team filters accept both sources'
 abbreviation spellings, and passing the wrong system's id returns a guided error rather
-than an upstream failure.
+than an upstream failure. (`gleague-data` is the exception on spellings: no ESPN mapping
+is verified for G League tricodes, so its official commands take NBA.com's only.)
 
 Wide or long tables (nflverse player/team stats, rosters, schedules and play-by-play;
 NBA Stats game logs, team stats and shot charts; MLB Stats play-by-play) accept

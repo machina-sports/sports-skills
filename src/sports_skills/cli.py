@@ -404,6 +404,27 @@ _REGISTRY = {
         "get_nbastats_play_by_play": {"required": ["game_id"], "optional": ["limit"]},
         "get_nbastats_advanced_boxscore": {"required": ["game_id"]},
     },
+    "gleague": {
+        "get_teams": {},
+        "get_scoreboard": {"optional": ["date"]},
+        "get_schedule": {"optional": ["date", "season"]},
+        "get_standings": {"optional": ["season"]},
+        "get_team_roster": {"required": ["team_id"]},
+        "get_team_schedule": {"required": ["team_id"], "optional": ["season", "season_type"]},
+        "get_game_summary": {"required": ["event_id"]},
+        "get_play_by_play": {"required": ["event_id"]},
+        "get_news": {"optional": ["limit"]},
+        "get_live_boxscore": {"required": ["game_id"]},
+        "get_live_playbyplay": {"required": ["game_id"], "optional": ["limit", "scoring_only"]},
+        "find_nba_player": {"required": ["name"]},
+        "get_nbastats_game_log": {"optional": ["season", "team", "season_type", "player_or_team", "player", *_SHAPING]},
+        "get_nbastats_player_career": {"optional": ["player_id", "player", "per_mode"]},
+        "get_nbastats_team_stats": {"optional": ["season", "team", "measure", "per_mode", "season_type", *_SHAPING]},
+        "get_nbastats_shot_chart": {"optional": ["player_id", "player", "season", "season_type", *_SHAPING]},
+        "get_nbastats_play_by_play": {"required": ["game_id"], "optional": ["limit"]},
+        "get_nbastats_advanced_boxscore": {"required": ["game_id"]},
+        "get_nbastats_leaders": {"optional": ["season", "season_type", "per_mode", "stat_category", *_SHAPING]},
+    },
     "wnba": {
         "get_scoreboard": {"optional": ["date"]},
         "get_standings": {"optional": ["season"]},
@@ -761,6 +782,10 @@ def _load_module(name):
         from sports_skills import nba
 
         return nba
+    elif name == "gleague":
+        from sports_skills import gleague
+
+        return gleague
     elif name == "wnba":
         from sports_skills import wnba
 
@@ -1157,12 +1182,12 @@ def _storefront_discovery(args, remaining):
 def main():
     parser = argparse.ArgumentParser(
         prog="sports-skills",
-        description="Lightweight CLI for sports data — football, F1, NFL, NBA, WNBA, NHL, MLB, tennis, cricket, CFB, CBB, golf, volleyball, prediction markets, betting analysis, metadata, and news.",
+        description="Lightweight CLI for sports data — football, F1, NFL, NBA, NBA G League, WNBA, NHL, MLB, tennis, cricket, CFB, CBB, golf, volleyball, prediction markets, betting analysis, metadata, and news.",
     )
     parser.add_argument(
         "module",
         nargs="?",
-        help="Module name: football, f1, nfl, nba, wnba, nhl, mlb, tennis, cricket, cfb, cbb, golf, volleyball, xctf, esports, polymarket, polymarket-trading, kalshi, prophetx, novig, gemini, betting, markets, metadata, news",
+        help="Module name: football, f1, nfl, nba, gleague, wnba, nhl, mlb, tennis, cricket, cfb, cbb, golf, volleyball, xctf, esports, polymarket, polymarket-trading, kalshi, prophetx, novig, gemini, betting, markets, metadata, news",
     )
     parser.add_argument("command", nargs="?", help="Command name (e.g., get_season_standings)")
     parser.add_argument("--version", action="store_true", help="Show version")

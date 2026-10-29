@@ -1,0 +1,1511 @@
+{
+  "header": {
+    "id": "401867657",
+    "season": {
+      "year": 2026,
+      "current": false,
+      "type": 3
+    },
+    "timeValid": true,
+    "competitions": [
+      {
+        "id": "401867657",
+        "date": "2026-04-11T02:00Z",
+        "neutralSite": false,
+        "conferenceCompetition": false,
+        "boxscoreAvailable": true,
+        "commentaryAvailable": false,
+        "liveAvailable": false,
+        "shotChartAvailable": true,
+        "timeoutsAvailable": true,
+        "possessionArrowAvailable": false,
+        "onWatchESPN": true,
+        "recent": false,
+        "wallclockAvailable": true,
+        "boxscoreSource": "full",
+        "playByPlaySource": "full",
+        "competitors": [
+          {
+            "id": "23",
+            "order": 0,
+            "homeAway": "home",
+            "winner": false,
+            "team": {
+              "id": "23",
+              "guid": "47a37a24-1416-ee42-1123-2e15db7216d0",
+              "location": "Stockton",
+              "name": "Kings",
+              "nickname": "Stockton",
+              "abbreviation": "STO",
+              "displayName": "Stockton Kings",
+              "color": "5A2D81",
+              "alternateColor": "000000"
+            },
+            "score": "104",
+            "linescores": [
+              {
+                "displayValue": "19"
+              },
+              {
+                "displayValue": "31"
+              },
+              {
+                "displayValue": "33"
+              },
+              {
+                "displayValue": "21"
+              }
+            ],
+            "record": [
+              {
+                "type": "total",
+                "summary": "23-13",
+                "displayValue": "23-13"
+              },
+              {
+                "type": "home",
+                "summary": "11-6",
+                "displayValue": "11-6"
+              },
+              {
+                "type": "vsconf",
+                "summary": "19-11",
+                "displayValue": "19-11"
+              }
+            ],
+            "possession": false
+          },
+          {
+            "id": "9",
+            "order": 1,
+            "homeAway": "away",
+            "winner": true,
+            "team": {
+              "id": "9",
+              "guid": "1b776a6f-7230-afec-7ae2-81c0e11c3746",
+              "location": "Greensboro",
+              "name": "Swarm",
+              "nickname": "Greensboro",
+              "abbreviation": "GBO",
+              "displayName": "Greensboro Swarm",
+              "color": "007BBC",
+              "alternateColor": "1D1160"
+            },
+            "score": "119",
+            "linescores": [
+              {
+                "displayValue": "25"
+              },
+              {
+                "displayValue": "37"
+              },
+              {
+                "displayValue": "27"
+              },
+              {
+                "displayValue": "30"
+              }
+            ],
+            "record": [
+              {
+                "type": "total",
+                "summary": "24-12",
+                "displayValue": "24-12"
+              },
+              {
+                "type": "road",
+                "summary": "12-6",
+                "displayValue": "12-6"
+              },
+              {
+                "type": "vsconf",
+                "summary": "19-10",
+                "displayValue": "19-10"
+              }
+            ],
+            "possession": false
+          }
+        ],
+        "status": {
+          "type": {
+            "id": "3",
+            "name": "STATUS_FINAL",
+            "state": "post",
+            "completed": true,
+            "description": "Final",
+            "detail": "Final",
+            "shortDetail": "Final"
+          }
+        },
+        "broadcasts": [
+          {
+            "type": {
+              "id": "1",
+              "shortName": "TV"
+            },
+            "market": {
+              "id": "1",
+              "type": "National"
+            },
+            "media": {
+              "shortName": "ESPNU"
+            },
+            "lang": "en",
+            "region": "us",
+            "isNational": true
+          }
+        ],
+        "series": [
+          {
+            "type": "playoff",
+            "title": "Playoff Series",
+            "description": "G League Finals",
+            "summary": "GBO wins series 2-0",
+            "completed": true,
+            "totalCompetitions": 3,
+            "competitors": [
+              {
+                "id": "23",
+                "wins": 0,
+                "ties": 0,
+                "team": {}
+              },
+              {
+                "id": "9",
+                "wins": 2,
+                "ties": 0,
+                "team": {}
+              }
+            ],
+            "events": [
+              {
+                "id": "401867656"
+              },
+              {
+                "id": "401867657"
+              }
+            ],
+            "startDate": "2026-04-08T23:30Z"
+          }
+        ],
+        "boxscoreMinutes": true
+      }
+    ],
+    "week": 1,
+    "league": {
+      "id": "69",
+      "name": "NBA G League",
+      "abbreviation": "NBA G League",
+      "slug": "nba-development",
+      "isTournament": false
+    },
+    "gameNote": "G League Finals - Game 2"
+  },
+  "boxscore": {
+    "teams": [
+      {
+        "team": {
+          "id": "9",
+          "slug": "greensboro-swarm",
+          "location": "Greensboro",
+          "name": "Swarm",
+          "abbreviation": "GBO",
+          "displayName": "Greensboro Swarm",
+          "shortDisplayName": "Swarm",
+          "color": "007BBC",
+          "alternateColor": "1D1160"
+        },
+        "statistics": [
+          {
+            "name": "fieldGoalsMade-fieldGoalsAttempted",
+            "displayValue": "42-91",
+            "label": "FG"
+          },
+          {
+            "name": "fieldGoalPct",
+            "displayValue": "46",
+            "abbreviation": "FG%",
+            "label": "Field Goal %"
+          },
+          {
+            "name": "threePointFieldGoalsMade-threePointFieldGoalsAttempted",
+            "displayValue": "13-34",
+            "label": "3PT"
+          },
+          {
+            "name": "threePointFieldGoalPct",
+            "displayValue": "38",
+            "abbreviation": "3P%",
+            "label": "Three Point %"
+          },
+          {
+            "name": "freeThrowsMade-freeThrowsAttempted",
+            "displayValue": "13-18",
+            "label": "FT"
+          },
+          {
+            "name": "freeThrowPct",
+            "displayValue": "72",
+            "abbreviation": "FT%",
+            "label": "Free Throw %"
+          },
+          {
+            "name": "totalRebounds",
+            "displayValue": "51",
+            "abbreviation": "REB",
+            "label": "Rebounds"
+          },
+          {
+            "name": "offensiveRebounds",
+            "displayValue": "13",
+            "abbreviation": "OR",
+            "label": "Offensive Rebounds"
+          },
+          {
+            "name": "defensiveRebounds",
+            "displayValue": "38",
+            "abbreviation": "DR",
+            "label": "Defensive Rebounds"
+          },
+          {
+            "name": "teamRebounds",
+            "displayValue": "0",
+            "abbreviation": "TREB",
+            "label": "Team Rebounds"
+          },
+          {
+            "name": "assists",
+            "displayValue": "20",
+            "abbreviation": "AST",
+            "label": "Assists"
+          },
+          {
+            "name": "steals",
+            "displayValue": "10",
+            "abbreviation": "STL",
+            "label": "Steals"
+          },
+          {
+            "name": "blocks",
+            "displayValue": "4",
+            "abbreviation": "BLK",
+            "label": "Blocks"
+          },
+          {
+            "name": "turnovers",
+            "displayValue": "16",
+            "abbreviation": "TO",
+            "label": "Turnovers"
+          },
+          {
+            "name": "teamTurnovers",
+            "displayValue": "1",
+            "abbreviation": "TTO",
+            "label": "Team Turnovers"
+          },
+          {
+            "name": "totalTurnovers",
+            "displayValue": "17",
+            "abbreviation": "ToTO",
+            "label": "Total Turnovers"
+          },
+          {
+            "name": "technicalFouls",
+            "displayValue": "0",
+            "abbreviation": "TECH",
+            "label": "Technical Fouls"
+          },
+          {
+            "name": "totalTechnicalFouls",
+            "displayValue": "0",
+            "abbreviation": "TECH",
+            "label": "Total Technical Fouls"
+          },
+          {
+            "name": "flagrantFouls",
+            "displayValue": "0",
+            "abbreviation": "FLAG",
+            "label": "Flagrant Fouls"
+          },
+          {
+            "name": "turnoverPoints",
+            "displayValue": "21",
+            "abbreviation": "PTS OFF TO",
+            "label": "Points Off Turnovers"
+          },
+          {
+            "name": "fastBreakPoints",
+            "displayValue": "17",
+            "abbreviation": "FBPs",
+            "label": "Fast Break Points"
+          },
+          {
+            "name": "pointsInPaint",
+            "displayValue": "52",
+            "abbreviation": "PIP",
+            "label": "Points in Paint"
+          },
+          {
+            "name": "fouls",
+            "displayValue": "22",
+            "abbreviation": "PF",
+            "label": "Fouls"
+          },
+          {
+            "name": "largestLead",
+            "displayValue": "17",
+            "abbreviation": "LL",
+            "label": "Largest Lead"
+          },
+          {
+            "name": "leadChanges",
+            "displayValue": "0",
+            "abbreviation": "LC",
+            "label": "Lead Changes"
+          },
+          {
+            "name": "leadPercentage",
+            "displayValue": "96",
+            "abbreviation": "LPCT",
+            "label": "Percent Led"
+          }
+        ],
+        "displayOrder": 1,
+        "homeAway": "away"
+      },
+      {
+        "team": {
+          "id": "23",
+          "slug": "stockton-kings",
+          "location": "Stockton",
+          "name": "Kings",
+          "abbreviation": "STO",
+          "displayName": "Stockton Kings",
+          "shortDisplayName": "Kings",
+          "color": "5A2D81",
+          "alternateColor": "000000"
+        },
+        "statistics": [
+          {
+            "name": "fieldGoalsMade-fieldGoalsAttempted",
+            "displayValue": "39-92",
+            "label": "FG"
+          },
+          {
+            "name": "fieldGoalPct",
+            "displayValue": "42",
+            "abbreviation": "FG%",
+            "label": "Field Goal %"
+          },
+          {
+            "name": "threePointFieldGoalsMade-threePointFieldGoalsAttempted",
+            "displayValue": "5-31",
+            "label": "3PT"
+          },
+          {
+            "name": "threePointFieldGoalPct",
+            "displayValue": "16",
+            "abbreviation": "3P%",
+            "label": "Three Point %"
+          },
+          {
+            "name": "freeThrowsMade-freeThrowsAttempted",
+            "displayValue": "11-13",
+            "label": "FT"
+          },
+          {
+            "name": "freeThrowPct",
+            "displayValue": "85",
+            "abbreviation": "FT%",
+            "label": "Free Throw %"
+          },
+          {
+            "name": "totalRebounds",
+            "displayValue": "43",
+            "abbreviation": "REB",
+            "label": "Rebounds"
+          },
+          {
+            "name": "offensiveRebounds",
+            "displayValue": "9",
+            "abbreviation": "OR",
+            "label": "Offensive Rebounds"
+          },
+          {
+            "name": "defensiveRebounds",
+            "displayValue": "34",
+            "abbreviation": "DR",
+            "label": "Defensive Rebounds"
+          },
+          {
+            "name": "teamRebounds",
+            "displayValue": "0",
+            "abbreviation": "TREB",
+            "label": "Team Rebounds"
+          },
+          {
+            "name": "assists",
+            "displayValue": "15",
+            "abbreviation": "AST",
+            "label": "Assists"
+          },
+          {
+            "name": "steals",
+            "displayValue": "11",
+            "abbreviation": "STL",
+            "label": "Steals"
+          },
+          {
+            "name": "blocks",
+            "displayValue": "5",
+            "abbreviation": "BLK",
+            "label": "Blocks"
+          },
+          {
+            "name": "turnovers",
+            "displayValue": "15",
+            "abbreviation": "TO",
+            "label": "Turnovers"
+          },
+          {
+            "name": "teamTurnovers",
+            "displayValue": "1",
+            "abbreviation": "TTO",
+            "label": "Team Turnovers"
+          },
+          {
+            "name": "totalTurnovers",
+            "displayValue": "16",
+            "abbreviation": "ToTO",
+            "label": "Total Turnovers"
+          },
+          {
+            "name": "technicalFouls",
+            "displayValue": "0",
+            "abbreviation": "TECH",
+            "label": "Technical Fouls"
+          },
+          {
+            "name": "totalTechnicalFouls",
+            "displayValue": "0",
+            "abbreviation": "TECH",
+            "label": "Total Technical Fouls"
+          },
+          {
+            "name": "flagrantFouls",
+            "displayValue": "0",
+            "abbreviation": "FLAG",
+            "label": "Flagrant Fouls"
+          },
+          {
+            "name": "turnoverPoints",
+            "displayValue": "20",
+            "abbreviation": "PTS OFF TO",
+            "label": "Points Off Turnovers"
+          },
+          {
+            "name": "fastBreakPoints",
+            "displayValue": "15",
+            "abbreviation": "FBPs",
+            "label": "Fast Break Points"
+          },
+          {
+            "name": "pointsInPaint",
+            "displayValue": "66",
+            "abbreviation": "PIP",
+            "label": "Points in Paint"
+          },
+          {
+            "name": "fouls",
+            "displayValue": "26",
+            "abbreviation": "PF",
+            "label": "Fouls"
+          },
+          {
+            "name": "largestLead",
+            "displayValue": "0",
+            "abbreviation": "LL",
+            "label": "Largest Lead"
+          },
+          {
+            "name": "leadChanges",
+            "displayValue": "0",
+            "abbreviation": "LC",
+            "label": "Lead Changes"
+          },
+          {
+            "name": "leadPercentage",
+            "displayValue": "0",
+            "abbreviation": "LPCT",
+            "label": "Percent Led"
+          }
+        ],
+        "displayOrder": 2,
+        "homeAway": "home"
+      }
+    ],
+    "players": [
+      {
+        "team": {
+          "id": "9",
+          "slug": "greensboro-swarm",
+          "location": "Greensboro",
+          "name": "Swarm",
+          "abbreviation": "GBO",
+          "displayName": "Greensboro Swarm",
+          "shortDisplayName": "Swarm",
+          "color": "007BBC",
+          "alternateColor": "1D1160"
+        },
+        "statistics": [
+          {
+            "names": [
+              "MIN",
+              "PTS",
+              "FG",
+              "3PT",
+              "FT",
+              "REB",
+              "AST",
+              "TO",
+              "STL",
+              "BLK",
+              "OREB",
+              "DREB",
+              "PF",
+              "+/-"
+            ],
+            "keys": [
+              "minutes",
+              "points",
+              "fieldGoalsMade-fieldGoalsAttempted",
+              "threePointFieldGoalsMade-threePointFieldGoalsAttempted",
+              "freeThrowsMade-freeThrowsAttempted",
+              "rebounds",
+              "assists",
+              "turnovers",
+              "steals",
+              "blocks",
+              "offensiveRebounds",
+              "defensiveRebounds",
+              "fouls",
+              "plusMinus"
+            ],
+            "labels": [
+              "MIN",
+              "PTS",
+              "FG",
+              "3PT",
+              "FT",
+              "REB",
+              "AST",
+              "TO",
+              "STL",
+              "BLK",
+              "OREB",
+              "DREB",
+              "PF",
+              "+/-"
+            ],
+            "descriptions": [
+              "Minutes",
+              "Points",
+              "Field Goals Made/Attempted",
+              "3-Point Field Goals Made/Attempted",
+              "Free Throws Made/Attempted",
+              "Rebounds",
+              "Assists",
+              "Turnovers",
+              "Steals",
+              "Blocks",
+              "Offensive Rebounds",
+              "Defensive Rebounds",
+              "Personal Fouls",
+              "Teams net points while player is on the court."
+            ],
+            "athletes": [
+              {
+                "active": false,
+                "athlete": {
+                  "id": "4684682",
+                  "guid": "3d732b93-3e24-3c55-9a40-9e2d6dad742e",
+                  "displayName": "Jonas Aidoo",
+                  "shortName": "J. Aidoo",
+                  "jersey": "00",
+                  "position": {
+                    "name": "Center",
+                    "displayName": "Center",
+                    "abbreviation": "C"
+                  }
+                },
+                "starter": true,
+                "didNotPlay": false,
+                "reason": "COACH'S DECISION",
+                "ejected": false,
+                "stats": [
+                  "18",
+                  "6",
+                  "2-3",
+                  "0-0",
+                  "1-1",
+                  "8",
+                  "0",
+                  "3",
+                  "1",
+                  "1",
+                  "3",
+                  "5",
+                  "4",
+                  "+6"
+                ]
+              },
+              {
+                "active": true,
+                "athlete": {
+                  "id": "5239590",
+                  "guid": "6d6b4455-4c69-3296-96e1-e20ed80ec16f",
+                  "displayName": "Liam McNeeley",
+                  "shortName": "L. McNeeley",
+                  "jersey": "33",
+                  "position": {
+                    "name": "Forward",
+                    "displayName": "Forward",
+                    "abbreviation": "F"
+                  }
+                },
+                "starter": true,
+                "didNotPlay": false,
+                "reason": "COACH'S DECISION",
+                "ejected": false,
+                "stats": [
+                  "31",
+                  "21",
+                  "6-14",
+                  "2-7",
+                  "4-4",
+                  "4",
+                  "1",
+                  "0",
+                  "1",
+                  "0",
+                  "1",
+                  "3",
+                  "2",
+                  "+5"
+                ]
+              }
+            ],
+            "totals": [
+              "",
+              "119",
+              "42-91",
+              "13-34",
+              "13-18",
+              "51",
+              "20",
+              "16",
+              "10",
+              "4",
+              "13",
+              "38",
+              "22",
+              ""
+            ]
+          }
+        ],
+        "displayOrder": 1
+      },
+      {
+        "team": {
+          "id": "23",
+          "slug": "stockton-kings",
+          "location": "Stockton",
+          "name": "Kings",
+          "abbreviation": "STO",
+          "displayName": "Stockton Kings",
+          "shortDisplayName": "Kings",
+          "color": "5A2D81",
+          "alternateColor": "000000"
+        },
+        "statistics": [
+          {
+            "names": [
+              "MIN",
+              "PTS",
+              "FG",
+              "3PT",
+              "FT",
+              "REB",
+              "AST",
+              "TO",
+              "STL",
+              "BLK",
+              "OREB",
+              "DREB",
+              "PF",
+              "+/-"
+            ],
+            "keys": [
+              "minutes",
+              "points",
+              "fieldGoalsMade-fieldGoalsAttempted",
+              "threePointFieldGoalsMade-threePointFieldGoalsAttempted",
+              "freeThrowsMade-freeThrowsAttempted",
+              "rebounds",
+              "assists",
+              "turnovers",
+              "steals",
+              "blocks",
+              "offensiveRebounds",
+              "defensiveRebounds",
+              "fouls",
+              "plusMinus"
+            ],
+            "labels": [
+              "MIN",
+              "PTS",
+              "FG",
+              "3PT",
+              "FT",
+              "REB",
+              "AST",
+              "TO",
+              "STL",
+              "BLK",
+              "OREB",
+              "DREB",
+              "PF",
+              "+/-"
+            ],
+            "descriptions": [
+              "Minutes",
+              "Points",
+              "Field Goals Made/Attempted",
+              "3-Point Field Goals Made/Attempted",
+              "Free Throws Made/Attempted",
+              "Rebounds",
+              "Assists",
+              "Turnovers",
+              "Steals",
+              "Blocks",
+              "Offensive Rebounds",
+              "Defensive Rebounds",
+              "Personal Fouls",
+              "Teams net points while player is on the court."
+            ],
+            "athletes": [
+              {
+                "active": false,
+                "athlete": {
+                  "id": "3065297",
+                  "guid": "4d0e7c96-14cd-41c2-bc3a-1567d728ce5f",
+                  "displayName": "Gabe Levin",
+                  "shortName": "G. Levin",
+                  "jersey": "19",
+                  "position": {
+                    "name": "Forward",
+                    "displayName": "Forward",
+                    "abbreviation": "F"
+                  }
+                },
+                "starter": true,
+                "didNotPlay": false,
+                "reason": "COACH'S DECISION",
+                "ejected": false,
+                "stats": [
+                  "22",
+                  "6",
+                  "2-3",
+                  "0-0",
+                  "1-1",
+                  "4",
+                  "0",
+                  "0",
+                  "1",
+                  "1",
+                  "2",
+                  "2",
+                  "6",
+                  "-5"
+                ]
+              },
+              {
+                "active": false,
+                "athlete": {
+                  "id": "4433246",
+                  "guid": "3464f26e-f9ed-345c-8959-eb35e3a02f69",
+                  "displayName": "Patrick Baldwin Jr.",
+                  "shortName": "P. Baldwin Jr.",
+                  "jersey": "23",
+                  "position": {
+                    "name": "Guard",
+                    "displayName": "Guard",
+                    "abbreviation": "G"
+                  }
+                },
+                "starter": true,
+                "didNotPlay": false,
+                "reason": "COACH'S DECISION",
+                "ejected": false,
+                "stats": [
+                  "37",
+                  "20",
+                  "7-14",
+                  "0-3",
+                  "3-3",
+                  "7",
+                  "3",
+                  "3",
+                  "3",
+                  "1",
+                  "1",
+                  "6",
+                  "6",
+                  "-16"
+                ]
+              }
+            ],
+            "totals": [
+              "",
+              "104",
+              "39-92",
+              "5-31",
+              "11-13",
+              "43",
+              "15",
+              "15",
+              "11",
+              "5",
+              "9",
+              "34",
+              "26",
+              ""
+            ]
+          }
+        ],
+        "displayOrder": 2
+      }
+    ]
+  },
+  "plays": [
+    {
+      "id": "4018676574",
+      "sequenceNumber": "4",
+      "type": {
+        "id": "615",
+        "text": "Jumpball"
+      },
+      "text": "Jonas Aidoo vs. Gabe Levin (Marcus Garrett gains possession)",
+      "awayScore": 0,
+      "homeScore": 0,
+      "period": {
+        "number": 1,
+        "displayValue": "1st Quarter"
+      },
+      "clock": {
+        "displayValue": "12:00"
+      },
+      "scoringPlay": false,
+      "scoreValue": 0,
+      "team": {
+        "id": "9"
+      },
+      "participants": [
+        {
+          "athlete": {
+            "id": "4684682"
+          }
+        },
+        {
+          "athlete": {
+            "id": "3065297"
+          }
+        },
+        {
+          "athlete": {
+            "id": "4277892"
+          }
+        }
+      ],
+      "wallclock": "2026-04-11T02:02:51Z",
+      "shootingPlay": false,
+      "coordinate": {
+        "x": -214748340,
+        "y": -214748365
+      },
+      "pointsAttempted": 0,
+      "shortDescription": "Jump Ball"
+    },
+    {
+      "id": "4018676577",
+      "sequenceNumber": "7",
+      "type": {
+        "id": "110",
+        "text": "Driving Layup"
+      },
+      "text": "Marcus Garrett misses driving layup",
+      "awayScore": 0,
+      "homeScore": 0,
+      "period": {
+        "number": 1,
+        "displayValue": "1st Quarter"
+      },
+      "clock": {
+        "displayValue": "11:34"
+      },
+      "scoringPlay": false,
+      "scoreValue": 0,
+      "team": {
+        "id": "9"
+      },
+      "participants": [
+        {
+          "athlete": {
+            "id": "4277892"
+          }
+        }
+      ],
+      "wallclock": "2026-04-11T02:03:15Z",
+      "shootingPlay": true,
+      "coordinate": {
+        "x": 27,
+        "y": 4
+      },
+      "pointsAttempted": 0,
+      "shortDescription": "Driving Layup"
+    },
+    {
+      "id": "4018676578",
+      "sequenceNumber": "8",
+      "type": {
+        "id": "155",
+        "text": "Defensive Rebound"
+      },
+      "text": "DaQuan Jeffries defensive rebound",
+      "awayScore": 0,
+      "homeScore": 0,
+      "period": {
+        "number": 1,
+        "displayValue": "1st Quarter"
+      },
+      "clock": {
+        "displayValue": "11:33"
+      },
+      "scoringPlay": false,
+      "scoreValue": 0,
+      "team": {
+        "id": "23"
+      },
+      "participants": [
+        {
+          "athlete": {
+            "id": "3913220"
+          }
+        }
+      ],
+      "wallclock": "2026-04-11T02:03:16Z",
+      "shootingPlay": false,
+      "coordinate": {
+        "x": 27,
+        "y": 4
+      },
+      "pointsAttempted": 0,
+      "shortDescription": "Rebound"
+    }
+  ],
+  "gameInfo": {
+    "venue": {
+      "id": "1248",
+      "guid": "dc192d74-c351-330e-acc4-0624fc8d914b",
+      "fullName": "Adventist Health Arena",
+      "address": {
+        "city": "Stockton",
+        "state": "CA"
+      },
+      "grass": false
+    },
+    "attendance": 4020,
+    "officials": [
+      {
+        "fullName": "Agon Abazi",
+        "displayName": "Agon Abazi",
+        "position": {
+          "name": "Referee",
+          "displayName": "Referee",
+          "id": "40"
+        },
+        "order": 1
+      },
+      {
+        "fullName": "Gina Catanzariti",
+        "displayName": "Gina Catanzariti",
+        "position": {
+          "name": "Referee",
+          "displayName": "Referee",
+          "id": "40"
+        },
+        "order": 2
+      },
+      {
+        "fullName": "Nate Cearley",
+        "displayName": "Nate Cearley",
+        "position": {
+          "name": "Referee",
+          "displayName": "Referee",
+          "id": "40"
+        },
+        "order": 3
+      },
+      {
+        "fullName": "Chelisa Painter",
+        "displayName": "Chelisa Painter",
+        "position": {
+          "name": "Referee",
+          "displayName": "Referee",
+          "id": "40"
+        },
+        "order": 4
+      }
+    ]
+  },
+  "leaders": [
+    {
+      "team": {
+        "id": "23",
+        "displayName": "Stockton Kings",
+        "abbreviation": "STO"
+      },
+      "leaders": [
+        {
+          "name": "points",
+          "displayName": "Points",
+          "leaders": [
+            {
+              "displayValue": "27",
+              "value": 27.0,
+              "athlete": {
+                "id": "3913220",
+                "guid": "7dd2d924-841d-8411-b7e1-359bdbb3f310",
+                "lastName": "Jeffries",
+                "fullName": "DaQuan Jeffries",
+                "displayName": "DaQuan Jeffries",
+                "shortName": "D. Jeffries",
+                "jersey": "6",
+                "position": {
+                  "name": "Guard",
+                  "displayName": "Guard",
+                  "abbreviation": "G"
+                },
+                "team": {
+                  "id": "23"
+                },
+                "status": {
+                  "id": "1",
+                  "name": "Active",
+                  "type": "active",
+                  "abbreviation": "Active"
+                }
+              },
+              "statistics": [
+                {
+                  "name": "points",
+                  "displayName": "Points",
+                  "shortDisplayName": "PTS",
+                  "description": "The number of points scored.",
+                  "abbreviation": "PTS",
+                  "value": 27.0,
+                  "displayValue": "27"
+                },
+                {
+                  "name": "fieldGoals",
+                  "displayName": "Field Goals",
+                  "shortDisplayName": "FG",
+                  "description": "Field Goal makes and attempts.",
+                  "abbreviation": "FG",
+                  "value": 0.434783,
+                  "displayValue": "10/23"
+                },
+                {
+                  "name": "freeThrows",
+                  "displayName": "Free Throws",
+                  "shortDisplayName": "FT",
+                  "description": "Free Throw makes and attempts.",
+                  "abbreviation": "FT",
+                  "value": 0.666667,
+                  "displayValue": "2/3"
+                }
+              ],
+              "mainStat": {
+                "value": "27",
+                "label": "PTS"
+              },
+              "summary": "10/23 FG, 2/3 FT"
+            }
+          ]
+        },
+        {
+          "name": "assists",
+          "displayName": "Assists",
+          "leaders": [
+            {
+              "displayValue": "7",
+              "value": 7.0,
+              "athlete": {
+                "id": "3155937",
+                "guid": "9d215757-088f-34f3-d472-e03e67bc2cd7",
+                "lastName": "Elmore",
+                "fullName": "Jon Elmore",
+                "displayName": "Jon Elmore",
+                "shortName": "J. Elmore",
+                "jersey": "33",
+                "position": {
+                  "name": "Guard",
+                  "displayName": "Guard",
+                  "abbreviation": "G"
+                },
+                "team": {
+                  "id": "23"
+                },
+                "status": {
+                  "id": "2",
+                  "name": "Inactive",
+                  "type": "inactive",
+                  "abbreviation": "Inactive"
+                }
+              },
+              "statistics": [
+                {
+                  "name": "assists",
+                  "displayName": "Assists",
+                  "shortDisplayName": "AST",
+                  "description": "The number of times a player who passes the ball to a teammate in a way that leads to a score by field goal, meaning that he or she was \"assisting\" in the basket. There is some judgment involved in deciding whether a passer should be credited with an assist.",
+                  "abbreviation": "AST",
+                  "value": 7.0,
+                  "displayValue": "7"
+                },
+                {
+                  "name": "turnovers",
+                  "displayName": "Turnovers",
+                  "shortDisplayName": "TO",
+                  "description": "The number of times a player loses possession to the other team.",
+                  "abbreviation": "TO",
+                  "value": 0.0,
+                  "displayValue": "0"
+                },
+                {
+                  "name": "minutes",
+                  "displayName": "Minutes",
+                  "shortDisplayName": "MIN",
+                  "description": "The total number of minutes played.",
+                  "abbreviation": "MIN",
+                  "value": 35.0,
+                  "displayValue": "35"
+                },
+                {
+                  "name": "assistTurnoverRatio",
+                  "displayName": "Assist To Turnover Ratio",
+                  "shortDisplayName": "AST/TO",
+                  "description": "The average number of assists a player or team records per turnover",
+                  "abbreviation": "AST/TO",
+                  "value": 0.0,
+                  "displayValue": "INF"
+                }
+              ],
+              "mainStat": {
+                "value": "7",
+                "label": "AST"
+              },
+              "summary": "0 TO, 35 MIN"
+            }
+          ]
+        },
+        {
+          "name": "rebounds",
+          "displayName": "Rebounds",
+          "leaders": [
+            {
+              "displayValue": "10",
+              "value": 10.0,
+              "athlete": {
+                "id": "3913220",
+                "guid": "7dd2d924-841d-8411-b7e1-359bdbb3f310",
+                "lastName": "Jeffries",
+                "fullName": "DaQuan Jeffries",
+                "displayName": "DaQuan Jeffries",
+                "shortName": "D. Jeffries",
+                "jersey": "6",
+                "position": {
+                  "name": "Guard",
+                  "displayName": "Guard",
+                  "abbreviation": "G"
+                },
+                "team": {
+                  "id": "23"
+                },
+                "status": {
+                  "id": "1",
+                  "name": "Active",
+                  "type": "active",
+                  "abbreviation": "Active"
+                }
+              },
+              "statistics": [
+                {
+                  "name": "rebounds",
+                  "displayName": "Rebounds",
+                  "shortDisplayName": "REB",
+                  "description": "The total number of rebounds (offensive and defensive).",
+                  "abbreviation": "REB",
+                  "value": 10.0,
+                  "displayValue": "10"
+                },
+                {
+                  "name": "defensiveRebounds",
+                  "displayName": "Defensive Rebounds",
+                  "shortDisplayName": "DREB",
+                  "description": "The number of times when the defense obtains the possession of the ball after a missed shot by the offense.",
+                  "abbreviation": "DR",
+                  "value": 9.0,
+                  "displayValue": "9"
+                },
+                {
+                  "name": "offensiveRebounds",
+                  "displayName": "Offensive Rebounds",
+                  "shortDisplayName": "OREB",
+                  "description": "The number of times when the offense obtains the possession of the ball after a missed shot.",
+                  "abbreviation": "OR",
+                  "value": 1.0,
+                  "displayValue": "1"
+                }
+              ],
+              "mainStat": {
+                "value": "10",
+                "label": "REB"
+              },
+              "summary": "9 DREB, 1 OREB"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "team": {
+        "id": "9",
+        "displayName": "Greensboro Swarm",
+        "abbreviation": "GBO"
+      },
+      "leaders": [
+        {
+          "name": "points",
+          "displayName": "Points",
+          "leaders": [
+            {
+              "displayValue": "22",
+              "value": 22.0,
+              "athlete": {
+                "id": "4597865",
+                "guid": "2f08c919-d77f-3b6a-95f6-5deb544532f6",
+                "lastName": "Evbuomwan",
+                "fullName": "Tosan Evbuomwan",
+                "displayName": "Tosan Evbuomwan",
+                "shortName": "T. Evbuomwan",
+                "jersey": "8",
+                "position": {
+                  "name": "Forward",
+                  "displayName": "Forward",
+                  "abbreviation": "F"
+                },
+                "team": {
+                  "id": "9"
+                },
+                "status": {
+                  "id": "1",
+                  "name": "Active",
+                  "type": "active",
+                  "abbreviation": "Active"
+                }
+              },
+              "statistics": [
+                {
+                  "name": "points",
+                  "displayName": "Points",
+                  "shortDisplayName": "PTS",
+                  "description": "The number of points scored.",
+                  "abbreviation": "PTS",
+                  "value": 22.0,
+                  "displayValue": "22"
+                },
+                {
+                  "name": "fieldGoals",
+                  "displayName": "Field Goals",
+                  "shortDisplayName": "FG",
+                  "description": "Field Goal makes and attempts.",
+                  "abbreviation": "FG",
+                  "value": 0.5,
+                  "displayValue": "8/16"
+                },
+                {
+                  "name": "freeThrows",
+                  "displayName": "Free Throws",
+                  "shortDisplayName": "FT",
+                  "description": "Free Throw makes and attempts.",
+                  "abbreviation": "FT",
+                  "value": 0.75,
+                  "displayValue": "3/4"
+                }
+              ],
+              "mainStat": {
+                "value": "22",
+                "label": "PTS"
+              },
+              "summary": "8/16 FG, 3/4 FT"
+            }
+          ]
+        },
+        {
+          "name": "assists",
+          "displayName": "Assists",
+          "leaders": [
+            {
+              "displayValue": "10",
+              "value": 10.0,
+              "athlete": {
+                "id": "4395997",
+                "guid": "71a0257c-820a-8817-36ee-c1e8cbdff6c3",
+                "lastName": "Brown Jr.",
+                "fullName": "Terrell Brown Jr.",
+                "displayName": "Terrell Brown Jr.",
+                "shortName": "T. Brown Jr.",
+                "jersey": "3",
+                "position": {
+                  "name": "Guard",
+                  "displayName": "Guard",
+                  "abbreviation": "G"
+                },
+                "team": {
+                  "id": "9"
+                },
+                "status": {
+                  "id": "2",
+                  "name": "Inactive",
+                  "type": "inactive",
+                  "abbreviation": "Inactive"
+                }
+              },
+              "statistics": [
+                {
+                  "name": "assists",
+                  "displayName": "Assists",
+                  "shortDisplayName": "AST",
+                  "description": "The number of times a player who passes the ball to a teammate in a way that leads to a score by field goal, meaning that he or she was \"assisting\" in the basket. There is some judgment involved in deciding whether a passer should be credited with an assist.",
+                  "abbreviation": "AST",
+                  "value": 10.0,
+                  "displayValue": "10"
+                },
+                {
+                  "name": "turnovers",
+                  "displayName": "Turnovers",
+                  "shortDisplayName": "TO",
+                  "description": "The number of times a player loses possession to the other team.",
+                  "abbreviation": "TO",
+                  "value": 1.0,
+                  "displayValue": "1"
+                },
+                {
+                  "name": "minutes",
+                  "displayName": "Minutes",
+                  "shortDisplayName": "MIN",
+                  "description": "The total number of minutes played.",
+                  "abbreviation": "MIN",
+                  "value": 31.0,
+                  "displayValue": "31"
+                },
+                {
+                  "name": "assistTurnoverRatio",
+                  "displayName": "Assist To Turnover Ratio",
+                  "shortDisplayName": "AST/TO",
+                  "description": "The average number of assists a player or team records per turnover",
+                  "abbreviation": "AST/TO",
+                  "value": 10.0,
+                  "displayValue": "10.0"
+                }
+              ],
+              "mainStat": {
+                "value": "10",
+                "label": "AST"
+              },
+              "summary": "1 TO, 31 MIN"
+            }
+          ]
+        },
+        {
+          "name": "rebounds",
+          "displayName": "Rebounds",
+          "leaders": [
+            {
+              "displayValue": "10",
+              "value": 10.0,
+              "athlete": {
+                "id": "5211176",
+                "guid": "1dc72382-093a-337b-9b04-4ad051171560",
+                "lastName": "Salaun",
+                "fullName": "Tidjane Salaun",
+                "displayName": "Tidjane Salaun",
+                "shortName": "T. Salaun",
+                "jersey": "31",
+                "position": {
+                  "name": "Forward",
+                  "displayName": "Forward",
+                  "abbreviation": "F"
+                },
+                "team": {
+                  "id": "9"
+                },
+                "status": {
+                  "id": "1",
+                  "name": "Active",
+                  "type": "active",
+                  "abbreviation": "Active"
+                }
+              },
+              "statistics": [
+                {
+                  "name": "rebounds",
+                  "displayName": "Rebounds",
+                  "shortDisplayName": "REB",
+                  "description": "The total number of rebounds (offensive and defensive).",
+                  "abbreviation": "REB",
+                  "value": 10.0,
+                  "displayValue": "10"
+                },
+                {
+                  "name": "defensiveRebounds",
+                  "displayName": "Defensive Rebounds",
+                  "shortDisplayName": "DREB",
+                  "description": "The number of times when the defense obtains the possession of the ball after a missed shot by the offense.",
+                  "abbreviation": "DR",
+                  "value": 8.0,
+                  "displayValue": "8"
+                },
+                {
+                  "name": "offensiveRebounds",
+                  "displayName": "Offensive Rebounds",
+                  "shortDisplayName": "OREB",
+                  "description": "The number of times when the offense obtains the possession of the ball after a missed shot.",
+                  "abbreviation": "OR",
+                  "value": 2.0,
+                  "displayValue": "2"
+                }
+              ],
+              "mainStat": {
+                "value": "10",
+                "label": "REB"
+              },
+              "summary": "8 DREB, 2 OREB"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
