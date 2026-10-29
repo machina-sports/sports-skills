@@ -43,6 +43,7 @@ pip install "sports-skills[dev]"
 
 - **Football (Soccer)**: ESPN, Understat, FPL, Transfermarkt, football-data.co.uk, ClubElo — 25 commands across 30 leagues
 - **US Sports**: NFL, NBA, WNBA, NHL, MLB, College Football (CFB), College Basketball (CBB) — live scores, standings, depth charts, injuries, and leaders
+- **NBA G League** (`gleague`, ESPN): scores, standings, current rosters, team schedules by phase (Tip-Off Tournament, regular season, playoffs), game summaries, play-by-play, and news. G League team ids are separate from NBA ids; no NBA CDN / NBA Stats coverage
 - **Analytics backends** (same modules, second source): nflverse for NFL (EPA, weekly tables, 1999+), NBA Stats for NBA (shot charts, advanced ratings, 1946+), the official MLB Stats API (pitch-level velocity/spin/exit-velocity, 1901+), the official NHL API (coordinate play-by-play, 1917+), and the NCAA's own endpoints for college (FCS/D2/D3 scoreboards, March Madness bracket)
 - **Tennis**: ATP and WTA tournament scores, rankings, calendars, and player profiles
 - **Golf**: PGA, LPGA, and DP World tour scorecards and leaderboards
@@ -72,6 +73,7 @@ sports-skills nfl
 Execute a command:
 ```bash
 sports-skills nfl get_scoreboard --date 2026-02-24
+sports-skills gleague get_team_schedule --team_id 2 --season 2026 --season_type tournament
 sports-skills football get_current_season --competition_id premier-league
 sports-skills polymarket search_markets --query "super bowl"
 sports-skills news fetch_items --query "Lando Norris" --limit 5

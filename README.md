@@ -81,6 +81,7 @@ npx skills add machina-sports/sports-skills@nba-data
 | [`football-data`](https://skills.sh/machina-sports/sports-skills/football-data) | Football (Soccer) | 25 | ESPN, FPL, Understat, Transfermarkt, football-data.co.uk, ClubElo |
 | [`nfl-data`](https://skills.sh/machina-sports/sports-skills/nfl-data) | NFL | 22 | ESPN, nflverse |
 | [`nba-data`](https://skills.sh/machina-sports/sports-skills/nba-data) | NBA | 28 | ESPN, NBA CDN, NBA Stats (stats.nba.com) |
+| [`gleague-data`](https://skills.sh/machina-sports/sports-skills/gleague-data) | NBA G League | 9 | ESPN |
 | [`wnba-data`](https://skills.sh/machina-sports/sports-skills/wnba-data) | WNBA | 16 | ESPN |
 | [`nhl-data`](https://skills.sh/machina-sports/sports-skills/nhl-data) | NHL | 22 | ESPN, NHL API (api-web.nhle.com) |
 | [`mlb-data`](https://skills.sh/machina-sports/sports-skills/mlb-data) | MLB | 23 | ESPN, MLB Stats API (statsapi.mlb.com) |

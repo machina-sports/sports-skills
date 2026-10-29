@@ -118,6 +118,17 @@
       "skill_path": "skills/gemini/SKILL.md",
       "untrusted_content": true
     },
+    "gleague-data": {
+      "description": "NBA G League data via ESPN public endpoints — scores, standings, team rosters, schedules (Tip-Off Tournament, regular season, playoffs), game summaries, play-by-play, and news. Zero config, no API keys.",
+      "external_network": true,
+      "mode": "read_only",
+      "money_movement": false,
+      "requires_explicit_confirmation": false,
+      "risk": "low",
+      "secrets_required": false,
+      "skill_path": "skills/gleague-data/SKILL.md",
+      "untrusted_content": true
+    },
     "golf-data": {
       "description": "PGA Tour, LPGA, and DP World Tour golf data via ESPN public endpoints — tournament leaderboards, scorecards, season schedules, golfer profiles/overviews, and news. Zero config, no API keys.",
       "external_network": true,
