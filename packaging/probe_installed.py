@@ -1,5 +1,6 @@
 """Probe the installed canonical package without importing unrelated dependencies."""
 
+import ast
 import hashlib
 import importlib
 import importlib.metadata
@@ -10,7 +11,29 @@ import sys
 import types
 from pathlib import Path
 
-VERSION = "0.39.0"
+VERSION = "0.40.0"
+GLEAGUE_SOURCES = ("__init__.py", "_cdn.py", "_connector.py", "_stats.py")
+GLEAGUE_COMMANDS = [
+    "get_teams",
+    "get_scoreboard",
+    "get_schedule",
+    "get_standings",
+    "get_team_roster",
+    "get_team_schedule",
+    "get_game_summary",
+    "get_play_by_play",
+    "get_news",
+    "get_live_boxscore",
+    "get_live_playbyplay",
+    "find_nba_player",
+    "get_nbastats_game_log",
+    "get_nbastats_player_career",
+    "get_nbastats_team_stats",
+    "get_nbastats_shot_chart",
+    "get_nbastats_play_by_play",
+    "get_nbastats_advanced_boxscore",
+    "get_nbastats_leaders",
+]
 
 distribution = importlib.metadata.distribution("sports-skills")
 if distribution.version != VERSION:
@@ -30,6 +53,27 @@ nba = importlib.import_module("sports_skills.canonical.adapters.nba")
 for module in (canonical, football, nba):
     if root not in Path(module.__file__).resolve().parents:
         raise SystemExit(f"worktree import detected: {module.__file__}")
+
+# gleague and cli import requests (via _storefront), absent after --no-deps, so
+# their installed bytes are parsed instead of imported.
+for name in GLEAGUE_SOURCES:
+    if not (root / "sports_skills/gleague" / name).is_file():
+        raise SystemExit(f"gleague source missing: {name}")
+cli_source = (root / "sports_skills/cli.py").read_text(encoding="utf-8")
+registry = next(
+    node.value
+    for node in ast.parse(cli_source).body
+    if isinstance(node, ast.Assign) and [getattr(target, "id", None) for target in node.targets] == ["_REGISTRY"]
+)
+modules = {key.value: value for key, value in zip(registry.keys, registry.values)}
+if [key.value for key in modules["gleague"].keys] != GLEAGUE_COMMANDS:
+    raise SystemExit("gleague CLI registry drift")
+gleague_source = (root / "sports_skills/gleague/__init__.py").read_text(encoding="utf-8")
+gleague_functions = {node.name for node in ast.parse(gleague_source).body if isinstance(node, ast.FunctionDef)}
+if set(GLEAGUE_COMMANDS) - gleague_functions:
+    raise SystemExit("gleague CLI command without a function")
+if not (root / "sports_skills/_storefront.py").is_file() or 'args.module == "storefront"' not in cli_source:
+    raise SystemExit("storefront command missing")
 
 expected_signatures = {
     "to_successor_envelope": "(*, operation, request_bytes, operation_arguments_bytes, output_mode, consumer_tier) -> bytes",

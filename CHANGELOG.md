@@ -1,3 +1,15 @@
+## [0.40.0]
+
+### Added
+- **gleague: NBA G League data** (#199). 19 read-only commands from three sources that are never mixed within a command: ESPN (`basketball/nba-development`) for scores, standings, current rosters, team schedules by phase (Tip-Off Tournament, regular season, playoffs), game summaries, play-by-play and news; NBA Stats (`LeagueID=20`) for NBA-shaped game logs, careers, team stats, shot charts, play-by-play, advanced box scores and leaders; and the G League CDN (cdn-gleague.nba.com) for box scores and play-by-play. ESPN and official NBA.com ids are not interchangeable. Official game ids are validated for the G League; NBA.com player ids may be shared across leagues. Nothing falls back to an NBA path. There is no G League live scoreboard. Access: stats.nba.com is undocumented and throttles by client and volume, and a CDN refusal (e.g. 403/429) is returned as an error with no ESPN fallback. The `nba` module is unchanged.
+- **storefront: `sports-skills storefront [--json]`** (#195). Read-only discovery of the Machina Agent Storefront manifest. It never signs, pays, POSTs, follows redirects or uses credentials, and refuses to run when `SPORTS_SKILLS_REPLAY` is not `off`.
+
+### Fixed
+- **espn: current season defaults for NBA, NHL and CBB** (#197). Leaders, futures, team stats and player stats use the ending year of the season in progress, advancing in October. Explicit seasons still win; NFL, CFB, MLB and WNBA behavior is unchanged.
+
+### Docs
+- **tennis: API reference matches the callable parameters** (#198). `get_scoreboard` documents optional `tour` and `date`, including both tours when omitted; `get_player_info` no longer advertises an unsupported `tour` argument.
+
 ## [0.39.0]
 
 ### Added
