@@ -71,9 +71,11 @@ If the user explicitly asks to place/cancel orders or manage a wallet, stop and 
 3. For detailed prices, use `get_market_prices --token_id=<clob_token_id>`.
 
 ### Today's Events for a League
-1. `get_todays_events --sport=epl` — returns events sorted by start date.
-2. Each event includes nested markets (moneyline, spreads, totals, props).
-3. Pick a market, get `clob_token_id` from outcomes, then `get_market_prices`.
+1. `get_todays_events --sport=epl` — games kicking off today (UTC); pass `--date=YYYY-MM-DD --timezone=<IANA zone>` for the user's local day. Kickoff is `game_start_time`, not the listing `start_date`.
+2. It reads ONE page. If `complete` is false (`truncated`/`next_offset`, `unknown_start`, `unknown_market_state`, or `offset>0`), say coverage is partial — never "no games". Page on with `--offset=<next_offset>`.
+3. Each event includes nested markets; known closed/inactive/not-accepting markets are dropped, `accepting_orders: null` means unknown. Add `--sports_market_types=moneyline --compact=true` for a short summary.
+4. Outcome prices are indicative. For executable bid/ask, take `clob_token_id` and call `get_order_book` / `get_market_prices`.
+5. For upcoming fixtures on any date, use `get_sports_events --sport=epl`.
 
 ### Live Odds Check
 1. `search_markets --sport=nba --query="Lakers" --sports_market_types=moneyline`
@@ -91,10 +93,10 @@ If the user explicitly asks to place/cancel orders or manage a wallet, stop and 
 | Command | Description |
 |---|---|
 | `get_sports_config` | Available sport codes |
-| `get_todays_events` | Today's events for a league |
+| `get_todays_events` | A league's games on a date (default today, UTC), one page with coverage fields |
 | `search_markets` | Find markets by sport, keyword, and type |
 | `get_sports_markets` | Browse all sports markets |
-| `get_sports_events` | Browse sports events |
+| `get_sports_events` | Browse sports events (`sport` for one league, any date) |
 | `get_series` | List series (leagues) |
 | `get_market_details` | Single market details |
 | `get_event_details` | Single event details |
@@ -124,7 +126,7 @@ Example 3: Today's EPL events
 User says: "What EPL matches are on today?"
 Actions:
 1. Call `get_todays_events(sport='epl')`
-Result: Today's events with nested markets (moneyline, spreads, totals, props)
+Result: Today's events with open nested markets; if `complete` is false, say the list may be partial
 
 Example 4: League winner futures
 User says: "Who will win the Premier League?"

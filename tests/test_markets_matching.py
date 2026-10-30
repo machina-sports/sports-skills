@@ -169,9 +169,11 @@ class TestMatchMarkets:
     @patch("sports_skills.kalshi")
     def test_code_and_title_matching(self, mock_kalshi, mock_poly):
         mock_kalshi.get_todays_events.return_value = _KALSHI_EVENTS
-        mock_poly.get_todays_events.return_value = _POLY_EVENTS
+        mock_poly.get_sports_events.return_value = _POLY_EVENTS
 
         result = match_markets({"params": {"sport": "mlb"}})
+        mock_poly.get_sports_events.assert_called_once_with(sport="mlb", limit=100)
+        mock_poly.get_todays_events.assert_not_called()
 
         assert result["status"] is True
         data = result["data"]
@@ -195,7 +197,7 @@ class TestMatchMarkets:
     @patch("sports_skills.kalshi")
     def test_date_filter(self, mock_kalshi, mock_poly):
         mock_kalshi.get_todays_events.return_value = _KALSHI_EVENTS
-        mock_poly.get_todays_events.return_value = _POLY_EVENTS
+        mock_poly.get_sports_events.return_value = _POLY_EVENTS
 
         result = match_markets({"params": {"sport": "mlb", "date": "2030-01-01"}})
 
@@ -219,7 +221,7 @@ class TestMatchMarkets:
                 ]
             },
         }
-        mock_poly.get_todays_events.return_value = {
+        mock_poly.get_sports_events.return_value = {
             "status": True,
             "data": {
                 "events": [

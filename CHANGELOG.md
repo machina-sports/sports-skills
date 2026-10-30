@@ -1,3 +1,11 @@
+## [0.40.1]
+
+### Fixed
+- **polymarket: date- and timezone-correct `get_todays_events`.** Events are kept by game kickoff (event `startTime`, else a consistent market `gameStartTime`) on `date` (YYYY-MM-DD, default today) in `timezone` (IANA, default `UTC`), never by listing date. Each call reads one bounded provider page (`limit` up to 100, validated `offset`); `limit`, `offset`, `date`, `timezone`, `compact` and `sports_market_types` are validated, and a malformed provider page is an error, never an empty day. Markets known to be closed, inactive or not accepting orders are dropped; `sports_market_types` keeps one exact market type.
+- **polymarket: honest coverage.** Responses report `scanned`, `truncated` and `next_offset` for a full page, `unknown_start` for events without a usable kickoff, `unknown_market_state` for missing market or order flags (status `unknown`), and `complete` only when the page proves the date's full listing. An empty result is not "no games" unless `complete` is true.
+- **polymarket: opt-in `compact` output.** `compact=True` keeps identity, kickoff, status, order flags, outcomes and token IDs without descriptions; the default output is unchanged.
+- **polymarket, markets: broad listings keep future fixtures.** `get_sports_events` accepts `sport`, resolved to its league series (unknown codes and a conflicting `series_id` fail instead of widening to every sport), with no date filter. `markets.match_markets` and UCL counterpart discovery use it, so upcoming games are no longer dropped by the date-scoped read.
+
 ## [0.40.0]
 
 ### Added
