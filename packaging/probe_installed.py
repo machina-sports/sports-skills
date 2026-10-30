@@ -11,7 +11,8 @@ import sys
 import types
 from pathlib import Path
 
-VERSION = "0.40.0"
+VERSION = "0.40.1"
+POLYMARKET_TODAYS_PARAMS = ("offset", "date", "timezone", "sports_market_types", "compact")
 GLEAGUE_SOURCES = ("__init__.py", "_cdn.py", "_connector.py", "_stats.py")
 GLEAGUE_COMMANDS = [
     "get_teams",
@@ -74,6 +75,25 @@ if set(GLEAGUE_COMMANDS) - gleague_functions:
     raise SystemExit("gleague CLI command without a function")
 if not (root / "sports_skills/_storefront.py").is_file() or 'args.module == "storefront"' not in cli_source:
     raise SystemExit("storefront command missing")
+
+# polymarket imports requests too: compare installed wrapper keywords with the CLI registry.
+polymarket_source = (root / "sports_skills/polymarket/__init__.py").read_text(encoding="utf-8")
+polymarket_params = {
+    node.name: [arg.arg for arg in node.args.kwonlyargs]
+    for node in ast.parse(polymarket_source).body
+    if isinstance(node, ast.FunctionDef)
+}
+polymarket_cli = ast.literal_eval(modules["polymarket"])
+todays_cli = polymarket_cli["get_todays_events"]
+if todays_cli.get("required") != ["sport"] or set(POLYMARKET_TODAYS_PARAMS) - set(todays_cli.get("optional", [])):
+    raise SystemExit("polymarket get_todays_events CLI params drift")
+if {"sport", *POLYMARKET_TODAYS_PARAMS} - set(polymarket_params["get_todays_events"]):
+    raise SystemExit("polymarket get_todays_events wrapper params drift")
+if (
+    "sport" not in polymarket_cli["get_sports_events"].get("optional", [])
+    or "sport" not in polymarket_params["get_sports_events"]
+):
+    raise SystemExit("polymarket get_sports_events sport param missing")
 
 expected_signatures = {
     "to_successor_envelope": "(*, operation, request_bytes, operation_arguments_bytes, output_mode, consumer_tier) -> bytes",
