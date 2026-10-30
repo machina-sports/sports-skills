@@ -129,6 +129,7 @@ def get_sports_events(
     order: str = "volume",
     ascending: bool = False,
     series_id: str | None = None,
+    sport: str | None = None,
 ) -> dict:
     """Get sports events (each event groups related markets).
 
@@ -140,6 +141,8 @@ def get_sports_events(
         order: Sort field (default: 'volume').
         ascending: Sort ascending (default: False = highest first).
         series_id: Filter to one series/league (from get_sports_config()).
+        sport: Sport code (e.g. 'nba', 'ucl') resolved to its league series;
+            unknown codes fail. No date filtering — future fixtures are kept.
     """
     return _get_sports_events(
         _req(
@@ -150,6 +153,7 @@ def get_sports_events(
             order=order,
             ascending=ascending,
             series_id=series_id,
+            sport=sport,
         )
     )
 
@@ -222,16 +226,46 @@ def get_sports_config() -> dict:
     return _get_sports_config(_req())
 
 
-def get_todays_events(*, sport: str, limit: int = 30, offset: int = 0) -> dict:
-    """Get today's events (single-game markets) for a specific sport.
+def get_todays_events(
+    *,
+    sport: str,
+    limit: int = 30,
+    offset: int = 0,
+    date: str | None = None,
+    timezone: str = "UTC",
+    sports_market_types: str | None = None,
+    compact: bool = False,
+) -> dict:
+    """Get one sport's games kicking off on a calendar date (default: today, UTC).
+
+    Reads one provider page and filters it by game kickoff (never the listing
+    date). Check ``complete``/``truncated``/``next_offset``/``unknown_start``
+    and ``unknown_market_state`` before treating an empty result as "no games". Closed, inactive and
+    not-accepting markets are dropped; unknown order flags stay None. Outcome
+    prices are indicative — use get_order_book for executable bid/ask.
+    For upcoming fixtures on any date use get_sports_events(sport=...).
 
     Args:
         sport: Sport code — e.g. 'nba', 'epl', 'nfl', 'nhl', 'mlb',
             'bun', 'fl1', 'ucl', 'mls', 'atp', 'wta', 'lal'.
-        limit: Max events (default: 30, max: 100).
+        limit: Provider page size (default: 30, max: 100).
         offset: Events to skip, to page past a full result (default: 0).
+        date: Calendar date YYYY-MM-DD (default: today in ``timezone``).
+        timezone: IANA zone for ``date`` (default: 'UTC').
+        sports_market_types: Keep only this market type (e.g. 'moneyline').
+        compact: Summary fields only, no descriptions (default: False).
     """
-    return _get_todays_events(_req(sport=sport, limit=limit, offset=offset))
+    return _get_todays_events(
+        _req(
+            sport=sport,
+            limit=limit,
+            offset=offset,
+            date=date,
+            timezone=timezone,
+            sports_market_types=sports_market_types,
+            compact=compact,
+        )
+    )
 
 
 def search_markets(

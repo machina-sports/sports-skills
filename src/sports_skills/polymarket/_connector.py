@@ -5,6 +5,9 @@ import time
 import urllib.error
 import urllib.parse
 import urllib.request
+from datetime import date as _date
+from datetime import datetime
+from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 from sports_skills import _replay
 
@@ -261,6 +264,10 @@ def _normalize_market(market):
         "event_id": market.get("events", [{}])[0].get("id", "") if market.get("events") else "",
         "sports_market_type": market.get("sportsMarketType", ""),
         "game_id": market.get("gameId", ""),
+        "game_start_time": market.get("gameStartTime") or "",
+        # Only real provider booleans; a missing flag stays None (unknown).
+        "accepting_orders": _bool_or_none(market.get("acceptingOrders")),
+        "enable_order_book": _bool_or_none(market.get("enableOrderBook")),
         "clob_token_ids": clob_token_ids,
         "tags": [t.get("label", "") if isinstance(t, dict) else t for t in (market.get("tags") or [])],
     }
@@ -268,7 +275,7 @@ def _normalize_market(market):
 
 def _normalize_event(event):
     """Normalize a Gamma API event response."""
-    markets = event.get("markets", [])
+    markets = event.get("markets") or []
 
     return {
         "id": event.get("id", ""),
@@ -280,8 +287,10 @@ def _normalize_event(event):
         else "closed"
         if event.get("closed")
         else "inactive",
+        # startDate is the listing time; startTime is the game kickoff.
         "start_date": event.get("startDate", ""),
         "end_date": event.get("endDate", ""),
+        "game_start_time": event.get("startTime") or "",
         "created_at": event.get("createdAt", ""),
         "updated_at": event.get("updatedAt", ""),
         "volume": _safe_float(event.get("volume")),
@@ -302,6 +311,10 @@ def _safe_float(value, default=0.0):
         return float(value)
     except (ValueError, TypeError):
         return default
+
+
+def _bool_or_none(value):
+    return value if isinstance(value, bool) else None
 
 
 # ============================================================
@@ -377,9 +390,12 @@ def get_sports_events(request_data):
         order (str): Sort field (default: 'volume')
         ascending (bool): Sort ascending (default: False)
         series_id (str): Filter by series (league) ID
+        sport (str): Sport code resolved to its league series via get_sports_config()
+            (e.g. 'nba', 'ucl'). No date filtering: future fixtures are kept.
     """
     try:
         params = request_data.get("params", {})
+        sport = str(params.get("sport") or "").lower()
 
         query = {
             "tag_id": params.get("tag_id", SPORTS_TAG_ID),
@@ -394,21 +410,33 @@ def get_sports_events(request_data):
         if params.get("series_id"):
             query["series_id"] = params["series_id"]
 
+        if sport:
+            series_id = _get_sports_config().get(sport, {}).get("series")
+            # Never widen a league listing to every sport.
+            if not series_id:
+                return _error(f"Could not resolve Polymarket sport '{sport}' to a series; see get_sports_config()")
+            if query.get("series_id") and str(query["series_id"]) != str(series_id):
+                return _error(f"series_id {query['series_id']!r} does not match sport '{sport}' ({series_id})")
+            query["series_id"] = series_id
+            # The league series is the scope; only an explicit tag_id narrows it further.
+            if "tag_id" not in params:
+                del query["tag_id"]
+
         response = _gamma_request("/events", params=query)
         err = _check_error(response)
         if err:
             return err
 
-        events = response if isinstance(response, list) else response.get("events", response)
-        if not isinstance(events, list):
-            events = []
+        events = response.get("events") if isinstance(response, dict) else response
+        if not _valid_event_page(events):
+            return _error("Unexpected Polymarket /events response")
 
         normalized = [_normalize_event(e) for e in events]
 
-        return _success(
-            {"events": normalized, "count": len(normalized), "offset": query["offset"]},
-            f"Retrieved {len(normalized)} sports events",
-        )
+        data = {"events": normalized, "count": len(normalized), "offset": query["offset"]}
+        if sport:
+            data["sport"] = sport
+        return _success(data, f"Retrieved {len(normalized)} sports events")
 
     except Exception as e:
         return _error(f"Error fetching sports events: {str(e)}")
@@ -883,26 +911,147 @@ def _get_sports_config():
     return {}
 
 
-def get_todays_events(request_data):
-    """Get today's events (single-game markets) for a specific sport.
+_KICKOFF_RE = re.compile(r"(\d{4}-\d{2}-\d{2})[T ](\d{2}:\d{2}(?::\d{2})?)(?:\.\d+)?(Z|[+-]\d{2}(?::?\d{2})?)")
+_ISO_DATE_RE = re.compile(r"\d{4}-\d{2}-\d{2}")
 
-    Returns events sorted by volume (most liquid first) for the given
-    sport/league. Each event includes its nested markets with prices.
+# compact=True keeps identity, kickoff, status, order flags and token IDs; no descriptions.
+_COMPACT_EVENT_KEYS = ("id", "title", "slug", "status", "game_start_time", "start_date", "end_date")
+_COMPACT_EVENT_KEYS += ("series_id", "market_count", "markets")
+_COMPACT_MARKET_KEYS = ("id", "question", "slug", "status", "sports_market_type", "game_id", "game_start_time")
+_COMPACT_MARKET_KEYS += ("end_date", "accepting_orders", "enable_order_book", "outcomes", "clob_token_ids")
+
+
+def _parse_kickoff(value):
+    """Offset-aware datetime from a Gamma timestamp, else None.
+
+    Accepts '2026-10-30T00:00:00Z' (event startTime) and '2026-10-30 00:00:00+00'
+    (market gameStartTime); both are rewritten to a +HH:MM offset that
+    Python 3.9 fromisoformat understands. A naive timestamp is unknown, not UTC.
+    """
+    match = _KICKOFF_RE.fullmatch(value.strip()) if isinstance(value, str) else None
+    if not match:
+        return None
+    day, clock, offset = match.groups()
+    if offset == "Z":
+        offset = "+00:00"
+    elif len(offset) == 3:
+        offset += ":00"
+    elif ":" not in offset:
+        offset = f"{offset[:3]}:{offset[3:]}"
+    try:
+        return datetime.fromisoformat(f"{day}T{clock}{offset}")
+    except ValueError:
+        return None
+
+
+def _event_kickoff(event):
+    """(kickoff, raw value) for an event, or (None, "") when it is unknown.
+
+    event.startTime is authoritative. Without it, the nested markets'
+    gameStartTime is used only when every present value parses and agrees.
+    Listing startDate, endDate and the bare eventDate are never used.
+    """
+    raw = event.get("startTime")
+    if raw not in (None, ""):
+        kickoff = _parse_kickoff(raw)
+        return (kickoff, raw) if kickoff else (None, "")
+    found = {}
+    for market in event.get("markets") or []:
+        value = market.get("gameStartTime")
+        if value in (None, ""):
+            continue
+        kickoff = _parse_kickoff(value)
+        if kickoff is None:
+            return None, ""
+        found.setdefault(kickoff, value)
+    if len(found) == 1:
+        return next(iter(found.items()))
+    return None, ""
+
+
+def _market_not_known_unavailable(market):
+    """Drop markets the provider marks closed, inactive or not accepting orders.
+
+    An open event does not make its markets tradable; a missing flag is
+    unknown and kept (reported as None), never assumed True.
+    """
+    return (
+        market.get("closed") is not True
+        and market.get("active") is not False
+        and market.get("acceptingOrders") is not False
+    )
+
+
+def _valid_event_page(events):
+    return isinstance(events, list) and all(
+        isinstance(e, dict)
+        and (e.get("markets") is None or isinstance(e["markets"], list))
+        and all(isinstance(m, dict) for m in e.get("markets") or [])
+        for e in events
+    )
+
+
+def get_todays_events(request_data):
+    """Get one sport's games kicking off on a calendar date (default: today, UTC).
+
+    Reads ONE provider page (limit/offset, volume-desc) and keeps events whose
+    kickoff (event startTime, else consistent market gameStartTime) falls on
+    ``date`` in ``timezone``. Nested markets known to be closed, inactive or
+    not accepting orders are dropped. Outcome prices are Gamma indicative
+    prices, not executable quotes — use the CLOB order book for bid/ask.
+
+    Coverage metadata: ``scanned`` rows read, ``truncated``/``next_offset`` when
+    the page was full, ``unknown_start`` events with no usable kickoff, and
+    ``unknown_market_state`` IDs with missing state/data, and ``complete`` only
+    when this single page proves the date's full listing and market states.
 
     Params:
         sport (str): Sport code (required) — e.g. 'nba', 'epl', 'nfl', 'nhl',
             'mlb', 'bun', 'fl1', 'sea', 'ucl', 'mls', 'atp', 'wta', 'lal'.
-        limit (int): Max events (default: 50, max: 100). Increase to 100 for
-            leagues with many concurrent matches.
+        limit (int): Provider page size (default: 50, max: 100).
         offset (int): Events to skip, for paging past a full page (default: 0).
+        date (str): Calendar date YYYY-MM-DD (default: today in ``timezone``).
+        timezone (str): IANA zone for ``date`` (default: 'UTC').
+        sports_market_types (str): Keep only this exact market type (e.g. 'moneyline').
+        compact (bool): Summary fields only, no descriptions (default: False).
     """
     try:
         params = request_data.get("params", {})
         offset = params.get("offset", 0)
         if isinstance(offset, bool) or not isinstance(offset, int) or offset < 0:
             return _error(f"offset must be a non-negative integer, got {offset!r}")
+        limit = params.get("limit", 50)
+        if isinstance(limit, bool) or not isinstance(limit, int) or limit < 1:
+            return _error(f"limit must be a positive integer, got {limit!r}")
+        limit = min(limit, 100)
         sport = str(params.get("sport") or "").lower()
-        limit = min(int(params.get("limit", 50)), 100)
+
+        tz_name = params.get("timezone") or "UTC"
+        try:
+            zone = ZoneInfo(tz_name) if isinstance(tz_name, str) else None
+        except (ZoneInfoNotFoundError, ValueError, OSError):
+            zone = None
+        if zone is None:
+            return _error(f"timezone must be an IANA zone name (e.g. 'UTC', 'America/New_York'), got {tz_name!r}")
+
+        day = params.get("date")
+        if day in (None, ""):
+            day = datetime.now(zone).date()
+        else:
+            try:
+                if not isinstance(day, str) or not _ISO_DATE_RE.fullmatch(day):
+                    raise ValueError
+                day = _date.fromisoformat(day)
+            except ValueError:
+                return _error(f"date must be YYYY-MM-DD, got {params.get('date')!r}")
+
+        compact = params.get("compact", False)
+        if not isinstance(compact, bool):
+            return _error(f"compact must be a boolean, got {compact!r}")
+        market_type = params.get("sports_market_types")
+        if market_type is not None and not isinstance(market_type, str):
+            return _error("sports_market_types must be a market type string")
+        market_type = market_type or ""
 
         if not sport:
             return _error(
@@ -936,15 +1085,57 @@ def get_todays_events(request_data):
         if err:
             return err
 
-        events = response if isinstance(response, list) else response.get("events", response)
-        if not isinstance(events, list):
-            events = []
+        events = response.get("events") if isinstance(response, dict) else response
+        # A malformed page is a provider failure, never an empty day.
+        if not _valid_event_page(events):
+            return _error(f"Unexpected Polymarket /events response for '{sport}'")
 
-        normalized = [_normalize_event(e) for e in events]
+        day_events, unknown_start, unknown_market_state = [], [], []
+        for event in events:
+            kickoff, raw_kickoff = _event_kickoff(event)
+            if kickoff is None:
+                unknown_start.append(str(event.get("id") or event.get("slug") or ""))
+                continue
+            if kickoff.astimezone(zone).date() != day:
+                continue
+            if event.get("markets") is None:
+                unknown_market_state.append(str(event.get("id") or event.get("slug") or ""))
+            markets = [m for m in event.get("markets") or [] if _market_not_known_unavailable(m)]
+            if market_type:
+                markets = [m for m in markets if m.get("sportsMarketType") == market_type]
+            # The event stays even when no market survives: the game is on the date.
+            normalized = _normalize_event({**event, "markets": markets})
+            normalized["game_start_time"] = raw_kickoff
+            for raw, market in zip(markets, normalized["markets"]):
+                if not isinstance(raw.get("active"), bool) or not isinstance(raw.get("closed"), bool):
+                    market["status"] = "unknown"
+                if not all(isinstance(raw.get(key), bool) for key in ("active", "closed", "acceptingOrders", "enableOrderBook")):
+                    unknown_market_state.append(str(raw.get("id") or raw.get("slug") or ""))
+            if compact:
+                normalized["markets"] = [
+                    {k: m[k] for k in _COMPACT_MARKET_KEYS if k in m} for m in normalized["markets"]
+                ]
+                normalized = {k: normalized[k] for k in _COMPACT_EVENT_KEYS if k in normalized}
+            day_events.append(normalized)
 
+        # A full page may hide more rows; skipped rows and unknown kickoffs were not checked.
+        truncated = len(events) >= limit
         return _success(
-            {"events": normalized, "count": len(normalized), "sport": sport},
-            f"Retrieved {len(normalized)} {sport.upper()} events",
+            {
+                "events": day_events,
+                "count": len(day_events),
+                "sport": sport,
+                "date": day.isoformat(),
+                "timezone": tz_name,
+                "offset": offset,
+                "scanned": len(events),
+                "next_offset": offset + len(events) if truncated else None,
+                "truncated": truncated,
+                "unknown_start": unknown_start,
+                "unknown_market_state": unknown_market_state,
+                "complete": not truncated and offset == 0 and not unknown_start and not unknown_market_state,
+            },
+            f"Retrieved {len(day_events)} {sport.upper()} events on {day.isoformat()} ({tz_name})",
         )
 
     except Exception as e:

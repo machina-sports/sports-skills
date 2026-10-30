@@ -13,7 +13,7 @@ never folded into the two-way compare_odds path.
 
 No network. Seams patched:
   sports_skills.polymarket.get_event_details  source event for a Polymarket link
-  sports_skills.polymarket.get_todays_events  Polymarket UCL listing (counterpart of a Kalshi link)
+  sports_skills.polymarket.get_sports_events  Polymarket UCL listing (counterpart of a Kalshi link)
   sports_skills.kalshi.get_event              source event for a Kalshi link
   sports_skills.kalshi.get_events             Kalshi KXUCLGAME listing (counterpart of a Polymarket link)
   sports_skills._espn_base.espn_request       ESPN soccer/uefa.champions scoreboard
@@ -155,7 +155,7 @@ def env():
     compare = MagicMock(return_value={"status": False, "data": None, "message": "compare_odds must not run for UCL"})
     with ExitStack() as stack:
         stack.enter_context(patch("sports_skills.polymarket.get_event_details", poly_event))
-        stack.enter_context(patch("sports_skills.polymarket.get_todays_events", poly_list))
+        stack.enter_context(patch("sports_skills.polymarket.get_sports_events", poly_list))
         stack.enter_context(patch("sports_skills.kalshi.get_event", kalshi_event))
         stack.enter_context(patch("sports_skills.kalshi.get_events", kalshi_list))
         stack.enter_context(patch("sports_skills._espn_base.espn_request", espn))

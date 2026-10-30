@@ -2809,7 +2809,8 @@ def match_markets(request_data: dict) -> dict:
     try:
         from sports_skills import polymarket
 
-        result = polymarket.get_todays_events(sport=POLYMARKET_SPORTS[sport], limit=100)
+        # Broad league listing: get_todays_events is date-scoped and would drop upcoming games.
+        result = polymarket.get_sports_events(sport=POLYMARKET_SPORTS[sport], limit=100)
         if result.get("status"):
             poly_events = result.get("data", {}).get("events", []) or []
         else:

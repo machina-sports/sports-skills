@@ -13,10 +13,10 @@ RIGHT: search_markets(sport='epl', query='Leeds')   → returns Leeds markets
 
 These work out of the box:
 - `get_sports_config` — list all available sport codes (nba, epl, nfl, bun, etc.)
-- `get_todays_events` — today's events for a specific sport (requires `sport` param)
+- `get_todays_events` — one sport's games kicking off on a date (requires `sport`; optional `date`, `timezone`, `offset`, `sports_market_types`, `compact`). Reads one page; check `complete`/`next_offset` before saying "no games"
 - `search_markets` — find markets by sport, keyword, and type (use `sport` param for single-game markets)
 - `get_sports_markets` — browse all sports markets (sorted by volume)
-- `get_sports_events` — browse sports events (sorted by volume)
+- `get_sports_events` — browse sports events (sorted by volume); `sport` limits to one league with upcoming fixtures on any date
 - `get_series` — list series (leagues)
 - `get_market_details` — single market details (by market_id or slug)
 - `get_event_details` — single event details with nested markets
@@ -36,6 +36,7 @@ Trading/order-management commands are intentionally excluded from this read-only
 sports-skills polymarket search_markets --sport=nba --sports_market_types=moneyline
 sports-skills polymarket search_markets --sport=epl --query="Leeds"
 sports-skills polymarket get_todays_events --sport=nba
+sports-skills polymarket get_todays_events --sport=nba --date=2026-10-29 --timezone=America/New_York --sports_market_types=moneyline --compact=true
 ```
 
 ### Discovering sport codes

@@ -301,7 +301,7 @@ def _poly_counterpart(identity: dict, report: dict) -> list:
     for page_number in range(1, _POLY_MAX_PAGES + 1):
         offset = (page_number - 1) * _POLY_LIST_LIMIT
         try:
-            result = polymarket.get_todays_events(sport=_SPORT, limit=_POLY_LIST_LIMIT, offset=offset)
+            result = polymarket.get_sports_events(sport=_SPORT, limit=_POLY_LIST_LIMIT, offset=offset)
         except Exception as exc:
             result = {"status": False, "message": str(exc)}
         if not result.get("status"):

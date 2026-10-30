@@ -89,6 +89,7 @@ _REGISTRY = {
                 "order",
                 "ascending",
                 "series_id",
+                "sport",
             ]
         },
         "get_series": {"optional": ["limit", "offset"]},
@@ -100,7 +101,7 @@ _REGISTRY = {
         "get_sports_config": {},
         "get_todays_events": {
             "required": ["sport"],
-            "optional": ["limit"],
+            "optional": ["limit", "offset", "date", "timezone", "sports_market_types", "compact"],
         },
         "search_markets": {"optional": ["query", "sport", "sports_market_types", "tag_id", "limit"]},
         "get_price_history": {
@@ -609,6 +610,7 @@ _BOOL_PARAMS = {
     "ascending",
     "descending",
     "with_nested_markets",
+    "compact",
 }
 
 # Params that should be parsed as int
