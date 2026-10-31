@@ -1,10 +1,19 @@
 ---
 name: prophetx
-description: |
-  ProphetX betting exchange — public tournaments, events, markets, and exchange odds. No API key, read-only. Covers soccer, tennis, basketball, baseball (MLB), NFL, NHL. IMPORTANT: odds are per-market optional — they appear only when a public order book exists (check `selections_available`); empty/suspended books return market structure and matched stake only. Full guaranteed odds coverage requires the authenticated ProphetX Affiliate API (separate Machina connector).
-
-  Use when: user asks what markets/lines ProphetX offers for a game, ProphetX exchange odds and order-book prices (when exposed), event/tournament discovery, market structure (spreads, totals, alt lines, player props), or matched-stake activity.
-  Don't use when: user needs guaranteed odds on every market or in-play liquidity — that requires the authenticated Affiliate connector (Machina platform). For prediction-market prices use polymarket or kalshi. For scores/stats use the sport-specific skill (nfl-data, mlb-data, football-data, ...). For news use sports-news.
+description: >-
+  ProphetX betting exchange — public tournaments, events, markets, and exchange
+  odds. No API key, read-only. Covers soccer, tennis, basketball, baseball
+  (MLB), NFL, NHL. IMPORTANT: odds are per-market optional — they appear only
+  when a public order book exists (check `selections_available`);
+  empty/suspended books return market structure and matched stake only. Full
+  guaranteed odds coverage requires the authenticated ProphetX Affiliate API
+  (separate Machina connector). Use when: user asks what markets/lines ProphetX
+  offers for a game, ProphetX exchange odds and order-book prices (when
+  exposed), event/tournament discovery, market structure (spreads, totals, alt
+  lines, player props), or matched-stake activity. Don't use when: user needs
+  guaranteed odds on every market or in-play liquidity — that requires the
+  authenticated Affiliate connector (Machina platform). For prediction-market
+  prices use polymarket or kalshi.
 license: MIT
 metadata:
   author: machina-sports
