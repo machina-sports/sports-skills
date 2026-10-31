@@ -1,11 +1,15 @@
 ---
 name: espn-api
-description: |
-  Raw reference for ESPN's undocumented public JSON endpoints, for a sport, league, or operation that no dedicated sports-skills skill covers, or when a developer explicitly asks to work with raw ESPN endpoints. Prompt-only: endpoint catalog, documented league slugs, observed response shapes, pitfalls, and stdlib fetch helpers. Output is provider-native ESPN JSON, not normalized or canonical data.
-
-  Use when: the requested league or operation is genuinely not covered by a dedicated skill (e.g. MMA, lacrosse, rugby, Australian football, NCAA volleyball, field hockey, water polo, IndyCar/NASCAR), or the user explicitly asks to write, debug, or inspect code against ESPN endpoints.
-
-  Don't use when: a dedicated skill covers the league and job — nba-data, wnba-data, nfl-data, nhl-data, mlb-data, cfb-data (NCAA football), cbb-data (NCAA men's basketball), football-data (its listed soccer leagues), tennis-data (ATP/WTA), golf-data (PGA/LPGA/DP World), cricket-data, fastf1 (Formula 1); sports-news or sports-reporter for news and articles; betting, markets, kalshi, or polymarket for odds and prediction markets. volleyball-data covers Dutch Nevobo volleyball only, not NCAA. A dedicated skill's error, timeout, or empty result is not permission to switch to raw ESPN automatically — report it and ask first.
+description: >-
+  Raw reference for ESPN's undocumented public JSON endpoints, for a sport,
+  league, or operation that no dedicated sports-skills skill covers, or when a
+  developer explicitly asks to work with raw ESPN endpoints. Prompt-only:
+  endpoint catalog, documented league slugs, observed response shapes, pitfalls,
+  and stdlib fetch helpers. Output is provider-native ESPN JSON, not normalized
+  or canonical data. Use when: the requested league or operation is genuinely
+  not covered by a dedicated skill (e.g. MMA, lacrosse, rugby, Australian
+  football, NCAA volleyball, field hockey, water polo, IndyCar/NASCAR), or the
+  user explicitly asks to write, debug, or inspect code against ESPN endpoints.
 license: MIT
 metadata:
   author: sejaldua
