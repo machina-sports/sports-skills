@@ -236,6 +236,7 @@ def _extract_games(sport: str, scoreboard_data: dict) -> list[dict]:
                 "name": team.get("name", ""),
                 "abbreviation": team.get("abbreviation", ""),
                 "id": team.get("id", ""),
+                "score": c.get("score"),
             }
             if c.get("home_away") == "home":
                 home = entry

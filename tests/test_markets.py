@@ -1,5 +1,6 @@
 """Tests for markets orchestration module."""
 
+from contextlib import ExitStack
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -554,6 +555,110 @@ class TestGetSportScheduleMocked:
     def test_invalid_sport(self):
         result = get_sport_schedule({"params": {"sport": "curling"}})
         assert result["status"] is False
+
+
+# ============================================================
+# Observed scores survive schedule extraction
+# ============================================================
+
+_NO_SCORE = object()  # competitor carries no "score" key at all
+
+# Synthetic in-game points (home, away) in the sport modules' string shape.
+_LIVE_SCORES = {
+    "nfl": ("13", "6"),
+    "nba": ("88", "91"),
+    "mlb": ("4", "2"),
+    "nhl": ("3", "1"),
+    "wnba": ("55", "60"),
+    "cfb": ("24", "27"),
+    "cbb": ("33", "29"),
+}
+
+
+def _scored_competitor(sport, side, score):
+    competitor = {
+        "home_away": side,
+        "team": {
+            "name": f"{sport.upper()} {side.title()} Club",
+            "abbreviation": side.upper()[:3],
+            "id": f"{sport}-{side}",
+        },
+    }
+    if score is not _NO_SCORE:
+        competitor["score"] = score
+    return competitor
+
+
+def _scored_scoreboard(sport):
+    """Synthetic get_scoreboard response: a live, halftime, final and scheduled game."""
+    live_home, live_away = _LIVE_SCORES[sport]
+    rows = [
+        ("live", "in_progress", "2nd 4:12", live_home, live_away),
+        ("half", "in_progress", "Halftime", "0", 0),
+        ("final", "final", "Final", "17", "0"),
+        ("sched", "scheduled", "7:30 PM ET", _NO_SCORE, None),
+    ]
+    events = [
+        {
+            "id": f"{sport}-{suffix}",
+            "name": f"{sport.upper()} Away Club at {sport.upper()} Home Club",
+            "short_name": "AWA @ HOM",
+            "start_time": "2026-11-01T18:00Z",
+            "status": status,
+            "status_detail": detail,
+            "competitors": [_scored_competitor(sport, "home", home), _scored_competitor(sport, "away", away)],
+            "odds": {"home_odds": "-150", "away_odds": "+130", "provider": "Synthetic Book"},
+        }
+        for suffix, status, detail, home, away in rows
+    ]
+    return {"status": True, "data": {"events": events}}
+
+
+def _assert_observed_scores(games, sport):
+    events = _scored_scoreboard(sport)["data"]["events"]
+    sport_games = [game for game in games if game["sport"] == sport]
+    assert [game["event_id"] for game in sport_games] == [event["id"] for event in events]
+    for game, event in zip(sport_games, events):
+        assert (game["status"], game["status_detail"]) == (event["status"], event["status_detail"])
+        assert game["espn_odds"] == event["odds"]
+        for competitor in event["competitors"]:
+            entry = game[competitor["home_away"]]
+            team = competitor["team"]
+            assert (entry["name"], entry["abbreviation"], entry["id"]) == (team["name"], team["abbreviation"], team["id"])
+            observed = competitor.get("score", _NO_SCORE)
+            where = (sport, game["event_id"], competitor["home_away"])
+            if observed is _NO_SCORE or observed is None:
+                # Unknown stays unknown: never invented as 0 or "".
+                assert entry.get("score") is None, where
+            else:
+                # Exact value and type: "0" and 0 are observed scores, not blanks.
+                score = entry.get("score")
+                assert (score, type(score)) == (observed, type(observed)), where
+
+
+class TestObservedScores:
+    @pytest.mark.parametrize("sport", sorted(SCOREBOARD_SPORTS))
+    def test_extract_games_keeps_each_sides_score(self, sport):
+        _assert_observed_scores(_extract_games(sport, _scored_scoreboard(sport)), sport)
+
+    def test_public_schedule_keeps_scores_for_every_sport(self):
+        import sports_skills.markets as markets
+
+        with ExitStack() as stack:
+            providers = {
+                sport: stack.enter_context(
+                    patch(f"sports_skills.{sport}.get_scoreboard", return_value=_scored_scoreboard(sport))
+                )
+                for sport in sorted(SCOREBOARD_SPORTS)
+            }
+            result = markets.get_sport_schedule(date="2026-11-01")
+
+        assert result["status"] is True
+        assert "warnings" not in result["data"]
+        assert result["data"]["count"] == 4 * len(SCOREBOARD_SPORTS)
+        for sport, provider in providers.items():
+            provider.assert_called_once_with(date="2026-11-01")
+            _assert_observed_scores(result["data"]["games"], sport)
 
 
 # ============================================================
