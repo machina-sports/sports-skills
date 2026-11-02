@@ -11,7 +11,8 @@ import sys
 import types
 from pathlib import Path
 
-VERSION = "0.40.1"
+VERSION = "0.40.2"
+SCOREBOARD_SPORTS = ("nba", "nfl", "mlb", "nhl", "wnba", "cfb", "cbb")
 POLYMARKET_TODAYS_PARAMS = ("offset", "date", "timezone", "sports_market_types", "compact")
 GLEAGUE_SOURCES = ("__init__.py", "_cdn.py", "_connector.py", "_stats.py")
 GLEAGUE_COMMANDS = [
@@ -94,6 +95,44 @@ if (
     or "sport" not in polymarket_params["get_sports_events"]
 ):
     raise SystemExit("polymarket get_sports_events sport param missing")
+
+# markets._connector is stdlib-only at module load; its sport modules are imported
+# lazily, so the installed schedule normalizer runs on a synthetic scoreboard.
+connector = importlib.import_module("sports_skills.markets._connector")
+if Path(connector.__file__).resolve() != root / "sports_skills/markets/_connector.py":
+    raise SystemExit(f"markets connector not installed: {connector.__file__}")
+if set(connector.SCOREBOARD_SPORTS) != set(SCOREBOARD_SPORTS):
+    raise SystemExit("markets scoreboard sports drift")
+scoreboard = {
+    "status": True,
+    "data": {
+        "events": [
+            {
+                "id": "synthetic-1",
+                "competitors": [
+                    {"home_away": "home", "team": {"id": "1", "name": "Home"}, "score": 0},
+                    {"home_away": "away", "team": {"id": "2", "name": "Away"}, "score": "0"},
+                ],
+            },
+            {
+                "id": "synthetic-2",
+                "competitors": [
+                    {"home_away": "home", "team": {"id": "3", "name": "Home"}},
+                    {"home_away": "away", "team": {"id": "4", "name": "Away"}, "score": None},
+                ],
+            },
+        ]
+    },
+}
+for sport in SCOREBOARD_SPORTS:
+    games = connector._extract_games(sport, scoreboard)
+    observed = [(game["sport"], game["event_id"], game["home"]["score"], game["away"]["score"]) for game in games]
+    if observed != [(sport, "synthetic-1", 0, "0"), (sport, "synthetic-2", None, None)]:
+        raise SystemExit(f"markets score preservation drift: {sport}: {observed!r}")
+    if type(games[0]["home"]["score"]) is not int:
+        raise SystemExit(f"markets zero score lost its type: {sport}")
+if connector._extract_games("nba", {"status": False, "data": scoreboard["data"]}) != []:
+    raise SystemExit("markets failed scoreboard produced games")
 
 expected_signatures = {
     "to_successor_envelope": "(*, operation, request_bytes, operation_arguments_bytes, output_mode, consumer_tier) -> bytes",

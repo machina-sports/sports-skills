@@ -1,3 +1,8 @@
+## [0.40.2]
+
+### Fixed
+- **markets: unified schedules keep observed scores.** `markets.get_sport_schedule` now carries each home and away competitor's `score` from the sport scoreboard for NBA, NFL, MLB, NHL, WNBA, CFB and CBB. A score of `0` (or `"0"`) stays as sent, and a score the scoreboard does not provide is `null`. Market coverage, matching and prices are unchanged.
+
 ## [0.40.1]
 
 ### Fixed
