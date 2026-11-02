@@ -230,3 +230,25 @@ def test_championship_standings_bad_round_is_text_error(fake_fastf1):
     result = f1.get_championship_standings({"params": {"year": 2026, "round": "abc"}})
     assert result["status"] is False
     assert "round" in result["message"].lower()
+
+
+def test_event_resolves_by_location(fake_fastf1):
+    """The docs use the circuit ("Monza"), which is the schedule's Location."""
+    result = f1.get_race_results({"params": {"year": 2026, "event": "suzuka"}})
+    assert result["status"] is True, result
+    assert fake_fastf1 == [("Japanese Grand Prix", "R")]
+
+
+def test_shared_location_is_not_guessed(monkeypatch):
+    schedule = fastf1.events.EventSchedule(
+        pd.DataFrame(
+            {
+                "EventName": ["British Grand Prix", "70th Anniversary Grand Prix"],
+                "EventFormat": ["conventional", "conventional"],
+                "Location": ["Silverstone", "Silverstone"],
+            }
+        )
+    )
+    monkeypatch.setattr(fastf1, "get_event_schedule", lambda year: schedule)
+    with pytest.raises(ValueError, match="not found"):
+        f1._validate_event(2020, "Silverstone")
