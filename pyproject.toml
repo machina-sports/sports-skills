@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "sports-skills"
-version = "0.40.1"
+version = "0.40.2"
 description = "Lightweight Python SDK for sports data — football, F1, NFL, NBA, WNBA, NHL, MLB, tennis, CFB, CBB, golf, volleyball, prediction markets, betting analysis, and news"
 readme = "README_PYPI.md"
 requires-python = ">=3.9.10"
@@ -34,7 +34,7 @@ dependencies = [
 ]
 
 [project.urls]
-"Reviewed source" = "https://github.com/machina-sports/sports-skills/tree/7c4d0fd3909f82c95d3c766b2d19f4bf0957d30e"
+"Reviewed source" = "https://github.com/machina-sports/sports-skills/tree/b29948e717954104f6434e3d020d9f330c71c5c6"
 
 [project.optional-dependencies]
 f1 = ["fastf1>=3.0", "pandas>=2.0"]
