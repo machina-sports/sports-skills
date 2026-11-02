@@ -197,8 +197,12 @@ def devig(request_data: dict) -> dict:
             return _error(bad)
         raw_probs = [_american_to_prob(o) for o in odds_list]
     elif fmt == "decimal":
+        if any(o <= 1.0 for o in odds_list):
+            return _error("Decimal odds must be greater than 1.0")
         raw_probs = [_decimal_to_prob(o) for o in odds_list]
     elif fmt == "probability":
+        if not all(0 < o < 1 for o in odds_list):
+            return _error("Probability must be between 0 and 1 (exclusive)")
         raw_probs = list(odds_list)
     else:
         return _error(

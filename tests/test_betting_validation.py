@@ -84,6 +84,32 @@ class TestAmericanOddsDomain:
         assert favorite["implied_probability"] > 0.5 > underdog["implied_probability"]
 
 
+class TestDevigDecimalAndProbabilityDomain:
+    """devig checks decimal and probability input the way convert_odds does."""
+
+    def test_probabilities_passed_as_decimal_are_rejected(self):
+        """0.6 and 0.45 read as decimal odds flip the favourite to 43%."""
+        r = _calcs.devig({"params": {"odds": "0.6,0.45", "format": "decimal"}})
+        assert r["status"] is False and "greater than 1.0" in r["message"]
+
+    def test_decimal_even_one_is_rejected(self):
+        r = _calcs.devig({"params": {"odds": "1.0,1.0", "format": "decimal"}})
+        assert r["status"] is False
+
+    @pytest.mark.parametrize("odds", ["0.7,1.2", "55,50", "0.5,0"])
+    def test_probability_outside_zero_one_is_rejected(self, odds):
+        r = _calcs.devig({"params": {"odds": odds, "format": "probability"}})
+        assert r["status"] is False and "between 0 and 1" in r["message"]
+
+    def test_evaluate_bet_rejects_probabilities_passed_as_decimal(self):
+        r = _calcs.evaluate_bet({"params": {"book_odds": "0.6,0.45", "book_format": "decimal", "market_prob": 0.5}})
+        assert r["status"] is False
+
+    def test_valid_decimal_and_probability_unaffected(self):
+        assert _calcs.devig({"params": {"odds": "1.91,1.91", "format": "decimal"}})["status"] is True
+        assert _calcs.devig({"params": {"odds": "0.55,0.50", "format": "probability"}})["status"] is True
+
+
 # ── CLI registry contract ─────────────────────────────────────────────
 
 
