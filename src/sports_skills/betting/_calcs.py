@@ -17,6 +17,8 @@ Functions:
 
 from __future__ import annotations
 
+import math
+
 # ============================================================
 # Response Helpers
 # ============================================================
@@ -48,6 +50,8 @@ def _invalid_american(*values: float) -> str | None:
     value there is rejected rather than answered with a confident number. Decimal
     odds passed as American land here too, which is the common way to hit it.
     """
+    if not all(math.isfinite(v) for v in values):
+        return "Odds must be finite numbers"
     bad = [v for v in values if -_MIN_AMERICAN < v < _MIN_AMERICAN]
     if not bad:
         return None
@@ -115,6 +119,8 @@ def convert_odds(request_data: dict) -> dict:
         odds = float(params.get("odds", 0))
     except (TypeError, ValueError) as e:
         return _error(f"Invalid odds value: {e}")
+    if not math.isfinite(odds):
+        return _error("Odds must be a finite number")
 
     from_format = str(params.get("from_format", "american")).lower()
 
@@ -187,6 +193,8 @@ def devig(request_data: dict) -> dict:
 
     if len(odds_list) < 2:
         return _error("Need at least 2 outcome odds to de-vig")
+    if not all(math.isfinite(o) for o in odds_list):
+        return _error("Odds must be finite numbers")
 
     fmt = str(params.get("format", "american")).lower()
 
@@ -197,8 +205,12 @@ def devig(request_data: dict) -> dict:
             return _error(bad)
         raw_probs = [_american_to_prob(o) for o in odds_list]
     elif fmt == "decimal":
+        if any(o <= 1.0 for o in odds_list):
+            return _error("Decimal odds must be greater than 1.0")
         raw_probs = [_decimal_to_prob(o) for o in odds_list]
     elif fmt == "probability":
+        if not all(0 < o < 1 for o in odds_list):
+            return _error("Probability must be between 0 and 1 (exclusive)")
         raw_probs = list(odds_list)
     else:
         return _error(
@@ -451,7 +463,7 @@ def find_arbitrage(request_data: dict) -> dict:
 
     if len(probs) < 2:
         return _error("Need at least 2 outcome probabilities")
-    if any(p <= 0 or p >= 1 for p in probs):
+    if not all(0 < p < 1 for p in probs):
         return _error("All probabilities must be between 0 and 1 (exclusive)")
 
     # Parse labels
@@ -545,7 +557,7 @@ def parlay_analysis(request_data: dict) -> dict:
     except (TypeError, ValueError) as e:
         return _error(f"Invalid legs format: {e}")
 
-    if any(p <= 0 or p >= 1 for p in leg_probs):
+    if not all(0 < p < 1 for p in leg_probs):
         return _error("All leg probabilities must be between 0 and 1 (exclusive)")
 
     # Parse parlay odds
@@ -563,7 +575,7 @@ def parlay_analysis(request_data: dict) -> dict:
         offered_american = parlay_odds
         offered_decimal = _prob_to_decimal(implied_prob)
     elif odds_format == "decimal":
-        if parlay_odds <= 1.0:
+        if not (math.isfinite(parlay_odds) and parlay_odds > 1.0):
             return _error("Decimal parlay_odds must be greater than 1.0")
         implied_prob = _decimal_to_prob(parlay_odds)
         offered_decimal = parlay_odds
@@ -576,7 +588,7 @@ def parlay_analysis(request_data: dict) -> dict:
         correlation = float(params.get("correlation", 0.0))
     except (TypeError, ValueError):
         correlation = 0.0
-    if correlation < 0 or correlation > 0.5:
+    if not 0 <= correlation <= 0.5:
         return _error("correlation must be between 0 and 0.5")
 
     # Combined fair probability
@@ -730,6 +742,8 @@ def line_movement(request_data: dict) -> dict:
             close_line = float(params["close_line"])
         except (TypeError, ValueError) as e:
             return _error(f"Invalid line values: {e}")
+        if not (math.isfinite(open_line) and math.isfinite(close_line)):
+            return _error("Line values must be finite numbers")
 
         line_change = close_line - open_line
 

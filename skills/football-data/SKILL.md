@@ -1,10 +1,10 @@
 ---
 name: football-data
 description: |
-  Football (soccer) data across the world's major leagues — standings, schedules, match stats, xG, transfers, player profiles, head-to-head history, team strength (Elo), and match forecasts. Zero config, no API keys. Covers Premier League, La Liga, Bundesliga, Serie A, Ligue 1, MLS, Champions League, World Cup, Championship, Serie B, Eredivisie, Primeira Liga, Serie A Brazil, Russian Premier League, Scottish/Belgian/Turkish top flights, European Championship, and more (call get_competitions for the live list).
+  Football (soccer) data — standings, schedules, match stats, xG, transfers, player profiles, head-to-head, Elo, and forecasts. No API keys. Covers Premier League, La Liga, Bundesliga, Serie A, Ligue 1, MLS, Champions League, World Cup, and more (see get_competitions).
 
-  Use when: user asks about football/soccer standings, fixtures, match stats, xG, lineups, player values, transfers, injury news, league tables, daily fixtures, player profiles, head-to-head records, team strength/Elo ratings, or match odds/forecasts.
-  Don't use when: user asks about American football/NFL (use nfl-data), college football (use cfb-data), NBA (use nba-data), WNBA (use wnba-data), college basketball (use cbb-data), NHL (use nhl-data), MLB (use mlb-data), tennis (use tennis-data), golf (use golf-data), cricket (use cricket-data), Formula 1 (use fastf1), or betting odds (use polymarket or kalshi). Don't use for live/real-time scores — data updates post-match. Don't use get_season_leaders or get_missing_players for non-Premier League leagues (they return empty). Don't use get_event_xg for leagues outside the top 5 (EPL, La Liga, Bundesliga, Serie A, Ligue 1).
+  Use when: user asks about soccer standings, fixtures, match stats, xG, lineups, transfers, player values or profiles, injuries, head-to-head, Elo ratings, or match forecasts.
+  Don't use when: user asks about American football/NFL (use nfl-data), college football (cfb-data), NBA (nba-data), WNBA (wnba-data), college basketball (cbb-data), NHL (nhl-data), MLB (mlb-data), tennis (tennis-data), golf (golf-data), cricket (cricket-data), Formula 1 (fastf1), or betting odds (polymarket or kalshi). Don't use for live/real-time scores — data updates post-match. get_season_leaders and get_missing_players are Premier League only (empty elsewhere); get_event_xg is top-5 leagues only (EPL, La Liga, Bundesliga, Serie A, Ligue 1).
 license: MIT
 metadata:
   author: machina-sports
