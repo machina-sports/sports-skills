@@ -230,3 +230,102 @@ def test_championship_standings_bad_round_is_text_error(fake_fastf1):
     result = f1.get_championship_standings({"params": {"year": 2026, "round": "abc"}})
     assert result["status"] is False
     assert "round" in result["message"].lower()
+
+
+def test_event_resolves_by_location(fake_fastf1):
+    """The docs use the circuit ("Monza"), which is the schedule's Location."""
+    result = f1.get_race_results({"params": {"year": 2026, "event": "suzuka"}})
+    assert result["status"] is True, result
+    assert fake_fastf1 == [("Japanese Grand Prix", "R")]
+
+
+def test_shared_location_is_not_guessed(monkeypatch):
+    schedule = fastf1.events.EventSchedule(
+        pd.DataFrame(
+            {
+                "EventName": ["British Grand Prix", "70th Anniversary Grand Prix"],
+                "EventFormat": ["conventional", "conventional"],
+                "Location": ["Silverstone", "Silverstone"],
+            }
+        )
+    )
+    monkeypatch.setattr(fastf1, "get_event_schedule", lambda year: schedule)
+    with pytest.raises(ValueError, match="not found"):
+        f1._validate_event(2020, "Silverstone")
+
+
+def _circuit_schedule():
+    # 2020-style calendar: Sakhir hosts two events, one of them named after it.
+    names = [
+        "Bahrain Grand Prix",
+        "Sakhir Grand Prix",
+        "British Grand Prix",
+        "70th Anniversary Grand Prix",
+        "Italian Grand Prix",
+    ]
+    locations = ["Sakhir", "Sakhir", "Silverstone", "Silverstone", "Monza"]
+    dates = pd.to_datetime(["2020-11-29", "2020-12-06", "2020-08-02", "2020-08-09", "2020-09-06"])
+    return fastf1.events.EventSchedule(
+        pd.DataFrame(
+            {
+                "RoundNumber": [1, 2, 3, 4, 5],
+                "EventName": names,
+                "EventDate": dates,
+                "EventFormat": ["conventional"] * 5,
+                "Location": locations,
+                "Session5": ["Race"] * 5,
+                "Session5Date": dates,
+            }
+        )
+    )
+
+
+class _CircuitSession:
+    name = "Race"
+
+    def __init__(self, event):
+        # Exact: fastf1's fuzzy lookup also scores Location and turns "Sakhir Grand Prix" into Bahrain.
+        self.event = _circuit_schedule().get_event_by_name(event, exact_match=True)
+
+    def load(self, **kwargs):
+        self.results = _results([25.0, 18.0])
+
+
+@pytest.fixture
+def fake_circuits(monkeypatch):
+    calls = []
+
+    def get_session(year, event, session_type):
+        calls.append((event, session_type))
+        return _CircuitSession(event)
+
+    monkeypatch.setattr(fastf1, "get_event_schedule", lambda year: _circuit_schedule())
+    monkeypatch.setattr(fastf1, "get_session", get_session)
+    return calls
+
+
+@pytest.mark.parametrize("params", [{"session_name": "Monza"}, {"session_name": "mONZA"}, {}])
+def test_monza_resolves_through_public_entrypoint(fake_circuits, params):
+    """Monza is the documented example and the get_session_data default."""
+    result = f1.get_session_data({"params": {"session_year": 2020, "session_type": "R", **params}})
+    assert result["status"] is True, result
+    assert result["data"]["event_name"] == "Italian Grand Prix"
+    assert result["data"]["track_name"] == "Monza"
+    assert fake_circuits == [("Italian Grand Prix", "R")]
+
+
+def test_event_name_match_wins_over_location(fake_circuits):
+    """"Sakhir" names one event, so the shared Sakhir location must not block it."""
+    result = f1.get_session_data({"params": {"session_year": 2020, "session_name": "sakhir", "session_type": "R"}})
+    assert result["status"] is True, result
+    assert result["data"]["event_name"] == "Sakhir Grand Prix"
+    assert fake_circuits == [("Sakhir Grand Prix", "R")]
+
+
+def test_shared_location_is_refused_through_public_caller(fake_circuits):
+    result = f1.get_session_data(
+        {"params": {"session_year": 2020, "session_name": "Silverstone", "session_type": "R"}}
+    )
+    assert result["status"] is False
+    assert "not found" in result["data"]
+    assert fake_circuits == []

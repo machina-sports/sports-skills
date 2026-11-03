@@ -117,6 +117,10 @@ def _validate_event(year, event_name):
     ]
     if len(partial) == 1:
         return partial.iloc[0]["EventName"]
+    # Then the circuit ("Monza"), unless more than one event ran there that year
+    location = real_events[real_events["Location"].str.lower() == event_name.lower()]
+    if len(location) == 1:
+        return location.iloc[0]["EventName"]
     # No valid match — list available events
     available = ", ".join(real_events["EventName"].tolist())
     raise ValueError(

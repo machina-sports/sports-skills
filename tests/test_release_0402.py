@@ -3,6 +3,8 @@
 import ast
 import email
 import hashlib
+import inspect
+import io
 import json
 import os
 import re
@@ -21,6 +23,9 @@ VERSION = "0.40.2"
 TAG = f"v{VERSION}"
 REVIEWED_SOURCE_COMMIT = "b29948e717954104f6434e3d020d9f330c71c5c6"
 REVIEWED_SOURCE_TREE = "62bdc92bd1d08a70551fbe2ccf3bdc2be13caa71"
+# The commit v0.40.2 was published from. SHA256SUMS is immutable, so only this
+# source can reproduce it; later commits on main legitimately change the bytes.
+PUBLISHED_SOURCE_COMMIT = "ad39ffc60241e513167259d2940ca52326a73445"
 SOURCE_DATE_EPOCH = 1793590722
 AUTHORITY = ROOT / "release" / VERSION / "SHA256SUMS"
 REVIEW_RECEIPT = ROOT / "release" / VERSION / "review-receipt.json"
@@ -74,17 +79,36 @@ def _authority_rows():
     return dict(parsed)
 
 
-def _build(output):
+def _build(output, root=ROOT):
     env = os.environ.copy()
     env["SOURCE_DATE_EPOCH"] = str(SOURCE_DATE_EPOCH)
     subprocess.run(
-        [sys.executable, str(ROOT / "packaging/release.py"), str(ROOT), str(output)],
+        [sys.executable, str(root / "packaging/release.py"), str(root), str(output)],
         check=True,
-        cwd=ROOT,
+        cwd=root,
         env=env,
     )
     assert sorted(path.name for path in output.iterdir()) == sorted([SDIST_NAME, WHEEL_NAME])
     return output / WHEEL_NAME, output / SDIST_NAME
+
+
+def _published_source_archive():
+    return subprocess.run(
+        ["git", "-C", str(ROOT), "archive", "--format=zip", PUBLISHED_SOURCE_COMMIT],
+        check=True,
+        capture_output=True,
+    ).stdout
+
+
+def _export_published_source(destination):
+    with zipfile.ZipFile(io.BytesIO(_published_source_archive())) as archive:
+        for info in archive.infolist():
+            path = Path(archive.extract(info, destination))
+            # zipfile drops permission bits; restore them so executable files match a checkout.
+            mode = info.external_attr >> 16 & 0o777
+            if mode and not info.is_dir():
+                path.chmod(mode)
+    return destination
 
 
 def _assert_checksum_file_is_not_an_artifact_input(wheel, sdist):
@@ -115,6 +139,14 @@ def release_builds(tmp_path_factory):
     first = tmp_path_factory.mktemp("release-build-a")
     second = tmp_path_factory.mktemp("release-build-b")
     return _build(first), _build(second)
+
+
+@pytest.fixture(scope="session")
+def published_builds(tmp_path_factory):
+    source = _export_published_source(tmp_path_factory.mktemp("published-source"))
+    first = tmp_path_factory.mktemp("published-build-a")
+    second = tmp_path_factory.mktemp("published-build-b")
+    return _build(first, root=source), _build(second, root=source)
 
 
 def test_every_active_version_surface_is_0402():
@@ -178,11 +210,23 @@ def test_previous_release_receipt_is_unchanged():
     }
 
 
-def test_both_builds_reproduce_the_checksum_authority(release_builds):
+def test_both_builds_reproduce_the_checksum_authority(published_builds, release_builds):
     authority = _authority_rows()
-    for wheel, sdist in release_builds:
+    for wheel, sdist in published_builds:
         assert authority == {_sha256(wheel): WHEEL_NAME, _sha256(sdist): SDIST_NAME}
         _assert_checksum_file_is_not_an_artifact_input(wheel, sdist)
+    for wheel, sdist in release_builds:
+        _assert_checksum_file_is_not_an_artifact_input(wheel, sdist)
+
+
+def test_checksum_authority_is_built_from_the_pinned_published_commit():
+    # A full hash, not a ref like HEAD, so new commits cannot move the checksum source.
+    assert re.fullmatch(r"[0-9a-f]{40}", PUBLISHED_SOURCE_COMMIT)
+    with zipfile.ZipFile(io.BytesIO(_published_source_archive())) as archive:
+        # git archive records the archived commit as the zip comment.
+        assert archive.comment == PUBLISHED_SOURCE_COMMIT.encode("ascii")
+    # Every other release check still builds the current tree.
+    assert inspect.signature(_build).parameters["root"].default == ROOT
 
 
 def test_two_clean_builds_are_byte_identical(release_builds):
