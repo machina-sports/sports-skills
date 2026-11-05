@@ -1,3 +1,9 @@
+## [Unreleased]
+
+### Fixed
+- **nba: game dates on the league calendar.** `get_scoreboard` events add `game_date` (YYYY-MM-DD), the start time's date in US Eastern time; `start_time` stays UTC, where a 7:30 PM ET game on Nov 2 reads `2026-11-03T00:30Z`. When ESPN leaves `day` empty for an explicit `date`, `day` is that date instead of `""`. `get_schedule` and `get_team_schedule` events carry `game_date` too.
+- **nba: play-by-play names its teams.** `get_play_by_play` (ESPN path) adds `teams` with the `home` and `away` sides' `id`, `abbreviation` and `name`, and each play adds `team`, the acting team's abbreviation, so `home_score`/`away_score` and `team_id` can be read without a second lookup. G League play-by-play shares the normalizer and gains the same fields. Existing fields are unchanged.
+
 ## [0.40.2]
 
 ### Fixed

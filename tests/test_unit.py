@@ -392,6 +392,71 @@ class TestNormalizeDrives:
 class TestNormalizePlays:
     """Tests for NBA/NHL/CBB flat play-by-play normalizer."""
 
+    def test_teams_named_and_each_play_tagged(self):
+        """home_score/away_score and team_id are ambiguous without the teams named."""
+        from sports_skills.nba._connector import _normalize_plays
+
+        data = {
+            "header": {
+                "competitions": [
+                    {
+                        "competitors": [
+                            {
+                                "id": "13",
+                                "homeAway": "home",
+                                "team": {"id": "13", "abbreviation": "LAL", "displayName": "Los Angeles Lakers"},
+                            },
+                            {
+                                "id": "14",
+                                "homeAway": "away",
+                                "team": {"id": "14", "abbreviation": "MIA", "displayName": "Miami Heat"},
+                            },
+                        ]
+                    }
+                ]
+            },
+            "plays": [
+                {
+                    "id": "1",
+                    "text": "Davion Mitchell makes 27-foot three point jumper",
+                    "type": {"text": "Jump Shot"},
+                    "period": {"number": 1},
+                    "clock": {"displayValue": "10:29"},
+                    "homeScore": 0,
+                    "awayScore": 4,
+                    "scoringPlay": True,
+                    "scoreValue": 3,
+                    "team": {"id": "14"},
+                },
+                {
+                    "id": "2",
+                    "text": "End of 1st",
+                    "type": {"text": "End Period"},
+                    "period": {"number": 1},
+                    "clock": {"displayValue": "0:00"},
+                    "homeScore": 30,
+                    "awayScore": 28,
+                },
+            ],
+        }
+        result = _normalize_plays(data)
+        assert result["teams"] == {
+            "home": {"id": "13", "abbreviation": "LAL", "name": "Los Angeles Lakers"},
+            "away": {"id": "14", "abbreviation": "MIA", "name": "Miami Heat"},
+        }
+        assert result["plays"][0]["team"] == "MIA"
+        assert result["plays"][1]["team"] == ""  # no acting team
+
+    def test_no_header_keeps_the_old_shape(self):
+        from sports_skills.nba._connector import _normalize_plays
+
+        data = {"plays": [{"id": "1", "text": "x", "team": {"id": "5"}}]}
+        result = _normalize_plays(data)
+        assert "teams" not in result
+        assert result["plays"][0]["team"] == ""
+        assert result["plays"][0]["team_id"] == "5"
+
+
     def test_empty_plays(self):
         from sports_skills.nba._connector import _normalize_plays
 
@@ -3311,3 +3376,36 @@ class TestLocalEloOutageMessage:
         assert out["teams"][0]["reason"] == "no_results_available"
         assert "Both sources are unreachable" in out["message"]
         assert "name-resolution" not in out["message"]
+
+
+class TestNbaScoreboardDates:
+    """NBA games are dated on US Eastern time; ESPN start times are UTC."""
+
+    def test_game_date_is_the_eastern_calendar_day(self):
+        from sports_skills.nba._connector import _league_date
+
+        assert _league_date("2026-11-03T00:30Z") == "2026-11-02"  # 7:30 PM ET on Nov 2
+        assert _league_date("2026-11-03T03:00Z") == "2026-11-02"  # 10 PM ET on Nov 2
+        assert _league_date("2026-11-03T17:00Z") == "2026-11-03"  # afternoon game
+        assert _league_date("2026-07-04T23:00Z") == "2026-07-04"  # daylight saving time
+        assert _league_date("") == ""
+        assert _league_date("not a date") == ""
+
+    def test_scoreboard_day_and_game_dates(self, monkeypatch):
+        from sports_skills.nba import _connector as nba
+
+        event = {
+            "id": "401909921",
+            "name": "Miami Heat at Los Angeles Lakers",
+            "competitions": [
+                {"date": "2026-11-03T03:30Z", "competitors": [], "status": {"type": {"name": "STATUS_FINAL"}}}
+            ],
+        }
+        monkeypatch.setattr(nba, "espn_request", lambda *a, **k: {"events": [event], "day": {}})
+        result = nba.get_scoreboard({"params": {"date": "2026-11-02"}})
+        assert result["day"] == "2026-11-02"  # ESPN left it empty
+        assert result["events"][0]["start_time"] == "2026-11-03T03:30Z"  # unchanged
+        assert result["events"][0]["game_date"] == "2026-11-02"
+
+        monkeypatch.setattr(nba, "espn_request", lambda *a, **k: {"events": [event], "day": {"date": "2026-11-02"}})
+        assert nba.get_scoreboard({"params": {"date": "2026-11-02"}})["day"] == "2026-11-02"
