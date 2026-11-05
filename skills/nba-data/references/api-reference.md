@@ -6,7 +6,7 @@
 Get live/recent NBA scores.
 - `date` (str, optional): Date in YYYY-MM-DD format. Defaults to today.
 
-Returns `events[]` with game info, scores, status, and competitors.
+Returns `events[]` with game info, scores, status, and competitors, plus `day` (the slate's date). `start_time` is UTC, so an evening game carries the next day's date there; each event's `game_date` (YYYY-MM-DD) is its date on the league's US Eastern calendar, the date to match against `date`.
 
 ### get_standings
 Get NBA standings by conference.
@@ -55,7 +55,7 @@ Returns `articles[]` with headline, description, published date, and link.
 Get full play-by-play data for a game.
 - `event_id` (str, required): ESPN event ID
 
-Returns play-by-play detail including period, clock, team, play description, and scoring plays.
+Returns play-by-play detail including period, clock, team, play description, and scoring plays. `teams` names the `home` and `away` sides (`id`, `abbreviation`, `name`) that `home_score` and `away_score` refer to, and each play's `team` is the acting team's abbreviation (empty when no team acted). A live game served from the NBA CDN keeps its own `actions[]` shape.
 
 ### get_win_probability
 Get win probability chart data for a game.

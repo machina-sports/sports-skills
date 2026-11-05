@@ -4,8 +4,10 @@ Provides scores, standings, rosters, schedules, game summaries,
 statistical leaders, and news for the NBA.
 """
 
+import datetime
 import json
 import logging
+from zoneinfo import ZoneInfo
 
 from sports_skills._espn_base import (
     _USER_AGENT,
@@ -42,6 +44,9 @@ from sports_skills.nba import _cdn as nba_cdn
 logger = logging.getLogger("sports_skills.nba")
 
 SPORT_PATH = "basketball/nba"
+# NBA schedules are dated on US Eastern time: a 7:30 PM ET tip-off on Nov 2 is
+# 00:30Z on Nov 3, so a UTC start time alone puts the game on the wrong day.
+LEAGUE_TZ = ZoneInfo("America/New_York")
 
 
 def _find_live_cdn_game(event_id):
@@ -61,6 +66,14 @@ def _find_live_cdn_game(event_id):
 # ============================================================
 # ESPN Response Normalizers
 # ============================================================
+
+
+def _league_date(iso):
+    """The league's (US Eastern) calendar date of an ISO start time, or "" when unparseable."""
+    ts = epoch_seconds(iso)
+    if ts is None:
+        return ""
+    return datetime.datetime.fromtimestamp(ts, LEAGUE_TZ).date().isoformat()
 
 
 def _normalize_event(espn_event):
@@ -106,6 +119,7 @@ def _normalize_event(espn_event):
         "status_detail": status_detail,
         "start_time": comp.get("date", espn_event.get("date", "")),
         "start_ts": epoch_seconds(comp.get("date", espn_event.get("date", ""))),
+        "game_date": _league_date(comp.get("date", espn_event.get("date", ""))),
         "season_type": event_season_type(espn_event),
         "venue": {
             "name": comp.get("venue", {}).get("fullName", ""),
@@ -423,7 +437,8 @@ def get_scoreboard(request_data):
 
     return {
         "events": events,
-        "day": day_info.get("date", ""),
+        # ESPN leaves "day" empty for an explicit date; the slate is that date.
+        "day": day_info.get("date", "") or (date or ""),
         "count": len(events),
     }
 
@@ -659,11 +674,31 @@ def get_schedule(request_data):
 # ============================================================
 
 
+def _summary_teams(summary_data):
+    """{"home": {...}, "away": {...}} from the summary header: id, abbreviation and name."""
+    comps = (summary_data.get("header") or {}).get("competitions") or [{}]
+    teams = {}
+    for c in comps[0].get("competitors") or []:
+        side = c.get("homeAway")
+        team = c.get("team") or {}
+        if side in ("home", "away"):
+            teams[side] = {
+                "id": str(c.get("id") or team.get("id") or ""),
+                "abbreviation": team.get("abbreviation", ""),
+                "name": team.get("displayName", ""),
+            }
+    return teams
+
+
 def _normalize_plays(summary_data):
     """Normalize play-by-play data from ESPN summary."""
     plays_raw = summary_data.get("plays", [])
     if not plays_raw:
         return {"error": True, "message": "No play-by-play data available"}
+
+    # home_score/away_score and team_id are only meaningful with the teams named.
+    teams = _summary_teams(summary_data)
+    abbreviation = {t["id"]: t["abbreviation"] for t in teams.values() if t["id"]}
 
     plays = []
     for p in plays_raw:
@@ -680,6 +715,7 @@ def _normalize_plays(summary_data):
             "scoring_play": p.get("scoringPlay", False),
             "score_value": p.get("scoreValue", 0),
             "team_id": str(team.get("id", "")) if team else "",
+            "team": abbreviation.get(str(team.get("id", "")), "") if team else "",
             "shooting_play": p.get("shootingPlay", False),
         }
         coord = p.get("coordinate", {})
@@ -687,7 +723,10 @@ def _normalize_plays(summary_data):
             play["coordinate"] = {"x": coord.get("x"), "y": coord.get("y")}
         plays.append(play)
 
-    return {"plays": plays, "count": len(plays)}
+    result = {"plays": plays, "count": len(plays)}
+    if teams:
+        result["teams"] = teams
+    return result
 
 
 def _normalize_win_probability(summary_data):
