@@ -11,7 +11,7 @@ import sys
 import types
 from pathlib import Path
 
-VERSION = "0.40.2"
+VERSION = "0.40.3"
 SCOREBOARD_SPORTS = ("nba", "nfl", "mlb", "nhl", "wnba", "cfb", "cbb")
 POLYMARKET_TODAYS_PARAMS = ("offset", "date", "timezone", "sports_market_types", "compact")
 GLEAGUE_SOURCES = ("__init__.py", "_cdn.py", "_connector.py", "_stats.py")
@@ -133,6 +133,43 @@ for sport in SCOREBOARD_SPORTS:
         raise SystemExit(f"markets zero score lost its type: {sport}")
 if connector._extract_games("nba", {"status": False, "data": scoreboard["data"]}) != []:
     raise SystemExit("markets failed scoreboard produced games")
+
+# nba._connector is stdlib-only at module load (its package __init__ is not: it
+# wraps responses through the storefront), so it loads under a bare package. The
+# installed bytes date games on the league's US Eastern calendar and name the
+# teams in play-by-play.
+nba_package = types.ModuleType("sports_skills.nba")
+nba_package.__path__ = [str(root / "sports_skills/nba")]
+nba_package.__package__ = "sports_skills.nba"
+sys.modules["sports_skills.nba"] = nba_package
+nba = importlib.import_module("sports_skills.nba._connector")
+if Path(nba.__file__).resolve() != root / "sports_skills/nba/_connector.py":
+    raise SystemExit(f"nba connector not installed: {nba.__file__}")
+if (nba._league_date("2026-11-03T00:30Z"), nba._league_date("2026-11-03T17:00Z"), nba._league_date("")) != (
+    "2026-11-02",
+    "2026-11-03",
+    "",
+):
+    raise SystemExit("nba league-calendar game date drift")
+plays = nba._normalize_plays(
+    {
+        "header": {
+            "competitions": [
+                {
+                    "competitors": [
+                        {"id": "13", "homeAway": "home", "team": {"abbreviation": "LAL", "displayName": "Lakers"}},
+                        {"id": "14", "homeAway": "away", "team": {"abbreviation": "MIA", "displayName": "Heat"}},
+                    ]
+                }
+            ]
+        },
+        "plays": [{"id": "1", "text": "three", "awayScore": 3, "homeScore": 0, "team": {"id": "14"}}],
+    }
+)
+if plays.get("teams", {}).get("away", {}).get("abbreviation") != "MIA" or plays["plays"][0]["team"] != "MIA":
+    raise SystemExit(f"nba play-by-play team names drift: {plays!r}")
+for name in [name for name in sys.modules if name == "sports_skills.nba" or name.startswith("sports_skills.nba.")]:
+    del sys.modules[name]
 
 expected_signatures = {
     "to_successor_envelope": "(*, operation, request_bytes, operation_arguments_bytes, output_mode, consumer_tier) -> bytes",
