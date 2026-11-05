@@ -1,3 +1,12 @@
+## [0.40.3]
+
+### Fixed
+- **nba: game dates on the league calendar.** `get_scoreboard`, `get_schedule` and `get_team_schedule` events add `game_date` (YYYY-MM-DD), the start time's date in US Eastern time; `start_time` stays UTC, where a 7:30 PM ET game on Nov 2 reads `2026-11-03T00:30Z`. When ESPN leaves `day` empty for an explicit `date`, `get_scoreboard` reports that date instead of `""`.
+- **nba: play-by-play names its teams.** `get_play_by_play` (ESPN path) adds `teams`, the `home` and `away` sides' `id`, `abbreviation` and `name`, and each play adds `team`, the acting team's abbreviation, so `home_score`/`away_score` and `team_id` read without a second lookup. G League play-by-play shares the normalizer. Existing fields are unchanged.
+- **betting: non-finite inputs are rejected.** Odds, probabilities and line values that are NaN or infinite return an error across the calculations instead of a misleading result.
+- **f1: events resolve by circuit name.** A circuit name such as "Monza" resolves to its event when exactly one event ran there that season.
+- **skills: shorter routing descriptions.** The ESPN API, football-data and ProphetX skill descriptions are trimmed, with their routing guardrails kept and description lengths validated.
+
 ## [0.40.2]
 
 ### Fixed

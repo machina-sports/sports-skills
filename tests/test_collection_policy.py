@@ -22,7 +22,8 @@ def test_active_release_proof_defers_to_other_ignore_hooks(monkeypatch):
     monkeypatch.delenv("SPORTS_SKILLS_VERIFY_RELEASE_039", raising=False)
     monkeypatch.delenv("SPORTS_SKILLS_VERIFY_RELEASE_040", raising=False)
     monkeypatch.delenv("SPORTS_SKILLS_VERIFY_RELEASE_0401", raising=False)
-    assert collection_policy.pytest_ignore_collect(Path("tests/test_release_0402.py"), None) is None
+    monkeypatch.delenv("SPORTS_SKILLS_VERIFY_RELEASE_0402", raising=False)
+    assert collection_policy.pytest_ignore_collect(Path("tests/test_release_0403.py"), None) is None
 
 
 @pytest.mark.parametrize(
@@ -34,6 +35,7 @@ def test_active_release_proof_defers_to_other_ignore_hooks(monkeypatch):
         ("test_release_039.py", "SPORTS_SKILLS_VERIFY_RELEASE_039", "SPORTS_SKILLS_VERIFY_RELEASE_038"),
         ("test_release_040.py", "SPORTS_SKILLS_VERIFY_RELEASE_040", "SPORTS_SKILLS_VERIFY_RELEASE_039"),
         ("test_release_0401.py", "SPORTS_SKILLS_VERIFY_RELEASE_0401", "SPORTS_SKILLS_VERIFY_RELEASE_040"),
+        ("test_release_0402.py", "SPORTS_SKILLS_VERIFY_RELEASE_0402", "SPORTS_SKILLS_VERIFY_RELEASE_0401"),
     ],
 )
 def test_historical_release_proof_is_opt_in(monkeypatch, name, variable, other):
