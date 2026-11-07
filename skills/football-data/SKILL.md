@@ -77,9 +77,9 @@ This skill stitches several free sources together. **Coverage is not uniform** �
 | `get_event_xg`, `get_event_players_statistics` (xG fields) | Understat | **Top 5 only** (EPL, La Liga, Bundesliga, Serie A, Ligue 1). *Not RFPL — Understat dropped it. No Serie B or Championship either.* |
 | `get_season_leaders`, `get_missing_players` | FPL | **Premier League only** |
 | `get_player_profile`, `get_season_transfers` (market value) | Transfermarkt | Any player with a `tm_player_id` |
-| `get_head_to_head` | football-data.co.uk | **12 European domestic leagues** (EPL, Championship, La Liga, Serie A, Serie B, Bundesliga, Ligue 1, Eredivisie, Primeira Liga, Scottish, Belgian, Turkish). Same-division meetings only. |
-| `get_team_strength` | ClubElo, falling back to local Elo | **European clubs** (incl. Russia). Falls back to ratings computed from football-data.co.uk when ClubElo is down. |
-| `get_match_forecast` | ClubElo | **European clubs** (incl. Russia). No fallback — needs ClubElo's fixture feed. |
+| `get_head_to_head` | football-data.co.uk | **12 European domestic leagues** (EPL, Championship, La Liga, Serie A, Serie B, Bundesliga, Ligue 1, Eredivisie, Primeira Liga, Scottish, Belgian, Turkish) **+ Liga MX** (2012+). Same-division meetings only. |
+| `get_team_strength` | ClubElo, falling back to local Elo | **European clubs** (incl. Russia). Falls back to ratings computed from football-data.co.uk when ClubElo is down. **Liga MX**: always local Elo (`source: "local-elo"`), since ClubElo has no Mexican data. |
+| `get_match_forecast` | ClubElo | **European clubs** (incl. Russia). No fallback — needs ClubElo's fixture feed. For Liga MX use `get_team_strength(home, away)` → `outcome_probabilities`. |
 
 Rule of thumb: **ESPN answers "what happened" everywhere; the enrichment sources ( Understat/FPL/ClubElo/football-data.co.uk ) add depth only in their coverage zone.** ESPN is always the fixture/score authority — never let an enrichment source override an ESPN score.
 
@@ -92,6 +92,7 @@ Rule of thumb: **ESPN answers "what happened" everywhere; the enrichment sources
 - **ClubElo off-season gaps**: current-date `get_team_strength` can miss clubs in the summer break (a club's weekly Elo period may not span today). If a well-known club returns unresolved, pass an in-season `date` (e.g. `date="2026-03-01"`).
 - **ClubElo outages**: `get_team_strength` falls back to locally computed Elo and sets `source: "local-elo"`. Check that field before comparing numbers across calls — the local scale is division-local, so a rating means nothing outside its own division and cross-division comparisons are refused. The fallback honours `date` (it rates the division as of that date, and each entry's `as_of` is the last match counted). `get_match_forecast` has no fallback and stays empty.
 - **`get_match_forecast` is short-horizon**: ClubElo only forecasts ~a week ahead — empty between matchdays / off-season. That's expected, not a failure.
+- **Liga MX H2H/Elo** come from football-data.co.uk's all-seasons file (`new/MEX.csv`, 2012+); Apertura and Clausura of one season are one season there (`2026/2027`), turning over in July. Local Elo is a rough second opinion: in a walk-forward test over 1,492 Liga MX matches (2022–2026) it picked 50.8% of results vs 51.7% for closing odds (log-loss 1.022 vs 0.994). Treat odds as the stronger baseline; Elo is useful to spot disagreements.
 - **H2H is same-division only**: two clubs that met in a cup or across tiers won't show; it counts league meetings in the resolved division.
 - **H2H tells "unresolved" apart from "never met"**: football-data.co.uk uses short exonyms/abbreviations ("FC Koln", "M'gladbach", "Sp Lisbon"). Each club in `teams[]` reports `resolved` + `matched_as`; if a club is `resolved: false`, zero meetings means the lookup failed, not that the clubs never played.
 
@@ -127,8 +128,8 @@ When a piece of the composition isn't covered (e.g. xG outside the top 5, H2H fo
 | `get_event_statistics` | Match team statistics |
 | `get_event_timeline` | Match timeline (goals, cards, subs) |
 | `get_team_schedule` | Schedule for a specific team |
-| `get_head_to_head` | Historical H2H results + stats (European domestic leagues) |
-| `get_team_strength` | Elo rating / two-team comparison (European clubs); local-Elo fallback if ClubElo is down |
+| `get_head_to_head` | Historical H2H results + stats (European domestic leagues, Liga MX) |
+| `get_team_strength` | Elo rating / two-team comparison (European clubs, Liga MX via local Elo); local-Elo fallback if ClubElo is down |
 | `get_match_forecast` | ClubElo win/draw/loss + scoreline forecast (~week ahead) |
 | `get_event_xg` | xG data (top 5 leagues only) |
 | `get_event_players_statistics` | Player-level match stats with optional xG |

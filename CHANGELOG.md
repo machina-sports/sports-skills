@@ -1,3 +1,8 @@
+## [Unreleased]
+
+### Added
+- **football: Liga MX head-to-head and local Elo.** `get_head_to_head` and `get_team_strength` now cover Liga MX, read from football-data.co.uk's all-seasons "extra leagues" file (`new/MEX.csv`, 2012/2013 onward). Each season is re-shaped into the mmz4281 CSV the existing H2H and Elo code reads, so outputs keep their shape. Liga MX seasons turn over in July (`start_month`), not August. Liga MX strength is rated by local Elo directly (`source: "local-elo"`, with a `fallback_reason` that says ClubElo does not cover the league instead of reporting an outage), and `get_match_forecast` points Liga MX callers to `get_team_strength`. Name overrides map "León" to `Club Leon` (not the defunct Leones Negros) and "Atlético de San Luis" to `Atl. San Luis`. Liga MX results carry no shots/corners in this source.
+
 ## [0.40.3]
 
 ### Fixed
