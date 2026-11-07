@@ -28,6 +28,7 @@ Not all data is available for every league. Use the right command for the right 
 **PL only** (FPL): Premier League — injury news, player stats, ownership, ICT index.
 **All leagues**: via ESPN — scores, standings, schedules, match summaries, lineups, team stats.
 **Serie B** (`serie-b`, ESPN `ita.2`): ESPN data, head-to-head (football-data.co.uk `I2`), ClubElo strength/forecasts, openfootball fallback. No xG (Understat has no Serie B) and no FPL.
+**Liga MX** (`liga-mx`, ESPN `mex.1`): ESPN data (standings per Apertura/Clausura, schedules, odds), head-to-head and local-Elo strength from football-data.co.uk `new/MEX.csv` (2012+). No xG, no ClubElo forecasts.
 **Transfermarkt**: Works for any player with a `tm_player_id` — market values and transfer history.
 
 **Note**: MLS uses a different season structure (spring-fall calendar). Use `get_current_season(competition_id="mls")` to detect the right season_id.
@@ -41,7 +42,7 @@ Not all data is available for every league. Use the right command for the right 
 | Understat | xG per match, xG per shot, player xG/xA | Top 5 (EPL, La Liga, Bundesliga, Serie A, Ligue 1) |
 | FPL | Top scorers, injuries, player stats, ownership | Premier League only |
 | Transfermarkt | Market values, transfer history | Any player (requires tm_player_id) |
-| football-data.co.uk | Head-to-head history, historical results + match stats | 12 European domestic leagues (incl. Serie B), 1993+ |
+| football-data.co.uk | Head-to-head history, historical results + match stats | 12 European domestic leagues (incl. Serie B), 1993+; Liga MX, 2012+ |
 | ClubElo | Team strength (Elo rating), fixture-difficulty control, match forecasts | European clubs |
 
 For licensed data with full coverage across all sports (Sportradar, Opta, Genius Sports), see [Machina Sports](https://machina.gg).

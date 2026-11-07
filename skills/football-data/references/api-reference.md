@@ -44,7 +44,7 @@
 | Understat | xG per match, xG per shot, player xG/xA | Top 5 (EPL, La Liga, Bundesliga, Serie A, Ligue 1) |
 | FPL | Top scorers, injuries, player stats, ownership | Premier League only |
 | Transfermarkt | Market values, transfer history | Any player (requires tm_player_id) |
-| football-data.co.uk | Head-to-head history, historical results + match stats | 11 European domestic leagues, 1993+ |
+| football-data.co.uk | Head-to-head history, historical results + match stats | 12 European domestic leagues, 1993+; Liga MX, 2012+ |
 | ClubElo | Team strength (Elo rating), fixture-difficulty control, match forecasts | European clubs |
 
 ## Commands (Detailed)
@@ -166,7 +166,7 @@ Get schedule for a specific team (past results + upcoming fixtures).
 
 ### get_head_to_head
 Head-to-head history between two teams via football-data.co.uk (free CSV).
-**European domestic leagues only** (see coverage below). Returns an informative
+**European domestic leagues and Liga MX** (see coverage below). Returns an informative
 message for other leagues (MLS, Brazil, Champions League, Euros, World Cup).
 - `team_id` (str, required): First team ESPN ID
 - `team_id_2` (str, required): Second team ESPN ID
@@ -185,7 +185,10 @@ that could not be matched is reported as such — `total_meetings: 0` with an
 unresolved club means "we could not look this pair up", not "they never met".
 
 Coverage: Premier League, Championship, La Liga, Serie A, Serie B, Bundesliga, Ligue 1,
-Eredivisie, Primeira Liga, Scottish Premiership, Belgian Pro League, Turkish Super Lig.
+Eredivisie, Primeira Liga, Scottish Premiership, Belgian Pro League, Turkish Super Lig,
+Liga MX. Liga MX is read from football-data.co.uk's all-seasons "extra leagues" file
+(`new/MEX.csv`, 2012/2013 onward; results only, no shots/corners), where one season
+(`2026/2027`) spans that year's Apertura and Clausura and turns over in July.
 
 ### get_team_strength
 Team strength via ClubElo Elo rating (free CSV). **European clubs only** — a
@@ -201,7 +204,9 @@ Returns `data.teams[]` with `elo`, `rank`, `country`, `level`, `as_of`, `matched
 and a `resolved` flag. With two teams also returns `elo_difference` (team1 − team2)
 and `favorite`. Team names are matched to ClubElo's labels (country-scoped, reserve
 teams excluded); teams that cannot be confidently matched are reported, not guessed.
-Coverage: the same 11 European domestic leagues as `get_head_to_head`.
+Coverage: the same European domestic leagues as `get_head_to_head`. **Liga MX** clubs
+are rated by local Elo directly (ClubElo has no Mexican data), with
+`fallback_reason` saying so rather than reporting an outage.
 
 **Local-Elo fallback.** When ClubElo is unreachable the command does not fail: it
 returns ratings computed here from the football-data.co.uk result CSVs (the same
@@ -230,7 +235,9 @@ that division's own history for the given Elo gap, with the `sample` it rests on
 ### get_match_forecast
 ClubElo win/draw/loss + scoreline forecast for a team's upcoming fixtures (free CSV).
 **ClubElo forecasts only ~a week ahead** — empty between matchdays or off-season.
-European clubs only.
+European clubs only; for a Liga MX team the message points to `get_team_strength`
+(home as `team_id`, away as `team_id_2`), whose `outcome_probabilities` is the
+equivalent W/D/L.
 - `team_id` (str, required): Team ESPN ID
 - `team_id_2` (str, optional): Opponent ESPN ID → filters to fixtures against that team
 - `league_slug` (str, optional): League hint; inferred from the team when omitted
