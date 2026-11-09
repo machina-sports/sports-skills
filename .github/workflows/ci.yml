@@ -14,7 +14,8 @@ jobs:
       - uses: astral-sh/ruff-action@4919ec5cf1f49eff0871dbcea0da843445b837e6  # v3
 
   test:
-    runs-on: ubuntu-latest
+    # setup-python publishes no Python 3.9 build for ubuntu-26.04 (ubuntu-latest).
+    runs-on: ubuntu-24.04
     strategy:
       matrix:
         # Cover both edges of requires-python (>=3.9) plus current stable.
