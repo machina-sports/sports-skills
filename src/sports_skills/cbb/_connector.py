@@ -892,7 +892,7 @@ def _fetch_bpi_for_team(team_id):
                 return _normalize_bpi_team(entry)
 
         pagination = data.get("pagination", {})
-        if page >= pagination.get("pageCount", 1):
+        if page >= pagination.get("pages", 1):
             break
         page += 1
     return None
@@ -940,7 +940,7 @@ def get_power_index(request_data):
     pagination = data.get("pagination", {})
     if pagination:
         result["page"] = pagination.get("page", page)
-        result["page_count"] = pagination.get("pageCount", 1)
+        result["page_count"] = pagination.get("pages", 1)
         result["total"] = pagination.get("count", len(teams))
 
     return result
@@ -984,7 +984,7 @@ def get_tournament_projections(request_data=None):
                 all_teams.append(team)
 
         pagination = data.get("pagination", {})
-        page_count = pagination.get("pageCount", 1)
+        page_count = pagination.get("pages", 1)
         if page >= page_count:
             break
         page += 1
