@@ -57,7 +57,8 @@ jobs:
 
   verify-installed:
     needs: build
-    runs-on: ubuntu-latest
+    # setup-python publishes no Python 3.9 build for ubuntu-26.04 (ubuntu-latest).
+    runs-on: ubuntu-24.04
     strategy:
       matrix:
         python-version: ["3.9", "3.14"]
