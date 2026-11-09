@@ -2554,6 +2554,15 @@ class TestFdukDriftGuard:
         ("Amed SFK", "T1", "Amedspor"),                        # override: club-name suffix
         ("Istanbul Basaksehir", "T1", "Buyuksehyr"),           # override: exonym
         ("Goztepe", "T1", "Goztep"),
+        ("León", "MEX", "Club Leon"),                          # override, not "Leones Negros"
+        ("Atlético de San Luis", "MEX", "Atl. San Luis"),      # override: abbreviation
+        ("América", "MEX", "Club America"),
+        ("Guadalajara", "MEX", "Guadalajara Chivas"),
+        ("Pumas UNAM", "MEX", "UNAM Pumas"),                   # word order
+        ("Santos", "MEX", "Santos Laguna"),
+        ("Tijuana", "MEX", "Club Tijuana"),
+        ("FC Juárez", "MEX", "Juarez"),                        # accent + FC token
+        ("Querétaro", "MEX", "Queretaro"),
     ]
 
     def test_known_clubs_resolve(self):
@@ -3376,6 +3385,136 @@ class TestLocalEloOutageMessage:
         assert out["teams"][0]["reason"] == "no_results_available"
         assert "Both sources are unreachable" in out["message"]
         assert "name-resolution" not in out["message"]
+
+
+class TestFdukExtraLeagues:
+    """Liga MX via football-data.co.uk's all-seasons "extra leagues" file
+    (new/MEX.csv), re-shaped into the mmz4281 CSV the H2H/Elo code reads."""
+
+    EXTRA = (
+        "﻿Country,League,Season,Date,Time,Home,Away,HG,AG,Res,AvgCH,AvgCD,AvgCA\r\n"
+        "Mexico,Liga MX,2025/2026,10/07/2025,02:00,Club America,UNAM Pumas,4,1,H,1.8,3.6,4.2\r\n"
+        "Mexico,Liga MX,2026/2027,22/03/2026,02:00,UNAM Pumas,Club America,1,0,H,2.9,3.4,2.4\r\n"
+        "Mexico,Liga MX,2026/2027,04/05/2026,02:00,Club America,UNAM Pumas,3,3,D,1.9,3.5,3.9\r\n"
+        "Mexico,Liga MX,2026/2027,09/11/2026,02:00,Club Leon,Guadalajara Chivas,,,,3.1,3.5,2.1\r\n"
+    )
+
+    def test_season_code_parsing(self):
+        from sports_skills.football._connector import _fduk_extra_season_code
+
+        assert _fduk_extra_season_code("2026/2027") == "2627"
+        assert _fduk_extra_season_code(" 1999 / 2000 ") == "9900"
+        # Calendar-year seasons (Brazil, MLS) are not sliced by two-year codes.
+        assert _fduk_extra_season_code("2026") is None
+        assert _fduk_extra_season_code("") is None
+
+    def test_slice_is_mmz4281_shaped(self):
+        from sports_skills.football._connector import (
+            _fduk_extra_season_csv,
+            _fduk_labels_from_csv,
+            _fduk_results_from_csv,
+        )
+
+        text = _fduk_extra_season_csv(self.EXTRA, "2627")
+        assert text.splitlines()[0] == "Date,HomeTeam,AwayTeam,FTHG,FTAG,FTR"
+        assert _fduk_labels_from_csv(text) == {
+            "UNAM Pumas",
+            "Club America",
+            "Club Leon",
+            "Guadalajara Chivas",
+        }
+        # The unplayed fixture is kept but skipped as a result, like mmz4281.
+        assert _fduk_results_from_csv(text) == [
+            ("2026-03-22", "UNAM Pumas", "Club America", 1, 0),
+            ("2026-05-04", "Club America", "UNAM Pumas", 3, 3),
+        ]
+
+    def test_missing_season_is_empty(self):
+        from sports_skills.football._connector import _fduk_extra_season_csv
+
+        assert _fduk_extra_season_csv(self.EXTRA, "1213") == ""
+        assert _fduk_extra_season_csv("", "2627") == ""
+
+    def test_fetch_season_routes_extra_divisions(self, monkeypatch):
+        from sports_skills.football import _connector as c
+
+        def no_mmz(*a, **k):
+            raise AssertionError("extra divisions must not hit the mmz4281 URL")
+
+        monkeypatch.setattr(c, "_fduk_extra_fetch_all", lambda div: self.EXTRA)
+        monkeypatch.setattr(c, "_http_fetch", no_mmz)
+        text = c._fduk_fetch_season("MEX", "2526", False)
+        assert "Club America,UNAM Pumas,4,1,H" in text
+
+    def test_liga_mx_season_turns_over_in_july(self):
+        from datetime import datetime
+
+        from sports_skills.football._connector import (
+            _fduk_season_codes,
+            _fduk_season_kwargs,
+        )
+
+        july = datetime(2026, 7, 20)
+        assert _fduk_season_codes(1, july, **_fduk_season_kwargs("MEX"))[0][0] == "2627"
+        # European divisions keep the August turnover.
+        assert _fduk_season_codes(1, july, **_fduk_season_kwargs("E0"))[0][0] == "2526"
+
+    def test_head_to_head_end_to_end(self, monkeypatch):
+        from sports_skills.football import _connector as c
+
+        c._cache.clear()
+        monkeypatch.setattr(c, "_fduk_extra_fetch_all", lambda div: self.EXTRA)
+        meta = {
+            "233": {"name": "Pumas UNAM", "slug": "liga-mx"},
+            "227": {"name": "América", "slug": "liga-mx"},
+        }
+        monkeypatch.setattr(c, "_resolve_espn_team_meta", lambda tid, hint=None: meta.get(str(tid)))
+        monkeypatch.setattr(c, "_resolve_team_id", lambda tid, params=None: str(tid))
+        out = c.get_head_to_head({"params": {"team_id": "233", "team_id_2": "227"}})
+        assert out["source"] == "football-data.co.uk"
+        assert [t["matched_as"] for t in out["teams"]] == ["UNAM Pumas", "Club America"]
+        s = out["summary"]
+        assert s["total_meetings"] == 3
+        assert (s["team1"]["wins"], s["draws"], s["team2"]["wins"]) == (1, 1, 1)
+
+    def test_strength_uses_local_elo_without_asking_clubelo(self, monkeypatch):
+        from sports_skills.football import _connector as c
+
+        c._cache.clear()
+        monkeypatch.setattr(c, "_fduk_extra_fetch_all", lambda div: self.EXTRA)
+
+        def no_clubelo(*a, **k):
+            raise AssertionError("ClubElo does not cover Liga MX")
+
+        monkeypatch.setattr(c, "_clubelo_fetch_snapshot", no_clubelo)
+        meta = {
+            "233": {"name": "Pumas UNAM", "slug": "liga-mx"},
+            "227": {"name": "América", "slug": "liga-mx"},
+        }
+        monkeypatch.setattr(c, "_resolve_espn_team_meta", lambda tid, hint=None: meta.get(str(tid)))
+        monkeypatch.setattr(c, "_resolve_team_id", lambda tid, params=None: str(tid))
+        out = c.get_team_strength(
+            {"params": {"team_id": "233", "team_id_2": "227", "date": "2026-11-07"}}
+        )
+        assert out["source"] == "local-elo"
+        assert all(t["resolved"] and t["div"] == "MEX" for t in out["teams"])
+        assert "does not cover this league" in out["fallback_reason"]
+        assert "temporarily unavailable" not in out["fallback_reason"]
+        assert not out["message"].startswith("ClubElo was unavailable")
+
+    def test_forecast_points_liga_mx_to_team_strength(self, monkeypatch):
+        from sports_skills.football import _connector as c
+
+        monkeypatch.setattr(c, "_clubelo_fetch_fixtures", lambda: "")
+        monkeypatch.setattr(
+            c,
+            "_resolve_espn_team_meta",
+            lambda tid, hint=None: {"name": "Pumas UNAM", "slug": "liga-mx"},
+        )
+        monkeypatch.setattr(c, "_resolve_team_id", lambda tid, params=None: str(tid))
+        out = c.get_match_forecast({"params": {"team_id": "233"}})
+        assert out["fixtures"] == []
+        assert "get_team_strength" in out["message"]
 
 
 class TestNbaScoreboardDates:

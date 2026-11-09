@@ -156,6 +156,8 @@ LEAGUES = {
         "understat": None,
         "fpl": None,
         "transfermarkt": "liga-mx",
+        # football-data.co.uk "extra leagues" file (new/MEX.csv), not mmz4281.
+        "fduk": "MEX",
         "season_format": "jan",
         "name": "Liga MX",
         "country": "Mexico",
@@ -1326,6 +1328,9 @@ _PROVIDER_NAME_OVERRIDES = {
         # Turkey
         "amed sfk": "Amedspor",
         "istanbul basaksehir": "Buyuksehyr",
+        # Mexico ("Leon" is otherwise ambiguous with the defunct Leones Negros)
+        "leon": "Club Leon",
+        "atletico de san luis": "Atl. San Luis",
     },
 }
 
@@ -3179,8 +3184,28 @@ def get_team_schedule(request_data):
 _FDUK_H2H_COVERAGE = (
     "Premier League, Championship, La Liga, Serie A, Serie B, Bundesliga, Ligue 1, "
     "Eredivisie, Primeira Liga, Scottish Premiership, Belgian Pro League, "
-    "Turkish Super Lig"
+    "Turkish Super Lig, Liga MX"
 )
+
+# football-data.co.uk publishes its "extra leagues" differently from the
+# European divisions: one all-seasons file per country at new/<CODE>.csv, with
+# `Season` ("2026/2027"), `Home`/`Away` and `HG`/`AG`/`Res` columns instead of a
+# per-season mmz4281 file with `HomeTeam`/`AwayTeam`/`FTHG`/`FTAG`/`FTR`. Each
+# season is sliced out and re-emitted in the mmz4281 shape, so head-to-head and
+# local Elo read it unchanged. Only split-season leagues ("YYYY/YYYY") belong
+# here, because the slice is keyed by the same two-year season code.
+# `season_start_month` is when that league's season turns over (Liga MX opens
+# its Apertura in July, a month before the European default of August).
+_FDUK_EXTRA_DIVS = {
+    "MEX": {"season_start_month": 7},
+}
+_FDUK_EXTRA_COLUMNS = ("Date", "HomeTeam", "AwayTeam", "FTHG", "FTAG", "FTR")
+
+
+def _fduk_season_kwargs(div):
+    """Season-code options for a division (its turnover month, if not August)."""
+    extra = _FDUK_EXTRA_DIVS.get(div)
+    return {"start_month": extra["season_start_month"]} if extra else {}
 
 
 def _fduk_int(x):
@@ -3207,19 +3232,21 @@ def _fduk_date_iso(s):
     return s
 
 
-def _fduk_season_codes(max_seasons, as_of=None):
+def _fduk_season_codes(max_seasons, as_of=None, start_month=8):
     """Return (season_code, is_current) newest-first, e.g. ('2526', True).
 
     Season codes are the football-data.co.uk `mmz4281` format: the last two
     digits of each of the two calendar years. Football starts in August, so
     before August the current season is the one that began the previous year.
+    `start_month` overrides that turnover for leagues that start earlier (Liga
+    MX, July).
 
     `as_of` (a datetime) walks back from a past date instead of today, so a
     historical request sees the seasons that had actually been played by then.
     `is_current` is then relative to `as_of`, not to today.
     """
     now = as_of or datetime.now()
-    base = now.year if now.month >= 8 else now.year - 1
+    base = now.year if now.month >= start_month else now.year - 1
     codes = []
     for i in range(max(1, max_seasons)):
         y = base - i
@@ -3229,8 +3256,71 @@ def _fduk_season_codes(max_seasons, as_of=None):
     return codes
 
 
+def _fduk_extra_fetch_all(div):
+    """Fetch a football-data.co.uk extra-league file (new/<div>.csv) as text, or ''."""
+    cache_key = f"fduk_extra:{div}"
+    cached = _cache_get(cache_key)
+    if cached is not None:
+        return cached
+    raw, err = _http_fetch(
+        f"https://www.football-data.co.uk/new/{div}.csv",
+        headers={"User-Agent": "Mozilla/5.0 (sports-skills)"},
+        max_retries=1,
+    )
+    if err or not raw:
+        _cache_set(cache_key, "", ttl=3600)
+        return ""
+    try:
+        text = raw.decode("utf-8-sig")
+    except UnicodeDecodeError:
+        text = raw.decode("latin-1")
+    # One file carries the season in progress, so it changes after each matchday.
+    _cache_set(cache_key, text, ttl=3600)
+    return text
+
+
+def _fduk_extra_season_code(season):
+    """'2026/2027' -> '2627'; anything else (calendar-year seasons) -> None."""
+    m = re.fullmatch(r"\s*(\d{4})\s*/\s*(\d{4})\s*", season or "")
+    if not m:
+        return None
+    return f"{int(m.group(1)) % 100:02d}{int(m.group(2)) % 100:02d}"
+
+
+def _fduk_extra_season_csv(text, code):
+    """Slice one season out of an extra-league file, in the mmz4281 CSV shape.
+
+    Returns '' when the season is absent, so callers treat it exactly like a
+    missing mmz4281 season file.
+    """
+    if not text:
+        return ""
+    out = io.StringIO()
+    writer = csv.writer(out, lineterminator="\r\n")
+    wrote_header = False
+    for row in csv.DictReader(io.StringIO(text)):
+        if _fduk_extra_season_code(row.get("Season")) != code:
+            continue
+        if not wrote_header:
+            writer.writerow(_FDUK_EXTRA_COLUMNS)
+            wrote_header = True
+        writer.writerow(
+            [
+                (row.get("Date") or "").strip(),
+                (row.get("Home") or "").strip(),
+                (row.get("Away") or "").strip(),
+                (row.get("HG") or "").strip(),
+                (row.get("AG") or "").strip(),
+                (row.get("Res") or "").strip(),
+            ]
+        )
+    return out.getvalue()
+
+
 def _fduk_fetch_season(div, code, is_current):
     """Fetch one football-data.co.uk division-season CSV as text (cached), or ''."""
+    if div in _FDUK_EXTRA_DIVS:
+        return _fduk_extra_season_csv(_fduk_extra_fetch_all(div), code)
     cache_key = f"fduk:{div}:{code}"
     cached = _cache_get(cache_key)
     if cached is not None:
@@ -3373,7 +3463,7 @@ def _fduk_head_to_head(div, name1, name2, max_seasons, slug=""):
     "Dundee" and "Dundee United" or "Paris SG" and "Paris FC".
     """
     seasons = []
-    for code, is_current in _fduk_season_codes(max_seasons):
+    for code, is_current in _fduk_season_codes(max_seasons, **_fduk_season_kwargs(div)):
         text = _fduk_fetch_season(div, code, is_current)
         if text:
             seasons.append(text)
@@ -3520,7 +3610,8 @@ def _local_elo_table(div, max_seasons=10, as_of_iso=None):
     matches, last_date = 0, ""
     seasons_used = 0
     current_labels = set()
-    for code, is_current in reversed(list(_fduk_season_codes(max_seasons, horizon))):
+    season_codes = _fduk_season_codes(max_seasons, horizon, **_fduk_season_kwargs(div))
+    for code, is_current in reversed(list(season_codes)):
         # A past season's file is static; only today's gains rows.
         text = _fduk_fetch_season(div, code, is_current and is_live)
         results = [
@@ -3877,14 +3968,23 @@ def _clubelo_entry(meta, rows):
     }
 
 
-def _local_elo_strength(metas, date_iso, max_seasons):
+def _local_elo_strength(metas, date_iso, max_seasons, clubelo_covers=True):
     """`get_team_strength` result built from local Elo instead of ClubElo.
 
     Mirrors the ClubElo response shape so callers need no special case, but
     always reports `source: "local-elo"` — the ratings are computed here, not
     fetched, and the two scales must not be mixed. Because each division is
     rated independently, a comparison across divisions is refused.
+
+    `clubelo_covers=False` means local Elo is the primary source because
+    ClubElo has no data for these leagues (Liga MX), not an outage fallback.
     """
+    if clubelo_covers:
+        why = "ClubElo ratings are temporarily unavailable."
+        lead = "ClubElo was unavailable; these ratings are"
+    else:
+        why = "ClubElo does not cover this league; local Elo is the primary source."
+        lead = "ClubElo does not cover this league, so these ratings are"
     pairs = [_local_elo_entry(m, max_seasons, date_iso) for m in metas]
     entries = [e for e, _ in pairs]
     tables = [t for _, t in pairs]
@@ -3897,7 +3997,7 @@ def _local_elo_strength(metas, date_iso, max_seasons):
             f"{date_iso} (K={_ELO_K:g}, home advantage {_ELO_HOME_ADVANTAGE:g}, "
             f"season regression {_ELO_SEASON_REGRESSION:g})"
         ),
-        "fallback_reason": "ClubElo ratings are temporarily unavailable.",
+        "fallback_reason": why,
     }
     stale_tables = [
         table
@@ -3967,7 +4067,7 @@ def _local_elo_strength(metas, date_iso, max_seasons):
             )
     elif not result.get("message"):
         result["message"] = (
-            "ClubElo was unavailable; these ratings are computed locally from "
+            f"{lead} computed locally from "
             "football-data.co.uk results played up to the requested date. The "
             "scale is division-local and NOT comparable to ClubElo — only the gap "
             "between two ratings in the same division is meaningful. Check "
@@ -4020,6 +4120,11 @@ def get_team_strength(request_data):
         if not meta2:
             return {"teams": [], "message": "Could not resolve team_id_2"}
         metas.append(meta2)
+    leagues = [LEAGUES.get(m.get("slug"), {}) for m in metas]
+    if all(lg.get("fduk") and not lg.get("clubelo") for lg in leagues):
+        # ClubElo is European-only, so asking it would only ever answer
+        # "league not covered". Rate these clubs locally from the start.
+        return _local_elo_strength(metas, date_iso, max_seasons, clubelo_covers=False)
     rows = list(csv.DictReader(io.StringIO(_clubelo_fetch_snapshot(date_iso))))
     if not rows:
         # ClubElo unreachable — fall back to ratings computed from the
@@ -4174,11 +4279,21 @@ def get_match_forecast(request_data):
     if name2:
         result["opponent"] = {"id": tid2, "name": name2}
     if not fixtures:
-        result["message"] = (
-            f"No ClubElo-forecast fixtures for {name1} in the coming days "
-            "(ClubElo forecasts about a week ahead; the league may be between "
-            "matchdays or off-season)."
-        )
+        league1 = LEAGUES.get(meta1.get("slug"), {})
+        if league1.get("fduk") and not league1.get("clubelo"):
+            # e.g. Liga MX: ClubElo will never list it, but local Elo can.
+            result["message"] = (
+                f"ClubElo does not forecast {league1.get('name', 'this league')}. "
+                "For win/draw/loss probabilities use get_team_strength with the "
+                "home side as team_id and the away side as team_id_2 (local Elo, "
+                "empirical outcome rates)."
+            )
+        else:
+            result["message"] = (
+                f"No ClubElo-forecast fixtures for {name1} in the coming days "
+                "(ClubElo forecasts about a week ahead; the league may be between "
+                "matchdays or off-season)."
+            )
     return result
 
 
