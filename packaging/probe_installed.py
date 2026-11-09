@@ -1,17 +1,20 @@
 """Probe the installed canonical package without importing unrelated dependencies."""
 
 import ast
+import csv
 import hashlib
 import importlib
 import importlib.metadata
 import importlib.resources
 import inspect
+import io
 import json
+import re
 import sys
 import types
 from pathlib import Path
 
-VERSION = "0.40.3"
+VERSION = "0.40.4"
 SCOREBOARD_SPORTS = ("nba", "nfl", "mlb", "nhl", "wnba", "cfb", "cbb")
 POLYMARKET_TODAYS_PARAMS = ("offset", "date", "timezone", "sports_market_types", "compact")
 GLEAGUE_SOURCES = ("__init__.py", "_cdn.py", "_connector.py", "_stats.py")
@@ -170,6 +173,80 @@ if plays.get("teams", {}).get("away", {}).get("abbreviation") != "MIA" or plays[
     raise SystemExit(f"nba play-by-play team names drift: {plays!r}")
 for name in [name for name in sys.modules if name == "sports_skills.nba" or name.startswith("sports_skills.nba.")]:
     del sys.modules[name]
+
+# cbb._connector is stdlib-only at module load too, so it loads under a bare
+# package. The installed BPI reads follow ESPN's `pagination.pages` past the
+# first page, served here by a synthetic three-page power index.
+cbb_package = types.ModuleType("sports_skills.cbb")
+cbb_package.__path__ = [str(root / "sports_skills/cbb")]
+cbb_package.__package__ = "sports_skills.cbb"
+sys.modules["sports_skills.cbb"] = cbb_package
+cbb = importlib.import_module("sports_skills.cbb._connector")
+if Path(cbb.__file__).resolve() != root / "sports_skills/cbb/_connector.py":
+    raise SystemExit(f"cbb connector not installed: {cbb.__file__}")
+bpi_pages = []
+
+
+def _bpi_page(sport_path, resource, params=None):
+    page, limit = params["page"], params["limit"]
+    bpi_pages.append(page)
+    return {
+        "teams": [
+            {"team": {"id": str(1000 + rank), "displayName": f"Team {rank}", "abbreviation": f"T{rank}"}}
+            for rank in range((page - 1) * limit + 1, min(page * limit, 120) + 1)
+        ],
+        "pagination": {"count": 120, "limit": limit, "page": page, "pages": -(-120 // limit)},
+    }
+
+
+cbb.espn_fitt_request = _bpi_page
+found = cbb.get_power_index({"params": {"team_id": "1110"}})
+if [team["team"]["id"] for team in found.get("teams", [])] != ["1110"] or bpi_pages != [1, 2, 3]:
+    raise SystemExit(f"cbb BPI pagination drift: {bpi_pages!r} {found!r}")
+if cbb.get_power_index({"params": {"limit": 50, "page": 1}}).get("page_count") != 3:
+    raise SystemExit("cbb BPI page count drift")
+for name in [name for name in sys.modules if name == "sports_skills.cbb" or name.startswith("sports_skills.cbb.")]:
+    del sys.modules[name]
+
+# football._connector imports requests (through _premium and the storefront),
+# absent after --no-deps, so the installed Liga MX season slicer is compiled
+# from the installed bytes and run on a synthetic all-seasons MEX.csv.
+football_path = root / "sports_skills/football/_connector.py"
+football_tree = ast.parse(football_path.read_text(encoding="utf-8"))
+leagues = next(
+    node.value
+    for node in football_tree.body
+    if isinstance(node, ast.Assign) and [getattr(target, "id", None) for target in node.targets] == ["LEAGUES"]
+)
+liga_mx_league = next(value for key, value in zip(leagues.keys, leagues.values) if key.value == "liga-mx")
+fduk = next((value for key, value in zip(liga_mx_league.keys, liga_mx_league.values) if key.value == "fduk"), None)
+if not isinstance(fduk, ast.Constant) or fduk.value != "MEX":
+    raise SystemExit("football Liga MX fduk division drift")
+liga_mx = {"csv": csv, "io": io, "re": re}
+slicer = [
+    node
+    for node in football_tree.body
+    if (isinstance(node, ast.FunctionDef) and node.name in ("_fduk_extra_season_code", "_fduk_extra_season_csv"))
+    or (
+        isinstance(node, ast.Assign)
+        and [getattr(target, "id", None) for target in node.targets] in (["_FDUK_EXTRA_DIVS"], ["_FDUK_EXTRA_COLUMNS"])
+    )
+]
+exec(compile(ast.Module(body=slicer, type_ignores=[]), str(football_path), "exec"), liga_mx)
+if liga_mx["_FDUK_EXTRA_DIVS"] != {"MEX": {"season_start_month": 7}}:
+    raise SystemExit("football Liga MX season turnover drift")
+if (liga_mx["_fduk_extra_season_code"]("2026/2027"), liga_mx["_fduk_extra_season_code"]("2026")) != ("2627", None):
+    raise SystemExit("football extra-league season code drift")
+extra = (
+    "Country,League,Season,Date,Time,Home,Away,HG,AG,Res\r\n"
+    "Mexico,Liga MX,2025/2026,10/07/2025,02:00,Club America,UNAM Pumas,4,1,H\r\n"
+    "Mexico,Liga MX,2026/2027,19/07/2026,02:00,UNAM Pumas,Club America,1,0,H\r\n"
+)
+if liga_mx["_fduk_extra_season_csv"](extra, "2627").splitlines() != [
+    "Date,HomeTeam,AwayTeam,FTHG,FTAG,FTR",
+    "19/07/2026,UNAM Pumas,Club America,1,0,H",
+]:
+    raise SystemExit("football Liga MX season slice drift")
 
 expected_signatures = {
     "to_successor_envelope": "(*, operation, request_bytes, operation_arguments_bytes, output_mode, consumer_tier) -> bytes",

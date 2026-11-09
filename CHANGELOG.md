@@ -1,7 +1,10 @@
-## [Unreleased]
+## [0.40.4]
 
 ### Added
 - **football: Liga MX head-to-head and local Elo.** `get_head_to_head` and `get_team_strength` now cover Liga MX, read from football-data.co.uk's all-seasons "extra leagues" file (`new/MEX.csv`, 2012/2013 onward). Each season is re-shaped into the mmz4281 CSV the existing H2H and Elo code reads, so outputs keep their shape. Liga MX seasons turn over in July (`start_month`), not August. Liga MX strength is rated by local Elo directly (`source: "local-elo"`, with a `fallback_reason` that says ClubElo does not cover the league instead of reporting an outage), and `get_match_forecast` points Liga MX callers to `get_team_strength`. Name overrides map "León" to `Club Leon` (not the defunct Leones Negros) and "Atlético de San Luis" to `Atl. San Luis`. Liga MX results carry no shots/corners in this source.
+
+### Fixed
+- **cbb: BPI reads follow every page.** `get_power_index`, `compare_teams` and `get_tournament_projections` read ESPN's `pagination.pages` instead of `pageCount`, a key ESPN does not send, which stopped every read after the first page. A `team_id` lookup now finds teams ranked past the first page, `compare_teams` works for any two teams, projections return the full 68-team field, and `page_count` reports ESPN's page count.
 
 ## [0.40.3]
 
