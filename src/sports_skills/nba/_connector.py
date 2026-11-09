@@ -20,6 +20,7 @@ from sports_skills._espn_base import (
     default_standings_season,
     epoch_seconds,
     espn_core_request,
+    espn_news,
     espn_request,
     espn_summary,
     espn_team_schedule,
@@ -620,17 +621,9 @@ def get_leaders(request_data):
 
 
 def get_news(request_data):
-    """Get NBA news articles."""
-    params = request_data.get("params", {})
-    team_id = params.get("team_id")
-
-    resource = f"teams/{team_id}/news" if team_id else "news"
-    data = espn_request(SPORT_PATH, resource)
-    if data.get("error"):
-        return data
-
-    articles = _normalize_news(data)
-    return {"articles": articles, "count": len(articles)}
+    """Get NBA news articles, optionally restricted to one team."""
+    team_id = request_data.get("params", {}).get("team_id")
+    return espn_news(SPORT_PATH, 46, team_id, _normalize_news)
 
 
 def get_schedule(request_data):
