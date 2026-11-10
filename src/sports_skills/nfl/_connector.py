@@ -647,36 +647,40 @@ def get_game_summary(request_data):
 
 
 def get_leaders(request_data):
-    """Get NFL statistical leaders via ESPN core API."""
+    """Get NFL statistical leaders via ESPN core API.
+
+    ESPN's unscoped ``leagues/nfl/leaders`` is all-time career leaders, so an
+    omitted season reads the current one, stepping back a year while ESPN
+    doesn't serve it yet.
+    """
     params = request_data.get("params", {})
     season = params.get("season")
+    explicit = season not in (None, "")
 
-    if season:
-        url = f"https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/seasons/{season}/types/2/leaders"
-    else:
-        url = "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/leaders"
+    def load(year):
+        cache_key = f"nfl_leaders:{year}"
+        cached = _cache_get(cache_key)
+        if cached is not None:
+            return cached
+        url = f"https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/seasons/{year}/types/2/leaders"
+        raw, err = _http_fetch(url, headers={"User-Agent": _USER_AGENT})
+        if err:
+            return err
+        try:
+            data = json.loads(raw.decode())
+        except (json.JSONDecodeError, ValueError):
+            return {"error": True, "message": "ESPN core API returned invalid JSON"}
+        result = {
+            "categories": _resolve_leaders(data.get("categories", [])),
+            "season": data.get("season", {}).get("year", year),
+        }
+        _cache_set(cache_key, result, ttl=300)
+        return result
 
-    cache_key = f"nfl_leaders:{season or 'current'}"
-    cached = _cache_get(cache_key)
-    if cached is not None:
-        return cached
-
-    headers = {"User-Agent": _USER_AGENT}
-    raw, err = _http_fetch(url, headers=headers)
-    if err:
-        return err
-    try:
-        data = json.loads(raw.decode())
-    except (json.JSONDecodeError, ValueError):
-        return {"error": True, "message": "ESPN core API returned invalid JSON"}
-
-    result = {
-        "categories": _resolve_leaders(data.get("categories", [])),
-        "season": data.get("season", {}).get("year", season or ""),
-    }
-    _cache_set(cache_key, result, ttl=300)
+    result, _, note = fetch_season(load, season if explicit else _current_year(), explicit)
+    if note and not result.get("error"):
+        result = {**result, "warnings": [note]}
     return result
-
 
 def get_news(request_data):
     """Get NFL news articles, optionally restricted to one team.
