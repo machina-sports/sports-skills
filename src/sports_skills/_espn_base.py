@@ -428,6 +428,52 @@ def espn_team_schedule(sport_path, team_id, season=None, season_type=None, all_t
     return merged
 
 
+def article_team_ids(article, sport_id):
+    """ESPN team IDs tagged on a news article for one league.
+
+    Team identity lives in ``categories[]`` entries of ``type == "team"``, as
+    ``teamId`` or ``team.id``. Tags from another sport are skipped, since team
+    ids collide across leagues.
+    """
+    ids = set()
+    for category in article.get("categories") or []:
+        if not isinstance(category, dict) or category.get("type") != "team":
+            continue
+        if category.get("sportId") not in (None, sport_id):
+            continue
+        team = category.get("team") if isinstance(category.get("team"), dict) else {}
+        for value in (category.get("teamId"), team.get("id")):
+            if value not in (None, ""):
+                ids.add(str(value))
+    return ids
+
+
+def espn_news(sport_path, sport_id, team_id, normalize):
+    """League news, or one team's news from the league feed.
+
+    ``teams/<id>/news`` answers ``{}``, which reads as "no news about this
+    team". The league feed takes ``?team=<id>`` and tags each article with the
+    teams it covers, so keep the articles tagged with this team.
+    """
+    team_id = str(team_id) if team_id not in (None, "") else None
+    data = espn_request(sport_path, "news", params={"team": team_id} if team_id else None)
+    if not isinstance(data, dict):
+        return {"error": True, "message": "ESPN news returned an unexpected payload"}
+    if data.get("error"):
+        return data
+
+    raw_articles = data.get("articles") or []
+    matched = raw_articles
+    if team_id:
+        matched = [a for a in raw_articles if isinstance(a, dict) and team_id in article_team_ids(a, sport_id)]
+
+    articles = normalize({"articles": matched})
+    result = {"articles": articles, "count": len(articles)}
+    if team_id:
+        result["team_id"] = team_id
+    return result
+
+
 def espn_web_request(sport_path, resource, params=None, *, timeout=30, max_retries=_MAX_RETRIES):
     """ESPN web API (standings, season lists). Different host from site API.
 

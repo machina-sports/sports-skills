@@ -33,7 +33,7 @@ Catalog of documented ESPN API endpoints organized by domain and resource type. 
 | `teams/{id}/injuries` | Team injury report |
 | `teams/{id}/transactions` | Recent team transactions/moves |
 | `teams/{id}/history` | Franchise historical record |
-| `teams/{id}/news` | Team news |
+| `news?team={id}` | Team news (`teams/{id}/news` answers `{}`) |
 | `teams/{id}/leaders` | Team statistical leaders |
 
 ### Athletes
