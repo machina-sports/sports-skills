@@ -46,6 +46,9 @@ _START_TIME = {
     "fractional_second": re.compile(r"^\d{4}-\d{2}-\d{2}[Tt]\d{2}:\d{2}:\d{2}\.\d+" + _OFFSET + r"$"),
 }
 
+#: The precisions a caller may declare for the source start time, most reduced first.
+START_TIME_PRECISIONS = tuple(_START_TIME)
+
 
 def _text(value):
     if value is None or isinstance(value, (dict, list, bool)):
