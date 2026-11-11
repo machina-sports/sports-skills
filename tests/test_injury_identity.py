@@ -143,3 +143,33 @@ def test_nfl_get_injuries_carries_identity(monkeypatch):
     result = nfl.get_injuries()
     assert result["teams"][0]["injuries"][0]["athlete_id"] == "3139477"
     assert result["identity_summary"]["unresolved"] == 2
+
+
+def test_espn_feed_shape_reads_id_from_links_and_injury_from_details():
+    """ESPN's injuries feed: no athlete.id, the status repeated in type, the injury in details.type."""
+    record = {
+        "status": "Out",
+        "athlete": {
+            "displayName": "Asa Newell",
+            "position": {"abbreviation": "F"},
+            "links": [
+                {"href": "https://www.espn.com/nba/player/_/id/4873201/asa-newell"},
+                {"href": "https://www.espn.com/nba/player/stats/_/id/4873201/asa-newell"},
+            ],
+        },
+        "type": {"name": "INJURY_STATUS_OUT", "description": "out"},
+        "details": {"type": "Toe", "side": "Left", "returnDate": "2026-11-13"},
+    }
+    result = normalize_injuries({"injuries": [{"id": "1", "displayName": "Atlanta Hawks", "injuries": [record]}]})
+    injury = result["teams"][0]["injuries"][0]
+    assert injury["athlete_id"] == "4873201"
+    assert injury["identity_status"] == "provider-native"
+    assert injury["type"] == "Toe"
+    assert injury["status"] == "Out"
+    assert result["identity_summary"] == {"records": 1, "provider_native": 1, "unresolved": 0}
+
+
+def test_links_without_a_player_id_are_unresolved():
+    athlete = {"displayName": "Player E", "links": [{"href": "https://www.espn.com/nba/team/_/name/atl"}, None]}
+    payload = {"injuries": [{"injuries": [{"athlete": athlete, "status": "Out"}]}]}
+    assert _records(normalize_injuries(payload))[0]["athlete_id"] is None
