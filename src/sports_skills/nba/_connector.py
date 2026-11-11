@@ -766,6 +766,30 @@ def get_play_by_play(request_data):
     return _normalize_plays(data)
 
 
+def get_event_summary(request_data):
+    """One game as its normalized event plus its play-by-play, from one ESPN summary read.
+
+    ``event`` is the game exactly as ``get_scoreboard`` states one, and ``plays`` is what
+    ``get_play_by_play`` returns for it on the ESPN path. ESPN only, never the live CDN,
+    so the shape is the same before, during and after the game: this is the input the
+    canonical NBA adapter reads, and it reads one shape.
+    """
+    params = request_data.get("params", {})
+    event_id = params.get("event_id")
+    if not event_id:
+        return {"error": True, "message": "event_id is required"}
+
+    data = espn_summary(SPORT_PATH, event_id)
+    if not data or not data.get("header"):
+        return {"error": True, "message": f"No summary data found for event {event_id}"}
+
+    result = {"event": _normalize_event(data["header"])}
+    plays = _normalize_plays(data)
+    if not plays.get("error"):  # a game not yet played has an event and no plays
+        result["plays"] = plays
+    return result
+
+
 def get_win_probability(request_data):
     """Get win probability timeline for an NBA game."""
     params = request_data.get("params", {})

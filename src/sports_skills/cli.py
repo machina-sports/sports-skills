@@ -383,6 +383,7 @@ _REGISTRY = {
         "get_team_schedule": {"required": ["team_id"], "optional": ["season", "season_type"]},
         "get_game_summary": {"required": ["event_id"]},
         "get_play_by_play": {"required": ["event_id"]},
+        "get_event_summary": {"required": ["event_id"]},
         "get_win_probability": {"required": ["event_id"]},
         "get_leaders": {"optional": ["season"]},
         "get_news": {"optional": ["team_id"]},
@@ -1111,6 +1112,7 @@ def _canonical_validate(module_name, command_name, args):
             command_name,
             observed_at=args.observed_at,
             consumer_tier=args.consumer_tier or canonical.DEFAULT_CONSUMER_TIER,
+            start_time_precision=args.start_time_precision,
         )
     except canonical.CanonicalCliError as e:
         _cli_error(str(e), error_code=e.error_code, hint=e.hint, findings=e.findings)
@@ -1132,6 +1134,7 @@ def _print_canonical(module_name, command_name, result, args):
             result,
             observed_at=args.observed_at,
             consumer_tier=args.consumer_tier or canonical.DEFAULT_CONSUMER_TIER,
+            start_time_precision=args.start_time_precision,
         )
     except canonical.CanonicalCliError as e:
         _cli_error(str(e), error_code=e.error_code, hint=e.hint, findings=e.findings)
@@ -1166,6 +1169,7 @@ def _storefront_discovery(args, remaining):
         or args.canonical
         or args.observed_at
         or args.consumer_tier
+        or args.start_time_precision
         or any(a != "--json" for a in remaining)
     ):
         _cli_error(
@@ -1196,7 +1200,7 @@ def main():
     parser.add_argument(
         "--canonical",
         action="store_true",
-        help=f"Alias for --format={_CANONICAL_FORMAT}: emit the Machina Sports Schema envelope instead of the native payload (football event commands only)",
+        help=f"Alias for --format={_CANONICAL_FORMAT}: emit the Machina Sports Schema envelope instead of the native payload (football event commands and nba get_event_summary only)",
     )
     parser.add_argument(
         "--observed-at",
@@ -1205,6 +1209,10 @@ def main():
     parser.add_argument(
         "--consumer-tier",
         help=f"Rights tier to gate --format={_CANONICAL_FORMAT} output against: prototype (default) or production. Open-data envelopes are prototype-only, so production refuses them",
+    )
+    parser.add_argument(
+        "--start-time-precision",
+        help=f"How exactly the source stated the event start: minute, second or fractional_second. Required by --format={_CANONICAL_FORMAT} for nba get_event_summary (ESPN states an NBA start to the minute); refused elsewhere.",
     )
 
     # Parse known args, rest are --key=value params
@@ -1314,7 +1322,11 @@ def main():
     if canonical_mode:
         kwargs.pop("format", None)
     else:
-        for flag, value in (("--observed-at", args.observed_at), ("--consumer-tier", args.consumer_tier)):
+        for flag, value in (
+            ("--observed-at", args.observed_at),
+            ("--consumer-tier", args.consumer_tier),
+            ("--start-time-precision", args.start_time_precision),
+        ):
             if value is not None:
                 _cli_error(
                     f"{flag} only applies to --format={_CANONICAL_FORMAT} output. "

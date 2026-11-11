@@ -9,11 +9,11 @@ produced none.
 Four things it refuses, each because emitting something would be worse than emitting
 nothing:
 
-**A command whose payload is not one or more normalized football events.** The envelope
-declares itself one provider's observation of one event, conforming to a named profile
-at a pinned commit. Wrapping a standings table in it would be a false conformance claim,
-so the supported commands are enumerated rather than guessed from the shape of whatever
-arrived.
+**A command whose payload is not one or more normalized events an adapter was checked
+against.** The envelope declares itself one provider's observation of one event,
+conforming to a named profile at a pinned commit. Wrapping a standings table in it would
+be a false conformance claim, so the supported commands are enumerated rather than
+guessed from the shape of whatever arrived.
 
 **A missing or offset-naive ``observed_at``.** It is the one input that makes the
 document reproducible, and it is the caller's fact to state. Defaulting it to the
@@ -40,13 +40,19 @@ scoreboard at every tier — there is nothing to object to — and a production 
 would read that as permission to configure a prototype-only adapter, on the accident of
 a day with no matches. The envelopes are still gated after they are built, so a document
 whose licence claim ever disagreed with the constant is refused on its own terms.
+
+One more input belongs to the NBA command alone: ``start_time_precision``. ESPN states
+an NBA start to the minute, the NBA adapter will not guess how exactly a source value
+was stated, and so the caller declares it, exactly as the library call requires. It is
+refused where no adapter reads it, because accepting it there would imply a declaration
+nothing checked.
 """
 
 from datetime import datetime
 
-from . import canonicalize_event, rights_findings
+from . import canonicalize_event, canonicalize_nba_event, rights_findings
 from ._vendored.rights import CONSUMER_TIERS, ENVELOPE_KEY
-from .adapters import football
+from .adapters import football, nba
 
 #: The one ``--format`` value this mode answers to. Any other value is left alone for
 #: the command to interpret — ``format`` is an existing parameter of ``betting devig``.
@@ -57,13 +63,19 @@ CANONICAL_FORMAT = "machina-canonical"
 #: The strict direction stays reachable, and refuses.
 DEFAULT_CONSUMER_TIER = "prototype"
 
-#: ``(module, command) -> (payload field, one envelope per item)``. An allowlist, not a
-#: shape sniff: a command that happens to return something event-like is not thereby a
-#: command whose output this adapter has been checked against.
+#: ``(module, command) -> (payload field, one envelope per item, adapter)``. An
+#: allowlist, not a shape sniff: a command that happens to return something event-like is
+#: not thereby a command whose output an adapter has been checked against.
 EVENT_COMMANDS = {
-    ("football", "get_event_summary"): ("event", False),
-    ("football", "get_daily_schedule"): ("events", True),
+    ("football", "get_event_summary"): ("event", False, football),
+    ("football", "get_daily_schedule"): ("events", True, football),
+    ("nba", "get_event_summary"): ("event", False, nba),
 }
+
+#: The commands whose adapter reads a declared start-time precision.
+PRECISION_COMMANDS = sorted(
+    f"{module} {command}" for (module, command), spec in EVENT_COMMANDS.items() if spec[2] is nba
+)
 
 #: Shown in every ``observed_at`` refusal, because "ISO-8601" is not an example.
 OBSERVED_AT_EXAMPLE = "2026-03-01T22:05:00+00:00"
@@ -97,7 +109,7 @@ def supported_commands():
     return sorted(f"{module} {command}" for module, command in EVENT_COMMANDS)
 
 
-def validate_request(module, command, *, observed_at, consumer_tier):
+def validate_request(module, command, *, observed_at, consumer_tier, start_time_precision=None):
     """Everything refusable before the provider is called.
 
     Called first on purpose: a caller who forgot ``--observed-at``, or who named a tier
@@ -106,8 +118,8 @@ def validate_request(module, command, *, observed_at, consumer_tier):
     """
     if (module, command) not in EVENT_COMMANDS:
         raise CanonicalCliError(
-            f"--format {CANONICAL_FORMAT} reads normalized football events, and "
-            f"'{module} {command}' does not return any. Supported: "
+            f"--format {CANONICAL_FORMAT} reads the normalized events of the commands "
+            f"an adapter was checked against, and '{module} {command}' is not one. Supported: "
             f"{', '.join(supported_commands())}. Wrapping other data in a canonical "
             "envelope would claim a conformance the document does not have.",
             error_code="CANONICAL_UNSUPPORTED_COMMAND",
@@ -128,10 +140,12 @@ def validate_request(module, command, *, observed_at, consumer_tier):
             "the permissive tier.",
             error_code="CANONICAL_UNKNOWN_CONSUMER_TIER",
         )
-    _check_rights([_adapter_envelope()], consumer_tier)
+    adapter = EVENT_COMMANDS[(module, command)][2]
+    _check_precision(adapter, start_time_precision)
+    _check_rights([_adapter_envelope(adapter)], consumer_tier)
 
 
-def render(module, command, result, *, observed_at, consumer_tier):
+def render(module, command, result, *, observed_at, consumer_tier, start_time_precision=None):
     """One command's payload as the canonical document it maps to.
 
     One event is the envelope itself, with no wrapper: a second envelope around a
@@ -139,9 +153,15 @@ def render(module, command, result, *, observed_at, consumer_tier):
     a three-key wrapper, and every member of it is the full envelope that event alone
     would produce — a trimmed member would publish a conformance claim it no longer has.
     """
-    field, many = EVENT_COMMANDS[(module, command)]
+    field, many, adapter = EVENT_COMMANDS[(module, command)]
     payload = _payload(result)
-    if not many:
+    if adapter is nba:
+        document = _nba_envelope(
+            payload.get(field) or {}, payload.get("plays"),
+            observed_at=observed_at, start_time_precision=start_time_precision,
+        )
+        envelopes = [document]
+    elif not many:
         document = _envelope(payload.get(field) or {}, observed_at=observed_at)
         envelopes = [document]
     else:
@@ -150,12 +170,40 @@ def render(module, command, result, *, observed_at, consumer_tier):
             for index, event in enumerate(payload.get(field) or [])
         ]
         document = {
-            "provider": football.PROVIDER["namespace"],
+            "provider": adapter.PROVIDER["namespace"],
             "format": CANONICAL_FORMAT,
             "events": envelopes,
         }
     _check_rights(envelopes, consumer_tier)
     return document
+
+
+def _check_precision(adapter, start_time_precision):
+    """The declared start-time precision is stated where it is read, and nowhere else."""
+    if adapter is not nba:
+        if start_time_precision is not None:
+            raise CanonicalCliError(
+                "--start-time-precision is read only by "
+                f"{', '.join(PRECISION_COMMANDS)}: this command's events state an exact "
+                "start, and accepting the flag here would imply a declaration nothing checked.",
+                error_code="CANONICAL_START_TIME_PRECISION_NOT_READ",
+            )
+        return
+    expected = ", ".join(nba.START_TIME_PRECISIONS)
+    if not start_time_precision:
+        raise CanonicalCliError(
+            f"--format {CANONICAL_FORMAT} requires --start-time-precision for this "
+            "command: the adapter will not guess how exactly the source stated the start, "
+            f"so the caller declares it. One of: {expected}. ESPN states an NBA start to "
+            "the minute, e.g. --start-time-precision=minute",
+            error_code="CANONICAL_START_TIME_PRECISION_REQUIRED",
+        )
+    if start_time_precision not in nba.START_TIME_PRECISIONS:
+        raise CanonicalCliError(
+            f"--start-time-precision '{start_time_precision}' is not a precision the "
+            f"adapter knows; expected one of: {expected}.",
+            error_code="CANONICAL_UNKNOWN_START_TIME_PRECISION",
+        )
 
 
 def _check_offset_aware(observed_at):
@@ -225,15 +273,27 @@ def _envelope(event, *, observed_at, label=None):
         ) from None
 
 
-def _adapter_envelope():
-    """The licence claim every envelope this mode can emit will carry, gate-shaped.
+def _nba_envelope(event, plays, *, observed_at, start_time_precision):
+    try:
+        return canonicalize_nba_event(
+            event, plays, observed_at=observed_at, start_time_precision=start_time_precision
+        )
+    except ValueError as exc:
+        raise CanonicalCliError(
+            f"event could not be canonicalized: {exc}",
+            error_code="CANONICAL_EVENT_REFUSED",
+        ) from None
+
+
+def _adapter_envelope(adapter):
+    """The licence claim every envelope this adapter can emit will carry, gate-shaped.
 
     Built from the adapter's own constant, so the tier is answered by the same fact the
     documents would have stated rather than by a second reading of the policy. It is a
     rights block and nothing else because that is all the gate reads, and a fuller
     stand-in would be a document claiming an observation nobody made.
     """
-    return {ENVELOPE_KEY: {"rights": dict(football.RIGHTS)}}
+    return {ENVELOPE_KEY: {"rights": dict(adapter.RIGHTS)}}
 
 
 def _check_rights(envelopes, consumer_tier):

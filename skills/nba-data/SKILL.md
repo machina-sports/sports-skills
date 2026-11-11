@@ -66,6 +66,7 @@ ESPN names an NBA season by the year it ends: 2026-27 is `2027`, so in February 
 | `get_leaders` | NBA statistical leaders |
 | `get_news` | NBA news articles |
 | `get_play_by_play` | Full play-by-play for a game |
+| `get_event_summary` | One game as its scoreboard event plus its play-by-play, in one read |
 | `get_win_probability` | Win probability chart data |
 | `get_schedule` | Games on a specific date (no season filter; see `get_team_schedule`) |
 | `get_injuries` | Injury reports across all teams |

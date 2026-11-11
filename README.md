@@ -280,7 +280,7 @@ Works with every agent that supports the SKILL.md format: [sportsclaw](https://s
 
 ## Machina Sports Schema (canonical output)
 
-Football event commands can emit the **Machina Sports Schema** envelope instead of the native payload: one provider's observation of one event, serialized as JSON-LD against the [IPTC Sport Schema](https://sportschema.org) 1.1 profile, with a provider-id crosswalk, a capability report, and a provenance block naming the pinned upstream commit.
+Football event commands and `nba get_event_summary` can emit the **Machina Sports Schema** envelope instead of the native payload: one provider's observation of one event, serialized as JSON-LD against the [IPTC Sport Schema](https://sportschema.org) 1.1 profile, with a provider-id crosswalk, a capability report, and a provenance block naming the pinned upstream commit.
 
 ```bash
 # One event → one envelope, printed directly
@@ -292,7 +292,7 @@ sports-skills football scores --date=2026-03-01 \
   --canonical --observed-at=2026-03-01T22:05:00+00:00
 ```
 
-`--canonical` is an alias for `--format=machina-canonical`. It is supported on `football get_event_summary` and `football get_daily_schedule` (also reachable as `scores`); every other command refuses the flag by name rather than wrapping data the schema does not describe. From Python:
+`--canonical` is an alias for `--format=machina-canonical`. It is supported on `football get_event_summary`, `football get_daily_schedule` (also reachable as `scores`) and `nba get_event_summary`; every other command refuses the flag by name rather than wrapping data the schema does not describe. From Python:
 
 ```python
 from sports_skills import canonical, football
@@ -300,6 +300,15 @@ from sports_skills import canonical, football
 event = football.get_event_summary(event_id="740000")["data"]["event"]
 document = canonical.canonicalize_event(event, observed_at="2026-03-01T22:05:00+00:00")
 ```
+
+**NBA: one game with its plays, and a declared start precision.** `nba get_event_summary` returns a game as its scoreboard event plus its play-by-play, and it is the one NBA command the mode accepts:
+
+```bash
+sports-skills nba get_event_summary --event_id=401859967 --canonical \
+  --observed-at=2026-06-14T03:30:00+00:00 --start-time-precision=minute
+```
+
+`--start-time-precision` (`minute`, `second` or `fractional_second`) is required there and refused everywhere else. ESPN states an NBA start to the minute, so the envelope carries a 60-second window (`temporal_evidence`) and no `sport_schema_graph`: the schema refuses an interoperability graph when no exact start exists. Every play is in `event_view.actions`.
 
 **`--observed-at` is required and must carry a UTC offset.** It is never read from the clock. It is the one input that makes the document reproducible, and the cross-repository reference fixtures this output is tested byte-for-byte against depend on it being stated rather than guessed.
 

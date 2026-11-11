@@ -57,6 +57,12 @@ Get full play-by-play data for a game.
 
 Returns play-by-play detail including period, clock, team, play description, and scoring plays. `teams` names the `home` and `away` sides (`id`, `abbreviation`, `name`) that `home_score` and `away_score` refer to, and each play's `team` is the acting team's abbreviation (empty when no team acted). A live game served from the NBA CDN keeps its own `actions[]` shape.
 
+### get_event_summary
+Get one game as its scoreboard event plus its play-by-play, from one ESPN read.
+- `event_id` (str, required): ESPN event ID
+
+Returns `event`, the game exactly as `get_scoreboard` states one, and `plays`, what `get_play_by_play` returns on the ESPN path (omitted for a game with no plays yet). It never reads the NBA CDN, so the shape is the same before, during and after the game. This is the command `--format=machina-canonical` accepts for the NBA; that mode also requires `--observed-at` and `--start-time-precision`.
+
 ### get_win_probability
 Get win probability chart data for a game.
 - `event_id` (str, required): ESPN event ID

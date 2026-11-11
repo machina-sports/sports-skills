@@ -36,6 +36,9 @@ from sports_skills.nba._connector import (
     get_depth_chart as _get_depth_chart,
 )
 from sports_skills.nba._connector import (
+    get_event_summary as _get_event_summary,
+)
+from sports_skills.nba._connector import (
     get_futures as _get_futures,
 )
 from sports_skills.nba._connector import (
@@ -203,6 +206,17 @@ def get_play_by_play(*, event_id: str) -> dict:
         event_id: ESPN event ID.
     """
     return wrap(_get_play_by_play(_params(event_id=event_id)))
+
+
+def get_event_summary(*, event_id: str) -> dict:
+    """Get one NBA game as its scoreboard event plus its play-by-play, in one read.
+
+    The input for ``--format machina-canonical`` (with ``--start-time-precision``).
+
+    Args:
+        event_id: ESPN event ID.
+    """
+    return wrap(_get_event_summary(_params(event_id=event_id)))
 
 
 def get_win_probability(*, event_id: str) -> dict:
