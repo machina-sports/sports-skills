@@ -1028,7 +1028,12 @@ def _no_games_played(data):
     if not rows:
         return False
     for entry in rows:
-        stats = {s.get("name"): s for s in entry.get("stats") or [] if isinstance(s, dict)}
+        # CBB repeats "wins"/"losses" for each split (home, road, vs. conference);
+        # the first pair is the season total.
+        stats = {}
+        for s in entry.get("stats") or []:
+            if isinstance(s, dict):
+                stats.setdefault(s.get("name"), s)
         if _record(stats) != (0, 0):
             return False
     return True
@@ -1244,14 +1249,33 @@ def _as_dict(value):
     return value if isinstance(value, dict) else {}
 
 
+_ATHLETE_LINK_ID = re.compile(r"/id/(\d+)/")
+
+
+def _injured_athlete_id(athlete):
+    """ESPN's ``athlete.id``, else the id in the athlete's player-page links.
+
+    The injuries feed sends no ``athlete.id``; each player's ESPN links
+    carry it as ``.../player/_/id/<id>/<slug>``.
+    """
+    if "id" in athlete:
+        return athlete["id"]
+    links = athlete.get("links")
+    for link in links if isinstance(links, list) else []:
+        match = _ATHLETE_LINK_ID.search(str(_as_dict(link).get("href", "")))
+        if match:
+            return match.group(1)
+    return None
+
+
 def normalize_injuries(data):
     """Normalize ESPN injuries response (shared across all US sports).
 
     Input: full response from ``espn_request(SPORT_PATH, "injuries")``.
 
-    ``athlete_id`` is ESPN's own ``athlete.id`` (as a string) or None; a
-    record without one is ``unresolved``. Names are never hashed or fuzzily
-    joined into an id.
+    ``athlete_id`` is ESPN's own athlete id (as a string) or None; a record
+    without one is ``unresolved``. Names are never hashed or fuzzily joined
+    into an id.
     """
     teams = []
     records = native = 0
@@ -1267,7 +1291,7 @@ def normalize_injuries(data):
             athlete = _as_dict(inj.get("athlete"))
             details = _as_dict(inj.get("details"))
             inj_type = _as_dict(inj.get("type"))
-            athlete_id = athlete.get("id")
+            athlete_id = _injured_athlete_id(athlete)
             athlete_id = str(athlete_id) if type(athlete_id) in (str, int) else None
             if not athlete_id or athlete_id != athlete_id.strip():
                 athlete_id = None
@@ -1275,7 +1299,9 @@ def normalize_injuries(data):
                 "name": athlete.get("displayName", ""),
                 "position": _as_dict(athlete.get("position")).get("abbreviation", ""),
                 "status": inj.get("status", ""),
-                "type": inj_type.get("description", inj_type.get("name", "")),
+                # ESPN's top-level ``type`` is the status again ("out"); the
+                # injury itself ("Ankle") is ``details.type``.
+                "type": details.get("type") or inj_type.get("description", inj_type.get("name", "")),
                 "detail": details.get("detail", ""),
                 "side": details.get("side", ""),
                 "return_date": details.get("returnDate", ""),
