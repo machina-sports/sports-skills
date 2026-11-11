@@ -1028,7 +1028,12 @@ def _no_games_played(data):
     if not rows:
         return False
     for entry in rows:
-        stats = {s.get("name"): s for s in entry.get("stats") or [] if isinstance(s, dict)}
+        # CBB repeats "wins"/"losses" for each split (home, road, vs. conference);
+        # the first pair is the season total.
+        stats = {}
+        for s in entry.get("stats") or []:
+            if isinstance(s, dict):
+                stats.setdefault(s.get("name"), s)
         if _record(stats) != (0, 0):
             return False
     return True
