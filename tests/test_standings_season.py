@@ -105,6 +105,27 @@ def test_zero_table_after_the_start_date_falls_back(monkeypatch):
     assert connector.get_standings({"params": {}})["defaulted_from"] == 2027
 
 
+def test_split_records_do_not_hide_games_played(monkeypatch):
+    """CBB in November: 3-0 overall, but the vs. conference split listed last is 0-0."""
+    stats = [
+        {"name": "losses", "type": "losses", "value": 0},
+        {"name": "wins", "type": "wins", "value": 3},
+        {"name": "losses", "type": "home_losses", "value": 0},
+        {"name": "wins", "type": "home_wins", "value": 2},
+        {"name": "losses", "type": "vsconf_losses", "value": 0},
+        {"name": "wins", "type": "vsconf_wins", "value": 0},
+    ]
+    playing = _payload(2027, 2, 0, 0, [_season(2027, "2026-11-03T08:00Z", "2027-03-16T06:59Z")])
+    for entry in playing["children"][0]["standings"]["entries"]:
+        entry["stats"] = stats
+    connector, calls = _serve(monkeypatch, "cbb", {None: playing, 2026: FINISHED})
+    monkeypatch.setattr(_espn_base, "_now", lambda: 1794787200)  # 2026-11-16
+    result = connector.get_standings({"params": {}})
+    assert (result["season"], result["season_status"]) == (2027, "in_progress")
+    assert "defaulted_from" not in result
+    assert calls == [None]
+
+
 def test_season_in_progress_is_unchanged(monkeypatch):
     playing = _payload(2026, 2, 3, 0, [_season(2026, "2026-09-10T07:00Z", "2027-01-05T07:59Z")])
     connector, calls = _serve(monkeypatch, "nfl", {None: playing})
