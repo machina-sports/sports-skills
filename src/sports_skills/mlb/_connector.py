@@ -205,6 +205,16 @@ def _normalize_roster(espn_data):
     return athletes
 
 
+def _bats_throws(athlete):
+    """``"L/R"`` from ESPN's separate ``bats`` and ``throws``; ``""`` without both."""
+    bats, throws = athlete.get("bats"), athlete.get("throws")
+    if not (isinstance(bats, dict) and isinstance(throws, dict)):
+        return ""
+    if not (bats.get("abbreviation") and throws.get("abbreviation")):
+        return ""
+    return f"{bats['abbreviation']}/{throws['abbreviation']}"
+
+
 def _parse_athlete(athlete, default_position=""):
     """Parse a single athlete record."""
     position = athlete.get("position", {})
@@ -221,7 +231,7 @@ def _parse_athlete(athlete, default_position=""):
         "height": athlete.get("displayHeight", ""),
         "weight": athlete.get("displayWeight", ""),
         "experience": athlete.get("experience", {}).get("years", ""),
-        "bats_throws": athlete.get("hand", {}).get("displayValue", "") if isinstance(athlete.get("hand"), dict) else "",
+        "bats_throws": _bats_throws(athlete),
         "birthplace": athlete.get("birthPlace", {}).get("city", "") if isinstance(athlete.get("birthPlace"), dict) else "",
         "status": athlete.get("status", {}).get("type", ""),
     }
