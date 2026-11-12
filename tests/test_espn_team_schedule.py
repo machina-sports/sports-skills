@@ -141,3 +141,44 @@ def test_season_type_tolerates_non_dict_values(event):
     from sports_skills._espn_base import event_season_type
 
     assert event_season_type(event) in ("regular", "")
+
+
+# teams/{id}/schedule also shapes broadcasts and records unlike the scoreboard:
+# ``broadcasts[].media.shortName`` instead of ``names``, and ``record`` (a list
+# of ``{type, displayValue}``) instead of ``records[].summary``.
+def _with(competitor_extra, comp_extra):
+    event = _schedule_event("13", "20")
+    comp = event["competitions"][0]
+    comp.update(comp_extra)
+    for c in comp["competitors"]:
+        c.update(competitor_extra)
+    return event
+
+
+@pytest.mark.parametrize("league", _ESPN_LEAGUES)
+def test_schedule_broadcasts_and_record_are_read(league):
+    connector = importlib.import_module(f"sports_skills.{league}._connector")
+    event = _with(
+        {"record": [{"type": "total", "displayValue": "1-0"}, {"type": "vsconf", "displayValue": "1-0"}]},
+        {"broadcasts": [{"type": {"shortName": "TV"}, "media": {"shortName": "ESPN"}}]},
+    )
+    row = connector._normalize_event(event)
+    assert row["broadcasts"] == ["ESPN"]
+    assert [c["record"] for c in row["competitors"]] == ["1-0", "1-0"]
+
+
+@pytest.mark.parametrize("league", _ESPN_LEAGUES)
+def test_scoreboard_broadcasts_and_records_are_unchanged(league):
+    connector = importlib.import_module(f"sports_skills.{league}._connector")
+    event = _with({"records": [{"type": "total", "summary": "9-3"}]}, {"broadcasts": [{"names": ["MNMT"]}]})
+    row = connector._normalize_event(event)
+    assert row["broadcasts"] == ["MNMT"]
+    assert [c["record"] for c in row["competitors"]] == ["9-3", "9-3"]
+
+
+@pytest.mark.parametrize("league", _ESPN_LEAGUES)
+def test_no_broadcasts_or_records(league):
+    connector = importlib.import_module(f"sports_skills.{league}._connector")
+    row = connector._normalize_event(_schedule_event("13", "20"))
+    assert row["broadcasts"] == []
+    assert [c["record"] for c in row["competitors"]] == ["", ""]
