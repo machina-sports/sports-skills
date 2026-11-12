@@ -173,3 +173,32 @@ def test_links_without_a_player_id_are_unresolved():
     athlete = {"displayName": "Player E", "links": [{"href": "https://www.espn.com/nba/team/_/name/atl"}, None]}
     payload = {"injuries": [{"injuries": [{"athlete": athlete, "status": "Out"}]}]}
     assert _records(normalize_injuries(payload))[0]["athlete_id"] is None
+
+
+def _link_record(athlete):
+    payload = {"injuries": [{"injuries": [{"athlete": athlete, "status": "Out"}]}]}
+    return _records(normalize_injuries(payload))[0]
+
+
+def test_team_link_id_is_not_taken_as_the_athlete_id():
+    athlete = {"displayName": "Player F", "links": [{"href": "https://www.espn.com/nhl/team/_/id/25/dallas-stars"}]}
+    record = _link_record(athlete)
+    assert record["athlete_id"] is None
+    assert record["identity_status"] == "unresolved"
+
+
+def test_id_at_the_end_of_a_player_link_is_read():
+    athlete = {"displayName": "Player G", "links": [{"href": "https://www.espn.com/nhl/player/_/id/4024854"}]}
+    record = _link_record(athlete)
+    assert record["athlete_id"] == "4024854"
+    assert record["identity_status"] == "provider-native"
+
+
+@pytest.mark.parametrize("athlete_id", ["", None])
+def test_empty_athlete_id_falls_back_to_links(athlete_id):
+    athlete = {
+        "id": athlete_id,
+        "displayName": "Player H",
+        "links": [{"href": "https://www.espn.com/mlb/player/_/id/33192/player-h"}],
+    }
+    assert _link_record(athlete)["athlete_id"] == "33192"
