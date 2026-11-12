@@ -1249,16 +1249,16 @@ def _as_dict(value):
     return value if isinstance(value, dict) else {}
 
 
-_ATHLETE_LINK_ID = re.compile(r"/id/(\d+)/")
+_ATHLETE_LINK_ID = re.compile(r"/player/(?:\w+/)?_/id/(\d+)(?:/|$)")
 
 
 def _injured_athlete_id(athlete):
     """ESPN's ``athlete.id``, else the id in the athlete's player-page links.
 
     The injuries feed sends no ``athlete.id``; each player's ESPN links
-    carry it as ``.../player/_/id/<id>/<slug>``.
+    carry it as ``.../player/_/id/<id>/<slug>`` or ``.../player/_/id/<id>``.
     """
-    if "id" in athlete:
+    if athlete.get("id") not in (None, ""):
         return athlete["id"]
     links = athlete.get("links")
     for link in links if isinstance(links, list) else []:
