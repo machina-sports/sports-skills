@@ -35,3 +35,24 @@ def test_every_tool_has_a_real_description():
         if t.get("description", "").endswith(f"command for {t['name'].split('_')[0]}")
     ]
     assert not bad, f"Tools with fallback descriptions: {', '.join(bad)}"
+
+
+def _nba_tool(name):
+    return next(t for t in _generate_schema("nba")["tools"] if t["name"] == name)
+
+
+def test_nba_descriptions_say_what_a_model_got_wrong():
+    # Measured on a tool-calling model (20 NBA questions, 11 Nov 2026): it passed the calendar
+    # year as `season` and got last season's standings, guessed a team id and got another
+    # team's roster, and answered a player's points from the scoreboard, which has none.
+    for name in ("nba_get_standings", "nba_get_team_schedule", "nba_get_leaders"):
+        season = _nba_tool(name)["parameters"]["properties"]["season"]["description"]
+        assert "year the season ends" in season, name
+        assert "2026-27" in season, name
+        assert "Omit" in season, name
+    team_id = _nba_tool("nba_get_team_roster")["parameters"]["properties"]["team_id"]["description"]
+    assert "get_teams" in team_id and "guess" in team_id
+    scoreboard = _nba_tool("nba_get_scoreboard")["description"]
+    assert "no player statistics" in scoreboard and "get_game_summary" in scoreboard
+    event_id = _nba_tool("nba_get_game_summary")["parameters"]["properties"]["event_id"]["description"]
+    assert "get_scoreboard" in event_id
