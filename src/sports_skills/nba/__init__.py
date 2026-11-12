@@ -118,7 +118,7 @@ def _params(**kwargs):
 
 
 def get_scoreboard(*, date: str | None = None) -> dict:
-    """Get live/recent NBA scores.
+    """Get NBA games and team scores for one date. Team scores only: it has no player statistics. For a player's points or other stats, call get_game_summary with the game's event id from this result.
 
     Args:
         date: Date in YYYY-MM-DD format. Defaults to today.
@@ -130,7 +130,8 @@ def get_standings(*, season: int | None = None) -> dict:
     """Get NBA standings by conference.
 
     Args:
-        season: Season year (e.g. 2025). Defaults to current.
+        season: The year the season ends: 2027 means the 2026-27 season. Omit it for the
+            current season; set it only when a past season is asked for.
     """
     return wrap(_get_standings(_params(season=season)))
 
@@ -144,7 +145,7 @@ def get_team_roster(*, team_id: str) -> dict:
     """Get full roster for an NBA team.
 
     Args:
-        team_id: ESPN team ID (e.g. "13" for Los Angeles Lakers).
+        team_id: ESPN team ID (e.g. "13" for Los Angeles Lakers). Get it from get_teams; do not guess it.
     """
     return wrap(_get_team_roster(_params(team_id=team_id)))
 
@@ -154,7 +155,8 @@ def get_team_schedule(*, team_id: str, season: int | None = None, season_type: s
 
     Args:
         team_id: ESPN team ID.
-        season: Season year. Defaults to current.
+        season: The year the season ends: 2027 means the 2026-27 season. Omit it for the
+            current season; set it only when a past season is asked for.
         season_type: "regular", "postseason" (alias "playoffs"), "playin", "preseason", or
             "all" (regular + play-in + playoffs). Omitted, ESPN's default (regular season) is returned.
     """
@@ -165,7 +167,7 @@ def get_game_summary(*, event_id: str) -> dict:
     """Get detailed game summary with box score and scoring plays.
 
     Args:
-        event_id: ESPN event ID.
+        event_id: ESPN event ID, from get_scoreboard.
     """
     return wrap(_get_game_summary(_params(event_id=event_id)))
 
@@ -174,7 +176,8 @@ def get_leaders(*, season: int | None = None) -> dict:
     """Get NBA statistical leaders (points, rebounds, assists, etc.).
 
     Args:
-        season: Season year. Defaults to current.
+        season: The year the season ends: 2027 means the 2026-27 season. Omit it for the
+            current season; set it only when a past season is asked for.
     """
     return wrap(_get_leaders(_params(season=season)))
 
