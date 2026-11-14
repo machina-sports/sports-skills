@@ -9,6 +9,8 @@ import logging
 from sports_skills._espn_base import (
     ESPN_STATUS_MAP,
     _current_year,
+    broadcast_names,
+    competitor_record,
     default_standings_season,
     epoch_seconds,
     espn_core_request,
@@ -56,7 +58,6 @@ def _normalize_event(espn_event):
     for c in comp.get("competitors", []):
         team = c.get("team", {})
         linescores = c.get("linescores", [])
-        records = c.get("records", [])
 
         # College-specific: curatedRank (AP poll ranking, 99 = unranked)
         curated = c.get("curatedRank", {})
@@ -73,17 +74,14 @@ def _normalize_event(espn_event):
             "home_away": c.get("homeAway", ""),
             "score": normalize_score(c.get("score", "0")),
             "period_scores": [int(p.get("value", 0)) for p in linescores],
-            "record": records[0].get("summary", "") if records else "",
+            "record": competitor_record(c),
             "winner": c.get("winner", False),
             "rank": rank if rank != 99 else None,
         })
 
     odds = normalize_odds(comp.get("odds", []))
 
-    broadcasts = []
-    for b in comp.get("broadcasts", []):
-        for name in b.get("names", []):
-            broadcasts.append(name)
+    broadcasts = broadcast_names(comp)
 
     week_info = espn_event.get("week", {})
 

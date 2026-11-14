@@ -619,6 +619,35 @@ def normalize_score(score):
     return score
 
 
+def competitor_record(competitor):
+    """Competitor's overall record as ESPN's string, or ``""``.
+
+    Scoreboards send ``records: [{"summary": "9-3"}, ...]``; ``teams/{id}/schedule``
+    sends ``record: [{"displayValue": "1-0"}, ...]``. The overall record is first
+    in both.
+    """
+    records = competitor.get("records") or competitor.get("record") or []
+    if not isinstance(records, list) or not records or not isinstance(records[0], dict):
+        return ""
+    first = records[0]
+    return first.get("summary") or first.get("displayValue", "")
+
+
+def broadcast_names(competition):
+    """Broadcast names for a competition.
+
+    Scoreboards send ``broadcasts: [{"names": ["ESPN"]}]``; ``teams/{id}/schedule``
+    sends ``broadcasts: [{"media": {"shortName": "ESPN"}}]``.
+    """
+    names = []
+    for b in competition.get("broadcasts", []):
+        if b.get("names"):
+            names.extend(b["names"])
+        elif (b.get("media") or {}).get("shortName"):
+            names.append(b["media"]["shortName"])
+    return names
+
+
 def normalize_odds(odds_list):
     """Normalize ESPN odds data from a competition into a structured format.
 
