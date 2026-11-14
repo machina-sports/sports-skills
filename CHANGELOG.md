@@ -1,3 +1,17 @@
+## [0.40.5]
+
+### Added
+- **nba: `get_event_summary`.** One game as its scoreboard event plus its play-by-play, from a single ESPN summary read that never consults the live CDN, so the shape is the same before, during and after a game. `--format machina-canonical` accepts it through the NBA adapter and requires the new `--start-time-precision` flag (`minute`, `second` or `fractional_second`), which every other command refuses. Other NBA commands are still refused by name in canonical mode, and no existing output changes.
+
+### Fixed
+- **news: team news in six leagues.** `get_news(team_id=...)` in NBA, NHL, MLB, WNBA, CFB and CBB read `teams/{id}/news`, which ESPN answers with `{}`, so every team returned 0 articles. It now reads the league feed with `news?team={id}` and keeps the articles tagged with that team, as NFL already did.
+- **schedule: broadcasts and records from team schedules.** `get_team_schedule` events carry `broadcasts` and each competitor's `record` in all seven ESPN leagues. The schedule sends them as `media.shortName` and `record[].displayValue`, not the scoreboard's `names` and `records[].summary`, and both shapes are read now. A schedule record is the team's record after that game, NHL's reads like `1-0-0, 2 PTS`, and MLB schedules carry no record. Scoreboard output is unchanged.
+- **injuries: athlete ids and injury types.** `get_injuries` records take `athlete_id` from the player-page links when ESPN's feed sends no `athlete.id`, or an empty one. Only `/player/` links count, so a team link can never supply the id. `type` reads `details.type` (for example `Toe`) and falls back to the previous field.
+- **nfl: `get_leaders` defaults to the current season.** Without `season`, it read ESPN's all-time career leaders. It now reads the current regular season, and steps back a year while ESPN does not serve that season yet. A named season is never substituted.
+- **cbb: standings stay on the season in progress.** CBB standings repeat `wins`/`losses` for each split, and the last pair hid games already played, so `get_standings` fell back to the previous season. The first pair, the season total, is read now.
+- **mlb: roster `bats_throws`.** It read NHL's `hand` field and was always `""`. It is built from ESPN's `bats` and `throws`, for example `L/R`, or `B/R` for a switch hitter.
+- **nba: tool descriptions.** `season` says it is the year the season ends and can be omitted, `team_id` says to get it from `get_teams` instead of guessing, and the scoreboard says it carries team scores only, with player stats in `get_game_summary`.
+
 ## [0.40.4]
 
 ### Added

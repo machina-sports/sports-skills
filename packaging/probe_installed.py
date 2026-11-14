@@ -14,7 +14,7 @@ import sys
 import types
 from pathlib import Path
 
-VERSION = "0.40.4"
+VERSION = "0.40.5"
 SCOREBOARD_SPORTS = ("nba", "nfl", "mlb", "nhl", "wnba", "cfb", "cbb")
 POLYMARKET_TODAYS_PARAMS = ("offset", "date", "timezone", "sports_market_types", "compact")
 GLEAGUE_SOURCES = ("__init__.py", "_cdn.py", "_connector.py", "_stats.py")
@@ -247,6 +247,74 @@ if liga_mx["_fduk_extra_season_csv"](extra, "2627").splitlines() != [
     "19/07/2026,UNAM Pumas,Club America,1,0,H",
 ]:
     raise SystemExit("football Liga MX season slice drift")
+
+# _espn_base is stdlib-only and already loaded through the cbb connector. Its
+# installed helpers read team news from the league feed, take injury ids only
+# from player links, and read the team-schedule shape of broadcasts and records.
+espn_base = importlib.import_module("sports_skills._espn_base")
+if Path(espn_base.__file__).resolve() != root / "sports_skills/_espn_base.py":
+    raise SystemExit(f"espn base not installed: {espn_base.__file__}")
+tagged = {
+    "categories": [{"type": "team", "sportId": 46, "teamId": 13}, {"type": "team", "sportId": 3170, "teamId": 99}]
+}
+if espn_base.article_team_ids(tagged, 46) != {"13"}:
+    raise SystemExit("team news tag drift")
+news_calls = []
+
+
+def _news_feed(sport_path, resource="scoreboard", params=None, **kwargs):
+    news_calls.append((resource, params))
+    other = {"categories": [{"type": "team", "sportId": 46, "teamId": 2}]}
+    return {"articles": [{"headline": "ours", **tagged}, {"headline": "other", **other}]}
+
+
+espn_request = espn_base.espn_request
+espn_base.espn_request = _news_feed
+news = espn_base.espn_news("basketball/nba", 46, "13", lambda data: [a["headline"] for a in data["articles"]])
+espn_base.espn_request = espn_request
+if news_calls != [("news", {"team": "13"})] or news.get("articles") != ["ours"]:
+    raise SystemExit(f"team news feed drift: {news_calls!r} {news!r}")
+team_link = {"href": "https://www.espn.com/nhl/team/_/id/25/dallas-stars"}
+player_link = {"href": "https://www.espn.com/nhl/player/_/id/4024854"}
+if (
+    espn_base._injured_athlete_id({"links": [team_link, player_link]}),
+    espn_base._injured_athlete_id({"id": "", "links": [team_link]}),
+) != ("4024854", None):
+    raise SystemExit("injury athlete id drift")
+schedule_competition = {"broadcasts": [{"media": {"shortName": "ESPN"}}, {"names": ["TNT"]}]}
+if espn_base.broadcast_names(schedule_competition) != ["ESPN", "TNT"]:
+    raise SystemExit("schedule broadcast drift")
+if (
+    espn_base.competitor_record({"record": [{"type": "total", "displayValue": "1-0"}]}),
+    espn_base.competitor_record({"records": [{"type": "total", "summary": "9-3"}]}),
+) != ("1-0", "9-3"):
+    raise SystemExit("schedule record drift")
+
+# mlb._connector is stdlib-only at module load too: roster rows build bats/throws
+# from ESPN's separate `bats` and `throws`.
+mlb_package = types.ModuleType("sports_skills.mlb")
+mlb_package.__path__ = [str(root / "sports_skills/mlb")]
+mlb_package.__package__ = "sports_skills.mlb"
+sys.modules["sports_skills.mlb"] = mlb_package
+mlb = importlib.import_module("sports_skills.mlb._connector")
+if Path(mlb.__file__).resolve() != root / "sports_skills/mlb/_connector.py":
+    raise SystemExit(f"mlb connector not installed: {mlb.__file__}")
+hands = {"bats": {"abbreviation": "B"}, "throws": {"abbreviation": "R"}}
+if (mlb._parse_athlete(hands)["bats_throws"], mlb._parse_athlete({})["bats_throws"]) != ("B/R", ""):
+    raise SystemExit("mlb bats/throws drift")
+for name in [name for name in sys.modules if name == "sports_skills.mlb" or name.startswith("sports_skills.mlb.")]:
+    del sys.modules[name]
+
+# nba get_event_summary ships in the installed connector and the CLI registry.
+nba_tree = ast.parse((root / "sports_skills/nba/_connector.py").read_text(encoding="utf-8"))
+if "get_event_summary" not in {node.name for node in nba_tree.body if isinstance(node, ast.FunctionDef)}:
+    raise SystemExit("nba get_event_summary missing from the connector")
+# The nba registry spreads shared entries (`**_SHAPING`), so only this command's
+# entry is evaluated.
+nba_cli = {key.value: value for key, value in zip(modules["nba"].keys, modules["nba"].values) if key is not None}
+event_summary_cli = nba_cli.get("get_event_summary")
+if event_summary_cli is None or ast.literal_eval(event_summary_cli) != {"required": ["event_id"]}:
+    raise SystemExit("nba get_event_summary CLI registry drift")
 
 expected_signatures = {
     "to_successor_envelope": "(*, operation, request_bytes, operation_arguments_bytes, output_mode, consumer_tier) -> bytes",
