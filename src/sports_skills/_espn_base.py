@@ -1568,6 +1568,7 @@ def normalize_boxscore(boxscore):
                 athlete = ath.get("athlete", {})
                 athletes_stats.append({
                     "name": athlete.get("displayName", ""),
+                    "jersey": athlete.get("jersey", ""),
                     "position": athlete.get("position", {}).get("abbreviation", ""),
                     "starter": ath.get("starter", False),
                     "did_not_play": ath.get("didNotPlay", False),
