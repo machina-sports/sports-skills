@@ -95,7 +95,7 @@ def test_boxscore_reads_players_not_teams():
                     "labels": ["PTS", "REB"],
                     "athletes": [
                         {
-                            "athlete": {"displayName": "A. Player", "position": {"abbreviation": "G"}},
+                            "athlete": {"displayName": "A. Player", "jersey": "30", "position": {"abbreviation": "G"}},
                             "stats": ["25", "5"],
                             "starter": True,
                         }
@@ -111,6 +111,8 @@ def test_boxscore_reads_players_not_teams():
     # The starter / did_not_play flags must be mapped through, not dropped.
     assert athletes[0]["starter"] is True
     assert athletes[0]["did_not_play"] is False
+    # The number worn in this game: a team's roster today is wrong for an old game.
+    assert athletes[0]["jersey"] == "30"
 
 
 def test_scoring_plays_prefers_curated_over_derived():
