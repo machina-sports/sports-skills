@@ -586,6 +586,16 @@ def get_schedule(request_data):
     season = params.get("season")
     week = params.get("week")
     group = params.get("group")
+    if season and not week:
+        # ESPN truncates a whole season to its first 300 games, and a larger
+        # limit makes it fall back to 25.
+        return {
+            "error": True,
+            "message": (
+                "get_schedule cannot return a whole college football season: pass a week with the season, "
+                "or use get_team_schedule for a team's full season."
+            ),
+        }
 
     espn_params = {}
     if season:

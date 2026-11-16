@@ -109,11 +109,23 @@ def _normalize_competitor(comp):
     }
 
 
+_STATE_STATUS = {"pre": "not_started", "in": "live", "post": "closed"}
+
+
+def _status(status_type):
+    """Map ESPN's status name; cricket statuses such as "Stumps" carry only a ``state``."""
+    name = status_type.get("name", "")
+    if name:
+        return ESPN_STATUS_MAP.get(name, name)
+    return _STATE_STATUS.get(status_type.get("state", ""), "")
+
+
 def _normalize_event(event):
     """Normalize one scoreboard event (a cricket match)."""
     competitions = event.get("competitions", [])
     comp = competitions[0] if competitions else {}
-    status_type = comp.get("status", {}).get("type", {})
+    status = comp.get("status", {})
+    status_type = status.get("type", {})
     venue = comp.get("venue", {})
     notes = comp.get("notes", [])
     return {
@@ -122,10 +134,12 @@ def _normalize_event(event):
         "short_name": event.get("shortName", ""),
         "date": event.get("date", ""),
         "description": comp.get("description", ""),
-        "status": ESPN_STATUS_MAP.get(status_type.get("name", ""), status_type.get("name", "")),
+        "status": _status(status_type),
         "status_detail": status_type.get("shortDetail", status_type.get("detail", "")),
         "venue": venue.get("fullName", venue.get("displayName", "")),
-        "note": notes[0].get("text", "") if notes else "",
+        # ESPN now puts the match situation ("Mymensingh lead by 142 runs") in
+        # ``status.summary`` and leaves ``notes`` empty.
+        "note": notes[0].get("text", "") if notes else status.get("summary", ""),
         "competitors": [_normalize_competitor(c) for c in comp.get("competitors", [])],
     }
 

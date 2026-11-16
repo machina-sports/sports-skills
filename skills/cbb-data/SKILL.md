@@ -74,7 +74,7 @@ Derive the current year from the system prompt's date (e.g., `currentDate: 2026-
 | `get_news` | College basketball news |
 | `get_play_by_play` | Full play-by-play for a game |
 | `get_win_probability` | Win probability chart data |
-| `get_schedule` | Schedule for a date or season |
+| `get_schedule` | Schedule for a date (use `get_team_schedule` for a full season) |
 | `get_futures` | Futures/odds markets (National Championship, etc.) |
 | `get_team_stats` | Team statistical profile |
 | `get_player_stats` | Player statistical profile |

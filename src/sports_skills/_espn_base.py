@@ -1317,6 +1317,10 @@ def normalize_injuries(data):
         for inj in injury_entries if isinstance(injury_entries, list) else []:
             if not isinstance(inj, dict):
                 continue
+            # ESPN's NFL report lists players cleared to play as "Active"
+            # (about 600 a week); they are not injuries.
+            if inj.get("status") == "Active":
+                continue
             athlete = _as_dict(inj.get("athlete"))
             details = _as_dict(inj.get("details"))
             inj_type = _as_dict(inj.get("type"))
@@ -1552,17 +1556,33 @@ def normalize_boxscore(boxscore):
         team = bt.get("team", {})
         tid = str(team.get("id", ""))
 
-        # Team-aggregate stats (flat displayValue list)
+        # Team-aggregate stats: a flat displayValue list, except MLB, which
+        # groups them ({"name": "batting", "stats": [...]}). Grouped stats are
+        # keyed by ESPN's name: abbreviations repeat (fielding "PO" is both
+        # putouts and pickoffs).
         team_stats = {}
         for s in bt.get("statistics", []):
             label = s.get("label") or s.get("name", "")
-            if label:
+            if not label:
+                continue
+            if isinstance(s.get("stats"), list):
+                team_stats[label] = {
+                    stat.get("name", ""): stat.get("displayValue", "")
+                    for stat in s["stats"]
+                    if isinstance(stat, dict)
+                }
+            else:
                 team_stats[label] = s.get("displayValue", "")
 
         # Per-player stat tables (from the parallel "players" array)
         statistics = []
         for stat_group in players_by_team.get(tid, {}).get("statistics", []):
-            labels = stat_group.get("labels", [])
+            # ESPN labels the NHL shootout-goals column "SOG", which reads as
+            # shots on goal (that column is "S"); use its key instead.
+            labels = list(stat_group.get("labels", []))
+            for i, key in enumerate(stat_group.get("keys", [])[: len(labels)]):
+                if (labels[i], key) == ("SOG", "shootoutGoals"):
+                    labels[i] = key
             athletes_stats = []
             for ath in stat_group.get("athletes", []):
                 athlete = ath.get("athlete", {})
@@ -1576,7 +1596,8 @@ def normalize_boxscore(boxscore):
                 })
             totals = stat_group.get("totals", [])
             statistics.append({
-                "category": stat_group.get("name", ""),
+                # MLB names its tables in "type" (batting, pitching), not "name".
+                "category": stat_group.get("name") or stat_group.get("type", ""),
                 "labels": labels,
                 "athletes": athletes_stats,
                 "totals": dict(zip(labels, totals)) if totals else {},

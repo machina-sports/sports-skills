@@ -586,12 +586,20 @@ def get_schedule(request_data):
     date = params.get("date")
     season = params.get("season")
     group = params.get("group")
+    if season and not date:
+        # A Division I season is thousands of games; ESPN truncates it to the
+        # first 200 (at most 1,000 with a limit).
+        return {
+            "error": True,
+            "message": (
+                "get_schedule cannot return a whole college basketball season: pass a date, "
+                "or use get_team_schedule for a team's full season."
+            ),
+        }
 
     espn_params = {}
     if date:
         espn_params["dates"] = date.replace("-", "")
-    elif season:
-        espn_params["dates"] = str(season)
     # ESPN's un-grouped scoreboard is Top-25 games only — 1 game on an ordinary
     # Friday instead of ~24. Default to group 50 (all of Division I) so the
     # skill returns what its name says; callers can still pass group explicitly.
@@ -783,7 +791,8 @@ def get_player_stats(request_data):
 # BPI field mappings: ESPN returns positional arrays, we map to named fields.
 _BPI_FIELDS = [
     "bpi", "bpi_rank", "rank_change", "bpi_offense", "bpi_defense",
-    "win_pct", "sos_rank", "wins", "losses", "proj_wins", "proj_losses",
+    # ESPN's "chancewinconfortie": the chance to win or tie the conference title.
+    "conf_title_pct", "sos_rank", "wins", "losses", "proj_wins", "proj_losses",
     "conf_wins", "conf_losses", "proj_conf_wins", "proj_conf_losses",
 ]
 
