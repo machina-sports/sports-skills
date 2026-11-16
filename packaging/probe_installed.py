@@ -14,7 +14,7 @@ import sys
 import types
 from pathlib import Path
 
-VERSION = "0.40.5"
+VERSION = "0.40.6"
 SCOREBOARD_SPORTS = ("nba", "nfl", "mlb", "nhl", "wnba", "cfb", "cbb")
 POLYMARKET_TODAYS_PARAMS = ("offset", "date", "timezone", "sports_market_types", "compact")
 GLEAGUE_SOURCES = ("__init__.py", "_cdn.py", "_connector.py", "_stats.py")
@@ -315,6 +315,28 @@ nba_cli = {key.value: value for key, value in zip(modules["nba"].keys, modules["
 event_summary_cli = nba_cli.get("get_event_summary")
 if event_summary_cli is None or ast.literal_eval(event_summary_cli) != {"required": ["event_id"]}:
     raise SystemExit("nba get_event_summary CLI registry drift")
+
+# The installed ESPN helpers read logos from `logos[].href`, the season of a
+# dated scoreboard from `leagues[0].season`, and keep `limit` leaders per category.
+if (espn_base.team_logo({"logos": [{"href": "https://a.espncdn.com/x.png"}]}), espn_base.team_logo({})) != (
+    "https://a.espncdn.com/x.png",
+    "",
+):
+    raise SystemExit("team logo drift")
+if espn_base.scoreboard_season({"leagues": [{"season": {"year": 2026, "type": {"type": 2}}}]}) != {
+    "year": 2026,
+    "type": 2,
+}:
+    raise SystemExit("scoreboard season drift")
+if (espn_base.leaders_limit({}), espn_base.leaders_limit({"limit": "3"})[0], espn_base.leaders_limit({"limit": "0"})[0]) != (
+    (10, None),
+    3,
+    None,
+):
+    raise SystemExit("leaders limit drift")
+category = {"name": "points", "leaders": [{"athlete": {"id": i, "displayName": f"P{i}"}, "value": i} for i in range(5)]}
+if [leader["rank"] for leader in espn_base._resolve_leaders([category], limit=3)[0]["leaders"]] != [1, 2, 3]:
+    raise SystemExit("leaders rank/limit drift")
 
 expected_signatures = {
     "to_successor_envelope": "(*, operation, request_bytes, operation_arguments_bytes, output_mode, consumer_tier) -> bytes",

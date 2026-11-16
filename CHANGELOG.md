@@ -1,3 +1,27 @@
+## [0.40.6]
+
+### Changed
+- **`get_leaders` returns 10 leaders per category by default.** ESPN names each leader only by a link, one request per athlete, so a call made 175 to 251 requests. NFL, NBA, WNBA, NHL and MLB `get_leaders` take a new `limit` (CLI `--limit`); pass `limit=25` for the old depth. Team names come from one league-wide request, so NFL leaders now take 109 requests and NBA 91. CBB `get_futures` drops from 131 requests to 12.
+- **cbb: BPI `win_pct` is renamed `conf_title_pct`.** The column is ESPN's chance to win or tie the conference title, not a win percentage.
+- **nhl: box-score `SOG` is renamed `shootoutGoals`.** ESPN sends shootout goals under that label, not shots on goal.
+- **cfb, cbb: `get_schedule` with only a season returns an error** that points to `get_team_schedule`, as NFL already does. ESPN returns only a slice of a college season, so the old answer was silently incomplete.
+- **injuries: players listed as `Active` are left out.** ESPN's NFL feed lists about 600 players already cleared to play.
+
+### Fixed
+- **standings: ESPN's renamed stats.** Last ten games, division record, NHL regulation wins and goal difference are read again in NBA, NHL, WNBA and MLB standings.
+- **summaries: team logos and records.** Team `logo` is filled in summaries and team schedules in all seven ESPN leagues (ESPN sends `logos[].href` there), and summary `record` reads like `11-3` instead of ESPN's raw list.
+- **scoreboards: `season` and `day` for a dated slate.** ESPN sends the season only in `leagues[0].season` for an explicit date. CFB and CBB rankings report `season` and `week` from `latestSeason`/`latestWeek`.
+- **leaders: `rank`.** ESPN's leaders carry no rank, and every rank was empty. It is the leader's position.
+- **mlb: game summary team stats.** ESPN groups them now; `team_stats` holds 59 batting, 77 pitching and 35 fielding stats per team, keyed by ESPN's stat name. Player groups read `type`.
+- **wnba: season schedule.** `get_schedule` with a season returns every game (374) instead of ESPN's default 100.
+- **nba: `get_event_summary`.** The event carries its name, short name, venue and odds.
+- **play-by-play: placeholder coordinates.** NBA, WNBA and CBB plays drop ESPN's `-214748340` placeholder shot coordinates.
+- **football: event summary venue and lineup formation.**
+- **golf: player date of birth, status and birthplace.**
+- **tennis: past winners and player country.** ESPN's new `previousWinners` shape and `citizenshipCountry` are read.
+- **cricket: match status and note.** ESPN's status sends `state` and moves the note to `summary`; both are read.
+- **box scores: jersey number.** Box-score player rows keep `jersey`.
+
 ## [0.40.5]
 
 ### Added
