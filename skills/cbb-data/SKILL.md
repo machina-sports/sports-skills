@@ -78,6 +78,7 @@ Derive the current year from the system prompt's date (e.g., `currentDate: 2026-
 | `get_futures` | Futures/odds markets (National Championship, etc.) |
 | `get_team_stats` | Team statistical profile |
 | `get_player_stats` | Player statistical profile |
+| `get_player_game_log` | One player's games in a season (opponent, home/away, result, stat line) |
 | `get_ncaa_scoreboard` | Official NCAA scoreboard — D1, D2, and D3 |
 | `get_ncaa_schedule` | Which dates have games (official index) |
 | `get_ncaa_game` | Official NCAA game information |

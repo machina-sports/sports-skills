@@ -73,6 +73,9 @@ metadata:
       - name: get_player_stats
         summary: Player statistical profile.
         returns: stats[]
+      - name: get_player_game_log
+        summary: One player's games in a season — opponent, home/away, result, stat line.
+        returns: games[]
     # The agent in the customer build sandbox can call `machina sports
     # cfb <command> --json` directly to capture a live sample output —
     # we don't ship static fixtures here so the public repo stays
@@ -154,6 +157,7 @@ Derive the current year from the system prompt's date (e.g., `currentDate: 2026-
 | `get_futures` | Futures/odds markets (National Championship, Heisman, etc.) |
 | `get_team_stats` | Team statistical profile |
 | `get_player_stats` | Player statistical profile |
+| `get_player_game_log` | One player's games in a season (opponent, home/away, result, stat line) |
 | `get_ncaa_scoreboard` | Official NCAA scoreboard — FBS and FCS |
 | `get_ncaa_schedule` | Which weeks have games (official index) |
 | `get_ncaa_game` | Official NCAA game information |

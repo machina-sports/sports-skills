@@ -24,6 +24,7 @@ from importlib.metadata import PackageNotFoundError
 from importlib.metadata import version as _pkg_version
 
 from sports_skills import _replay
+from sports_skills._shaping import ShapingError, shape_rows
 
 logger = logging.getLogger("sports_skills._espn_base")
 
@@ -533,6 +534,127 @@ def espn_fitt_request(sport_path, resource, params=None):
         return data
     except (json.JSONDecodeError, ValueError):
         return {"error": True, "message": "ESPN FITT API returned invalid JSON"}
+
+
+#: ``season_type`` values accepted by ``espn_player_game_log``.
+_GAME_LOG_SEASON_TYPES = ("regular", "postseason", "preseason", "all")
+
+#: Columns ``fields`` always keeps on a game-log row.
+GAME_LOG_IDENTITY = ("game_id", "game_date", "team_abbreviation", "opponent")
+
+
+def _game_log_season_type(display_name):
+    """``"2025 Postseason"`` -> postseason; ``"2024-25 Season"`` -> regular."""
+    name = str(display_name or "")
+    if "Postseason" in name:
+        return "postseason"
+    if "Preseason" in name:
+        return "preseason"
+    if name.endswith("Season"):
+        return "regular"
+    return "other"
+
+
+def espn_player_game_log(sport_path, params):
+    """One player's season, game by game, from ESPN's athlete gamelog.
+
+    One request: ``site.web.api.espn.com/apis/common/v3/sports/{sport_path}/athletes/{id}/gamelog``.
+    Each row has the game, the opponent, home/away, the result and score from the
+    player's side, and ``stats`` keyed by ESPN's stat names. The stat columns are
+    ESPN's for the player (a college quarterback has passing and rushing), so they
+    differ by sport and position. Rows are oldest first; ``sort_by``, ``descending``,
+    ``limit`` and ``fields`` shape them.
+    """
+    player_id = str(params.get("player_id") or "").strip()
+    if not player_id.isdigit():
+        return {"error": True, "message": "player_id is required: ESPN's numeric athlete id, from get_team_roster."}
+    season = params.get("season")
+    if season not in (None, ""):
+        try:
+            season = int(season)
+        except (TypeError, ValueError):
+            return {"error": True, "message": f"Invalid season {season!r}: use a year such as 2025."}
+    else:
+        season = None
+    season_type = str(params.get("season_type") or "regular").strip().lower()
+    if season_type not in _GAME_LOG_SEASON_TYPES:
+        return {
+            "error": True,
+            "message": f"Invalid season_type {params.get('season_type')!r}. Valid values: {', '.join(_GAME_LOG_SEASON_TYPES)}",
+        }
+
+    url = f"https://site.web.api.espn.com/apis/common/v3/sports/{sport_path}/athletes/{player_id}/gamelog"
+    if season is not None:
+        url += "?" + urllib.parse.urlencode({"season": season})
+    data = _cache_get(url)
+    if data is None:
+        raw, err = _http_fetch(url, headers={"User-Agent": _USER_AGENT}, rate_limiter=_espn_rate_limiter)
+        if err:
+            if err.get("status_code") == 404:
+                return {"error": True, "message": f"ESPN has no player {player_id} here. Get ids from get_team_roster."}
+            return err
+        try:
+            data = json.loads(raw.decode())
+        except (json.JSONDecodeError, ValueError):
+            return {"error": True, "message": "ESPN gamelog returned invalid JSON"}
+        _cache_set(url, data, ttl=300)
+
+    data = _as_dict(data)
+    names = data.get("names") if isinstance(data.get("names"), list) else []
+    events = _as_dict(data.get("events"))
+    games = []
+    for group in data.get("seasonTypes") or []:
+        group_type = _game_log_season_type(_as_dict(group).get("displayName"))
+        if season_type != "all" and group_type != season_type:
+            continue
+        for category in _as_dict(group).get("categories") or []:
+            for line in _as_dict(category).get("events") or []:
+                event = _as_dict(events.get(str(_as_dict(line).get("eventId"))))
+                if not event:
+                    continue
+                opponent = _as_dict(event.get("opponent"))
+                home = event.get("homeTeamId") is not None and event.get("homeTeamId") != opponent.get("id")
+                ours, theirs = (
+                    (event.get("homeTeamScore"), event.get("awayTeamScore"))
+                    if home
+                    else (event.get("awayTeamScore"), event.get("homeTeamScore"))
+                )
+                stats = line.get("stats") if isinstance(line.get("stats"), list) else []
+                games.append(
+                    {
+                        "game_id": str(event.get("id", "")),
+                        "game_date": event.get("gameDate", ""),
+                        "team_abbreviation": _as_dict(event.get("team")).get("abbreviation", ""),
+                        "opponent": opponent.get("abbreviation", ""),
+                        "opponent_id": str(opponent.get("id", "")),
+                        "opponent_name": opponent.get("displayName", ""),
+                        "home_away": "home" if home else "away",
+                        "result": event.get("gameResult", ""),
+                        "team_score": ours,
+                        "opponent_score": theirs,
+                        "season_type": group_type,
+                        "note": event.get("eventNote", ""),
+                        "stats": dict(zip(names, stats)),
+                    }
+                )
+    games.sort(key=lambda g: (g["game_date"], g["game_id"]))
+
+    try:
+        games, shaping = shape_rows(games, params, identity=GAME_LOG_IDENTITY, nested="stats")
+    except ShapingError as exc:
+        return {"error": True, "message": str(exc)}
+    seasons = [f for f in data.get("filters") or [] if _as_dict(f).get("name") == "season"]
+    result = {
+        "player_id": player_id,
+        "season": season if season is not None else (seasons[0].get("value", "") if seasons else ""),
+        "season_type": season_type,
+        "games": games,
+        "count": len(games),
+        **shaping,
+    }
+    if not games:
+        result["warnings"] = [f"no {season_type} games for player {player_id} in this season"]
+    return result
 
 
 #: Seconds to cache the summary of a game in progress. A drive can finish inside

@@ -25,6 +25,9 @@ from sports_skills.wnba._connector import (
     get_play_by_play as _get_play_by_play,
 )
 from sports_skills.wnba._connector import (
+    get_player_game_log as _get_player_game_log,
+)
+from sports_skills.wnba._connector import (
     get_player_stats as _get_player_stats,
 )
 from sports_skills.wnba._connector import (
@@ -217,6 +220,51 @@ def get_player_stats(
         _get_player_stats(
             _params(
                 player_id=player_id, season_year=season_year, season_type=season_type
+            )
+        )
+    )
+
+
+def get_player_game_log(
+    *,
+    player_id: str,
+    season: int | None = None,
+    season_type: str | None = None,
+    sort_by: str | None = None,
+    descending: bool | None = None,
+    limit: int | None = None,
+    fields: str | None = None,
+) -> dict:
+    """Get a WNBA player's game-by-game log for one season via ESPN.
+
+    One row per game, oldest first: game_id, game_date, team_abbreviation,
+    opponent (abbreviation), opponent_id, opponent_name, home_away, result
+    ("W"/"L"), team_score and opponent_score (the player's side first),
+    season_type, note (e.g. a bowl or tournament round), and the game's stat
+    line in stats, keyed by ESPN's stat names. The stat columns are the ones
+    ESPN keeps for this player, so they differ by position.
+
+    Args:
+        player_id: ESPN athlete ID. Find it with get_team_roster.
+        season: Season year (e.g. 2025). Defaults to the current season.
+        season_type: "regular" (default), "postseason", "preseason" or "all".
+        sort_by: Optional column to sort rows by, e.g. points (stat keys are
+            addressable directly). Numeric-aware; missing values sort last.
+        descending: Sort direction when sort_by is given. Defaults to true.
+        limit: Optional max rows to return, applied after sort_by.
+        fields: Optional comma-separated columns to keep, e.g. "result,points".
+            Always keeps game_id, game_date, team_abbreviation, opponent. Unknown names return the valid columns.
+    """
+    return wrap(
+        _get_player_game_log(
+            _params(
+                player_id=player_id,
+                season=season,
+                season_type=season_type,
+                sort_by=sort_by,
+                descending=descending,
+                limit=limit,
+                fields=fields,
             )
         )
     )

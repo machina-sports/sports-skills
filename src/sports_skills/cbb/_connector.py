@@ -18,6 +18,7 @@ from sports_skills._espn_base import (
     espn_core_request,
     espn_fitt_request,
     espn_news,
+    espn_player_game_log,
     espn_request,
     espn_summary,
     espn_team_schedule,
@@ -802,6 +803,11 @@ _TOURNAMENT_FIELDS = [
     "championship_pct", "champ_game_pct", "final_four_pct",
     "elite_eight_pct", "sweet_sixteen_pct", "round_of_32_pct",
 ]
+
+
+def get_player_game_log(request_data):
+    """Get a college basketball player's game-by-game log for one season."""
+    return espn_player_game_log(SPORT_PATH, request_data.get("params", {}))
 
 
 def _normalize_bpi_team(team_entry):

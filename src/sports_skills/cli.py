@@ -444,6 +444,7 @@ _REGISTRY = {
         "get_futures": {"optional": ["limit", "season_year"]},
         "get_team_stats": {"required": ["team_id"], "optional": ["season_year", "season_type"]},
         "get_player_stats": {"required": ["player_id"], "optional": ["season_year", "season_type"]},
+        "get_player_game_log": {"required": ["player_id"], "optional": ["season", "season_type", *_SHAPING]},
     },
     "nhl": {
         "get_scoreboard": {"optional": ["date"]},
@@ -538,6 +539,7 @@ _REGISTRY = {
         "get_futures": {"optional": ["limit", "season_year"]},
         "get_team_stats": {"required": ["team_id"], "optional": ["season_year", "season_type"]},
         "get_player_stats": {"required": ["player_id"], "optional": ["season_year", "season_type"]},
+        "get_player_game_log": {"required": ["player_id"], "optional": ["season", "season_type", *_SHAPING]},
         "get_ncaa_scoreboard": {"required": ["week"], "optional": ["division", "season"]},
         "get_ncaa_schedule": {"optional": ["division", "season"]},
         "get_ncaa_game": {"required": ["game_id"]},
@@ -561,6 +563,7 @@ _REGISTRY = {
         "get_futures": {"optional": ["limit", "season_year"]},
         "get_team_stats": {"required": ["team_id"], "optional": ["season_year", "season_type"]},
         "get_player_stats": {"required": ["player_id"], "optional": ["season_year", "season_type"]},
+        "get_player_game_log": {"required": ["player_id"], "optional": ["season", "season_type", *_SHAPING]},
         "get_power_index": {"optional": ["team_id", "limit", "page"]},
         "get_tournament_projections": {"optional": ["limit"]},
         "compare_teams": {"required": ["team_a_id", "team_b_id"]},
