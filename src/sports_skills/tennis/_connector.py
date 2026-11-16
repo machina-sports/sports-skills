@@ -174,9 +174,12 @@ def _normalize_tournament(espn_event, include_matches=True):
     prev_winners = []
     for w in espn_event.get("previousWinners", []):
         athlete = w.get("athlete", {})
+        # ESPN now sends the winner's name at the top level with the draw in
+        # ``type`` ({"displayName": "Jannik Sinner", "type": {"text": "Men's Singles"}}).
         prev_winners.append({
             "year": w.get("season", ""),
-            "name": athlete.get("displayName", ""),
+            "name": w.get("displayName") or athlete.get("displayName", ""),
+            "draw": (w.get("type") or {}).get("text", ""),
         })
     if prev_winners:
         tournament["previous_winners"] = prev_winners
@@ -455,7 +458,7 @@ def get_player_info(request_data):
         "name": data.get("displayName", data.get("fullName", "")),
         "first_name": data.get("firstName", ""),
         "last_name": data.get("lastName", ""),
-        "country": birth.get("country", ""),
+        "country": birth.get("country") or (data.get("citizenshipCountry") or {}).get("name", ""),
         "birthplace": birth.get("summary", ""),
         "date_of_birth": data.get("dateOfBirth", ""),
         "age": data.get("age", ""),

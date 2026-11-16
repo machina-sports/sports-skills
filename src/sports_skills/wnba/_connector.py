@@ -533,6 +533,8 @@ def get_schedule(request_data):
         espn_params["dates"] = date.replace("-", "")
     if season:
         espn_params["dates"] = str(season)
+        # ESPN returns 100 events unless asked for more; a season is ~375.
+        espn_params["limit"] = 1000
 
     data = espn_request(SPORT_PATH, "scoreboard", espn_params or None)
     if data.get("error"):
