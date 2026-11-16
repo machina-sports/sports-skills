@@ -172,14 +172,15 @@ def get_game_summary(*, event_id: str) -> dict:
     return wrap(_get_game_summary(_params(event_id=event_id)))
 
 
-def get_leaders(*, season: int | None = None) -> dict:
+def get_leaders(*, season: int | None = None, limit: int | None = None) -> dict:
     """Get NBA statistical leaders (points, rebounds, assists, etc.).
 
     Args:
         season: The year the season ends: 2027 means the 2026-27 season. Omit it for the
             current season; set it only when a past season is asked for.
+        limit: Leaders per category. Defaults to 10.
     """
-    return wrap(_get_leaders(_params(season=season)))
+    return wrap(_get_leaders(_params(season=season, limit=limit)))
 
 
 def get_news(*, team_id: str | None = None) -> dict:

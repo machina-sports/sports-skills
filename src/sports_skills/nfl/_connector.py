@@ -27,6 +27,7 @@ from sports_skills._espn_base import (
     event_season_type,
     fetch_season,
     fill_team_divisions,
+    leaders_limit,
     normalize_boxscore,
     normalize_core_stats,
     normalize_depth_chart,
@@ -651,10 +652,13 @@ def get_leaders(request_data):
     """
     params = request_data.get("params", {})
     season = params.get("season")
+    limit, limit_error = leaders_limit(params)
+    if limit_error:
+        return limit_error
     explicit = season not in (None, "")
 
     def load(year):
-        cache_key = f"nfl_leaders:{year}"
+        cache_key = f"nfl_leaders:{year}:{limit}"
         cached = _cache_get(cache_key)
         if cached is not None:
             return cached
@@ -667,7 +671,7 @@ def get_leaders(request_data):
         except (json.JSONDecodeError, ValueError):
             return {"error": True, "message": "ESPN core API returned invalid JSON"}
         result = {
-            "categories": _resolve_leaders(data.get("categories", [])),
+            "categories": _resolve_leaders(data.get("categories", []), limit),
             "season": data.get("season", {}).get("year", year),
         }
         _cache_set(cache_key, result, ttl=300)

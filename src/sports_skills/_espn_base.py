@@ -1183,10 +1183,39 @@ def fetch_season(loader, season_year, explicit):
     return fallback, prior, note
 
 
+_TEAM_REF = re.compile(r"/sports/([^/?]+)/leagues/([^/?]+)/(?:seasons/\d+/)?teams/(\d+)")
+
+
+def _league_team_names(sport, league):
+    """``{team_id: displayName}`` for a league from one site-API teams request (cached)."""
+    cache_key = f"league_team_names:{sport}/{league}"
+    cached = _cache_get(cache_key)
+    if cached is not None:
+        return cached
+    url = f"https://site.api.espn.com/apis/site/v2/sports/{sport}/{league}/teams?limit=1000"
+    raw, err = _http_fetch(url, headers={"User-Agent": _USER_AGENT}, rate_limiter=_espn_rate_limiter, max_retries=0)
+    names = {}
+    if not err:
+        try:
+            data = json.loads(raw.decode())
+            for sport_entry in data.get("sports", []):
+                for league_entry in sport_entry.get("leagues", []):
+                    for entry in league_entry.get("teams", []):
+                        team = entry.get("team", {}) if isinstance(entry, dict) else {}
+                        if team.get("id") and team.get("displayName"):
+                            names[str(team["id"])] = team["displayName"]
+        except (json.JSONDecodeError, ValueError, AttributeError):
+            names = {}
+    _cache_set(cache_key, names, ttl=3600 if names else 60)
+    return names
+
+
 def _resolve_team_ref(ref_url: str) -> str:
     """Follow an ESPN team $ref URL and return the team's displayName.
 
-    Same pattern as ``_resolve_athlete_ref`` but for team references.
+    Same pattern as ``_resolve_athlete_ref`` but for team references. A
+    futures market lists every team, so the name comes from the league's team
+    list (one request for all of them) before falling back to the ref itself.
     Returns empty string on any failure (safe fallback).
     """
     if not ref_url:
@@ -1196,6 +1225,13 @@ def _resolve_team_ref(ref_url: str) -> str:
     cached = _cache_get(cache_key)
     if cached is not None:
         return cached
+
+    match = _TEAM_REF.search(ref_url)
+    if match:
+        name = _league_team_names(match.group(1), match.group(2)).get(match.group(3), "")
+        if name:
+            _cache_set(cache_key, name, ttl=3600)
+            return name
 
     headers = {"User-Agent": _USER_AGENT}
     raw, err = _http_fetch(ref_url, headers=headers, timeout=5)
@@ -1863,16 +1899,36 @@ def normalize_football_drives(summary_data):
     }
 
 
-def _resolve_leaders(categories: list) -> list:
+def leaders_limit(params):
+    """``(limit, error)`` for get_leaders: leaders per category, default 10.
+
+    ESPN's core leaders name each athlete only by ``$ref``, one request per
+    athlete: 25-50 per category is about 250 requests for the NFL, 10 about 100.
+    """
+    limit = params.get("limit")
+    if limit in (None, ""):
+        return 10, None
+    try:
+        limit = int(limit)
+    except (TypeError, ValueError):
+        limit = 0
+    if limit < 1:
+        return None, {"error": True, "message": f"Invalid limit {params['limit']!r}: use a positive whole number."}
+    return limit, None
+
+
+def _resolve_leaders(categories: list, limit=None) -> list:
     """Normalize a list of ESPN core API leader categories.
 
     Handles the $ref athlete pattern and sport-agnostic value extraction.
     Returns a list of dicts with name, category, displayName, value, rank.
+    ``limit`` keeps the first N leaders of each category (and resolves only those).
     """
     result = []
     for cat in categories:
         leaders_list = []
-        for position, leader in enumerate(cat.get("leaders", []), 1):
+        leaders = cat.get("leaders", [])
+        for position, leader in enumerate(leaders[:limit] if limit else leaders, 1):
             athlete = leader.get("athlete", {})
             if isinstance(athlete, dict):
                 ref_url = athlete.get("$ref", "")

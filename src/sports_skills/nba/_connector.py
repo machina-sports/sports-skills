@@ -30,6 +30,7 @@ from sports_skills._espn_base import (
     event_season_type,
     fetch_season,
     fill_team_divisions,
+    leaders_limit,
     normalize_boxscore,
     normalize_core_stats,
     normalize_depth_chart,
@@ -592,12 +593,15 @@ def get_leaders(request_data):
     """Get NBA statistical leaders via ESPN core API."""
     params = request_data.get("params", {})
     season = params.get("season")
+    limit, limit_error = leaders_limit(params)
+    if limit_error:
+        return limit_error
 
     # Always use season-scoped URL with regular season type (2) for reliability.
     resolved = season or _end_year_season()
     url = f"https://sports.core.api.espn.com/v2/sports/basketball/leagues/nba/seasons/{resolved}/types/2/leaders"
 
-    cache_key = f"nba_leaders:{resolved}"
+    cache_key = f"nba_leaders:{resolved}:{limit}"
     cached = _cache_get(cache_key)
     if cached is not None:
         return cached
@@ -612,7 +616,7 @@ def get_leaders(request_data):
         return {"error": True, "message": "ESPN core API returned invalid JSON"}
 
     result = {
-        "categories": _resolve_leaders(data.get("categories", [])),
+        "categories": _resolve_leaders(data.get("categories", []), limit),
         "season": data.get("season", {}).get("year", resolved),
     }
     _cache_set(cache_key, result, ttl=300)
