@@ -1796,7 +1796,7 @@ def _normalize_espn_summary_lineups(summary):
     formations = {}
     # Coerce a possible null boxscore defensively (see _normalize_espn_summary_statistics).
     boxscore = summary.get("boxscore") or {}
-    for f in boxscore.get("form", []):
+    for f in boxscore.get("form") or []:
         tid = f.get("team", {}).get("id", "")
         formations[tid] = f.get("formationSummary", "")
     lineups = []
@@ -1824,7 +1824,8 @@ def _normalize_espn_summary_lineups(summary):
                         "abbreviation": team.get("abbreviation", ""),
                     },
                     "qualifier": ha_map.get(team_id, ""),
-                    "formation": formations.get(team_id, ""),
+                    # ESPN now leaves boxscore.form empty and sends the formation on the roster.
+                    "formation": formations.get(team_id, "") or roster.get("formation", ""),
                     "starting": starting,
                     "bench": bench,
                 }
@@ -3017,7 +3018,10 @@ def get_event_summary(request_data):
             slug = ESPN_TO_SLUG.get(espn_league, "")
             header = summary["header"]
             comps = header.get("competitions", [{}])
-            comp = comps[0] if comps else {}
+            comp = dict(comps[0]) if comps else {}
+            # The summary header has no venue; ESPN sends it in gameInfo.
+            if not comp.get("venue"):
+                comp["venue"] = (summary.get("gameInfo") or {}).get("venue") or {}
             event_data = {
                 "id": espn_eid,
                 "competitions": [comp],

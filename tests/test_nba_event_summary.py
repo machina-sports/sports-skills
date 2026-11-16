@@ -43,7 +43,11 @@ def test_it_returns_the_event_as_the_scoreboard_states_it_and_the_plays(reads):
     assert result["status"] is True
     data = result["data"]
     assert set(data) == {"event", "plays"}
-    assert data["event"] == _connector._normalize_event(summary()["header"])
+    assert data["event"] == _connector._normalize_event(_connector._summary_event(summary()))
+    # The header has no name or venue; they come from the teams and gameInfo.
+    assert data["event"]["name"] == "New York Knicks at San Antonio Spurs"
+    assert data["event"]["short_name"] == "NY @ SA"
+    assert data["event"]["venue"] == {"name": "Frost Bank Center", "city": "San Antonio", "state": "TX"}
     assert data["plays"] == _connector._normalize_plays(summary())
     assert data["event"]["id"] == EVENT_ID
     assert data["plays"]["count"] == len(data["plays"]["plays"]) > 0
