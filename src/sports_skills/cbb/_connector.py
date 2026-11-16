@@ -646,7 +646,8 @@ def _normalize_plays(summary_data):
             "shooting_play": p.get("shootingPlay", False),
         }
         coord = p.get("coordinate", {})
-        if coord and coord.get("x") is not None:
+        # Non-shot plays carry ESPN's placeholder (-214748340, -214748365), not a spot.
+        if coord and coord.get("x") is not None and abs(coord["x"]) < 1e6 and abs(coord.get("y") or 0) < 1e6:
             play["coordinate"] = {"x": coord.get("x"), "y": coord.get("y")}
         plays.append(play)
 

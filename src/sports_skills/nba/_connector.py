@@ -711,7 +711,8 @@ def _normalize_plays(summary_data):
             "shooting_play": p.get("shootingPlay", False),
         }
         coord = p.get("coordinate", {})
-        if coord and coord.get("x") is not None:
+        # Non-shot plays carry ESPN's placeholder (-214748340, -214748365), not a spot.
+        if coord and coord.get("x") is not None and abs(coord["x"]) < 1e6 and abs(coord.get("y") or 0) < 1e6:
             play["coordinate"] = {"x": coord.get("x"), "y": coord.get("y")}
         plays.append(play)
 
@@ -782,11 +783,33 @@ def get_event_summary(request_data):
     if not data or not data.get("header"):
         return {"error": True, "message": f"No summary data found for event {event_id}"}
 
-    result = {"event": _normalize_event(data["header"])}
+    result = {"event": _normalize_event(_summary_event(data))}
     plays = _normalize_plays(data)
     if not plays.get("error"):  # a game not yet played has an event and no plays
         result["plays"] = plays
     return result
+
+
+def _summary_event(summary):
+    """The summary header with what a scoreboard event carries and the header lacks.
+
+    The header has no name, short name or venue, and its odds are often empty:
+    ESPN sends the venue in ``gameInfo`` and the lines in ``pickcenter``.
+    """
+    header = dict(summary["header"])
+    comps = header.get("competitions") or [{}]
+    comp = dict(comps[0])
+    if not comp.get("venue"):
+        comp["venue"] = (summary.get("gameInfo") or {}).get("venue") or {}
+    if not comp.get("odds"):
+        comp["odds"] = summary.get("pickcenter") or []
+    header["competitions"] = [comp, *comps[1:]]
+    teams = {c.get("homeAway"): c.get("team") or {} for c in comp.get("competitors", [])}
+    away, home = teams.get("away"), teams.get("home")
+    if away and home:
+        header.setdefault("name", f"{away.get('displayName', '')} at {home.get('displayName', '')}")
+        header.setdefault("shortName", f"{away.get('abbreviation', '')} @ {home.get('abbreviation', '')}")
+    return header
 
 
 def get_win_probability(request_data):

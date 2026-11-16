@@ -485,20 +485,26 @@ def get_player_info(request_data):
 
     athlete = data.get("athlete", data)
     headshot = athlete.get("headshot", {})
+    status = athlete.get("status", "")
+    birth_place = athlete.get("birthPlace") or {}
 
     result = {
         "id": str(athlete.get("id", player_id)),
         "name": athlete.get("displayName", athlete.get("fullName", "")),
         "age": athlete.get("age", ""),
-        "date_of_birth": athlete.get("dateOfBirth", ""),
+        "date_of_birth": athlete.get("dateOfBirth") or athlete.get("displayDOB", ""),
         "citizenship": athlete.get("citizenship", ""),
-        "birthplace": athlete.get("birthPlace", {}).get("city", "") + ", " + athlete.get("birthPlace", {}).get("state", "") if athlete.get("birthPlace") else "",
+        # ESPN pads these ("Mississippi              ").
+        "birthplace": ", ".join(
+            part.strip() for part in (birth_place.get("city") or "", birth_place.get("state") or "") if part.strip()
+        ),
         "height": athlete.get("displayHeight", ""),
         "weight": athlete.get("displayWeight", ""),
         "turned_pro": athlete.get("turnedPro", ""),
         "college": athlete.get("college", {}).get("name", "") if isinstance(athlete.get("college"), dict) else str(athlete.get("college", "")),
         "headshot": headshot.get("href", "") if isinstance(headshot, dict) else "",
-        "status": athlete.get("status", ""),
+        # ESPN sends status as {"id", "name", "type", "abbreviation"}.
+        "status": status.get("name", "") if isinstance(status, dict) else status,
         "link": f"https://www.espn.com/golf/player/_/id/{player_id}",
     }
     _cache_set(cache_key, result, ttl=3600)
