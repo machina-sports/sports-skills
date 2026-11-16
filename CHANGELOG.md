@@ -1,3 +1,8 @@
+## [0.40.7]
+
+### Added
+- **wnba, cfb, cbb: `get_player_game_log`.** One player's season, game by game, from ESPN's athlete gamelog in one request. Each row has the game, `opponent`, `home_away`, `result`, `team_score` and `opponent_score` from the player's side, `season_type`, ESPN's `note` (bowl or tournament round), and `stats` keyed by ESPN's stat names, so a college quarterback's `passingYards` and `rushingYards` stay apart. `season_type` is `regular` (default), `postseason`, `preseason` or `all`, and `sort_by`, `descending`, `limit` and `fields` shape the rows as in the NBA, MLB and NHL game logs. Bad arguments, an unknown player and unknown columns return text errors. No existing output changes.
+
 ## [0.40.6]
 
 ### Changed

@@ -14,7 +14,7 @@ import sys
 import types
 from pathlib import Path
 
-VERSION = "0.40.6"
+VERSION = "0.40.7"
 SCOREBOARD_SPORTS = ("nba", "nfl", "mlb", "nhl", "wnba", "cfb", "cbb")
 POLYMARKET_TODAYS_PARAMS = ("offset", "date", "timezone", "sports_market_types", "compact")
 GLEAGUE_SOURCES = ("__init__.py", "_cdn.py", "_connector.py", "_stats.py")
@@ -337,6 +337,34 @@ if (espn_base.leaders_limit({}), espn_base.leaders_limit({"limit": "3"})[0], esp
 category = {"name": "points", "leaders": [{"athlete": {"id": i, "displayName": f"P{i}"}, "value": i} for i in range(5)]}
 if [leader["rank"] for leader in espn_base._resolve_leaders([category], limit=3)[0]["leaders"]] != [1, 2, 3]:
     raise SystemExit("leaders rank/limit drift")
+
+# The installed game-log helper reads ESPN's athlete gamelog in one request and
+# reports the score from the player's side.
+gamelog = {
+    "names": ["points"],
+    "events": {"1": {"id": "1", "gameDate": "2025-05-17", "homeTeamId": "9", "homeTeamScore": "70",
+                     "awayTeamScore": "80", "gameResult": "L", "opponent": {"id": "9", "abbreviation": "LV"}}},
+    "seasonTypes": [{"displayName": "2025 Regular Season", "categories": [{"events": [{"eventId": "1", "stats": ["21"]}]}]}],
+}
+gamelog_calls = []
+
+
+def _gamelog_fetch(url, **kwargs):
+    gamelog_calls.append(url)
+    return json.dumps(gamelog).encode(), None
+
+
+http_fetch = espn_base._http_fetch
+espn_base._http_fetch = _gamelog_fetch
+game_log = espn_base.espn_player_game_log("basketball/wnba", {"player_id": "2999101", "season": 2025})
+espn_base._http_fetch = http_fetch
+row = game_log.get("games", [{}])[0]
+if (
+    gamelog_calls
+    != ["https://site.web.api.espn.com/apis/common/v3/sports/basketball/wnba/athletes/2999101/gamelog?season=2025"]
+    or (row.get("home_away"), row.get("team_score"), row.get("opponent_score"), row.get("stats")) != ("away", "80", "70", {"points": "21"})
+):
+    raise SystemExit(f"player game log drift: {gamelog_calls!r} {game_log!r}")
 
 expected_signatures = {
     "to_successor_envelope": "(*, operation, request_bytes, operation_arguments_bytes, output_mode, consumer_tier) -> bytes",
