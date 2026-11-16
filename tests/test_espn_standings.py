@@ -153,3 +153,31 @@ def test_nba_neutral_record_is_what_home_and_road_leave_out():
     assert row["neutral_record"] == "1-0"
     (row,) = _connector("nba")._normalize_standings_entries(_entry(("overall", "62-20")))
     assert row["neutral_record"] == ""
+
+
+@pytest.mark.parametrize("league", ["nba", "nhl", "wnba", "mlb"])
+def test_last_ten_reads_last_ten_games(league):
+    """ESPN sends the last-ten record as "Last Ten Games"; the older "L10" still reads."""
+    normalize = _connector(league)._normalize_standings_entries
+    (row,) = normalize(_entry(("Last Ten Games", "9-1")))
+    assert row["last_ten"] == "9-1"
+    (row,) = normalize(_entry(("L10", "7-3")))
+    assert row["last_ten"] == "7-3"
+
+
+def test_nba_division_record_reads_vs_div():
+    (row,) = _connector("nba")._normalize_standings_entries(_entry(("vs. Div.", "1-2")))
+    assert row["division_record"] == "1-2"
+
+
+def test_nhl_regulation_wins_reads_reg_wins():
+    (row,) = _connector("nhl")._normalize_standings_entries(_entry(("regWins", "15")))
+    assert row["regulation_wins"] == "15"
+
+
+def test_nhl_goal_diff_is_the_season_total():
+    """Hurricanes: 87 for, 47 against. ``differential`` is per game (+1.9); the total is +40."""
+    (row,) = _connector("nhl")._normalize_standings_entries(
+        _entry(("pointsFor", "87"), ("pointsAgainst", "47"), ("differential", "+1.9"), ("pointDifferential", "+40"))
+    )
+    assert (row["goals_for"], row["goals_against"], row["goal_diff"]) == ("87", "47", "+40")
