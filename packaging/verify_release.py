@@ -1,4 +1,4 @@
-"""Fail-closed verification for the exact sports-skills 0.40.6 artifacts."""
+"""Fail-closed verification for the exact sports-skills 0.40.7 artifacts."""
 
 import email
 import hashlib
@@ -8,8 +8,8 @@ import tarfile
 import zipfile
 from pathlib import Path
 
-VERSION = "0.40.6"
-SOURCE_COMMIT = "a1ddc96415d4e42965df19dc6851a4a0a5d97d80"
+VERSION = "0.40.7"
+SOURCE_COMMIT = "74fb29d3283a4639cbe21c888fa3e994eb4b2d11"
 EXPECTED = [
     f"sports_skills-{VERSION}-py3-none-any.whl",
     f"sports_skills-{VERSION}.tar.gz",
