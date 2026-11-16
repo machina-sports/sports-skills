@@ -37,6 +37,7 @@ from sports_skills._espn_base import (
     normalize_summary_odds,
     normalize_transactions,
     standings_fields,
+    team_logo,
 )
 
 logger = logging.getLogger("sports_skills.wnba")
@@ -65,7 +66,7 @@ def _normalize_event(espn_event):
                 "id": str(team.get("id", "")),
                 "name": team.get("displayName", ""),
                 "abbreviation": team.get("abbreviation", ""),
-                "logo": team.get("logo", ""),
+                "logo": team_logo(team),
             },
             "home_away": c.get("homeAway", ""),
             "score": normalize_score(c.get("score", "0")),
@@ -252,12 +253,12 @@ def _normalize_game_summary(summary_data):
                 "id": str(team.get("id", "")),
                 "name": team.get("displayName", team.get("location", "")),
                 "abbreviation": team.get("abbreviation", ""),
-                "logo": team.get("logo", ""),
+                "logo": team_logo(team),
             },
             "home_away": c.get("homeAway", ""),
             "score": c.get("score", "0"),
             "winner": c.get("winner", False),
-            "record": c.get("record", ""),
+            "record": competitor_record(c),
             "linescores": [ls.get("displayValue", "0") for ls in c.get("linescores", [])],
         })
 
@@ -347,7 +348,7 @@ def get_scoreboard(request_data):
 
     return {
         "events": events,
-        "day": day_info.get("date", ""),
+        "day": day_info.get("date", "") or (date or ""),
         "count": len(events),
     }
 
@@ -545,7 +546,7 @@ def get_schedule(request_data):
 
     return {
         "events": events,
-        "day": day_info.get("date", ""),
+        "day": day_info.get("date", "") or (date or ""),
         "count": len(events),
     }
 

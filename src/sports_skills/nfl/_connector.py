@@ -38,7 +38,9 @@ from sports_skills._espn_base import (
     normalize_scoring_plays,
     normalize_summary_odds,
     normalize_transactions,
+    scoreboard_season,
     standings_fields,
+    team_logo,
 )
 
 logger = logging.getLogger("sports_skills.nfl")
@@ -128,7 +130,7 @@ def _normalize_event(espn_event):
                 "id": str(team.get("id", "")),
                 "name": team.get("displayName", ""),
                 "abbreviation": team.get("abbreviation", ""),
-                "logo": team.get("logo", ""),
+                "logo": team_logo(team),
             },
             "home_away": c.get("homeAway", ""),
             "score": normalize_score(c.get("score", "0")),
@@ -300,12 +302,12 @@ def _normalize_game_summary(summary_data):
                 "id": str(team.get("id", "")),
                 "name": team.get("displayName", team.get("location", "")),
                 "abbreviation": team.get("abbreviation", ""),
-                "logo": team.get("logo", ""),
+                "logo": team_logo(team),
             },
             "home_away": c.get("homeAway", ""),
             "score": c.get("score", "0"),
             "winner": c.get("winner", False),
-            "record": c.get("record", ""),
+            "record": competitor_record(c),
             "linescores": [ls.get("displayValue", "0") for ls in c.get("linescores", [])],
         })
 
@@ -456,15 +458,11 @@ def get_scoreboard(request_data):
         return data
 
     events = [_normalize_event(e) for e in data.get("events", [])]
-    season_info = data.get("season", {})
     week_info = data.get("week", {})
 
     return {
         "events": events,
-        "season": {
-            "year": season_info.get("year", ""),
-            "type": season_info.get("type", ""),
-        },
+        "season": scoreboard_season(data),
         "week": {
             "number": week_info.get("number", ""),
             "text": week_info.get("text", ""),
@@ -773,7 +771,6 @@ def get_schedule(request_data):
 
     raw_events = data.get("events", [])
     events = [_normalize_event(e) for e in raw_events]
-    season_info = data.get("season", {})
     week_info = data.get("week", {})
     if season:
         reason = f"ESPN scoreboard for week {week} of the {season} season."
@@ -784,10 +781,7 @@ def get_schedule(request_data):
 
     return {
         "events": events,
-        "season": {
-            "year": season_info.get("year", ""),
-            "type": season_info.get("type", ""),
-        },
+        "season": scoreboard_season(data),
         "week": {
             "number": week_info.get("number", ""),
             "text": week_info.get("text", ""),
