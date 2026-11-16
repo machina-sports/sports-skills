@@ -71,6 +71,7 @@ Derive the current year from the system prompt's date (e.g., `currentDate: 2026-
 | `get_futures` | Futures/odds markets |
 | `get_team_stats` | Team statistical profile |
 | `get_player_stats` | Player statistical profile |
+| `get_player_game_log` | One player's games in a season (opponent, home/away, result, stat line) |
 
 See `references/api-reference.md` for full parameter lists and return shapes.
 

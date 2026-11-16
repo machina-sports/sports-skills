@@ -1,0 +1,808 @@
+{
+ "categories": [
+  {
+   "count": 10,
+   "displayName": "Passing",
+   "name": "passing"
+  },
+  {
+   "count": 5,
+   "displayName": "Rushing",
+   "name": "rushing"
+  }
+ ],
+ "displayNames": [
+  "Completions",
+  "Passing Attempts",
+  "Passing Yards",
+  "Completion Percentage",
+  "Passing Touchdowns",
+  "Interceptions",
+  "Longest Pass",
+  "Total Sacks",
+  "Passer Rating",
+  "Adjusted QBR",
+  "Rushing Attempts",
+  "Rushing Yards",
+  "Yards Per Rush Attempt",
+  "Rushing Touchdowns",
+  "Long Rushing"
+ ],
+ "events": {
+  "401404124": {
+   "atVs": "vs",
+   "awayTeamId": "87",
+   "awayTeamScore": "10",
+   "gameDate": "2022-09-03T23:30:00.000+00:00",
+   "gameResult": "W",
+   "homeTeamId": "194",
+   "homeTeamScore": "21",
+   "id": "401404124",
+   "leagueAbbreviation": "NCAAF",
+   "leagueName": "NCAA - Football",
+   "leagueShortName": "NCAA Football",
+   "opponent": {
+    "abbreviation": "ND",
+    "displayName": "Notre Dame Fighting Irish",
+    "id": "87",
+    "rank": 5
+   },
+   "score": "21-10",
+   "team": {
+    "abbreviation": "OSU",
+    "id": "194",
+    "isAllStar": false
+   },
+   "week": 1
+  },
+  "401405079": {
+   "atVs": "vs",
+   "awayTeamId": "2032",
+   "awayTeamScore": "12",
+   "gameDate": "2022-09-10T16:00:00.000+00:00",
+   "gameResult": "W",
+   "homeTeamId": "194",
+   "homeTeamScore": "45",
+   "id": "401405079",
+   "leagueAbbreviation": "NCAAF",
+   "leagueName": "NCAA - Football",
+   "leagueShortName": "NCAA Football",
+   "opponent": {
+    "abbreviation": "ARST",
+    "displayName": "Arkansas State Red Wolves",
+    "id": "2032"
+   },
+   "score": "45-12",
+   "team": {
+    "abbreviation": "OSU",
+    "id": "194",
+    "isAllStar": false
+   },
+   "week": 2
+  },
+  "401405088": {
+   "atVs": "vs",
+   "awayTeamId": "2649",
+   "awayTeamScore": "21",
+   "gameDate": "2022-09-17T23:00:00.000+00:00",
+   "gameResult": "W",
+   "homeTeamId": "194",
+   "homeTeamScore": "77",
+   "id": "401405088",
+   "leagueAbbreviation": "NCAAF",
+   "leagueName": "NCAA - Football",
+   "leagueShortName": "NCAA Football",
+   "opponent": {
+    "abbreviation": "TOL",
+    "displayName": "Toledo Rockets",
+    "id": "2649"
+   },
+   "score": "77-21",
+   "team": {
+    "abbreviation": "OSU",
+    "id": "194",
+    "isAllStar": false
+   },
+   "week": 3
+  },
+  "401405095": {
+   "atVs": "vs",
+   "awayTeamId": "275",
+   "awayTeamScore": "21",
+   "gameDate": "2022-09-24T23:30:00.000+00:00",
+   "gameResult": "W",
+   "homeTeamId": "194",
+   "homeTeamScore": "52",
+   "id": "401405095",
+   "leagueAbbreviation": "NCAAF",
+   "leagueName": "NCAA - Football",
+   "leagueShortName": "NCAA Football",
+   "opponent": {
+    "abbreviation": "WISC",
+    "displayName": "Wisconsin Badgers",
+    "id": "275"
+   },
+   "score": "52-21",
+   "team": {
+    "abbreviation": "OSU",
+    "id": "194",
+    "isAllStar": false
+   },
+   "week": 4
+  },
+  "401405104": {
+   "atVs": "vs",
+   "awayTeamId": "164",
+   "awayTeamScore": "10",
+   "gameDate": "2022-10-01T19:30:00.000+00:00",
+   "gameResult": "W",
+   "homeTeamId": "194",
+   "homeTeamScore": "49",
+   "id": "401405104",
+   "leagueAbbreviation": "NCAAF",
+   "leagueName": "NCAA - Football",
+   "leagueShortName": "NCAA Football",
+   "opponent": {
+    "abbreviation": "RUTG",
+    "displayName": "Rutgers Scarlet Knights",
+    "id": "164"
+   },
+   "score": "49-10",
+   "team": {
+    "abbreviation": "OSU",
+    "id": "194",
+    "isAllStar": false
+   },
+   "week": 5
+  },
+  "401405110": {
+   "atVs": "@",
+   "awayTeamId": "194",
+   "awayTeamScore": "49",
+   "gameDate": "2022-10-08T20:00:00.000+00:00",
+   "gameResult": "W",
+   "homeTeamId": "127",
+   "homeTeamScore": "20",
+   "id": "401405110",
+   "leagueAbbreviation": "NCAAF",
+   "leagueName": "NCAA - Football",
+   "leagueShortName": "NCAA Football",
+   "opponent": {
+    "abbreviation": "MSU",
+    "displayName": "Michigan State Spartans",
+    "id": "127"
+   },
+   "score": "49-20",
+   "team": {
+    "abbreviation": "OSU",
+    "id": "194",
+    "isAllStar": false
+   },
+   "week": 6
+  },
+  "401405119": {
+   "atVs": "vs",
+   "awayTeamId": "2294",
+   "awayTeamScore": "10",
+   "gameDate": "2022-10-22T16:00:00.000+00:00",
+   "gameResult": "W",
+   "homeTeamId": "194",
+   "homeTeamScore": "54",
+   "id": "401405119",
+   "leagueAbbreviation": "NCAAF",
+   "leagueName": "NCAA - Football",
+   "leagueShortName": "NCAA Football",
+   "opponent": {
+    "abbreviation": "IOWA",
+    "displayName": "Iowa Hawkeyes",
+    "id": "2294"
+   },
+   "score": "54-10",
+   "team": {
+    "abbreviation": "OSU",
+    "id": "194",
+    "isAllStar": false
+   },
+   "week": 8
+  },
+  "401405126": {
+   "atVs": "@",
+   "awayTeamId": "194",
+   "awayTeamScore": "44",
+   "gameDate": "2022-10-29T16:00:00.000+00:00",
+   "gameResult": "W",
+   "homeTeamId": "213",
+   "homeTeamScore": "31",
+   "id": "401405126",
+   "leagueAbbreviation": "NCAAF",
+   "leagueName": "NCAA - Football",
+   "leagueShortName": "NCAA Football",
+   "opponent": {
+    "abbreviation": "PSU",
+    "displayName": "Penn State Nittany Lions",
+    "id": "213",
+    "rank": 13
+   },
+   "score": "44-31",
+   "team": {
+    "abbreviation": "OSU",
+    "id": "194",
+    "isAllStar": false
+   },
+   "week": 9
+  },
+  "401405129": {
+   "atVs": "@",
+   "awayTeamId": "194",
+   "awayTeamScore": "21",
+   "gameDate": "2022-11-05T16:00:00.000+00:00",
+   "gameResult": "W",
+   "homeTeamId": "77",
+   "homeTeamScore": "7",
+   "id": "401405129",
+   "leagueAbbreviation": "NCAAF",
+   "leagueName": "NCAA - Football",
+   "leagueShortName": "NCAA Football",
+   "opponent": {
+    "abbreviation": "NU",
+    "displayName": "Northwestern Wildcats",
+    "id": "77"
+   },
+   "score": "21-7",
+   "team": {
+    "abbreviation": "OSU",
+    "id": "194",
+    "isAllStar": false
+   },
+   "week": 10
+  },
+  "401405139": {
+   "atVs": "vs",
+   "awayTeamId": "84",
+   "awayTeamScore": "14",
+   "gameDate": "2022-11-12T17:00:00.000+00:00",
+   "gameResult": "W",
+   "homeTeamId": "194",
+   "homeTeamScore": "56",
+   "id": "401405139",
+   "leagueAbbreviation": "NCAAF",
+   "leagueName": "NCAA - Football",
+   "leagueShortName": "NCAA Football",
+   "opponent": {
+    "abbreviation": "IU",
+    "displayName": "Indiana Hoosiers",
+    "id": "84"
+   },
+   "score": "56-14",
+   "team": {
+    "abbreviation": "OSU",
+    "id": "194",
+    "isAllStar": false
+   },
+   "week": 11
+  },
+  "401405144": {
+   "atVs": "@",
+   "awayTeamId": "194",
+   "awayTeamScore": "43",
+   "gameDate": "2022-11-19T20:30:00.000+00:00",
+   "gameResult": "W",
+   "homeTeamId": "120",
+   "homeTeamScore": "30",
+   "id": "401405144",
+   "leagueAbbreviation": "NCAAF",
+   "leagueName": "NCAA - Football",
+   "leagueShortName": "NCAA Football",
+   "opponent": {
+    "abbreviation": "MD",
+    "displayName": "Maryland Terrapins",
+    "id": "120"
+   },
+   "score": "43-30",
+   "team": {
+    "abbreviation": "OSU",
+    "id": "194",
+    "isAllStar": false
+   },
+   "week": 12
+  },
+  "401405153": {
+   "atVs": "vs",
+   "awayTeamId": "130",
+   "awayTeamScore": "45",
+   "gameDate": "2022-11-26T17:00:00.000+00:00",
+   "gameResult": "L",
+   "homeTeamId": "194",
+   "homeTeamScore": "23",
+   "id": "401405153",
+   "leagueAbbreviation": "NCAAF",
+   "leagueName": "NCAA - Football",
+   "leagueShortName": "NCAA Football",
+   "opponent": {
+    "abbreviation": "MICH",
+    "displayName": "Michigan Wolverines",
+    "id": "130",
+    "rank": 3
+   },
+   "score": "45-23",
+   "team": {
+    "abbreviation": "OSU",
+    "id": "194",
+    "isAllStar": false
+   },
+   "week": 13
+  },
+  "401442015": {
+   "atVs": "vs",
+   "awayTeamId": "194",
+   "awayTeamScore": "41",
+   "eventNote": "CFP Semifinal at the Chick-fil-A Peach Bowl",
+   "gameDate": "2023-01-01T01:00:00.000+00:00",
+   "gameResult": "L",
+   "homeTeamId": "61",
+   "homeTeamScore": "42",
+   "id": "401442015",
+   "leagueAbbreviation": "NCAAF",
+   "leagueName": "NCAA - Football",
+   "leagueShortName": "NCAA Football",
+   "opponent": {
+    "abbreviation": "UGA",
+    "displayName": "Georgia Bulldogs",
+    "id": "61",
+    "rank": 1
+   },
+   "score": "42-41",
+   "team": {
+    "abbreviation": "OSU",
+    "id": "194",
+    "isAllStar": false
+   },
+   "week": 1
+  }
+ },
+ "filters": [
+  {
+   "displayName": "League",
+   "name": "league",
+   "options": [
+    {
+     "displayValue": "NCAA - Football",
+     "shortDisplayName": "NCAAF",
+     "value": "college-football"
+    },
+    {
+     "displayValue": "National Football League",
+     "shortDisplayName": "NFL",
+     "value": "nfl"
+    }
+   ],
+   "value": "college-football"
+  },
+  {
+   "displayName": "Season",
+   "name": "season",
+   "options": [
+    {
+     "displayValue": "2022",
+     "value": "2022"
+    },
+    {
+     "displayValue": "2021",
+     "value": "2021"
+    },
+    {
+     "displayValue": "2020",
+     "value": "2020"
+    }
+   ],
+   "value": "2022"
+  }
+ ],
+ "labels": [
+  "CMP",
+  "ATT",
+  "YDS",
+  "CMP%",
+  "TD",
+  "INT",
+  "LNG",
+  "SACK",
+  "RTG",
+  "QBR",
+  "CAR",
+  "YDS",
+  "AVG",
+  "TD",
+  "LNG"
+ ],
+ "names": [
+  "completions",
+  "passingAttempts",
+  "passingYards",
+  "completionPct",
+  "passingTouchdowns",
+  "interceptions",
+  "longPassing",
+  "sacks",
+  "QBRating",
+  "adjQBR",
+  "rushingAttempts",
+  "rushingYards",
+  "yardsPerRushAttempt",
+  "rushingTouchdowns",
+  "longRushing"
+ ],
+ "seasonTypes": [
+  {
+   "categories": [
+    {
+     "displayName": "Postseason",
+     "events": [
+      {
+       "eventId": "401442015",
+       "stats": [
+        "23",
+        "34",
+        "348",
+        "67.6",
+        "4",
+        "0",
+        "37",
+        "4",
+        "192.4",
+        "94.1",
+        "12",
+        "34",
+        "2.8",
+        "0",
+        "27"
+       ]
+      }
+     ],
+     "splitType": "3",
+     "totals": [
+      "258",
+      "389",
+      "3,688",
+      "66.3",
+      "41",
+      "6",
+      "79",
+      "12",
+      "177.7",
+      "88.9",
+      "47",
+      "108",
+      "2.3",
+      "0",
+      "44"
+     ],
+     "type": "event"
+    }
+   ],
+   "displayName": "2022 Postseason",
+   "displayTeam": "OSU",
+   "summary": {
+    "displayName": "Postseason",
+    "stats": [
+     {
+      "displayName": "Totals",
+      "stats": [
+       "258",
+       "389",
+       "3,688",
+       "66.3",
+       "41",
+       "6",
+       "79",
+       "12",
+       "177.7",
+       "88.9",
+       "47",
+       "108",
+       "2.3",
+       "0",
+       "44"
+      ],
+      "type": "total"
+     }
+    ]
+   }
+  },
+  {
+   "categories": [
+    {
+     "displayName": "Regular Season Stats",
+     "events": [
+      {
+       "eventId": "401405153",
+       "stats": [
+        "31",
+        "48",
+        "349",
+        "64.6",
+        "2",
+        "2",
+        "44",
+        "1",
+        "131.1",
+        "70.0",
+        "2",
+        "-3",
+        "-1.5",
+        "0",
+        "5"
+       ]
+      },
+      {
+       "eventId": "401405144",
+       "stats": [
+        "18",
+        "30",
+        "241",
+        "60.0",
+        "1",
+        "0",
+        "35",
+        "0",
+        "138.5",
+        "78.8",
+        "4",
+        "-6",
+        "-1.5",
+        "0",
+        "6"
+       ]
+      },
+      {
+       "eventId": "401405139",
+       "stats": [
+        "17",
+        "28",
+        "297",
+        "60.7",
+        "5",
+        "0",
+        "58",
+        "0",
+        "208.7",
+        "82.7",
+        "4",
+        "8",
+        "2.0",
+        "0",
+        "8"
+       ]
+      },
+      {
+       "eventId": "401405129",
+       "stats": [
+        "10",
+        "26",
+        "76",
+        "38.5",
+        "0",
+        "0",
+        "15",
+        "0",
+        "63.0",
+        "62.0",
+        "6",
+        "79",
+        "13.2",
+        "0",
+        "44"
+       ]
+      },
+      {
+       "eventId": "401405126",
+       "stats": [
+        "26",
+        "33",
+        "354",
+        "78.8",
+        "1",
+        "0",
+        "42",
+        "2",
+        "178.9",
+        "94.9",
+        "6",
+        "5",
+        "0.8",
+        "0",
+        "11"
+       ]
+      },
+      {
+       "eventId": "401405119",
+       "stats": [
+        "20",
+        "30",
+        "286",
+        "66.7",
+        "4",
+        "1",
+        "79",
+        "1",
+        "184.1",
+        "69.6",
+        "3",
+        "-13",
+        "-4.3",
+        "0",
+        "0"
+       ]
+      },
+      {
+       "eventId": "401405110",
+       "stats": [
+        "21",
+        "26",
+        "361",
+        "80.8",
+        "6",
+        "1",
+        "69",
+        "1",
+        "265.9",
+        "97.9",
+        "1",
+        "-4",
+        "-4.0",
+        "0",
+        "0"
+       ]
+      },
+      {
+       "eventId": "401405104",
+       "stats": [
+        "13",
+        "22",
+        "154",
+        "59.1",
+        "2",
+        "1",
+        "36",
+        "1",
+        "138.8",
+        "78.6",
+        "2",
+        "-1",
+        "-0.5",
+        "0",
+        "0"
+       ]
+      },
+      {
+       "eventId": "401405095",
+       "stats": [
+        "17",
+        "27",
+        "281",
+        "63.0",
+        "5",
+        "1",
+        "33",
+        "0",
+        "204.1",
+        "98.4",
+        "0",
+        "0",
+        "0.0",
+        "0",
+        "0"
+       ]
+      },
+      {
+       "eventId": "401405088",
+       "stats": [
+        "22",
+        "27",
+        "367",
+        "81.5",
+        "5",
+        "0",
+        "42",
+        "0",
+        "256.8",
+        "99.6",
+        "2",
+        "9",
+        "4.5",
+        "0",
+        "5"
+       ]
+      },
+      {
+       "eventId": "401405079",
+       "stats": [
+        "16",
+        "24",
+        "351",
+        "66.7",
+        "4",
+        "0",
+        "51",
+        "1",
+        "244.5",
+        "91.4",
+        "2",
+        "-1",
+        "-0.5",
+        "0",
+        "1"
+       ]
+      },
+      {
+       "eventId": "401404124",
+       "stats": [
+        "24",
+        "34",
+        "223",
+        "70.6",
+        "2",
+        "0",
+        "31",
+        "1",
+        "145.1",
+        "85.4",
+        "3",
+        "1",
+        "0.3",
+        "0",
+        "3"
+       ]
+      }
+     ],
+     "splitType": "2",
+     "totals": [
+      "235",
+      "355",
+      "3,340",
+      "66.2",
+      "37",
+      "6",
+      "79",
+      "8",
+      "176.2",
+      "88.9",
+      "35",
+      "74",
+      "2.1",
+      "0",
+      "44"
+     ],
+     "type": "event"
+    }
+   ],
+   "displayName": "2022 Regular Season",
+   "summary": {
+    "displayName": "Regular Season Stats",
+    "stats": [
+     {
+      "displayName": "Totals",
+      "stats": [
+       "235",
+       "355",
+       "3,340",
+       "66.2",
+       "37",
+       "6",
+       "79",
+       "8",
+       "176.2",
+       "88.9",
+       "35",
+       "74",
+       "2.1",
+       "0",
+       "44"
+      ],
+      "type": "total"
+     }
+    ]
+   }
+  }
+ ]
+}

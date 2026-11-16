@@ -98,6 +98,15 @@ Get full player statistical profile for a season.
 
 Returns `categories[]` with detailed stats including value, rank, and per-game averages.
 
+### get_player_game_log
+Get one player's games in a season via ESPN's athlete gamelog (`site.web.api.espn.com/apis/common/v3/sports/.../athletes/{id}/gamelog`, one request).
+- `player_id` (str, required): ESPN athlete ID. Find it with `get_team_roster`.
+- `season` (int, optional): Year the season ends (`2025` = 2024-25). Defaults to current.
+- `season_type` (str, optional): `regular` (default), `postseason`, `preseason` or `all`.
+- `sort_by`, `descending`, `limit`, `fields` (optional): Row shaping (`sort_by` then `limit`; `fields` always keeps `game_id`, `game_date`, `team_abbreviation`, `opponent`). Stat keys are addressable directly. With any set, the response adds `total_rows` and `returned_rows`.
+
+Returns `games[]`, oldest first: `game_id`, `game_date`, `team_abbreviation`, `opponent` (abbreviation), `opponent_id`, `opponent_name`, `home_away`, `result` (`W`/`L`), `team_score`, `opponent_score`, `season_type`, `note` (e.g. a bowl or tournament round), and `stats` keyed by ESPN's stat names (`points`, `totalRebounds`, `fieldGoalsMade-fieldGoalsAttempted`, ...). The stat columns are the ones ESPN keeps for that player, so they differ by position. An unknown `player_id` returns an error. Cooper Flagg (5041939) has 32 regular-season rows and 5 postseason rows in 2025 (2024-25).
+
 ### get_power_index
 Get BPI (Basketball Power Index) ratings for D1 teams.
 - `team_id` (str, optional): ESPN team ID to filter to one team.

@@ -1,0 +1,1825 @@
+{
+ "displayNames": [
+  "Minutes",
+  "Points",
+  "Rebounds",
+  "Assists",
+  "Steals",
+  "Blocks",
+  "Turnovers",
+  "Field Goals Made-Attempted",
+  "Field Goal Percentage",
+  "3-Point Field Goals Made-Attempted",
+  "3-Point Field Goal Percentage",
+  "Free Throws Made-Attempted",
+  "Free Throw Percentage",
+  "Fouls"
+ ],
+ "events": {
+  "401736116": {
+   "atVs": "vs",
+   "awayTeamId": "17",
+   "awayTeamScore": "78",
+   "gameDate": "2025-05-17T17:00:00.000+00:00",
+   "gameResult": "W",
+   "homeTeamId": "9",
+   "homeTeamScore": "92",
+   "id": "401736116",
+   "leagueAbbreviation": "WNBA",
+   "leagueName": "Women's National Basketball Association",
+   "leagueShortName": "WNBA",
+   "opponent": {
+    "abbreviation": "LV",
+    "displayName": "Las Vegas Aces",
+    "id": "17"
+   },
+   "score": "92-78",
+   "team": {
+    "abbreviation": "NY",
+    "id": "9",
+    "isAllStar": false
+   }
+  },
+  "401736127": {
+   "atVs": "@",
+   "awayTeamId": "9",
+   "awayTeamScore": "99",
+   "gameDate": "2025-05-23T00:00:00.000+00:00",
+   "gameResult": "W",
+   "homeTeamId": "19",
+   "homeTeamScore": "74",
+   "id": "401736127",
+   "leagueAbbreviation": "WNBA",
+   "leagueName": "Women's National Basketball Association",
+   "leagueShortName": "WNBA",
+   "opponent": {
+    "abbreviation": "CHI",
+    "displayName": "Chicago Sky",
+    "id": "19"
+   },
+   "score": "99-74",
+   "team": {
+    "abbreviation": "NY",
+    "id": "9",
+    "isAllStar": false
+   }
+  },
+  "401736132": {
+   "atVs": "@",
+   "awayTeamId": "9",
+   "awayTeamScore": "90",
+   "gameDate": "2025-05-24T17:00:00.000+00:00",
+   "gameResult": "W",
+   "homeTeamId": "5",
+   "homeTeamScore": "88",
+   "id": "401736132",
+   "leagueAbbreviation": "WNBA",
+   "leagueName": "Women's National Basketball Association",
+   "leagueShortName": "WNBA",
+   "opponent": {
+    "abbreviation": "IND",
+    "displayName": "Indiana Fever",
+    "id": "5"
+   },
+   "score": "90-88",
+   "team": {
+    "abbreviation": "NY",
+    "id": "9",
+    "isAllStar": false
+   }
+  },
+  "401736139": {
+   "atVs": "vs",
+   "awayTeamId": "129689",
+   "awayTeamScore": "67",
+   "gameDate": "2025-05-27T23:00:00.000+00:00",
+   "gameResult": "W",
+   "homeTeamId": "9",
+   "homeTeamScore": "95",
+   "id": "401736139",
+   "leagueAbbreviation": "WNBA",
+   "leagueName": "Women's National Basketball Association",
+   "leagueShortName": "WNBA",
+   "opponent": {
+    "abbreviation": "GS",
+    "displayName": "Golden State Valkyries",
+    "id": "129689"
+   },
+   "score": "95-67",
+   "team": {
+    "abbreviation": "NY",
+    "id": "9",
+    "isAllStar": false
+   }
+  },
+  "401736147": {
+   "atVs": "@",
+   "awayTeamId": "9",
+   "awayTeamScore": "85",
+   "gameDate": "2025-05-30T23:30:00.000+00:00",
+   "gameResult": "W",
+   "homeTeamId": "16",
+   "homeTeamScore": "63",
+   "id": "401736147",
+   "leagueAbbreviation": "WNBA",
+   "leagueName": "Women's National Basketball Association",
+   "leagueShortName": "WNBA",
+   "opponent": {
+    "abbreviation": "WSH",
+    "displayName": "Washington Mystics",
+    "id": "16"
+   },
+   "score": "85-63",
+   "team": {
+    "abbreviation": "NY",
+    "id": "9",
+    "isAllStar": false
+   }
+  },
+  "401736152": {
+   "atVs": "vs",
+   "awayTeamId": "18",
+   "awayTeamScore": "52",
+   "eventNote": "WNBA Commissioner's Cup",
+   "gameDate": "2025-06-01T19:00:00.000+00:00",
+   "gameResult": "W",
+   "homeTeamId": "9",
+   "homeTeamScore": "100",
+   "id": "401736152",
+   "leagueAbbreviation": "WNBA",
+   "leagueName": "Women's National Basketball Association",
+   "leagueShortName": "WNBA",
+   "opponent": {
+    "abbreviation": "CON",
+    "displayName": "Connecticut Sun",
+    "id": "18"
+   },
+   "score": "100-52",
+   "team": {
+    "abbreviation": "NY",
+    "id": "9",
+    "isAllStar": false
+   }
+  },
+  "401736159": {
+   "atVs": "@",
+   "awayTeamId": "9",
+   "awayTeamScore": "86",
+   "eventNote": "WNBA Commissioner's Cup",
+   "gameDate": "2025-06-05T23:30:00.000+00:00",
+   "gameResult": "W",
+   "homeTeamId": "16",
+   "homeTeamScore": "78",
+   "id": "401736159",
+   "leagueAbbreviation": "WNBA",
+   "leagueName": "Women's National Basketball Association",
+   "leagueShortName": "WNBA",
+   "opponent": {
+    "abbreviation": "WSH",
+    "displayName": "Washington Mystics",
+    "id": "16"
+   },
+   "score": "86-78",
+   "team": {
+    "abbreviation": "NY",
+    "id": "9",
+    "isAllStar": false
+   }
+  },
+  "401736183": {
+   "atVs": "vs",
+   "awayTeamId": "20",
+   "awayTeamScore": "81",
+   "eventNote": "WNBA Commissioner's Cup",
+   "gameDate": "2025-06-17T23:00:00.000+00:00",
+   "gameResult": "W",
+   "homeTeamId": "9",
+   "homeTeamScore": "86",
+   "id": "401736183",
+   "leagueAbbreviation": "WNBA",
+   "leagueName": "Women's National Basketball Association",
+   "leagueShortName": "WNBA",
+   "opponent": {
+    "abbreviation": "ATL",
+    "displayName": "Atlanta Dream",
+    "id": "20"
+   },
+   "score": "86-81",
+   "team": {
+    "abbreviation": "NY",
+    "id": "9",
+    "isAllStar": false
+   }
+  },
+  "401736189": {
+   "atVs": "vs",
+   "awayTeamId": "11",
+   "awayTeamScore": "89",
+   "gameDate": "2025-06-19T23:00:00.000+00:00",
+   "gameResult": "L",
+   "homeTeamId": "9",
+   "homeTeamScore": "81",
+   "id": "401736189",
+   "leagueAbbreviation": "WNBA",
+   "leagueName": "Women's National Basketball Association",
+   "leagueShortName": "WNBA",
+   "opponent": {
+    "abbreviation": "PHX",
+    "displayName": "Phoenix Mercury",
+    "id": "11"
+   },
+   "score": "89-81",
+   "team": {
+    "abbreviation": "NY",
+    "id": "9",
+    "isAllStar": false
+   }
+  },
+  "401736258": {
+   "atVs": "vs",
+   "awayTeamId": "5",
+   "awayTeamScore": "84",
+   "gameDate": "2025-07-23T00:00:00.000+00:00",
+   "gameResult": "W",
+   "homeTeamId": "9",
+   "homeTeamScore": "98",
+   "id": "401736258",
+   "leagueAbbreviation": "WNBA",
+   "leagueName": "Women's National Basketball Association",
+   "leagueShortName": "WNBA",
+   "opponent": {
+    "abbreviation": "IND",
+    "displayName": "Indiana Fever",
+    "id": "5"
+   },
+   "score": "98-84",
+   "team": {
+    "abbreviation": "NY",
+    "id": "9",
+    "isAllStar": false
+   }
+  },
+  "401736266": {
+   "atVs": "vs",
+   "awayTeamId": "11",
+   "awayTeamScore": "76",
+   "gameDate": "2025-07-25T23:30:00.000+00:00",
+   "gameResult": "W",
+   "homeTeamId": "9",
+   "homeTeamScore": "89",
+   "id": "401736266",
+   "leagueAbbreviation": "WNBA",
+   "leagueName": "Women's National Basketball Association",
+   "leagueShortName": "WNBA",
+   "opponent": {
+    "abbreviation": "PHX",
+    "displayName": "Phoenix Mercury",
+    "id": "11"
+   },
+   "score": "89-76",
+   "team": {
+    "abbreviation": "NY",
+    "id": "9",
+    "isAllStar": false
+   }
+  },
+  "401736270": {
+   "atVs": "vs",
+   "awayTeamId": "6",
+   "awayTeamScore": "101",
+   "gameDate": "2025-07-26T23:00:00.000+00:00",
+   "gameResult": "L",
+   "homeTeamId": "9",
+   "homeTeamScore": "99",
+   "id": "401736270",
+   "leagueAbbreviation": "WNBA",
+   "leagueName": "Women's National Basketball Association",
+   "leagueShortName": "WNBA",
+   "opponent": {
+    "abbreviation": "LA",
+    "displayName": "Los Angeles Sparks",
+    "id": "6"
+   },
+   "score": "101-99",
+   "team": {
+    "abbreviation": "NY",
+    "id": "9",
+    "isAllStar": false
+   }
+  },
+  "401736277": {
+   "atVs": "@",
+   "awayTeamId": "9",
+   "awayTeamScore": "82",
+   "gameDate": "2025-07-29T00:00:00.000+00:00",
+   "gameResult": "L",
+   "homeTeamId": "3",
+   "homeTeamScore": "92",
+   "id": "401736277",
+   "leagueAbbreviation": "WNBA",
+   "leagueName": "Women's National Basketball Association",
+   "leagueShortName": "WNBA",
+   "opponent": {
+    "abbreviation": "DAL",
+    "displayName": "Dallas Wings",
+    "id": "3"
+   },
+   "score": "92-82",
+   "team": {
+    "abbreviation": "NY",
+    "id": "9",
+    "isAllStar": false
+   }
+  },
+  "401736283": {
+   "atVs": "@",
+   "awayTeamId": "9",
+   "awayTeamScore": "93",
+   "gameDate": "2025-07-31T00:00:00.000+00:00",
+   "gameResult": "L",
+   "homeTeamId": "8",
+   "homeTeamScore": "100",
+   "id": "401736283",
+   "leagueAbbreviation": "WNBA",
+   "leagueName": "Women's National Basketball Association",
+   "leagueShortName": "WNBA",
+   "opponent": {
+    "abbreviation": "MIN",
+    "displayName": "Minnesota Lynx",
+    "id": "8"
+   },
+   "score": "100-93",
+   "team": {
+    "abbreviation": "NY",
+    "id": "9",
+    "isAllStar": false
+   }
+  },
+  "401736286": {
+   "atVs": "@",
+   "awayTeamId": "9",
+   "awayTeamScore": "62",
+   "gameDate": "2025-08-01T23:30:00.000+00:00",
+   "gameResult": "L",
+   "homeTeamId": "18",
+   "homeTeamScore": "78",
+   "id": "401736286",
+   "leagueAbbreviation": "WNBA",
+   "leagueName": "Women's National Basketball Association",
+   "leagueShortName": "WNBA",
+   "opponent": {
+    "abbreviation": "CON",
+    "displayName": "Connecticut Sun",
+    "id": "18"
+   },
+   "score": "78-62",
+   "team": {
+    "abbreviation": "NY",
+    "id": "9",
+    "isAllStar": false
+   }
+  },
+  "401736292": {
+   "atVs": "@",
+   "awayTeamId": "9",
+   "awayTeamScore": "87",
+   "gameDate": "2025-08-03T17:00:00.000+00:00",
+   "gameResult": "W",
+   "homeTeamId": "18",
+   "homeTeamScore": "78",
+   "id": "401736292",
+   "leagueAbbreviation": "WNBA",
+   "leagueName": "Women's National Basketball Association",
+   "leagueShortName": "WNBA",
+   "opponent": {
+    "abbreviation": "CON",
+    "displayName": "Connecticut Sun",
+    "id": "18"
+   },
+   "score": "87-78",
+   "team": {
+    "abbreviation": "NY",
+    "id": "9",
+    "isAllStar": false
+   }
+  },
+  "401736296": {
+   "atVs": "vs",
+   "awayTeamId": "3",
+   "awayTeamScore": "76",
+   "gameDate": "2025-08-05T23:00:00.000+00:00",
+   "gameResult": "W",
+   "homeTeamId": "9",
+   "homeTeamScore": "85",
+   "id": "401736296",
+   "leagueAbbreviation": "WNBA",
+   "leagueName": "Women's National Basketball Association",
+   "leagueShortName": "WNBA",
+   "opponent": {
+    "abbreviation": "DAL",
+    "displayName": "Dallas Wings",
+    "id": "3"
+   },
+   "score": "85-76",
+   "team": {
+    "abbreviation": "NY",
+    "id": "9",
+    "isAllStar": false
+   }
+  },
+  "401736305": {
+   "atVs": "@",
+   "awayTeamId": "9",
+   "awayTeamScore": "88",
+   "gameDate": "2025-08-08T23:30:00.000+00:00",
+   "gameResult": "W",
+   "homeTeamId": "3",
+   "homeTeamScore": "77",
+   "id": "401736305",
+   "leagueAbbreviation": "WNBA",
+   "leagueName": "Women's National Basketball Association",
+   "leagueShortName": "WNBA",
+   "opponent": {
+    "abbreviation": "DAL",
+    "displayName": "Dallas Wings",
+    "id": "3"
+   },
+   "score": "88-77",
+   "team": {
+    "abbreviation": "NY",
+    "id": "9",
+    "isAllStar": false
+   }
+  },
+  "401736310": {
+   "atVs": "vs",
+   "awayTeamId": "8",
+   "awayTeamScore": "83",
+   "gameDate": "2025-08-10T16:30:00.000+00:00",
+   "gameResult": "L",
+   "homeTeamId": "9",
+   "homeTeamScore": "71",
+   "id": "401736310",
+   "leagueAbbreviation": "WNBA",
+   "leagueName": "Women's National Basketball Association",
+   "leagueShortName": "WNBA",
+   "opponent": {
+    "abbreviation": "MIN",
+    "displayName": "Minnesota Lynx",
+    "id": "8"
+   },
+   "score": "83-71",
+   "team": {
+    "abbreviation": "NY",
+    "id": "9",
+    "isAllStar": false
+   }
+  },
+  "401736317": {
+   "atVs": "@",
+   "awayTeamId": "9",
+   "awayTeamScore": "105",
+   "gameDate": "2025-08-13T02:00:00.000+00:00",
+   "gameResult": "W",
+   "homeTeamId": "6",
+   "homeTeamScore": "97",
+   "id": "401736317",
+   "leagueAbbreviation": "WNBA",
+   "leagueName": "Women's National Basketball Association",
+   "leagueShortName": "WNBA",
+   "opponent": {
+    "abbreviation": "LA",
+    "displayName": "Los Angeles Sparks",
+    "id": "6"
+   },
+   "score": "105-97",
+   "team": {
+    "abbreviation": "NY",
+    "id": "9",
+    "isAllStar": false
+   }
+  },
+  "401736320": {
+   "atVs": "@",
+   "awayTeamId": "9",
+   "awayTeamScore": "77",
+   "gameDate": "2025-08-14T01:30:00.000+00:00",
+   "gameResult": "L",
+   "homeTeamId": "17",
+   "homeTeamScore": "83",
+   "id": "401736320",
+   "leagueAbbreviation": "WNBA",
+   "leagueName": "Women's National Basketball Association",
+   "leagueShortName": "WNBA",
+   "opponent": {
+    "abbreviation": "LV",
+    "displayName": "Las Vegas Aces",
+    "id": "17"
+   },
+   "score": "83-77",
+   "team": {
+    "abbreviation": "NY",
+    "id": "9",
+    "isAllStar": false
+   }
+  },
+  "401736327": {
+   "atVs": "@",
+   "awayTeamId": "9",
+   "awayTeamScore": "80",
+   "gameDate": "2025-08-16T18:00:00.000+00:00",
+   "gameResult": "L",
+   "homeTeamId": "8",
+   "homeTeamScore": "86",
+   "id": "401736327",
+   "leagueAbbreviation": "WNBA",
+   "leagueName": "Women's National Basketball Association",
+   "leagueShortName": "WNBA",
+   "opponent": {
+    "abbreviation": "MIN",
+    "displayName": "Minnesota Lynx",
+    "id": "8"
+   },
+   "score": "86-80",
+   "team": {
+    "abbreviation": "NY",
+    "id": "9",
+    "isAllStar": false
+   }
+  },
+  "401736333": {
+   "atVs": "vs",
+   "awayTeamId": "8",
+   "awayTeamScore": "75",
+   "gameDate": "2025-08-19T23:00:00.000+00:00",
+   "gameResult": "W",
+   "homeTeamId": "9",
+   "homeTeamScore": "85",
+   "id": "401736333",
+   "leagueAbbreviation": "WNBA",
+   "leagueName": "Women's National Basketball Association",
+   "leagueShortName": "WNBA",
+   "opponent": {
+    "abbreviation": "MIN",
+    "displayName": "Minnesota Lynx",
+    "id": "8"
+   },
+   "score": "85-75",
+   "team": {
+    "abbreviation": "NY",
+    "id": "9",
+    "isAllStar": false
+   }
+  },
+  "401736340": {
+   "atVs": "vs",
+   "awayTeamId": "19",
+   "awayTeamScore": "91",
+   "gameDate": "2025-08-21T23:00:00.000+00:00",
+   "gameResult": "L",
+   "homeTeamId": "9",
+   "homeTeamScore": "85",
+   "id": "401736340",
+   "leagueAbbreviation": "WNBA",
+   "leagueName": "Women's National Basketball Association",
+   "leagueShortName": "WNBA",
+   "opponent": {
+    "abbreviation": "CHI",
+    "displayName": "Chicago Sky",
+    "id": "19"
+   },
+   "score": "91-85",
+   "team": {
+    "abbreviation": "NY",
+    "id": "9",
+    "isAllStar": false
+   }
+  },
+  "401736346": {
+   "atVs": "@",
+   "awayTeamId": "9",
+   "awayTeamScore": "62",
+   "gameDate": "2025-08-23T18:00:00.000+00:00",
+   "gameResult": "L",
+   "homeTeamId": "20",
+   "homeTeamScore": "78",
+   "id": "401736346",
+   "leagueAbbreviation": "WNBA",
+   "leagueName": "Women's National Basketball Association",
+   "leagueShortName": "WNBA",
+   "opponent": {
+    "abbreviation": "ATL",
+    "displayName": "Atlanta Dream",
+    "id": "20"
+   },
+   "score": "78-62",
+   "team": {
+    "abbreviation": "NY",
+    "id": "9",
+    "isAllStar": false
+   }
+  },
+  "401736352": {
+   "atVs": "vs",
+   "awayTeamId": "18",
+   "awayTeamScore": "79",
+   "gameDate": "2025-08-25T23:00:00.000+00:00",
+   "gameResult": "W",
+   "homeTeamId": "9",
+   "homeTeamScore": "81",
+   "id": "401736352",
+   "leagueAbbreviation": "WNBA",
+   "leagueName": "Women's National Basketball Association",
+   "leagueShortName": "WNBA",
+   "opponent": {
+    "abbreviation": "CON",
+    "displayName": "Connecticut Sun",
+    "id": "18"
+   },
+   "score": "81-79",
+   "team": {
+    "abbreviation": "NY",
+    "id": "9",
+    "isAllStar": false
+   }
+  },
+  "401736366": {
+   "atVs": "@",
+   "awayTeamId": "9",
+   "awayTeamScore": "63",
+   "gameDate": "2025-08-31T02:00:00.000+00:00",
+   "gameResult": "L",
+   "homeTeamId": "11",
+   "homeTeamScore": "80",
+   "id": "401736366",
+   "leagueAbbreviation": "WNBA",
+   "leagueName": "Women's National Basketball Association",
+   "leagueShortName": "WNBA",
+   "opponent": {
+    "abbreviation": "PHX",
+    "displayName": "Phoenix Mercury",
+    "id": "11"
+   },
+   "score": "80-63",
+   "team": {
+    "abbreviation": "NY",
+    "id": "9",
+    "isAllStar": false
+   }
+  },
+  "401736372": {
+   "atVs": "@",
+   "awayTeamId": "9",
+   "awayTeamScore": "58",
+   "gameDate": "2025-09-03T02:00:00.000+00:00",
+   "gameResult": "L",
+   "homeTeamId": "129689",
+   "homeTeamScore": "66",
+   "id": "401736372",
+   "leagueAbbreviation": "WNBA",
+   "leagueName": "Women's National Basketball Association",
+   "leagueShortName": "WNBA",
+   "opponent": {
+    "abbreviation": "GS",
+    "displayName": "Golden State Valkyries",
+    "id": "129689"
+   },
+   "score": "66-58",
+   "team": {
+    "abbreviation": "NY",
+    "id": "9",
+    "isAllStar": false
+   }
+  },
+  "401736381": {
+   "atVs": "@",
+   "awayTeamId": "9",
+   "awayTeamScore": "84",
+   "gameDate": "2025-09-06T02:00:00.000+00:00",
+   "gameResult": "W",
+   "homeTeamId": "14",
+   "homeTeamScore": "76",
+   "id": "401736381",
+   "leagueAbbreviation": "WNBA",
+   "leagueName": "Women's National Basketball Association",
+   "leagueShortName": "WNBA",
+   "opponent": {
+    "abbreviation": "SEA",
+    "displayName": "Seattle Storm",
+    "id": "14"
+   },
+   "score": "84-76",
+   "team": {
+    "abbreviation": "NY",
+    "id": "9",
+    "isAllStar": false
+   }
+  },
+  "401736388": {
+   "atVs": "vs",
+   "awayTeamId": "16",
+   "awayTeamScore": "66",
+   "gameDate": "2025-09-09T23:00:00.000+00:00",
+   "gameResult": "W",
+   "homeTeamId": "9",
+   "homeTeamScore": "75",
+   "id": "401736388",
+   "leagueAbbreviation": "WNBA",
+   "leagueName": "Women's National Basketball Association",
+   "leagueShortName": "WNBA",
+   "opponent": {
+    "abbreviation": "WSH",
+    "displayName": "Washington Mystics",
+    "id": "16"
+   },
+   "score": "75-66",
+   "team": {
+    "abbreviation": "NY",
+    "id": "9",
+    "isAllStar": false
+   }
+  },
+  "401736394": {
+   "atVs": "@",
+   "awayTeamId": "9",
+   "awayTeamScore": "91",
+   "gameDate": "2025-09-12T00:00:00.000+00:00",
+   "gameResult": "W",
+   "homeTeamId": "19",
+   "homeTeamScore": "86",
+   "id": "401736394",
+   "leagueAbbreviation": "WNBA",
+   "leagueName": "Women's National Basketball Association",
+   "leagueShortName": "WNBA",
+   "opponent": {
+    "abbreviation": "CHI",
+    "displayName": "Chicago Sky",
+    "id": "19"
+   },
+   "score": "91-86",
+   "team": {
+    "abbreviation": "NY",
+    "id": "9",
+    "isAllStar": false
+   }
+  },
+  "401765028": {
+   "atVs": "vs",
+   "awayTeamId": "18",
+   "awayTeamScore": "94",
+   "gameDate": "2025-05-09T23:00:00.000+00:00",
+   "gameResult": "L",
+   "homeTeamId": "9",
+   "homeTeamScore": "86",
+   "id": "401765028",
+   "leagueAbbreviation": "WNBA",
+   "leagueName": "Women's National Basketball Association",
+   "leagueShortName": "WNBA",
+   "opponent": {
+    "abbreviation": "CON",
+    "displayName": "Connecticut Sun",
+    "id": "18"
+   },
+   "score": "94-86",
+   "team": {
+    "abbreviation": "NY",
+    "id": "9",
+    "isAllStar": false
+   }
+  },
+  "401765029": {
+   "atVs": "vs",
+   "awayTeamId": "130927",
+   "awayTeamScore": "61",
+   "gameDate": "2025-05-13T02:00:00.000+00:00",
+   "gameResult": "W",
+   "homeTeamId": "9",
+   "homeTeamScore": "84",
+   "id": "401765029",
+   "leagueAbbreviation": "WNBA",
+   "leagueName": "Women's National Basketball Association",
+   "leagueShortName": "WNBA",
+   "opponent": {
+    "abbreviation": "TOY",
+    "displayName": "Toyota Antelopes",
+    "id": "130927"
+   },
+   "score": "84-61",
+   "team": {
+    "abbreviation": "NY",
+    "id": "9",
+    "isAllStar": false
+   }
+  },
+  "401820314": {
+   "atVs": "@",
+   "awayTeamId": "9",
+   "awayTeamScore": "76",
+   "eventNote": "First Round - Game 1",
+   "gameDate": "2025-09-14T21:00:00.000+00:00",
+   "gameResult": "W",
+   "homeTeamId": "11",
+   "homeTeamScore": "69",
+   "id": "401820314",
+   "leagueAbbreviation": "WNBA",
+   "leagueName": "Women's National Basketball Association",
+   "leagueShortName": "WNBA",
+   "opponent": {
+    "abbreviation": "PHX",
+    "displayName": "Phoenix Mercury",
+    "id": "11"
+   },
+   "score": "76-69 OT",
+   "team": {
+    "abbreviation": "NY",
+    "id": "9",
+    "isAllStar": false
+   }
+  },
+  "401820318": {
+   "atVs": "vs",
+   "awayTeamId": "11",
+   "awayTeamScore": "86",
+   "eventNote": "First Round - Game 2",
+   "gameDate": "2025-09-18T00:00:00.000+00:00",
+   "gameResult": "L",
+   "homeTeamId": "9",
+   "homeTeamScore": "60",
+   "id": "401820318",
+   "leagueAbbreviation": "WNBA",
+   "leagueName": "Women's National Basketball Association",
+   "leagueShortName": "WNBA",
+   "opponent": {
+    "abbreviation": "PHX",
+    "displayName": "Phoenix Mercury",
+    "id": "11"
+   },
+   "score": "86-60",
+   "team": {
+    "abbreviation": "NY",
+    "id": "9",
+    "isAllStar": false
+   }
+  },
+  "401820324": {
+   "atVs": "@",
+   "awayTeamId": "9",
+   "awayTeamScore": "73",
+   "eventNote": "First Round - Game 3",
+   "gameDate": "2025-09-20T01:00:00.000+00:00",
+   "gameResult": "L",
+   "homeTeamId": "11",
+   "homeTeamScore": "79",
+   "id": "401820324",
+   "leagueAbbreviation": "WNBA",
+   "leagueName": "Women's National Basketball Association",
+   "leagueShortName": "WNBA",
+   "opponent": {
+    "abbreviation": "PHX",
+    "displayName": "Phoenix Mercury",
+    "id": "11"
+   },
+   "score": "79-73",
+   "team": {
+    "abbreviation": "NY",
+    "id": "9",
+    "isAllStar": false
+   }
+  }
+ },
+ "filters": [
+  {
+   "displayName": "League",
+   "name": "league",
+   "options": [
+    {
+     "displayValue": "Women's National Basketball Association",
+     "shortDisplayName": "WNBA",
+     "value": "wnba"
+    },
+    {
+     "displayValue": "NCAA Women's Basketball",
+     "shortDisplayName": "NCAAW",
+     "value": "womens-college-basketball"
+    }
+   ],
+   "value": "wnba"
+  },
+  {
+   "displayName": "Season",
+   "name": "season",
+   "options": [
+    {
+     "displayValue": "2026",
+     "value": "2026"
+    },
+    {
+     "displayValue": "2025",
+     "value": "2025"
+    },
+    {
+     "displayValue": "2024",
+     "value": "2024"
+    },
+    {
+     "displayValue": "2023",
+     "value": "2023"
+    },
+    {
+     "displayValue": "2022",
+     "value": "2022"
+    },
+    {
+     "displayValue": "2021",
+     "value": "2021"
+    },
+    {
+     "displayValue": "2019",
+     "value": "2019"
+    },
+    {
+     "displayValue": "2018",
+     "value": "2018"
+    },
+    {
+     "displayValue": "2017",
+     "value": "2017"
+    },
+    {
+     "displayValue": "2016",
+     "value": "2016"
+    }
+   ],
+   "value": "2025"
+  }
+ ],
+ "labels": [
+  "MIN",
+  "PTS",
+  "REB",
+  "AST",
+  "STL",
+  "BLK",
+  "TO",
+  "FG",
+  "FG%",
+  "3PT",
+  "3P%",
+  "FT",
+  "FT%",
+  "PF"
+ ],
+ "names": [
+  "minutes",
+  "points",
+  "totalRebounds",
+  "assists",
+  "steals",
+  "blocks",
+  "turnovers",
+  "fieldGoalsMade-fieldGoalsAttempted",
+  "fieldGoalPct",
+  "threePointFieldGoalsMade-threePointFieldGoalsAttempted",
+  "threePointPct",
+  "freeThrowsMade-freeThrowsAttempted",
+  "freeThrowPct",
+  "fouls"
+ ],
+ "seasonTypes": [
+  {
+   "categories": [
+    {
+     "displayName": "Postseason",
+     "events": [
+      {
+       "eventId": "401820324",
+       "stats": [
+        "33",
+        "3",
+        "8",
+        "4",
+        "0",
+        "1",
+        "0",
+        "1-10",
+        "10.0",
+        "0-5",
+        "0.0",
+        "1-2",
+        "50.0",
+        "5"
+       ]
+      },
+      {
+       "eventId": "401820318",
+       "stats": [
+        "22",
+        "7",
+        "13",
+        "1",
+        "0",
+        "2",
+        "2",
+        "3-9",
+        "33.3",
+        "1-3",
+        "33.3",
+        "0-0",
+        "0.0",
+        "3"
+       ]
+      },
+      {
+       "eventId": "401820314",
+       "stats": [
+        "35",
+        "7",
+        "12",
+        "2",
+        "0",
+        "3",
+        "2",
+        "3-7",
+        "42.9",
+        "1-3",
+        "33.3",
+        "0-0",
+        "0.0",
+        "3"
+       ]
+      }
+     ],
+     "splitType": "3",
+     "totals": [
+      "30.0",
+      "5.7",
+      "11.0",
+      "2.3",
+      "0.0",
+      "2.0",
+      "1.3",
+      "2.3-8.7",
+      "26.9",
+      "0.7-3.7",
+      "18.2",
+      "0.3-0.7",
+      "50.0",
+      "3.7"
+     ],
+     "type": "event"
+    }
+   ],
+   "displayName": "2025 Postseason",
+   "displayTeam": "NY",
+   "summary": {
+    "displayName": "Postseason",
+    "stats": [
+     {
+      "displayName": "Totals",
+      "stats": [
+       "90",
+       "17",
+       "33",
+       "7",
+       "0",
+       "6",
+       "4",
+       "7-26",
+       "26.9",
+       "2-11",
+       "18.2",
+       "1-2",
+       "50.0",
+       "11"
+      ],
+      "type": "total"
+     }
+    ]
+   }
+  },
+  {
+   "categories": [
+    {
+     "displayName": "september",
+     "events": [
+      {
+       "eventId": "401736394",
+       "stats": [
+        "19",
+        "7",
+        "3",
+        "4",
+        "0",
+        "1",
+        "0",
+        "2-6",
+        "33.3",
+        "1-3",
+        "33.3",
+        "2-2",
+        "100.0",
+        "2"
+       ]
+      },
+      {
+       "eventId": "401736388",
+       "stats": [
+        "29",
+        "12",
+        "11",
+        "3",
+        "1",
+        "0",
+        "2",
+        "4-11",
+        "36.4",
+        "0-3",
+        "0.0",
+        "4-5",
+        "80.0",
+        "3"
+       ]
+      },
+      {
+       "eventId": "401736381",
+       "stats": [
+        "18",
+        "2",
+        "2",
+        "3",
+        "0",
+        "1",
+        "1",
+        "1-4",
+        "25.0",
+        "0-1",
+        "0.0",
+        "0-0",
+        "0.0",
+        "5"
+       ]
+      },
+      {
+       "eventId": "401736372",
+       "stats": [
+        "25",
+        "5",
+        "4",
+        "1",
+        "1",
+        "1",
+        "3",
+        "2-4",
+        "50.0",
+        "0-2",
+        "0.0",
+        "1-2",
+        "50.0",
+        "2"
+       ]
+      }
+     ],
+     "splitType": "september",
+     "type": "event"
+    },
+    {
+     "displayName": "august",
+     "events": [
+      {
+       "eventId": "401736366",
+       "stats": [
+        "29",
+        "6",
+        "6",
+        "4",
+        "1",
+        "0",
+        "5",
+        "3-8",
+        "37.5",
+        "0-2",
+        "0.0",
+        "0-0",
+        "0.0",
+        "4"
+       ]
+      },
+      {
+       "eventId": "401736352",
+       "stats": [
+        "33",
+        "18",
+        "11",
+        "6",
+        "1",
+        "0",
+        "1",
+        "8-10",
+        "80.0",
+        "2-4",
+        "50.0",
+        "0-0",
+        "0.0",
+        "3"
+       ]
+      },
+      {
+       "eventId": "401736346",
+       "stats": [
+        "29",
+        "11",
+        "8",
+        "1",
+        "0",
+        "1",
+        "4",
+        "4-13",
+        "30.8",
+        "3-8",
+        "37.5",
+        "0-0",
+        "0.0",
+        "2"
+       ]
+      },
+      {
+       "eventId": "401736340",
+       "stats": [
+        "32",
+        "25",
+        "7",
+        "2",
+        "2",
+        "2",
+        "1",
+        "9-16",
+        "56.3",
+        "5-11",
+        "45.5",
+        "2-2",
+        "100.0",
+        "2"
+       ]
+      },
+      {
+       "eventId": "401736333",
+       "stats": [
+        "30",
+        "22",
+        "10",
+        "1",
+        "1",
+        "0",
+        "2",
+        "7-10",
+        "70.0",
+        "3-5",
+        "60.0",
+        "5-6",
+        "83.3",
+        "1"
+       ]
+      },
+      {
+       "eventId": "401736327",
+       "stats": [
+        "30",
+        "17",
+        "6",
+        "2",
+        "0",
+        "1",
+        "3",
+        "7-11",
+        "63.6",
+        "2-4",
+        "50.0",
+        "1-1",
+        "100.0",
+        "2"
+       ]
+      },
+      {
+       "eventId": "401736320",
+       "stats": [
+        "33",
+        "11",
+        "7",
+        "5",
+        "0",
+        "2",
+        "2",
+        "4-12",
+        "33.3",
+        "0-4",
+        "0.0",
+        "3-5",
+        "60.0",
+        "5"
+       ]
+      },
+      {
+       "eventId": "401736317",
+       "stats": [
+        "31",
+        "21",
+        "11",
+        "3",
+        "0",
+        "2",
+        "2",
+        "8-11",
+        "72.7",
+        "4-5",
+        "80.0",
+        "1-4",
+        "25.0",
+        "4"
+       ]
+      },
+      {
+       "eventId": "401736310",
+       "stats": [
+        "32",
+        "11",
+        "6",
+        "5",
+        "0",
+        "3",
+        "3",
+        "4-7",
+        "57.1",
+        "0-1",
+        "0.0",
+        "3-4",
+        "75.0",
+        "0"
+       ]
+      },
+      {
+       "eventId": "401736305",
+       "stats": [
+        "28",
+        "14",
+        "6",
+        "3",
+        "0",
+        "0",
+        "2",
+        "5-7",
+        "71.4",
+        "4-5",
+        "80.0",
+        "0-0",
+        "0.0",
+        "4"
+       ]
+      },
+      {
+       "eventId": "401736296",
+       "stats": [
+        "21",
+        "15",
+        "10",
+        "2",
+        "0",
+        "1",
+        "2",
+        "6-12",
+        "50.0",
+        "3-5",
+        "60.0",
+        "0-0",
+        "0.0",
+        "1"
+       ]
+      },
+      {
+       "eventId": "401736292",
+       "stats": [
+        "31",
+        "21",
+        "9",
+        "4",
+        "2",
+        "1",
+        "5",
+        "8-13",
+        "61.5",
+        "1-4",
+        "25.0",
+        "4-5",
+        "80.0",
+        "3"
+       ]
+      },
+      {
+       "eventId": "401736286",
+       "stats": [
+        "33",
+        "14",
+        "6",
+        "4",
+        "0",
+        "3",
+        "5",
+        "4-9",
+        "44.4",
+        "1-3",
+        "33.3",
+        "5-6",
+        "83.3",
+        "4"
+       ]
+      }
+     ],
+     "splitType": "august",
+     "type": "event"
+    },
+    {
+     "displayName": "july",
+     "events": [
+      {
+       "eventId": "401736283",
+       "stats": [
+        "29",
+        "12",
+        "7",
+        "2",
+        "0",
+        "1",
+        "2",
+        "5-7",
+        "71.4",
+        "2-2",
+        "100.0",
+        "0-0",
+        "0.0",
+        "3"
+       ]
+      },
+      {
+       "eventId": "401736277",
+       "stats": [
+        "30",
+        "18",
+        "7",
+        "2",
+        "0",
+        "0",
+        "0",
+        "6-16",
+        "37.5",
+        "2-6",
+        "33.3",
+        "4-4",
+        "100.0",
+        "1"
+       ]
+      },
+      {
+       "eventId": "401736270",
+       "stats": [
+        "29",
+        "14",
+        "8",
+        "4",
+        "0",
+        "1",
+        "2",
+        "5-12",
+        "41.7",
+        "2-4",
+        "50.0",
+        "2-2",
+        "100.0",
+        "3"
+       ]
+      },
+      {
+       "eventId": "401736266",
+       "stats": [
+        "29",
+        "20",
+        "11",
+        "1",
+        "1",
+        "1",
+        "1",
+        "5-14",
+        "35.7",
+        "1-4",
+        "25.0",
+        "9-9",
+        "100.0",
+        "1"
+       ]
+      },
+      {
+       "eventId": "401736258",
+       "stats": [
+        "23",
+        "18",
+        "9",
+        "2",
+        "0",
+        "1",
+        "2",
+        "5-13",
+        "38.5",
+        "3-7",
+        "42.9",
+        "5-5",
+        "100.0",
+        "5"
+       ]
+      }
+     ],
+     "splitType": "july",
+     "type": "event"
+    },
+    {
+     "displayName": "june",
+     "events": [
+      {
+       "eventId": "401736189",
+       "stats": [
+        "9",
+        "2",
+        "4",
+        "0",
+        "0",
+        "1",
+        "2",
+        "1-1",
+        "100.0",
+        "0-0",
+        "0.0",
+        "0-0",
+        "0.0",
+        "0"
+       ]
+      },
+      {
+       "eventId": "401736183",
+       "stats": [
+        "25",
+        "10",
+        "10",
+        "2",
+        "1",
+        "0",
+        "0",
+        "4-10",
+        "40.0",
+        "2-4",
+        "50.0",
+        "0-0",
+        "0.0",
+        "1"
+       ]
+      },
+      {
+       "eventId": "401736159",
+       "stats": [
+        "6",
+        "3",
+        "4",
+        "1",
+        "0",
+        "0",
+        "0",
+        "1-3",
+        "33.3",
+        "0-1",
+        "0.0",
+        "1-2",
+        "50.0",
+        "1"
+       ]
+      },
+      {
+       "eventId": "401736152",
+       "stats": [
+        "23",
+        "13",
+        "11",
+        "0",
+        "0",
+        "0",
+        "3",
+        "4-7",
+        "57.1",
+        "3-4",
+        "75.0",
+        "2-2",
+        "100.0",
+        "4"
+       ]
+      }
+     ],
+     "splitType": "june",
+     "type": "event"
+    },
+    {
+     "displayName": "may",
+     "events": [
+      {
+       "eventId": "401736147",
+       "stats": [
+        "30",
+        "14",
+        "18",
+        "3",
+        "2",
+        "2",
+        "1",
+        "5-14",
+        "35.7",
+        "1-6",
+        "16.7",
+        "3-6",
+        "50.0",
+        "2"
+       ]
+      },
+      {
+       "eventId": "401736139",
+       "stats": [
+        "25",
+        "13",
+        "10",
+        "5",
+        "1",
+        "1",
+        "1",
+        "4-12",
+        "33.3",
+        "2-5",
+        "40.0",
+        "3-6",
+        "50.0",
+        "4"
+       ]
+      },
+      {
+       "eventId": "401736132",
+       "stats": [
+        "36",
+        "26",
+        "12",
+        "3",
+        "1",
+        "1",
+        "3",
+        "9-15",
+        "60.0",
+        "2-5",
+        "40.0",
+        "6-7",
+        "85.7",
+        "3"
+       ]
+      },
+      {
+       "eventId": "401736127",
+       "stats": [
+        "22",
+        "11",
+        "7",
+        "1",
+        "0",
+        "4",
+        "3",
+        "4-6",
+        "66.7",
+        "3-4",
+        "75.0",
+        "0-0",
+        "0.0",
+        "1"
+       ]
+      },
+      {
+       "eventId": "401736116",
+       "stats": [
+        "30",
+        "17",
+        "10",
+        "6",
+        "0",
+        "1",
+        "2",
+        "6-12",
+        "50.0",
+        "1-3",
+        "33.3",
+        "4-6",
+        "66.7",
+        "3"
+       ]
+      }
+     ],
+     "splitType": "may",
+     "type": "event"
+    }
+   ],
+   "displayName": "2025 Regular Season",
+   "displayTeam": "NY",
+   "summary": {
+    "displayName": "Regular Season Stats",
+    "stats": [
+     {
+      "displayName": "Averages",
+      "stats": [
+       "26.8",
+       "13.6",
+       "8.1",
+       "2.7",
+       "0.5",
+       "1.1",
+       "2.1",
+       "4.8-9.9",
+       "49.0",
+       "1.7-4.0",
+       "42.4",
+       "2.3-2.9",
+       "76.9",
+       "2.5"
+      ],
+      "type": "avg"
+     },
+     {
+      "displayName": "Totals",
+      "stats": [
+       "830",
+       "423",
+       "251",
+       "85",
+       "15",
+       "33",
+       "65",
+       "150-306",
+       "49.0",
+       "53-125",
+       "42.4",
+       "70-91",
+       "76.9",
+       "79"
+      ],
+      "type": "total"
+     }
+    ]
+   }
+  },
+  {
+   "categories": [
+    {
+     "displayName": "Preseason",
+     "events": [
+      {
+       "eventId": "401765029",
+       "stats": [
+        "18",
+        "6",
+        "5",
+        "2",
+        "0",
+        "0",
+        "0",
+        "2-7",
+        "28.6",
+        "1-4",
+        "25.0",
+        "1-2",
+        "50.0",
+        "0"
+       ]
+      },
+      {
+       "eventId": "401765028",
+       "stats": [
+        "18",
+        "7",
+        "3",
+        "2",
+        "1",
+        "0",
+        "1",
+        "3-6",
+        "50.0",
+        "0-3",
+        "0.0",
+        "1-2",
+        "50.0",
+        "3"
+       ]
+      }
+     ],
+     "type": "event"
+    }
+   ],
+   "displayName": "2025 Preseason"
+  }
+ ]
+}

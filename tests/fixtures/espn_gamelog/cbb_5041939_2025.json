@@ -1,0 +1,1788 @@
+{
+ "displayNames": [
+  "Minutes",
+  "Field Goals Made-Attempted",
+  "Field Goal Percentage",
+  "3-Point Field Goals Made-Attempted",
+  "3-Point Field Goal Percentage",
+  "Free Throws Made-Attempted",
+  "Free Throw Percentage",
+  "Rebounds",
+  "Assists",
+  "Blocks",
+  "Steals",
+  "Fouls",
+  "Turnovers",
+  "Points"
+ ],
+ "events": {
+  "401706881": {
+   "atVs": "vs",
+   "awayTeamId": "311",
+   "awayTeamScore": "62",
+   "gameDate": "2024-11-05T00:00:00.000+00:00",
+   "gameResult": "W",
+   "homeTeamId": "150",
+   "homeTeamScore": "96",
+   "id": "401706881",
+   "leagueAbbreviation": "NCAAM",
+   "leagueName": "NCAA Men's Basketball",
+   "leagueShortName": "NCAAM",
+   "opponent": {
+    "abbreviation": "ME",
+    "displayName": "Maine Black Bears",
+    "id": "311"
+   },
+   "score": "96-62",
+   "team": {
+    "abbreviation": "DUKE",
+    "id": "150",
+    "isAllStar": false
+   },
+   "week": 1
+  },
+  "401706882": {
+   "atVs": "vs",
+   "awayTeamId": "349",
+   "awayTeamScore": "58",
+   "gameDate": "2024-11-08T23:00:00.000+00:00",
+   "gameResult": "W",
+   "homeTeamId": "150",
+   "homeTeamScore": "100",
+   "id": "401706882",
+   "leagueAbbreviation": "NCAAM",
+   "leagueName": "NCAA Men's Basketball",
+   "leagueShortName": "NCAAM",
+   "opponent": {
+    "abbreviation": "ARMY",
+    "displayName": "Army Black Knights",
+    "id": "349"
+   },
+   "score": "100-58",
+   "team": {
+    "abbreviation": "DUKE",
+    "id": "150",
+    "isAllStar": false
+   },
+   "week": 1
+  },
+  "401706883": {
+   "atVs": "vs",
+   "awayTeamId": "150",
+   "awayTeamScore": "72",
+   "eventNote": "State Farm Champions Classic",
+   "gameDate": "2024-11-13T02:00:00.000+00:00",
+   "gameResult": "L",
+   "homeTeamId": "96",
+   "homeTeamScore": "77",
+   "id": "401706883",
+   "leagueAbbreviation": "NCAAM",
+   "leagueName": "NCAA Men's Basketball",
+   "leagueShortName": "NCAAM",
+   "opponent": {
+    "abbreviation": "UK",
+    "displayName": "Kentucky Wildcats",
+    "id": "96",
+    "rank": 19
+   },
+   "score": "77-72",
+   "team": {
+    "abbreviation": "DUKE",
+    "id": "150",
+    "isAllStar": false
+   },
+   "week": 2
+  },
+  "401706884": {
+   "atVs": "vs",
+   "awayTeamId": "2747",
+   "awayTeamScore": "35",
+   "gameDate": "2024-11-16T17:00:00.000+00:00",
+   "gameResult": "W",
+   "homeTeamId": "150",
+   "homeTeamScore": "86",
+   "id": "401706884",
+   "leagueAbbreviation": "NCAAM",
+   "leagueName": "NCAA Men's Basketball",
+   "leagueShortName": "NCAAM",
+   "opponent": {
+    "abbreviation": "WOF",
+    "displayName": "Wofford Terriers",
+    "id": "2747"
+   },
+   "score": "86-35",
+   "team": {
+    "abbreviation": "DUKE",
+    "id": "150",
+    "isAllStar": false
+   },
+   "week": 2
+  },
+  "401706885": {
+   "atVs": "@",
+   "awayTeamId": "150",
+   "awayTeamScore": "69",
+   "gameDate": "2024-11-23T03:30:00.000+00:00",
+   "gameResult": "W",
+   "homeTeamId": "12",
+   "homeTeamScore": "55",
+   "id": "401706885",
+   "leagueAbbreviation": "NCAAM",
+   "leagueName": "NCAA Men's Basketball",
+   "leagueShortName": "NCAAM",
+   "opponent": {
+    "abbreviation": "ARIZ",
+    "displayName": "Arizona Wildcats",
+    "id": "12",
+    "rank": 17
+   },
+   "score": "69-55",
+   "team": {
+    "abbreviation": "DUKE",
+    "id": "150",
+    "isAllStar": false
+   },
+   "week": 3
+  },
+  "401706886": {
+   "atVs": "vs",
+   "awayTeamId": "2305",
+   "awayTeamScore": "75",
+   "eventNote": "Terry's Chocolate Vegas Showdown",
+   "gameDate": "2024-11-27T02:00:00.000+00:00",
+   "gameResult": "L",
+   "homeTeamId": "150",
+   "homeTeamScore": "72",
+   "id": "401706886",
+   "leagueAbbreviation": "NCAAM",
+   "leagueName": "NCAA Men's Basketball",
+   "leagueShortName": "NCAAM",
+   "opponent": {
+    "abbreviation": "KU",
+    "displayName": "Kansas Jayhawks",
+    "id": "2305",
+    "rank": 1
+   },
+   "score": "75-72",
+   "team": {
+    "abbreviation": "DUKE",
+    "id": "150",
+    "isAllStar": false
+   },
+   "week": 4
+  },
+  "401706887": {
+   "atVs": "vs",
+   "awayTeamId": "2547",
+   "awayTeamScore": "48",
+   "eventNote": "Terry's Chocolate Vegas Showdown",
+   "gameDate": "2024-11-30T00:00:00.000+00:00",
+   "gameResult": "W",
+   "homeTeamId": "150",
+   "homeTeamScore": "70",
+   "id": "401706887",
+   "leagueAbbreviation": "NCAAM",
+   "leagueName": "NCAA Men's Basketball",
+   "leagueShortName": "NCAAM",
+   "opponent": {
+    "abbreviation": "SEA",
+    "displayName": "Seattle U Redhawks",
+    "id": "2547"
+   },
+   "score": "70-48",
+   "team": {
+    "abbreviation": "DUKE",
+    "id": "150",
+    "isAllStar": false
+   },
+   "week": 4
+  },
+  "401706888": {
+   "atVs": "vs",
+   "awayTeamId": "2",
+   "awayTeamScore": "78",
+   "eventNote": "SEC/ACC Men's Challenge Presented by Continental Tire",
+   "gameDate": "2024-12-05T02:25:00.000+00:00",
+   "gameResult": "W",
+   "homeTeamId": "150",
+   "homeTeamScore": "84",
+   "id": "401706888",
+   "leagueAbbreviation": "NCAAM",
+   "leagueName": "NCAA Men's Basketball",
+   "leagueShortName": "NCAAM",
+   "opponent": {
+    "abbreviation": "AUB",
+    "displayName": "Auburn Tigers",
+    "id": "2",
+    "rank": 2
+   },
+   "score": "84-78",
+   "team": {
+    "abbreviation": "DUKE",
+    "id": "150",
+    "isAllStar": false
+   },
+   "week": 5
+  },
+  "401706889": {
+   "atVs": "vs",
+   "awayTeamId": "2916",
+   "awayTeamScore": "46",
+   "gameDate": "2024-12-11T00:00:00.000+00:00",
+   "gameResult": "W",
+   "homeTeamId": "150",
+   "homeTeamScore": "72",
+   "id": "401706889",
+   "leagueAbbreviation": "NCAAM",
+   "leagueName": "NCAA Men's Basketball",
+   "leagueShortName": "NCAAM",
+   "opponent": {
+    "abbreviation": "UIW",
+    "displayName": "Incarnate Word Cardinals",
+    "id": "2916"
+   },
+   "score": "72-46",
+   "team": {
+    "abbreviation": "DUKE",
+    "id": "150",
+    "isAllStar": false
+   },
+   "week": 6
+  },
+  "401706890": {
+   "atVs": "vs",
+   "awayTeamId": "2244",
+   "awayTeamScore": "47",
+   "gameDate": "2024-12-18T00:00:00.000+00:00",
+   "gameResult": "W",
+   "homeTeamId": "150",
+   "homeTeamScore": "68",
+   "id": "401706890",
+   "leagueAbbreviation": "NCAAM",
+   "leagueName": "NCAA Men's Basketball",
+   "leagueShortName": "NCAAM",
+   "opponent": {
+    "abbreviation": "GMU",
+    "displayName": "George Mason Patriots",
+    "id": "2244"
+   },
+   "score": "68-47",
+   "team": {
+    "abbreviation": "DUKE",
+    "id": "150",
+    "isAllStar": false
+   },
+   "week": 7
+  },
+  "401707856": {
+   "atVs": "vs",
+   "awayTeamId": "150",
+   "awayTeamScore": "110",
+   "gameDate": "2025-02-23T01:00:00.000+00:00",
+   "gameResult": "W",
+   "homeTeamId": "356",
+   "homeTeamScore": "67",
+   "id": "401707856",
+   "leagueAbbreviation": "NCAAM",
+   "leagueName": "NCAA Men's Basketball",
+   "leagueShortName": "NCAAM",
+   "opponent": {
+    "abbreviation": "ILL",
+    "displayName": "Illinois Fighting Illini",
+    "id": "356"
+   },
+   "score": "110-67",
+   "team": {
+    "abbreviation": "DUKE",
+    "id": "150",
+    "isAllStar": false
+   },
+   "week": 16
+  },
+  "401724748": {
+   "atVs": "vs",
+   "awayTeamId": "87",
+   "awayTeamScore": "78",
+   "gameDate": "2025-01-11T17:00:00.000+00:00",
+   "gameResult": "W",
+   "homeTeamId": "150",
+   "homeTeamScore": "86",
+   "id": "401724748",
+   "leagueAbbreviation": "NCAAM",
+   "leagueName": "NCAA Men's Basketball",
+   "leagueShortName": "NCAAM",
+   "opponent": {
+    "abbreviation": "ND",
+    "displayName": "Notre Dame Fighting Irish",
+    "id": "87"
+   },
+   "score": "86-78",
+   "team": {
+    "abbreviation": "DUKE",
+    "id": "150",
+    "isAllStar": false
+   },
+   "week": 10
+  },
+  "401724757": {
+   "atVs": "vs",
+   "awayTeamId": "221",
+   "awayTeamScore": "47",
+   "gameDate": "2025-01-08T00:00:00.000+00:00",
+   "gameResult": "W",
+   "homeTeamId": "150",
+   "homeTeamScore": "76",
+   "id": "401724757",
+   "leagueAbbreviation": "NCAAM",
+   "leagueName": "NCAA Men's Basketball",
+   "leagueShortName": "NCAAM",
+   "opponent": {
+    "abbreviation": "PITT",
+    "displayName": "Pittsburgh Panthers",
+    "id": "221"
+   },
+   "score": "76-47",
+   "team": {
+    "abbreviation": "DUKE",
+    "id": "150",
+    "isAllStar": false
+   },
+   "week": 10
+  },
+  "401724775": {
+   "atVs": "@",
+   "awayTeamId": "150",
+   "awayTeamScore": "76",
+   "gameDate": "2024-12-08T23:00:00.000+00:00",
+   "gameResult": "W",
+   "homeTeamId": "97",
+   "homeTeamScore": "65",
+   "id": "401724775",
+   "leagueAbbreviation": "NCAAM",
+   "leagueName": "NCAA Men's Basketball",
+   "leagueShortName": "NCAAM",
+   "opponent": {
+    "abbreviation": "LOU",
+    "displayName": "Louisville Cardinals",
+    "id": "97"
+   },
+   "score": "76-65",
+   "team": {
+    "abbreviation": "DUKE",
+    "id": "150",
+    "isAllStar": false
+   },
+   "week": 5
+  },
+  "401724779": {
+   "atVs": "@",
+   "awayTeamId": "150",
+   "awayTeamScore": "82",
+   "gameDate": "2024-12-21T17:00:00.000+00:00",
+   "gameResult": "W",
+   "homeTeamId": "59",
+   "homeTeamScore": "56",
+   "id": "401724779",
+   "leagueAbbreviation": "NCAAM",
+   "leagueName": "NCAA Men's Basketball",
+   "leagueShortName": "NCAAM",
+   "opponent": {
+    "abbreviation": "GT",
+    "displayName": "Georgia Tech Yellow Jackets",
+    "id": "59"
+   },
+   "score": "82-56",
+   "team": {
+    "abbreviation": "DUKE",
+    "id": "150",
+    "isAllStar": false
+   },
+   "week": 7
+  },
+  "401724783": {
+   "atVs": "vs",
+   "awayTeamId": "259",
+   "awayTeamScore": "65",
+   "gameDate": "2024-12-31T21:30:00.000+00:00",
+   "gameResult": "W",
+   "homeTeamId": "150",
+   "homeTeamScore": "88",
+   "id": "401724783",
+   "leagueAbbreviation": "NCAAM",
+   "leagueName": "NCAA Men's Basketball",
+   "leagueShortName": "NCAAM",
+   "opponent": {
+    "abbreviation": "VT",
+    "displayName": "Virginia Tech Hokies",
+    "id": "259"
+   },
+   "score": "88-65",
+   "team": {
+    "abbreviation": "DUKE",
+    "id": "150",
+    "isAllStar": false
+   },
+   "week": 9
+  },
+  "401724791": {
+   "atVs": "@",
+   "awayTeamId": "150",
+   "awayTeamScore": "89",
+   "gameDate": "2025-01-04T19:15:00.000+00:00",
+   "gameResult": "W",
+   "homeTeamId": "2567",
+   "homeTeamScore": "62",
+   "id": "401724791",
+   "leagueAbbreviation": "NCAAM",
+   "leagueName": "NCAA Men's Basketball",
+   "leagueShortName": "NCAAM",
+   "opponent": {
+    "abbreviation": "SMU",
+    "displayName": "SMU Mustangs",
+    "id": "2567"
+   },
+   "score": "89-62",
+   "team": {
+    "abbreviation": "DUKE",
+    "id": "150",
+    "isAllStar": false
+   },
+   "week": 9
+  },
+  "401724800": {
+   "atVs": "vs",
+   "awayTeamId": "2390",
+   "awayTeamScore": "54",
+   "gameDate": "2025-01-15T02:10:00.000+00:00",
+   "gameResult": "W",
+   "homeTeamId": "150",
+   "homeTeamScore": "89",
+   "id": "401724800",
+   "leagueAbbreviation": "NCAAM",
+   "leagueName": "NCAA Men's Basketball",
+   "leagueShortName": "NCAAM",
+   "opponent": {
+    "abbreviation": "MIA",
+    "displayName": "Miami Hurricanes",
+    "id": "2390"
+   },
+   "score": "89-54",
+   "team": {
+    "abbreviation": "DUKE",
+    "id": "150",
+    "isAllStar": false
+   },
+   "week": 11
+  },
+  "401724812": {
+   "atVs": "@",
+   "awayTeamId": "150",
+   "awayTeamScore": "88",
+   "gameDate": "2025-01-19T01:00:00.000+00:00",
+   "gameResult": "W",
+   "homeTeamId": "103",
+   "homeTeamScore": "63",
+   "id": "401724812",
+   "leagueAbbreviation": "NCAAM",
+   "leagueName": "NCAA Men's Basketball",
+   "leagueShortName": "NCAAM",
+   "opponent": {
+    "abbreviation": "BC",
+    "displayName": "Boston College Eagles",
+    "id": "103"
+   },
+   "score": "88-63",
+   "team": {
+    "abbreviation": "DUKE",
+    "id": "150",
+    "isAllStar": false
+   },
+   "week": 11
+  },
+  "401724827": {
+   "atVs": "@",
+   "awayTeamId": "150",
+   "awayTeamScore": "63",
+   "gameDate": "2025-01-25T21:30:00.000+00:00",
+   "gameResult": "W",
+   "homeTeamId": "154",
+   "homeTeamScore": "56",
+   "id": "401724827",
+   "leagueAbbreviation": "NCAAM",
+   "leagueName": "NCAA Men's Basketball",
+   "leagueShortName": "NCAAM",
+   "opponent": {
+    "abbreviation": "WAKE",
+    "displayName": "Wake Forest Demon Deacons",
+    "id": "154"
+   },
+   "score": "63-56",
+   "team": {
+    "abbreviation": "DUKE",
+    "id": "150",
+    "isAllStar": false
+   },
+   "week": 12
+  },
+  "401724830": {
+   "atVs": "vs",
+   "awayTeamId": "152",
+   "awayTeamScore": "64",
+   "gameDate": "2025-01-28T01:30:00.000+00:00",
+   "gameResult": "W",
+   "homeTeamId": "150",
+   "homeTeamScore": "74",
+   "id": "401724830",
+   "leagueAbbreviation": "NCAAM",
+   "leagueName": "NCAA Men's Basketball",
+   "leagueShortName": "NCAAM",
+   "opponent": {
+    "abbreviation": "NCSU",
+    "displayName": "NC State Wolfpack",
+    "id": "152"
+   },
+   "score": "74-64",
+   "team": {
+    "abbreviation": "DUKE",
+    "id": "150",
+    "isAllStar": false
+   },
+   "week": 13
+  },
+  "401724844": {
+   "atVs": "vs",
+   "awayTeamId": "153",
+   "awayTeamScore": "70",
+   "gameDate": "2025-02-01T23:30:00.000+00:00",
+   "gameResult": "W",
+   "homeTeamId": "150",
+   "homeTeamScore": "87",
+   "id": "401724844",
+   "leagueAbbreviation": "NCAAM",
+   "leagueName": "NCAA Men's Basketball",
+   "leagueShortName": "NCAAM",
+   "opponent": {
+    "abbreviation": "UNC",
+    "displayName": "North Carolina Tar Heels",
+    "id": "153"
+   },
+   "score": "87-70",
+   "team": {
+    "abbreviation": "DUKE",
+    "id": "150",
+    "isAllStar": false
+   },
+   "week": 13
+  },
+  "401724850": {
+   "atVs": "@",
+   "awayTeamId": "150",
+   "awayTeamScore": "83",
+   "gameDate": "2025-02-06T00:00:00.000+00:00",
+   "gameResult": "W",
+   "homeTeamId": "183",
+   "homeTeamScore": "54",
+   "id": "401724850",
+   "leagueAbbreviation": "NCAAM",
+   "leagueName": "NCAA Men's Basketball",
+   "leagueShortName": "NCAAM",
+   "opponent": {
+    "abbreviation": "SYR",
+    "displayName": "Syracuse Orange",
+    "id": "183"
+   },
+   "score": "83-54",
+   "team": {
+    "abbreviation": "DUKE",
+    "id": "150",
+    "isAllStar": false
+   },
+   "week": 14
+  },
+  "401724861": {
+   "atVs": "@",
+   "awayTeamId": "150",
+   "awayTeamScore": "71",
+   "gameDate": "2025-02-08T23:30:00.000+00:00",
+   "gameResult": "L",
+   "homeTeamId": "228",
+   "homeTeamScore": "77",
+   "id": "401724861",
+   "leagueAbbreviation": "NCAAM",
+   "leagueName": "NCAA Men's Basketball",
+   "leagueShortName": "NCAAM",
+   "opponent": {
+    "abbreviation": "CLEM",
+    "displayName": "Clemson Tigers",
+    "id": "228"
+   },
+   "score": "77-71",
+   "team": {
+    "abbreviation": "DUKE",
+    "id": "150",
+    "isAllStar": false
+   },
+   "week": 14
+  },
+  "401724870": {
+   "atVs": "vs",
+   "awayTeamId": "25",
+   "awayTeamScore": "57",
+   "gameDate": "2025-02-13T02:05:00.000+00:00",
+   "gameResult": "W",
+   "homeTeamId": "150",
+   "homeTeamScore": "78",
+   "id": "401724870",
+   "leagueAbbreviation": "NCAAM",
+   "leagueName": "NCAA Men's Basketball",
+   "leagueShortName": "NCAAM",
+   "opponent": {
+    "abbreviation": "CAL",
+    "displayName": "California Golden Bears",
+    "id": "25"
+   },
+   "score": "78-57",
+   "team": {
+    "abbreviation": "DUKE",
+    "id": "150",
+    "isAllStar": false
+   },
+   "week": 15
+  },
+  "401724878": {
+   "atVs": "vs",
+   "awayTeamId": "24",
+   "awayTeamScore": "70",
+   "gameDate": "2025-02-15T21:00:00.000+00:00",
+   "gameResult": "W",
+   "homeTeamId": "150",
+   "homeTeamScore": "106",
+   "id": "401724878",
+   "leagueAbbreviation": "NCAAM",
+   "leagueName": "NCAA Men's Basketball",
+   "leagueShortName": "NCAAM",
+   "opponent": {
+    "abbreviation": "STAN",
+    "displayName": "Stanford Cardinal",
+    "id": "24"
+   },
+   "score": "106-70",
+   "team": {
+    "abbreviation": "DUKE",
+    "id": "150",
+    "isAllStar": false
+   },
+   "week": 15
+  },
+  "401724880": {
+   "atVs": "@",
+   "awayTeamId": "150",
+   "awayTeamScore": "80",
+   "gameDate": "2025-02-18T01:00:00.000+00:00",
+   "gameResult": "W",
+   "homeTeamId": "258",
+   "homeTeamScore": "62",
+   "id": "401724880",
+   "leagueAbbreviation": "NCAAM",
+   "leagueName": "NCAA Men's Basketball",
+   "leagueShortName": "NCAAM",
+   "opponent": {
+    "abbreviation": "UVA",
+    "displayName": "Virginia Cavaliers",
+    "id": "258"
+   },
+   "score": "80-62",
+   "team": {
+    "abbreviation": "DUKE",
+    "id": "150",
+    "isAllStar": false
+   },
+   "week": 16
+  },
+  "401724895": {
+   "atVs": "@",
+   "awayTeamId": "150",
+   "awayTeamScore": "97",
+   "gameDate": "2025-02-26T00:00:00.000+00:00",
+   "gameResult": "W",
+   "homeTeamId": "2390",
+   "homeTeamScore": "60",
+   "id": "401724895",
+   "leagueAbbreviation": "NCAAM",
+   "leagueName": "NCAA Men's Basketball",
+   "leagueShortName": "NCAAM",
+   "opponent": {
+    "abbreviation": "MIA",
+    "displayName": "Miami Hurricanes",
+    "id": "2390"
+   },
+   "score": "97-60",
+   "team": {
+    "abbreviation": "DUKE",
+    "id": "150",
+    "isAllStar": false
+   },
+   "week": 17
+  },
+  "401724905": {
+   "atVs": "vs",
+   "awayTeamId": "52",
+   "awayTeamScore": "65",
+   "gameDate": "2025-03-02T00:00:00.000+00:00",
+   "gameResult": "W",
+   "homeTeamId": "150",
+   "homeTeamScore": "100",
+   "id": "401724905",
+   "leagueAbbreviation": "NCAAM",
+   "leagueName": "NCAA Men's Basketball",
+   "leagueShortName": "NCAAM",
+   "opponent": {
+    "abbreviation": "FSU",
+    "displayName": "Florida State Seminoles",
+    "id": "52"
+   },
+   "score": "100-65",
+   "team": {
+    "abbreviation": "DUKE",
+    "id": "150",
+    "isAllStar": false
+   },
+   "week": 17
+  },
+  "401724912": {
+   "atVs": "vs",
+   "awayTeamId": "154",
+   "awayTeamScore": "60",
+   "gameDate": "2025-03-04T00:00:00.000+00:00",
+   "gameResult": "W",
+   "homeTeamId": "150",
+   "homeTeamScore": "93",
+   "id": "401724912",
+   "leagueAbbreviation": "NCAAM",
+   "leagueName": "NCAA Men's Basketball",
+   "leagueShortName": "NCAAM",
+   "opponent": {
+    "abbreviation": "WAKE",
+    "displayName": "Wake Forest Demon Deacons",
+    "id": "154"
+   },
+   "score": "93-60",
+   "team": {
+    "abbreviation": "DUKE",
+    "id": "150",
+    "isAllStar": false
+   },
+   "week": 18
+  },
+  "401724922": {
+   "atVs": "@",
+   "awayTeamId": "150",
+   "awayTeamScore": "82",
+   "gameDate": "2025-03-08T23:45:00.000+00:00",
+   "gameResult": "W",
+   "homeTeamId": "153",
+   "homeTeamScore": "69",
+   "id": "401724922",
+   "leagueAbbreviation": "NCAAM",
+   "leagueName": "NCAA Men's Basketball",
+   "leagueShortName": "NCAAM",
+   "opponent": {
+    "abbreviation": "UNC",
+    "displayName": "North Carolina Tar Heels",
+    "id": "153"
+   },
+   "score": "82-69",
+   "team": {
+    "abbreviation": "DUKE",
+    "id": "150",
+    "isAllStar": false
+   },
+   "week": 18
+  },
+  "401743770": {
+   "atVs": "vs",
+   "awayTeamId": "59",
+   "awayTeamScore": "70",
+   "eventNote": "T. Rowe Price ACC Tournament - Quarterfinal",
+   "gameDate": "2025-03-13T16:00:00.000+00:00",
+   "gameResult": "W",
+   "homeTeamId": "150",
+   "homeTeamScore": "78",
+   "id": "401743770",
+   "leagueAbbreviation": "NCAAM",
+   "leagueName": "NCAA Men's Basketball",
+   "leagueShortName": "NCAAM",
+   "opponent": {
+    "abbreviation": "GT",
+    "displayName": "Georgia Tech Yellow Jackets",
+    "id": "59"
+   },
+   "score": "78-70",
+   "team": {
+    "abbreviation": "DUKE",
+    "id": "150",
+    "isAllStar": false
+   },
+   "week": 19
+  },
+  "401746003": {
+   "atVs": "vs",
+   "awayTeamId": "116",
+   "awayTeamScore": "49",
+   "eventNote": "Men's Basketball Championship - East Region - 1st Round",
+   "gameDate": "2025-03-21T19:09:00.000+00:00",
+   "gameResult": "W",
+   "homeTeamId": "150",
+   "homeTeamScore": "93",
+   "id": "401746003",
+   "leagueAbbreviation": "NCAAM",
+   "leagueName": "NCAA Men's Basketball",
+   "leagueShortName": "NCAAM",
+   "opponent": {
+    "abbreviation": "MSM",
+    "displayName": "Mount St. Mary's Mountaineers",
+    "id": "116",
+    "rank": 16
+   },
+   "score": "93-49",
+   "team": {
+    "abbreviation": "DUKE",
+    "id": "150",
+    "isAllStar": false
+   },
+   "week": 1
+  },
+  "401746049": {
+   "atVs": "vs",
+   "awayTeamId": "239",
+   "awayTeamScore": "66",
+   "eventNote": "Men's Basketball Championship - East Region - 2nd Round",
+   "gameDate": "2025-03-23T19:04:00.000+00:00",
+   "gameResult": "W",
+   "homeTeamId": "150",
+   "homeTeamScore": "89",
+   "id": "401746049",
+   "leagueAbbreviation": "NCAAM",
+   "leagueName": "NCAA Men's Basketball",
+   "leagueShortName": "NCAAM",
+   "opponent": {
+    "abbreviation": "BAY",
+    "displayName": "Baylor Bears",
+    "id": "239",
+    "rank": 9
+   },
+   "score": "89-66",
+   "team": {
+    "abbreviation": "DUKE",
+    "id": "150",
+    "isAllStar": false
+   },
+   "week": 1
+  },
+  "401746061": {
+   "atVs": "vs",
+   "awayTeamId": "12",
+   "awayTeamScore": "93",
+   "eventNote": "Men's Basketball Championship - East Region - Sweet 16",
+   "gameDate": "2025-03-28T02:03:00.000+00:00",
+   "gameResult": "W",
+   "homeTeamId": "150",
+   "homeTeamScore": "100",
+   "id": "401746061",
+   "leagueAbbreviation": "NCAAM",
+   "leagueName": "NCAA Men's Basketball",
+   "leagueShortName": "NCAAM",
+   "opponent": {
+    "abbreviation": "ARIZ",
+    "displayName": "Arizona Wildcats",
+    "id": "12",
+    "rank": 4
+   },
+   "score": "100-93",
+   "team": {
+    "abbreviation": "DUKE",
+    "id": "150",
+    "isAllStar": false
+   },
+   "week": 2
+  },
+  "401746076": {
+   "atVs": "vs",
+   "awayTeamId": "333",
+   "awayTeamScore": "65",
+   "eventNote": "Men's Basketball Championship - East Region - Elite 8",
+   "gameDate": "2025-03-30T00:59:00.000+00:00",
+   "gameResult": "W",
+   "homeTeamId": "150",
+   "homeTeamScore": "85",
+   "id": "401746076",
+   "leagueAbbreviation": "NCAAM",
+   "leagueName": "NCAA Men's Basketball",
+   "leagueShortName": "NCAAM",
+   "opponent": {
+    "abbreviation": "ALA",
+    "displayName": "Alabama Crimson Tide",
+    "id": "333",
+    "rank": 2
+   },
+   "score": "85-65",
+   "team": {
+    "abbreviation": "DUKE",
+    "id": "150",
+    "isAllStar": false
+   },
+   "week": 2
+  },
+  "401746080": {
+   "atVs": "vs",
+   "awayTeamId": "248",
+   "awayTeamScore": "70",
+   "eventNote": "Men's Basketball Championship - Final Four",
+   "gameDate": "2025-04-06T01:28:00.000+00:00",
+   "gameResult": "L",
+   "homeTeamId": "150",
+   "homeTeamScore": "67",
+   "id": "401746080",
+   "leagueAbbreviation": "NCAAM",
+   "leagueName": "NCAA Men's Basketball",
+   "leagueShortName": "NCAAM",
+   "opponent": {
+    "abbreviation": "HOU",
+    "displayName": "Houston Cougars",
+    "id": "248",
+    "rank": 1
+   },
+   "score": "70-67",
+   "team": {
+    "abbreviation": "DUKE",
+    "id": "150",
+    "isAllStar": false
+   },
+   "week": 3
+  }
+ },
+ "filters": [
+  {
+   "displayName": "League",
+   "name": "league",
+   "options": [
+    {
+     "displayValue": "NCAA Men's Basketball",
+     "shortDisplayName": "NCAAM",
+     "value": "mens-college-basketball"
+    },
+    {
+     "displayValue": "National Basketball Association",
+     "shortDisplayName": "NBA",
+     "value": "nba"
+    }
+   ],
+   "value": "mens-college-basketball"
+  },
+  {
+   "displayName": "Season",
+   "name": "season",
+   "options": [
+    {
+     "displayValue": "2024-25",
+     "value": "2025"
+    }
+   ],
+   "value": "2025"
+  }
+ ],
+ "labels": [
+  "MIN",
+  "FG",
+  "FG%",
+  "3PT",
+  "3P%",
+  "FT",
+  "FT%",
+  "REB",
+  "AST",
+  "BLK",
+  "STL",
+  "PF",
+  "TO",
+  "PTS"
+ ],
+ "names": [
+  "minutes",
+  "fieldGoalsMade-fieldGoalsAttempted",
+  "fieldGoalPct",
+  "threePointFieldGoalsMade-threePointFieldGoalsAttempted",
+  "threePointFieldGoalPct",
+  "freeThrowsMade-freeThrowsAttempted",
+  "freeThrowPct",
+  "totalRebounds",
+  "assists",
+  "blocks",
+  "steals",
+  "fouls",
+  "turnovers",
+  "points"
+ ],
+ "seasonTypes": [
+  {
+   "categories": [
+    {
+     "displayName": "Postseason",
+     "events": [
+      {
+       "eventId": "401746080",
+       "stats": [
+        "36",
+        "8-19",
+        "42.1",
+        "3-4",
+        "75.0",
+        "8-8",
+        "100.0",
+        "7",
+        "4",
+        "3",
+        "2",
+        "1",
+        "1",
+        "27"
+       ]
+      },
+      {
+       "eventId": "401746076",
+       "stats": [
+        "36",
+        "6-16",
+        "37.5",
+        "1-2",
+        "50.0",
+        "3-3",
+        "100.0",
+        "9",
+        "3",
+        "1",
+        "0",
+        "2",
+        "4",
+        "16"
+       ]
+      },
+      {
+       "eventId": "401746061",
+       "stats": [
+        "37",
+        "9-19",
+        "47.4",
+        "3-5",
+        "60.0",
+        "9-10",
+        "90.0",
+        "6",
+        "7",
+        "3",
+        "1",
+        "2",
+        "1",
+        "30"
+       ]
+      },
+      {
+       "eventId": "401746049",
+       "stats": [
+        "29",
+        "5-11",
+        "45.5",
+        "1-4",
+        "25.0",
+        "7-9",
+        "77.8",
+        "9",
+        "6",
+        "1",
+        "0",
+        "2",
+        "2",
+        "18"
+       ]
+      },
+      {
+       "eventId": "401746003",
+       "stats": [
+        "22",
+        "6-12",
+        "50.0",
+        "1-3",
+        "33.3",
+        "1-1",
+        "100.0",
+        "7",
+        "5",
+        "2",
+        "0",
+        "0",
+        "1",
+        "14"
+       ]
+      }
+     ],
+     "splitType": "3",
+     "totals": [
+      "32.0",
+      "6.8-15.4",
+      "44.2",
+      "1.8-3.6",
+      "50.0",
+      "5.6-6.2",
+      "90.3",
+      "7.6",
+      "5.0",
+      "2.0",
+      "0.6",
+      "1.4",
+      "1.8",
+      "21.0"
+     ],
+     "type": "event"
+    }
+   ],
+   "displayName": "2024-25 Postseason",
+   "displayTeam": "DUKE"
+  },
+  {
+   "categories": [
+    {
+     "displayName": "Regular Season Stats",
+     "events": [
+      {
+       "eventId": "401743770",
+       "stats": [
+        "15",
+        "1-7",
+        "14.3",
+        "0-3",
+        "0.0",
+        "0-0",
+        "0.0",
+        "4",
+        "0",
+        "1",
+        "2",
+        "0",
+        "1",
+        "2"
+       ]
+      },
+      {
+       "eventId": "401724922",
+       "stats": [
+        "29",
+        "6-15",
+        "40.0",
+        "1-4",
+        "25.0",
+        "2-2",
+        "100.0",
+        "9",
+        "6",
+        "4",
+        "0",
+        "3",
+        "3",
+        "15"
+       ]
+      },
+      {
+       "eventId": "401724912",
+       "stats": [
+        "34",
+        "10-16",
+        "62.5",
+        "3-6",
+        "50.0",
+        "5-6",
+        "83.3",
+        "8",
+        "7",
+        "3",
+        "2",
+        "2",
+        "1",
+        "28"
+       ]
+      },
+      {
+       "eventId": "401724905",
+       "stats": [
+        "20",
+        "5-9",
+        "55.6",
+        "0-0",
+        "0.0",
+        "6-6",
+        "100.0",
+        "6",
+        "4",
+        "1",
+        "2",
+        "2",
+        "0",
+        "16"
+       ]
+      },
+      {
+       "eventId": "401724895",
+       "stats": [
+        "27",
+        "6-9",
+        "66.7",
+        "1-2",
+        "50.0",
+        "3-3",
+        "100.0",
+        "4",
+        "6",
+        "0",
+        "0",
+        "1",
+        "0",
+        "16"
+       ]
+      },
+      {
+       "eventId": "401707856",
+       "stats": [
+        "23",
+        "5-10",
+        "50.0",
+        "1-1",
+        "100.0",
+        "5-5",
+        "100.0",
+        "7",
+        "5",
+        "0",
+        "1",
+        "3",
+        "2",
+        "16"
+       ]
+      },
+      {
+       "eventId": "401724880",
+       "stats": [
+        "30",
+        "8-16",
+        "50.0",
+        "0-3",
+        "0.0",
+        "1-2",
+        "50.0",
+        "14",
+        "2",
+        "2",
+        "2",
+        "3",
+        "0",
+        "17"
+       ]
+      },
+      {
+       "eventId": "401724878",
+       "stats": [
+        "28",
+        "7-13",
+        "53.8",
+        "3-6",
+        "50.0",
+        "2-2",
+        "100.0",
+        "5",
+        "6",
+        "0",
+        "2",
+        "0",
+        "0",
+        "19"
+       ]
+      },
+      {
+       "eventId": "401724870",
+       "stats": [
+        "29",
+        "8-14",
+        "57.1",
+        "2-4",
+        "50.0",
+        "9-9",
+        "100.0",
+        "5",
+        "3",
+        "0",
+        "3",
+        "0",
+        "2",
+        "27"
+       ]
+      },
+      {
+       "eventId": "401724861",
+       "stats": [
+        "38",
+        "6-17",
+        "35.3",
+        "3-6",
+        "50.0",
+        "3-4",
+        "75.0",
+        "5",
+        "1",
+        "1",
+        "3",
+        "3",
+        "2",
+        "18"
+       ]
+      },
+      {
+       "eventId": "401724850",
+       "stats": [
+        "28",
+        "4-7",
+        "57.1",
+        "1-1",
+        "100.0",
+        "2-2",
+        "100.0",
+        "5",
+        "2",
+        "2",
+        "0",
+        "0",
+        "1",
+        "11"
+       ]
+      },
+      {
+       "eventId": "401724844",
+       "stats": [
+        "38",
+        "6-14",
+        "42.9",
+        "3-5",
+        "60.0",
+        "6-9",
+        "66.7",
+        "8",
+        "7",
+        "2",
+        "3",
+        "2",
+        "3",
+        "21"
+       ]
+      },
+      {
+       "eventId": "401724830",
+       "stats": [
+        "37",
+        "8-17",
+        "47.1",
+        "1-4",
+        "25.0",
+        "11-13",
+        "84.6",
+        "7",
+        "3",
+        "1",
+        "1",
+        "1",
+        "1",
+        "28"
+       ]
+      },
+      {
+       "eventId": "401724827",
+       "stats": [
+        "39",
+        "8-16",
+        "50.0",
+        "1-6",
+        "16.7",
+        "7-9",
+        "77.8",
+        "7",
+        "6",
+        "1",
+        "0",
+        "2",
+        "7",
+        "24"
+       ]
+      },
+      {
+       "eventId": "401724812",
+       "stats": [
+        "31",
+        "9-14",
+        "64.3",
+        "1-3",
+        "33.3",
+        "9-11",
+        "81.8",
+        "5",
+        "4",
+        "2",
+        "2",
+        "4",
+        "2",
+        "28"
+       ]
+      },
+      {
+       "eventId": "401724800",
+       "stats": [
+        "28",
+        "5-11",
+        "45.5",
+        "2-5",
+        "40.0",
+        "1-1",
+        "100.0",
+        "7",
+        "6",
+        "0",
+        "1",
+        "1",
+        "6",
+        "13"
+       ]
+      },
+      {
+       "eventId": "401724748",
+       "stats": [
+        "36",
+        "11-14",
+        "78.6",
+        "4-6",
+        "66.7",
+        "16-17",
+        "94.1",
+        "6",
+        "7",
+        "0",
+        "1",
+        "1",
+        "3",
+        "42"
+       ]
+      },
+      {
+       "eventId": "401724757",
+       "stats": [
+        "33",
+        "7-11",
+        "63.6",
+        "1-2",
+        "50.0",
+        "4-6",
+        "66.7",
+        "10",
+        "5",
+        "2",
+        "1",
+        "3",
+        "3",
+        "19"
+       ]
+      },
+      {
+       "eventId": "401724791",
+       "stats": [
+        "32",
+        "7-12",
+        "58.3",
+        "2-2",
+        "100.0",
+        "8-8",
+        "100.0",
+        "11",
+        "3",
+        "2",
+        "1",
+        "2",
+        "3",
+        "24"
+       ]
+      },
+      {
+       "eventId": "401724783",
+       "stats": [
+        "30",
+        "9-14",
+        "64.3",
+        "2-4",
+        "50.0",
+        "4-4",
+        "100.0",
+        "3",
+        "6",
+        "1",
+        "4",
+        "2",
+        "1",
+        "24"
+       ]
+      },
+      {
+       "eventId": "401724779",
+       "stats": [
+        "28",
+        "5-11",
+        "45.5",
+        "1-3",
+        "33.3",
+        "2-4",
+        "50.0",
+        "4",
+        "2",
+        "0",
+        "0",
+        "3",
+        "3",
+        "13"
+       ]
+      },
+      {
+       "eventId": "401706890",
+       "stats": [
+        "35",
+        "7-20",
+        "35.0",
+        "2-5",
+        "40.0",
+        "8-8",
+        "100.0",
+        "9",
+        "4",
+        "1",
+        "3",
+        "2",
+        "3",
+        "24"
+       ]
+      },
+      {
+       "eventId": "401706889",
+       "stats": [
+        "22",
+        "2-8",
+        "25.0",
+        "0-3",
+        "0.0",
+        "2-2",
+        "100.0",
+        "8",
+        "2",
+        "1",
+        "1",
+        "0",
+        "0",
+        "6"
+       ]
+      },
+      {
+       "eventId": "401724775",
+       "stats": [
+        "28",
+        "8-17",
+        "47.1",
+        "1-3",
+        "33.3",
+        "3-3",
+        "100.0",
+        "12",
+        "1",
+        "1",
+        "1",
+        "5",
+        "0",
+        "20"
+       ]
+      },
+      {
+       "eventId": "401706888",
+       "stats": [
+        "38",
+        "7-18",
+        "38.9",
+        "0-4",
+        "0.0",
+        "8-12",
+        "66.7",
+        "11",
+        "4",
+        "2",
+        "3",
+        "2",
+        "0",
+        "22"
+       ]
+      },
+      {
+       "eventId": "401706887",
+       "stats": [
+        "27",
+        "2-7",
+        "28.6",
+        "0-2",
+        "0.0",
+        "5-7",
+        "71.4",
+        "9",
+        "7",
+        "0",
+        "0",
+        "2",
+        "3",
+        "9"
+       ]
+      },
+      {
+       "eventId": "401706886",
+       "stats": [
+        "38",
+        "5-9",
+        "55.6",
+        "1-1",
+        "100.0",
+        "2-4",
+        "50.0",
+        "5",
+        "3",
+        "0",
+        "1",
+        "2",
+        "5",
+        "13"
+       ]
+      },
+      {
+       "eventId": "401706885",
+       "stats": [
+        "38",
+        "10-22",
+        "45.5",
+        "2-5",
+        "40.0",
+        "2-4",
+        "50.0",
+        "7",
+        "3",
+        "3",
+        "1",
+        "4",
+        "4",
+        "24"
+       ]
+      },
+      {
+       "eventId": "401706884",
+       "stats": [
+        "28",
+        "3-8",
+        "37.5",
+        "1-5",
+        "20.0",
+        "1-1",
+        "100.0",
+        "9",
+        "6",
+        "2",
+        "3",
+        "2",
+        "3",
+        "8"
+       ]
+      },
+      {
+       "eventId": "401706883",
+       "stats": [
+        "32",
+        "9-19",
+        "47.4",
+        "1-5",
+        "20.0",
+        "7-9",
+        "77.8",
+        "11",
+        "2",
+        "2",
+        "0",
+        "2",
+        "3",
+        "26"
+       ]
+      },
+      {
+       "eventId": "401706882",
+       "stats": [
+        "25",
+        "5-10",
+        "50.0",
+        "2-4",
+        "50.0",
+        "1-3",
+        "33.3",
+        "11",
+        "3",
+        "3",
+        "2",
+        "2",
+        "2",
+        "13"
+       ]
+      },
+      {
+       "eventId": "401706881",
+       "stats": [
+        "30",
+        "6-15",
+        "40.0",
+        "0-4",
+        "0.0",
+        "6-6",
+        "100.0",
+        "7",
+        "5",
+        "0",
+        "3",
+        "2",
+        "2",
+        "18"
+       ]
+      }
+     ],
+     "splitType": "2",
+     "type": "event"
+    }
+   ],
+   "displayName": "2024-25 Season"
+  }
+ ],
+ "totals": [
+  "1133",
+  "239-497",
+  "48.1",
+  "52-135",
+  "38.5",
+  "179-213",
+  "84.0",
+  "277",
+  "156",
+  "50",
+  "52",
+  "70",
+  "78",
+  "709"
+ ]
+}
