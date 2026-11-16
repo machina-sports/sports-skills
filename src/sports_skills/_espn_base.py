@@ -627,10 +627,42 @@ def competitor_record(competitor):
     in both.
     """
     records = competitor.get("records") or competitor.get("record") or []
+    if isinstance(records, str):
+        return records
     if not isinstance(records, list) or not records or not isinstance(records[0], dict):
         return ""
     first = records[0]
     return first.get("summary") or first.get("displayValue", "")
+
+
+def team_logo(team):
+    """Team logo URL: scoreboards send ``logo``; summaries and team schedules send ``logos[].href``."""
+    if team.get("logo"):
+        return team["logo"]
+    logos = team.get("logos")
+    if isinstance(logos, list) and logos and isinstance(logos[0], dict):
+        return logos[0].get("href", "")
+    return ""
+
+
+def scoreboard_season(data):
+    """Scoreboard season as ``{"year", "type"}``.
+
+    ESPN sends a top-level ``season`` (``{"year": 2026, "type": 2}``) only for
+    the current slate; for an explicit date it is only in ``leagues[0].season``,
+    where ``type`` is an object.
+    """
+    season = data.get("season")
+    if isinstance(season, dict) and season:
+        return {"year": season.get("year", ""), "type": season.get("type", "")}
+    leagues = data.get("leagues")
+    league_season = leagues[0].get("season") if isinstance(leagues, list) and leagues and isinstance(leagues[0], dict) else None
+    if not isinstance(league_season, dict):
+        return {"year": "", "type": ""}
+    season_type = league_season.get("type", "")
+    if isinstance(season_type, dict):
+        season_type = season_type.get("type", "")
+    return {"year": league_season.get("year", ""), "type": season_type}
 
 
 def broadcast_names(competition):
@@ -1840,7 +1872,7 @@ def _resolve_leaders(categories: list) -> list:
     result = []
     for cat in categories:
         leaders_list = []
-        for leader in cat.get("leaders", []):
+        for position, leader in enumerate(cat.get("leaders", []), 1):
             athlete = leader.get("athlete", {})
             if isinstance(athlete, dict):
                 ref_url = athlete.get("$ref", "")
@@ -1871,7 +1903,8 @@ def _resolve_leaders(categories: list) -> list:
                 value = display_value
 
             leaders_list.append({
-                "rank": leader.get("rank", ""),
+                # ESPN's core leaders carry no rank; the list is in rank order.
+                "rank": leader.get("rank") or position,
                 "id": athlete_id,
                 "name": name,
                 "value": value,

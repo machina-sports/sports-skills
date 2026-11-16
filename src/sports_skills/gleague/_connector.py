@@ -170,7 +170,7 @@ def _scoreboard(date):
     if data.get("error"):
         return data
     events = [_normalize_event(e) for e in data.get("events", [])]
-    return {"events": events, "day": (data.get("day") or {}).get("date", ""), "count": len(events)}
+    return {"events": events, "day": (data.get("day") or {}).get("date", "") or (date or ""), "count": len(events)}
 
 
 # ============================================================

@@ -32,7 +32,9 @@ from sports_skills._espn_base import (
     normalize_score,
     normalize_scoring_plays,
     normalize_summary_odds,
+    scoreboard_season,
     standings_fields,
+    team_logo,
 )
 
 logger = logging.getLogger("sports_skills.cbb")
@@ -69,7 +71,7 @@ def _normalize_event(espn_event):
                 "id": str(team.get("id", "")),
                 "name": team.get("displayName", ""),
                 "abbreviation": team.get("abbreviation", ""),
-                "logo": team.get("logo", ""),
+                "logo": team_logo(team),
                 "conference_id": team.get("conferenceId", ""),
             },
             "home_away": c.get("homeAway", ""),
@@ -278,12 +280,12 @@ def _normalize_game_summary(summary_data):
                 "id": str(team.get("id", "")),
                 "name": team.get("displayName", team.get("location", "")),
                 "abbreviation": team.get("abbreviation", ""),
-                "logo": team.get("logo", ""),
+                "logo": team_logo(team),
             },
             "home_away": c.get("homeAway", ""),
             "score": c.get("score", "0"),
             "winner": c.get("winner", False),
-            "record": c.get("record", ""),
+            "record": competitor_record(c),
             "rank": rank if rank else None,
             "linescores": [ls.get("displayValue", "0") for ls in c.get("linescores", [])],
         })
@@ -344,7 +346,7 @@ def _normalize_rankings(espn_data):
                 "team": team.get("nickname", team.get("displayName", team.get("location", ""))),
                 "team_id": str(team.get("id", "")),
                 "abbreviation": team.get("abbreviation", ""),
-                "logo": team.get("logo", ""),
+                "logo": team_logo(team),
                 "record": entry.get("recordSummary", ""),
                 "points": entry.get("points", ""),
                 "first_place_votes": entry.get("firstPlaceVotes", 0),
@@ -407,14 +409,10 @@ def get_scoreboard(request_data):
         return data
 
     events = [_normalize_event(e) for e in data.get("events", [])]
-    season_info = data.get("season", {})
 
     return {
         "events": events,
-        "season": {
-            "year": season_info.get("year", ""),
-            "type": season_info.get("type", ""),
-        },
+        "season": scoreboard_season(data),
         "count": len(events),
     }
 
@@ -569,8 +567,9 @@ def get_rankings(request_data):
         "polls": polls,
         # Prefer the requested season: ESPN's envelope reports the *current*
         # season regardless of the season filter applied to the events.
-        "season": _echo_season(season, data),
-        "week": data.get("week", ""),
+        # Without a season/week ESPN reports them only as latestSeason/latestWeek.
+        "season": _echo_season(season, data) or (data.get("latestSeason") or {}).get("year", ""),
+        "week": data.get("week") or (data.get("latestWeek") or {}).get("number", ""),
     }
 
 
@@ -610,14 +609,10 @@ def get_schedule(request_data):
         return data
 
     events = [_normalize_event(e) for e in data.get("events", [])]
-    season_info = data.get("season", {})
 
     return {
         "events": events,
-        "season": {
-            "year": season_info.get("year", ""),
-            "type": season_info.get("type", ""),
-        },
+        "season": scoreboard_season(data),
         "count": len(events),
     }
 
