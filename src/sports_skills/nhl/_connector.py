@@ -116,15 +116,17 @@ def _normalize_standings_entries(standings_data):
             "losses": stats.get("losses", "0"),
             "overtime_losses": stats.get("OTLosses", stats.get("otLosses", "0")),
             "points": stats.get("points", "0"),
-            "regulation_wins": stats.get("regulationWins", stats.get("RW", "")),
+            "regulation_wins": stats.get("regulationWins", stats.get("RW", stats.get("regWins", ""))),
             "goals_for": stats.get("pointsFor", stats.get("goalsFor", "")),
             "goals_against": stats.get("pointsAgainst", stats.get("goalsAgainst", "")),
-            "goal_diff": stats.get("differential", stats.get("diff", "")),
+            # ESPN's "differential" is the per-game average (+1.9); the season
+            # total (+40 = 87 - 47) is "pointDifferential".
+            "goal_diff": stats.get("pointDifferential", stats.get("differential", stats.get("diff", ""))),
             "games_played": stats.get("gamesPlayed", ""),
             "streak": stats.get("streak", ""),
             "home_record": stats.get("Home", stats.get("homeRecord", "")),
             "away_record": stats.get("Road", stats.get("awayRecord", "")),
-            "last_ten": stats.get("L10", stats.get("last10Record", "")),
+            "last_ten": stats.get("L10", stats.get("last10Record", stats.get("Last Ten Games", ""))),
             "playoff_seed": stats.get("playoffSeed", ""),
             "clinch": stats.get("clincher", ""),
         })

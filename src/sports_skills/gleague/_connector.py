@@ -126,22 +126,12 @@ def _normalize_event(espn_event):
     return row
 
 
-def _standings_entries(table):
-    """NBA standings rows, plus the G League's "Last Ten Games" stat (the NBA calls it L10)."""
-    entries = _normalize_standings_entries(table)
-    for row, raw in zip(entries, table.get("entries", [])):
-        if not row["last_ten"]:
-            stats = {s.get("name"): s.get("displayValue", "") for s in raw.get("stats", []) if isinstance(s, dict)}
-            row["last_ten"] = stats.get("Last Ten Games", "")
-    return entries
-
-
 def _normalize_standings(espn_data):
     """Every standings table: league-wide (root), per conference, and per group inside a conference."""
     groups = []
 
     def add(table, conference, division):
-        entries = _standings_entries(table) if isinstance(table, dict) else []
+        entries = _normalize_standings_entries(table) if isinstance(table, dict) else []
         for entry in entries:
             entry["division"] = division
         if entries:

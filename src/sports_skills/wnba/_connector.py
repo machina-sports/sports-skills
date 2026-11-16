@@ -121,7 +121,7 @@ def _normalize_standings_entries(standings_data):
             "away_record": stats.get("Road", stats.get("awayRecord", "")),
             "conference_record": stats.get("vsConf", stats.get("conferenceRecord", stats.get("vs. Conf.", ""))),
             "division_record": stats.get("vsDiv", stats.get("divisionRecord", "")),
-            "last_ten": stats.get("L10", stats.get("last10Record", "")),
+            "last_ten": stats.get("L10", stats.get("last10Record", stats.get("Last Ten Games", ""))),
             "points_per_game": stats.get("avgPointsFor", stats.get("pointsFor", "")),
             "opp_points_per_game": stats.get("avgPointsAgainst", stats.get("pointsAgainst", "")),
             "diff": stats.get("differential", stats.get("diff", "")),
