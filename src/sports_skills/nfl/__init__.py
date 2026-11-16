@@ -135,13 +135,14 @@ def get_game_summary(*, event_id: str) -> dict:
     return wrap(_get_game_summary(_params(event_id=event_id)))
 
 
-def get_leaders(*, season: int | None = None) -> dict:
+def get_leaders(*, season: int | None = None, limit: int | None = None) -> dict:
     """Get NFL statistical leaders (passing, rushing, receiving, etc.).
 
     Args:
         season: Season year. Defaults to current.
+        limit: Leaders per category. Defaults to 10.
     """
-    return wrap(_get_leaders(_params(season=season)))
+    return wrap(_get_leaders(_params(season=season, limit=limit)))
 
 
 def get_news(*, team_id: str | None = None) -> dict:

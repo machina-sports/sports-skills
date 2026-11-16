@@ -27,6 +27,7 @@ from sports_skills._espn_base import (
     espn_web_request,
     event_season_type,
     fetch_season,
+    leaders_limit,
     normalize_boxscore,
     normalize_core_stats,
     normalize_futures,
@@ -489,13 +490,16 @@ def get_leaders(request_data):
     """Get WNBA statistical leaders via ESPN core API."""
     params = request_data.get("params", {})
     season = params.get("season")
+    limit, limit_error = leaders_limit(params)
+    if limit_error:
+        return limit_error
 
     # The generic /leaders endpoint returns 404 in offseason.
     # Always use season-scoped URL with regular season type (2).
     resolved = season or _wnba_current_season()
     url = f"https://sports.core.api.espn.com/v2/sports/basketball/leagues/wnba/seasons/{resolved}/types/2/leaders"
 
-    cache_key = f"wnba_leaders:{season or 'current'}"
+    cache_key = f"wnba_leaders:{season or 'current'}:{limit}"
     cached = _cache_get(cache_key)
     if cached is not None:
         return cached
@@ -510,7 +514,7 @@ def get_leaders(request_data):
         return {"error": True, "message": "ESPN core API returned invalid JSON"}
 
     result = {
-        "categories": _resolve_leaders(data.get("categories", [])),
+        "categories": _resolve_leaders(data.get("categories", []), limit),
         "season": data.get("season", {}).get("year", season or ""),
     }
     _cache_set(cache_key, result, ttl=300)

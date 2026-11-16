@@ -30,7 +30,7 @@ def served(monkeypatch):
         return json.dumps(body).encode(), None
 
     monkeypatch.setattr(nfl, "_http_fetch", fake_fetch)
-    monkeypatch.setattr(nfl, "_resolve_leaders", lambda cats: [c["name"] for c in cats])
+    monkeypatch.setattr(nfl, "_resolve_leaders", lambda cats, limit=None: [c["name"] for c in cats])
     monkeypatch.setattr(nfl, "_cache_get", lambda key: None)
     monkeypatch.setattr(nfl, "_cache_set", lambda *a, **kw: None)
     return calls
