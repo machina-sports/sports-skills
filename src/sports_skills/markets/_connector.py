@@ -431,6 +431,7 @@ def _search_polymarket(entity: str, sport: str | None = None, report: dict | Non
                 "title": market.get("question", ""),
                 "slug": market.get("slug", ""),
                 "volume": market.get("volume", 0),
+                "game_start_time": market.get("game_start_time"),
                 "sports_market_type": market.get("sports_market_type", ""),
                 "outcomes": outcomes,
             }
@@ -1198,6 +1199,10 @@ def _poly_market_identity(market: dict, identity: dict, side: str) -> str:
     if date not in identity["dates"]:
         return f"Polymarket '{slug}' is dated {date}; this game is played {' / '.join(sorted(identity['dates']))}"
 
+    scheduled = market.get("game_start_time")
+    if scheduled and not _same_start(scheduled, identity["start_utc"]):
+        return f"Polymarket '{slug}' scheduled start does not match this ESPN game"
+
     if _poly_side_outcome(market, identity, "home") is None or _poly_side_outcome(market, identity, "away") is None:
         labels = ", ".join(str(o.get("outcome") or "?") for o in market.get("outcomes") or []) or "none"
         return (
@@ -1742,11 +1747,13 @@ def compare_odds(request_data: dict) -> dict:
             return f"Gemini '{ticker}' has {len(outcomes)} outcomes; only a two-way moneyline is compared"
         for o in outcomes:
             label = o.get("label") or o.get("ticker")
+            # Gemini distinguishes the two LA teams with C/L in contract labels.
+            team_label = {"Los Angeles C": "LA Clippers", "Los Angeles L": "Los Angeles Lakers"}.get(label, label)
             if o.get("status") != "active" or o.get("market_state") != "open" or o.get("is_combo") is not False:
                 return f"Gemini '{ticker}' contract '{label}' is not an active, open, single-leg contract"
             if not 0 < (o.get("buy_yes") or 0) < 1:
                 return f"Gemini '{ticker}' contract '{label}' has no usable buy price"
-            if o.get("side") not in ("home", "away") or _side_for_label(label) != o["side"]:
+            if o.get("side") not in ("home", "away") or _side_for_label(team_label) != o["side"]:
                 return f"Gemini '{ticker}' contract '{label}' is listed as {o.get('side')}, which ESPN contradicts"
         if {o["side"] for o in outcomes} != {"home", "away"}:
             return f"Gemini '{ticker}' contracts do not cover both sides of this game"
@@ -2083,6 +2090,7 @@ def _resolve_poly_source(ref: dict):
         "title": market.get("question", ""),
         "slug": market.get("slug", ""),
         "sports_market_type": "moneyline",
+        "game_start_time": market.get("game_start_time") or event.get("game_start_time"),
         "outcomes": [{"outcome": o.get("name", "")} for o in outcomes],
     }
     source = {
