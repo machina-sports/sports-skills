@@ -14,7 +14,7 @@ import sys
 import types
 from pathlib import Path
 
-VERSION = "0.40.8"
+VERSION = "0.40.9"
 SCOREBOARD_SPORTS = ("nba", "nfl", "mlb", "nhl", "wnba", "cfb", "cbb")
 POLYMARKET_TODAYS_PARAMS = ("offset", "date", "timezone", "sports_market_types", "compact")
 GLEAGUE_SOURCES = ("__init__.py", "_cdn.py", "_connector.py", "_stats.py")
@@ -402,6 +402,15 @@ for relative, expected in operation_package["resource_digests"].items():
     payload = operations.joinpath(relative).read_bytes()
     if "sha256:" + hashlib.sha256(payload).hexdigest() != expected:
         raise SystemExit(f"operation resource byte mismatch: {relative}")
+
+# 0.40.9: Kalshi tickers use Kalshi's team codes, which differ from ESPN's for some teams.
+knicks = {"away": {"abbreviation": "NY"}, "home": {"abbreviation": "TOR"}, "dates": {"2026-11-17"}}
+if (
+    connector._kalshi_ticker_identity("KXNBAGAME-26NOV17NYKTOR-NYK", "nba", knicks, "away") != ""
+    or connector._kalshi_ticker_identity("KXNBAGAME-26NOV17NYKTOR-TOR", "nba", knicks, "away") == ""
+    or connector._kalshi_team_code("nfl", "JAX") != "JAC"
+):
+    raise SystemExit("kalshi team code drift")
 
 request = b'{"requires":[],"optional":[]}'
 successes = (
