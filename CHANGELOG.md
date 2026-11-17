@@ -1,3 +1,9 @@
+## [0.40.9]
+
+### Fixed
+- **polymarket: large event pages.** Polymarket answers `/events` requests with `limit` above 50 with `406 gzip_required` unless the client accepts gzip, so `search_markets`, `get_sports_events(limit=100)` and `compare_odds` found no Polymarket markets. Requests now accept gzip and decompress the reply; uncompressed replies are read as before.
+- **markets: Kalshi games in `compare_odds`.** Kalshi titles NFL and NHL games by city ("Miami vs Buffalo"), so the team-name search found nothing. `compare_odds` now reads the sport's Kalshi game series and keeps the event whose ticker names this matchup and date, and falls back to the text search when none does. ESPN abbreviations that differ from Kalshi's (NBA `GS`, `NO`, `NY`, `SA`, `UTAH`, `WSH`; NFL `JAX`, `WSH`; NHL `UTAH`) are mapped, which also fixes `evaluate_market` and `compare_market_url` for those teams.
+
 ## [0.40.8]
 
 ### Added
