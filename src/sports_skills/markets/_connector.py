@@ -319,8 +319,14 @@ def _note(report: dict | None, transport: str, detail: str = "") -> None:
         report["detail"] = detail
 
 
-def _search_kalshi(entity: str, sport: str | None, report: dict | None = None) -> list[dict]:
-    """Use kalshi.search_markets for sport-filtered search with fuzzy matching."""
+def _search_kalshi(
+    entity: str, sport: str | None, report: dict | None = None, series_ticker: str | None = None
+) -> list[dict]:
+    """Use kalshi.search_markets for sport-filtered search with fuzzy matching.
+
+    With ``series_ticker`` only that series is read, in full, and ``entity``
+    may be empty to return every event in it.
+    """
     try:
         from sports_skills import kalshi
     except ImportError:
@@ -329,7 +335,12 @@ def _search_kalshi(entity: str, sport: str | None, report: dict | None = None) -
         return []
 
     try:
-        result = kalshi.search_markets(sport=sport, query=entity)
+        if series_ticker:
+            from sports_skills.kalshi._connector import search_markets as _kalshi_search
+
+            result = _kalshi_search({"params": {"series_ticker": series_ticker, "query": entity, "limit": 200}})
+        else:
+            result = kalshi.search_markets(sport=sport, query=entity)
     except Exception as exc:
         logger.warning("Kalshi search failed: %s", exc)
         _note(report, "error", str(exc))
@@ -1054,6 +1065,19 @@ def _matchup_query(identity: dict) -> str:
     return f"{away} {home}".strip()
 
 
+# ESPN and Kalshi abbreviate these teams differently (ESPN code: Kalshi code).
+_KALSHI_TEAM_CODES = {
+    "nba": {"GS": "GSW", "NO": "NOP", "NY": "NYK", "SA": "SAS", "UTAH": "UTA", "WSH": "WAS"},
+    "nfl": {"JAX": "JAC", "WSH": "WAS"},
+    "nhl": {"UTAH": "UTA"},
+}
+
+
+def _kalshi_team_code(sport: str, abbreviation: str) -> str:
+    """The code Kalshi uses in tickers for the team ESPN abbreviates this way."""
+    return _KALSHI_TEAM_CODES.get(sport, {}).get(abbreviation, abbreviation)
+
+
 def _kalshi_event_date_pair(tail: str) -> tuple[str | None, str | None]:
     """('YYYY-MM-DD', 'AWAYHOME') from a Kalshi game event ticker's tail."""
     match = _KALSHI_EVENT_TAIL_RE.match(str(tail or ""))
@@ -1064,6 +1088,30 @@ def _kalshi_event_date_pair(tail: str) -> tuple[str | None, str | None]:
     if month is None:
         return None, pair
     return f"20{yy}-{month:02d}-{int(dd):02d}", pair
+
+
+def _search_kalshi_game(identity: dict, sport: str, report: dict | None = None) -> list[dict]:
+    """This game's Kalshi winner event, picked from the sport's game series by ticker.
+
+    Kalshi titles games by location ("Miami vs Buffalo"), so a mascot query
+    finds nothing outside the NBA. Falls back to the text search when the
+    series has no event for this game.
+    """
+    series = KALSHI_SERIES.get(sport)
+    if series:
+        events = _search_kalshi("", sport, report=report, series_ticker=f"{series}GAME")
+        matched = [
+            event
+            for event in events
+            if any(
+                not _kalshi_ticker_identity(market.get("ticker"), sport, identity, side)
+                for market in event.get("markets") or []
+                for side in ("home", "away")
+            )
+        ]
+        if matched:
+            return matched
+    return _search_kalshi(_matchup_query(identity), sport, report=report)
 
 
 def _kalshi_ticker_identity(ticker: str, sport: str, identity: dict, side: str) -> str:
@@ -1092,8 +1140,8 @@ def _kalshi_ticker_identity(ticker: str, sport: str, identity: dict, side: str) 
     if not pair:
         return f"Kalshi ticker '{ticker}' does not name a dated matchup"
 
-    home_abbr = identity["home"]["abbreviation"]
-    away_abbr = identity["away"]["abbreviation"]
+    home_abbr = _kalshi_team_code(sport, identity["home"]["abbreviation"])
+    away_abbr = _kalshi_team_code(sport, identity["away"]["abbreviation"])
     if pair not in (f"{away_abbr}{home_abbr}", f"{home_abbr}{away_abbr}"):
         return f"Kalshi ticker '{ticker}' prices {pair}, not {away_abbr} @ {home_abbr}"
 
@@ -1102,7 +1150,7 @@ def _kalshi_ticker_identity(ticker: str, sport: str, identity: dict, side: str) 
     if date not in identity["dates"]:
         return f"Kalshi ticker '{ticker}' is dated {date}; this game is played {' / '.join(sorted(identity['dates']))}"
 
-    want = identity[side]["abbreviation"]
+    want = _kalshi_team_code(sport, identity[side]["abbreviation"])
     if parts[2] != want:
         return f"Kalshi ticker '{ticker}' is the {parts[2]} side; {side} here is {want}"
     return ""
@@ -1442,7 +1490,7 @@ def compare_odds(request_data: dict) -> dict:
     found: dict[str, list] = {}
 
     for name, search in (
-        ("kalshi", _search_kalshi),
+        ("kalshi", lambda _query, sport, report=None: _search_kalshi_game(identity, sport, report=report)),
         ("polymarket", _search_polymarket),
         ("prophetx", _search_prophetx),
         ("novig", _search_novig),
