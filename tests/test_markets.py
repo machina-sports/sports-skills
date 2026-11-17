@@ -14,6 +14,7 @@ from sports_skills.markets._connector import (
     SCOREBOARD_SPORTS,
     _best_matches,
     _extract_games,
+    _kalshi_ticker_identity,
     _match_score,
     _normalize_name,
     _normalize_price,
@@ -2182,3 +2183,113 @@ class TestGetPlaysNearTimestampLive:
     def test_live_branch_requires_game_id(self):
         result = get_plays_near_timestamp({"params": {"sport": "mlb", "timestamp": "2026-07-17T18:01:00Z"}})
         assert result["status"] is False
+
+
+# ============================================================
+# Kalshi game matching: location titles and team codes
+# ============================================================
+
+
+def _identity(away_abbr, home_abbr, day):
+    return {
+        "away": {"name": "Away Team", "abbreviation": away_abbr, "nickname": "Team"},
+        "home": {"name": "Home Team", "abbreviation": home_abbr, "nickname": "Team"},
+        "start_utc": None,
+        "dates": {day},
+    }
+
+
+class TestKalshiTeamCodes:
+    """Kalshi abbreviates some teams differently from ESPN (NYK vs NY)."""
+
+    @pytest.mark.parametrize(
+        ("sport", "ticker", "away", "home", "side"),
+        [
+            ("nba", "KXNBAGAME-26NOV17NYKTOR-NYK", "NY", "TOR", "away"),
+            ("nba", "KXNBAGAME-26NOV17DETSAS-SAS", "DET", "SA", "home"),
+            ("nba", "KXNBAGAME-26NOV17UTALAC-UTA", "UTAH", "LAC", "away"),
+            ("nba", "KXNBAGAME-26NOV17GSWDAL-GSW", "GS", "DAL", "away"),
+            ("nba", "KXNBAGAME-26NOV17WASTOR-WAS", "WSH", "TOR", "away"),
+            ("nba", "KXNBAGAME-26NOV17NOPHOU-NOP", "NO", "HOU", "away"),
+            ("nfl", "KXNFLGAME-26NOV17JACNYG-JAC", "JAX", "NYG", "away"),
+            ("nfl", "KXNFLGAME-26NOV17CINWAS-WAS", "CIN", "WSH", "home"),
+            ("nhl", "KXNHLGAME-26NOV17COLUTA-UTA", "COL", "UTAH", "home"),
+        ],
+    )
+    def test_espn_codes_match_kalshi_tickers(self, sport, ticker, away, home, side):
+        assert _kalshi_ticker_identity(ticker, sport, _identity(away, home, "2026-11-17"), side) == ""
+
+    def test_other_side_is_still_refused(self):
+        identity = _identity("NY", "TOR", "2026-11-17")
+        assert _kalshi_ticker_identity("KXNBAGAME-26NOV17NYKTOR-TOR", "nba", identity, "away") != ""
+
+
+def _kalshi_event(event_ticker, title, sides):
+    return {
+        "source": "kalshi",
+        "event_ticker": event_ticker,
+        "title": title,
+        "status": "active",
+        "markets": [
+            {"ticker": f"{event_ticker}-{code}", "title": f"{title} Winner?", "yes_price": price}
+            for code, price in sides.items()
+        ],
+    }
+
+
+class TestCompareOddsKalshiByTicker:
+    """Kalshi titles games by location ("Miami vs Buffalo"), so a mascot
+    query finds nothing; the game is picked from its series by ticker."""
+
+    @staticmethod
+    def _compare(search_kalshi):
+        mod = MagicMock()
+        mod.get_game_summary.return_value = {
+            "status": True,
+            "data": {
+                "game_info": {"start_time": "2026-11-22T18:00Z"},
+                "competitors": [
+                    {"team": {"name": "Buffalo Bills", "abbreviation": "BUF"}, "home_away": "home"},
+                    {"team": {"name": "Miami Dolphins", "abbreviation": "MIA"}, "home_away": "away"},
+                ],
+                "odds": {},
+            },
+        }
+        with (
+            patch("sports_skills.markets._connector._load_sport_module", return_value=mod),
+            patch("sports_skills.markets._connector._search_kalshi", side_effect=search_kalshi) as mock_kalshi,
+            patch("sports_skills.markets._connector._search_polymarket", return_value=[]),
+            patch("sports_skills.markets._connector._search_prophetx", return_value=[]),
+            patch("sports_skills.markets._connector._search_novig", return_value=[]),
+        ):
+            return compare_odds({"params": {"sport": "nfl", "event_id": "401"}}), mock_kalshi
+
+    def test_nfl_game_is_found_in_the_game_series(self):
+        series_events = [
+            _kalshi_event("KXNFLGAME-26NOV22ARIKC", "Arizona vs Kansas City", {"KC": 70, "ARI": 31}),
+            _kalshi_event("KXNFLGAME-26NOV22MIABUF", "Miami vs Buffalo", {"BUF": 74, "MIA": 27}),
+        ]
+
+        def search(entity, sport, report=None, series_ticker=None):
+            if report is not None:
+                report["transport"] = "ok"
+            return series_events if series_ticker == "KXNFLGAME" else []
+
+        result, _ = self._compare(search)
+
+        data = result["data"]
+        assert data["sources"]["kalshi"]["outcome"] == "ok"
+        assert [e["event_ticker"] for e in data["kalshi_markets"]] == ["KXNFLGAME-26NOV22MIABUF"]
+        labels = [a["label"] for a in data["arbitrage_check"]["allocations"]]
+        assert labels == ["kalshi_Buffalo Bills", "kalshi_Miami Dolphins"]
+
+    def test_falls_back_to_the_text_search(self):
+        calls = []
+
+        def search(entity, sport, report=None, series_ticker=None):
+            calls.append((entity, series_ticker))
+            return []
+
+        self._compare(search)
+
+        assert calls == [("", "KXNFLGAME"), ("Dolphins Bills", None)]
