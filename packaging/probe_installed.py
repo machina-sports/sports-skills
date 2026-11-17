@@ -14,7 +14,7 @@ import sys
 import types
 from pathlib import Path
 
-VERSION = "0.40.7"
+VERSION = "0.40.8"
 SCOREBOARD_SPORTS = ("nba", "nfl", "mlb", "nhl", "wnba", "cfb", "cbb")
 POLYMARKET_TODAYS_PARAMS = ("offset", "date", "timezone", "sports_market_types", "compact")
 GLEAGUE_SOURCES = ("__init__.py", "_cdn.py", "_connector.py", "_stats.py")
@@ -365,6 +365,11 @@ if (
     or (row.get("home_away"), row.get("team_score"), row.get("opponent_score"), row.get("stats")) != ("away", "80", "70", {"points": "21"})
 ):
     raise SystemExit(f"player game log drift: {gamelog_calls!r} {game_log!r}")
+# ESPN files the NBA play-in under "... Play In Regular Season"; it is its own season type.
+if espn_base._game_log_season_type("2024-25 Play In Regular Season") != "playin" or espn_base._game_log_season_type(
+    "Eastern Conference Playoffs - Round One"
+) != "postseason":
+    raise SystemExit("player game log season-type drift")
 
 expected_signatures = {
     "to_successor_envelope": "(*, operation, request_bytes, operation_arguments_bytes, output_mode, consumer_tier) -> bytes",

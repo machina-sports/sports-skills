@@ -1,6 +1,6 @@
 """sports-skills: Lightweight Python SDK for sports data."""
 
-__version__ = "0.40.7"
+__version__ = "0.40.8"
 
 from sports_skills import (
     betting,
