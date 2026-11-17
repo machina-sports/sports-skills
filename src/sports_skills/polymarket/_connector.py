@@ -1,3 +1,4 @@
+import gzip
 import json
 import re
 import threading
@@ -158,10 +159,15 @@ def _live_http_fetch(url, rate_limiter):
     req = urllib.request.Request(url)
     req.add_header("User-Agent", _USER_AGENT)
     req.add_header("Accept", "application/json")
+    # Gamma serves /events pages with limit above 50 compressed only.
+    req.add_header("Accept-Encoding", "gzip")
 
     try:
         with urllib.request.urlopen(req, timeout=30) as resp:
-            return resp.read(), None
+            raw = resp.read()
+            if resp.headers.get("Content-Encoding") == "gzip":
+                raw = gzip.decompress(raw)
+            return raw, None
     except urllib.error.HTTPError as e:
         body = e.read().decode() if e.fp else ""
         return None, {"error": True, "status_code": e.code, "message": body}
