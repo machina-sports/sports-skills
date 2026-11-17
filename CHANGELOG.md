@@ -1,3 +1,11 @@
+## [0.40.8]
+
+### Added
+- **nba, nfl, football: `get_player_game_log`.** The ESPN athlete gamelog that 0.40.7 added for WNBA, CFB and CBB, now for NBA, NFL and soccer. It takes the ESPN athlete id and returns the same rows: the game, `opponent`, `home_away`, `result`, `team_score` and `opponent_score` from the player's side, `season_type`, ESPN's `note` (a playoff round, `Super Bowl LIX`), and `stats` keyed by ESPN's stat names (`points`, `receivingYards`, `passingYards`, `totalGoals`, ...). NBA's `season` is the year the season ends; `get_nbastats_game_log` still reads stats.nba.com with NBA.com ids, which does not answer from datacenter IPs. Soccer requires `league_slug` (no default league) and returns only that league's matches, each dated, unlike `get_player_season_stats` (the last ~5 across competitions, undated); `result` can be `D`. Without a `season`, the soccer call reads ESPN's season for the player first and then asks for it, because ESPN's unseasoned answer can be partial.
+
+### Changed
+- **Game logs: `season_type` for play-in, playoffs and cups.** NBA's play-in tournament (`"2024-25 Play In Regular Season"`) is `playin`, a new value and filter, instead of regular season. Soccer playoff rounds (`"Eastern Conference Playoffs - Round One"`) are `postseason` instead of `other`. A league named for its season (`"2026-27 English Women's Super League"`) is `regular` instead of `other`. A cup inside a league's log (`"2026 NWSL Challenge Cup"`) stays `other`, only in `all`. WNBA, CFB and CBB rows are unchanged.
+
 ## [0.40.7]
 
 ### Added
