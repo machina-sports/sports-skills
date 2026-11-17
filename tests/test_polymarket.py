@@ -1,7 +1,10 @@
 """Unit tests for the polymarket module (no network)."""
 
+import gzip
 import inspect
+import io
 import json
+import urllib.error
 from datetime import datetime, timezone
 from pathlib import Path
 from unittest.mock import patch
@@ -527,3 +530,48 @@ def test_invalid_market_type_is_not_a_successful_empty_lookup(monkeypatch, marke
     result, calls = _today(monkeypatch, [], date="2026-10-29", sports_market_types=market_type)
     assert result["status"] is False
     assert calls == []
+
+
+
+class _FakeResponse(io.BytesIO):
+    def __init__(self, body, headers=None):
+        super().__init__(body)
+        self.headers = headers or {}
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *exc):
+        return False
+
+
+class TestLiveFetchGzip:
+    """Gamma serves /events pages with limit above 50 gzip-only: without
+    Accept-Encoding: gzip it answers 406 gzip_required."""
+
+    def test_large_events_page_is_requested_and_read_compressed(self, monkeypatch):
+        events = [{"id": "1", "title": "Knicks vs. Raptors"}]
+
+        def fake_urlopen(req, timeout=None):
+            if req.get_header("Accept-encoding") != "gzip":
+                raise urllib.error.HTTPError(req.full_url, 406, "Not Acceptable", {}, io.BytesIO(b"gzip_required"))
+            return _FakeResponse(gzip.compress(json.dumps(events).encode()), {"Content-Encoding": "gzip"})
+
+        monkeypatch.setattr(poly_connector.urllib.request, "urlopen", fake_urlopen)
+
+        raw, err = poly_connector._live_http_fetch(
+            "https://gamma-api.polymarket.com/events?limit=100", poly_connector._gamma_rate_limiter
+        )
+
+        assert err is None
+        assert json.loads(raw) == events
+
+    def test_uncompressed_reply_is_read_as_is(self, monkeypatch):
+        monkeypatch.setattr(poly_connector.urllib.request, "urlopen", lambda req, timeout=None: _FakeResponse(b"[]"))
+
+        raw, err = poly_connector._live_http_fetch(
+            "https://gamma-api.polymarket.com/events?limit=10", poly_connector._gamma_rate_limiter
+        )
+
+        assert err is None
+        assert raw == b"[]"
