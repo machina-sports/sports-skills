@@ -75,6 +75,7 @@ ESPN names an NBA season by the year it ends: 2026-27 is `2027`, so in February 
 | `get_depth_chart` | Depth chart for a team |
 | `get_team_stats` | Team statistical profile |
 | `get_player_stats` | Player statistical profile |
+| `get_player_game_log` | One player's games in a season via ESPN, by ESPN athlete id (opponent, home/away, result, stat line) |
 | `find_nba_player` | Search the NBA Stats player registry (all eras) |
 | `get_nbastats_game_log` | League game log via NBA Stats — history to 1946, carries NBA game ids. `player_or_team="player"` or `player=<name or id>` for player game logs |
 | `get_nbastats_player_career` | Career stats season by season via NBA Stats |

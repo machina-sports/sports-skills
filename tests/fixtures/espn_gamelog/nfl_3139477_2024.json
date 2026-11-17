@@ -1,0 +1,1130 @@
+{
+ "categories": [
+  {
+   "name": "passing",
+   "displayName": "Passing",
+   "count": 11
+  },
+  {
+   "name": "rushing",
+   "displayName": "Rushing",
+   "count": 5
+  }
+ ],
+ "filters": [
+  {
+   "displayName": "League",
+   "name": "league",
+   "value": "nfl",
+   "options": [
+    {
+     "value": "college-football",
+     "displayValue": "NCAA - Football",
+     "shortDisplayName": "NCAAF"
+    },
+    {
+     "value": "nfl",
+     "displayValue": "National Football League",
+     "shortDisplayName": "NFL"
+    }
+   ]
+  },
+  {
+   "displayName": "Season",
+   "name": "season",
+   "value": "2024",
+   "options": [
+    {
+     "value": "2026",
+     "displayValue": "2026"
+    },
+    {
+     "value": "2025",
+     "displayValue": "2025"
+    },
+    {
+     "value": "2024",
+     "displayValue": "2024"
+    },
+    {
+     "value": "2023",
+     "displayValue": "2023"
+    },
+    {
+     "value": "2022",
+     "displayValue": "2022"
+    },
+    {
+     "value": "2021",
+     "displayValue": "2021"
+    },
+    {
+     "value": "2020",
+     "displayValue": "2020"
+    },
+    {
+     "value": "2019",
+     "displayValue": "2019"
+    },
+    {
+     "value": "2018",
+     "displayValue": "2018"
+    },
+    {
+     "value": "2017",
+     "displayValue": "2017"
+    }
+   ]
+  }
+ ],
+ "labels": [
+  "CMP",
+  "ATT",
+  "YDS",
+  "CMP%",
+  "AVG",
+  "TD",
+  "INT",
+  "LNG",
+  "SACK",
+  "RTG",
+  "QBR",
+  "CAR",
+  "YDS",
+  "AVG",
+  "TD",
+  "LNG"
+ ],
+ "names": [
+  "completions",
+  "passingAttempts",
+  "passingYards",
+  "completionPct",
+  "yardsPerPassAttempt",
+  "passingTouchdowns",
+  "interceptions",
+  "longPassing",
+  "sacks",
+  "QBRating",
+  "adjQBR",
+  "rushingAttempts",
+  "rushingYards",
+  "yardsPerRushAttempt",
+  "rushingTouchdowns",
+  "longRushing"
+ ],
+ "displayNames": [
+  "Completions",
+  "Passing Attempts",
+  "Passing Yards",
+  "Completion Percentage",
+  "Yards Per Pass Attempt",
+  "Passing Touchdowns",
+  "Interceptions",
+  "Longest Pass",
+  "Total Sacks",
+  "Passer Rating",
+  "Adjusted QBR",
+  "Rushing Attempts",
+  "Rushing Yards",
+  "Yards Per Rush Attempt",
+  "Rushing Touchdowns",
+  "Long Rushing"
+ ],
+ "events": {
+  "401671889": {
+   "id": "401671889",
+   "week": 5,
+   "atVs": "vs",
+   "gameDate": "2025-02-09T23:30:00.000+00:00",
+   "score": "40-22",
+   "homeTeamId": "21",
+   "awayTeamId": "12",
+   "homeTeamScore": "40",
+   "awayTeamScore": "22",
+   "gameResult": "L",
+   "opponent": {
+    "id": "21",
+    "displayName": "Philadelphia Eagles",
+    "abbreviation": "PHI"
+   },
+   "leagueName": "National Football League",
+   "leagueAbbreviation": "NFL",
+   "leagueShortName": "NFL",
+   "eventNote": "Super Bowl LIX",
+   "team": {
+    "id": "12",
+    "abbreviation": "KC",
+    "isAllStar": false
+   }
+  },
+  "401671887": {
+   "id": "401671887",
+   "week": 3,
+   "atVs": "vs",
+   "gameDate": "2025-01-26T23:30:00.000+00:00",
+   "score": "32-29",
+   "homeTeamId": "12",
+   "awayTeamId": "2",
+   "homeTeamScore": "32",
+   "awayTeamScore": "29",
+   "gameResult": "W",
+   "opponent": {
+    "id": "2",
+    "displayName": "Buffalo Bills",
+    "abbreviation": "BUF"
+   },
+   "leagueName": "National Football League",
+   "leagueAbbreviation": "NFL",
+   "leagueShortName": "NFL",
+   "eventNote": "AFC Championship",
+   "team": {
+    "id": "12",
+    "abbreviation": "KC",
+    "isAllStar": false
+   }
+  },
+  "401671884": {
+   "id": "401671884",
+   "week": 2,
+   "atVs": "vs",
+   "gameDate": "2025-01-18T21:30:00.000+00:00",
+   "score": "23-14",
+   "homeTeamId": "12",
+   "awayTeamId": "34",
+   "homeTeamScore": "23",
+   "awayTeamScore": "14",
+   "gameResult": "W",
+   "opponent": {
+    "id": "34",
+    "displayName": "Houston Texans",
+    "abbreviation": "HOU"
+   },
+   "leagueName": "National Football League",
+   "leagueAbbreviation": "NFL",
+   "leagueShortName": "NFL",
+   "eventNote": "AFC Divisional Playoffs",
+   "team": {
+    "id": "12",
+    "abbreviation": "KC",
+    "isAllStar": false
+   }
+  },
+  "401671799": {
+   "id": "401671799",
+   "week": 17,
+   "atVs": "@",
+   "gameDate": "2024-12-25T18:00:00.000+00:00",
+   "score": "29-10",
+   "homeTeamId": "23",
+   "awayTeamId": "12",
+   "homeTeamScore": "10",
+   "awayTeamScore": "29",
+   "gameResult": "W",
+   "opponent": {
+    "id": "23",
+    "displayName": "Pittsburgh Steelers",
+    "abbreviation": "PIT"
+   },
+   "leagueName": "National Football League",
+   "leagueAbbreviation": "NFL",
+   "leagueShortName": "NFL",
+   "team": {
+    "id": "12",
+    "abbreviation": "KC",
+    "isAllStar": false
+   }
+  },
+  "401671780": {
+   "id": "401671780",
+   "week": 16,
+   "atVs": "vs",
+   "gameDate": "2024-12-21T18:00:00.000+00:00",
+   "score": "27-19",
+   "homeTeamId": "12",
+   "awayTeamId": "34",
+   "homeTeamScore": "27",
+   "awayTeamScore": "19",
+   "gameResult": "W",
+   "opponent": {
+    "id": "34",
+    "displayName": "Houston Texans",
+    "abbreviation": "HOU"
+   },
+   "leagueName": "National Football League",
+   "leagueAbbreviation": "NFL",
+   "leagueShortName": "NFL",
+   "team": {
+    "id": "12",
+    "abbreviation": "KC",
+    "isAllStar": false
+   }
+  },
+  "401671854": {
+   "id": "401671854",
+   "week": 15,
+   "atVs": "@",
+   "gameDate": "2024-12-15T18:00:00.000+00:00",
+   "score": "21-7",
+   "homeTeamId": "5",
+   "awayTeamId": "12",
+   "homeTeamScore": "7",
+   "awayTeamScore": "21",
+   "gameResult": "W",
+   "opponent": {
+    "id": "5",
+    "displayName": "Cleveland Browns",
+    "abbreviation": "CLE"
+   },
+   "leagueName": "National Football League",
+   "leagueAbbreviation": "NFL",
+   "leagueShortName": "NFL",
+   "team": {
+    "id": "12",
+    "abbreviation": "KC",
+    "isAllStar": false
+   }
+  },
+  "401671788": {
+   "id": "401671788",
+   "week": 14,
+   "atVs": "vs",
+   "gameDate": "2024-12-09T01:20:00.000+00:00",
+   "score": "19-17",
+   "homeTeamId": "12",
+   "awayTeamId": "24",
+   "homeTeamScore": "19",
+   "awayTeamScore": "17",
+   "gameResult": "W",
+   "opponent": {
+    "id": "24",
+    "displayName": "Los Angeles Chargers",
+    "abbreviation": "LAC"
+   },
+   "leagueName": "National Football League",
+   "leagueAbbreviation": "NFL",
+   "leagueShortName": "NFL",
+   "team": {
+    "id": "12",
+    "abbreviation": "KC",
+    "isAllStar": false
+   }
+  },
+  "401671806": {
+   "id": "401671806",
+   "week": 13,
+   "atVs": "vs",
+   "gameDate": "2024-11-29T20:00:00.000+00:00",
+   "score": "19-17",
+   "homeTeamId": "12",
+   "awayTeamId": "13",
+   "homeTeamScore": "19",
+   "awayTeamScore": "17",
+   "gameResult": "W",
+   "opponent": {
+    "id": "13",
+    "displayName": "Las Vegas Raiders",
+    "abbreviation": "LV"
+   },
+   "leagueName": "National Football League",
+   "leagueAbbreviation": "NFL",
+   "leagueShortName": "NFL",
+   "team": {
+    "id": "12",
+    "abbreviation": "KC",
+    "isAllStar": false
+   }
+  },
+  "401671651": {
+   "id": "401671651",
+   "week": 12,
+   "atVs": "@",
+   "gameDate": "2024-11-24T18:00:00.000+00:00",
+   "score": "30-27",
+   "homeTeamId": "29",
+   "awayTeamId": "12",
+   "homeTeamScore": "27",
+   "awayTeamScore": "30",
+   "gameResult": "W",
+   "opponent": {
+    "id": "29",
+    "displayName": "Carolina Panthers",
+    "abbreviation": "CAR"
+   },
+   "leagueName": "National Football League",
+   "leagueAbbreviation": "NFL",
+   "leagueShortName": "NFL",
+   "team": {
+    "id": "12",
+    "abbreviation": "KC",
+    "isAllStar": false
+   }
+  },
+  "401671665": {
+   "id": "401671665",
+   "week": 11,
+   "atVs": "@",
+   "gameDate": "2024-11-17T21:25:00.000+00:00",
+   "score": "30-21",
+   "homeTeamId": "2",
+   "awayTeamId": "12",
+   "homeTeamScore": "30",
+   "awayTeamScore": "21",
+   "gameResult": "L",
+   "opponent": {
+    "id": "2",
+    "displayName": "Buffalo Bills",
+    "abbreviation": "BUF"
+   },
+   "leagueName": "National Football League",
+   "leagueAbbreviation": "NFL",
+   "leagueShortName": "NFL",
+   "team": {
+    "id": "12",
+    "abbreviation": "KC",
+    "isAllStar": false
+   }
+  },
+  "401671637": {
+   "id": "401671637",
+   "week": 10,
+   "atVs": "vs",
+   "gameDate": "2024-11-10T18:00:00.000+00:00",
+   "score": "16-14",
+   "homeTeamId": "12",
+   "awayTeamId": "7",
+   "homeTeamScore": "16",
+   "awayTeamScore": "14",
+   "gameResult": "W",
+   "opponent": {
+    "id": "7",
+    "displayName": "Denver Broncos",
+    "abbreviation": "DEN"
+   },
+   "leagueName": "National Football League",
+   "leagueAbbreviation": "NFL",
+   "leagueShortName": "NFL",
+   "team": {
+    "id": "12",
+    "abbreviation": "KC",
+    "isAllStar": false
+   }
+  },
+  "401671688": {
+   "id": "401671688",
+   "week": 9,
+   "atVs": "vs",
+   "gameDate": "2024-11-05T01:15:00.000+00:00",
+   "score": "30-24 OT",
+   "homeTeamId": "12",
+   "awayTeamId": "27",
+   "homeTeamScore": "30",
+   "awayTeamScore": "24",
+   "gameResult": "W",
+   "opponent": {
+    "id": "27",
+    "displayName": "Tampa Bay Buccaneers",
+    "abbreviation": "TB"
+   },
+   "leagueName": "National Football League",
+   "leagueAbbreviation": "NFL",
+   "leagueShortName": "NFL",
+   "team": {
+    "id": "12",
+    "abbreviation": "KC",
+    "isAllStar": false
+   }
+  },
+  "401671671": {
+   "id": "401671671",
+   "week": 8,
+   "atVs": "@",
+   "gameDate": "2024-10-27T20:25:00.000+00:00",
+   "score": "27-20",
+   "homeTeamId": "13",
+   "awayTeamId": "12",
+   "homeTeamScore": "20",
+   "awayTeamScore": "27",
+   "gameResult": "W",
+   "opponent": {
+    "id": "13",
+    "displayName": "Las Vegas Raiders",
+    "abbreviation": "LV"
+   },
+   "leagueName": "National Football League",
+   "leagueAbbreviation": "NFL",
+   "leagueShortName": "NFL",
+   "team": {
+    "id": "12",
+    "abbreviation": "KC",
+    "isAllStar": false
+   }
+  },
+  "401671777": {
+   "id": "401671777",
+   "week": 7,
+   "atVs": "@",
+   "gameDate": "2024-10-20T20:25:00.000+00:00",
+   "score": "28-18",
+   "homeTeamId": "25",
+   "awayTeamId": "12",
+   "homeTeamScore": "18",
+   "awayTeamScore": "28",
+   "gameResult": "W",
+   "opponent": {
+    "id": "25",
+    "displayName": "San Francisco 49ers",
+    "abbreviation": "SF"
+   },
+   "leagueName": "National Football League",
+   "leagueAbbreviation": "NFL",
+   "leagueShortName": "NFL",
+   "team": {
+    "id": "12",
+    "abbreviation": "KC",
+    "isAllStar": false
+   }
+  },
+  "401671687": {
+   "id": "401671687",
+   "week": 5,
+   "atVs": "vs",
+   "gameDate": "2024-10-08T00:15:00.000+00:00",
+   "score": "26-13",
+   "homeTeamId": "12",
+   "awayTeamId": "18",
+   "homeTeamScore": "26",
+   "awayTeamScore": "13",
+   "gameResult": "W",
+   "opponent": {
+    "id": "18",
+    "displayName": "New Orleans Saints",
+    "abbreviation": "NO"
+   },
+   "leagueName": "National Football League",
+   "leagueAbbreviation": "NFL",
+   "leagueShortName": "NFL",
+   "team": {
+    "id": "12",
+    "abbreviation": "KC",
+    "isAllStar": false
+   }
+  },
+  "401671674": {
+   "id": "401671674",
+   "week": 4,
+   "atVs": "@",
+   "gameDate": "2024-09-29T20:25:00.000+00:00",
+   "score": "17-10",
+   "homeTeamId": "24",
+   "awayTeamId": "12",
+   "homeTeamScore": "10",
+   "awayTeamScore": "17",
+   "gameResult": "W",
+   "opponent": {
+    "id": "24",
+    "displayName": "Los Angeles Chargers",
+    "abbreviation": "LAC"
+   },
+   "leagueName": "National Football League",
+   "leagueAbbreviation": "NFL",
+   "leagueShortName": "NFL",
+   "team": {
+    "id": "12",
+    "abbreviation": "KC",
+    "isAllStar": false
+   }
+  },
+  "401671793": {
+   "id": "401671793",
+   "week": 3,
+   "atVs": "@",
+   "gameDate": "2024-09-23T00:20:00.000+00:00",
+   "score": "22-17",
+   "homeTeamId": "1",
+   "awayTeamId": "12",
+   "homeTeamScore": "17",
+   "awayTeamScore": "22",
+   "gameResult": "W",
+   "opponent": {
+    "id": "1",
+    "displayName": "Atlanta Falcons",
+    "abbreviation": "ATL"
+   },
+   "leagueName": "National Football League",
+   "leagueAbbreviation": "NFL",
+   "leagueShortName": "NFL",
+   "team": {
+    "id": "12",
+    "abbreviation": "KC",
+    "isAllStar": false
+   }
+  },
+  "401671670": {
+   "id": "401671670",
+   "week": 2,
+   "atVs": "vs",
+   "gameDate": "2024-09-15T20:25:00.000+00:00",
+   "score": "26-25",
+   "homeTeamId": "12",
+   "awayTeamId": "4",
+   "homeTeamScore": "26",
+   "awayTeamScore": "25",
+   "gameResult": "W",
+   "opponent": {
+    "id": "4",
+    "displayName": "Cincinnati Bengals",
+    "abbreviation": "CIN"
+   },
+   "leagueName": "National Football League",
+   "leagueAbbreviation": "NFL",
+   "leagueShortName": "NFL",
+   "team": {
+    "id": "12",
+    "abbreviation": "KC",
+    "isAllStar": false
+   }
+  },
+  "401671789": {
+   "id": "401671789",
+   "week": 1,
+   "atVs": "vs",
+   "gameDate": "2024-09-06T00:40:00.000+00:00",
+   "score": "27-20",
+   "homeTeamId": "12",
+   "awayTeamId": "33",
+   "homeTeamScore": "27",
+   "awayTeamScore": "20",
+   "gameResult": "W",
+   "opponent": {
+    "id": "33",
+    "displayName": "Baltimore Ravens",
+    "abbreviation": "BAL"
+   },
+   "leagueName": "National Football League",
+   "leagueAbbreviation": "NFL",
+   "leagueShortName": "NFL",
+   "team": {
+    "id": "12",
+    "abbreviation": "KC",
+    "isAllStar": false
+   }
+  }
+ },
+ "seasonTypes": [
+  {
+   "displayName": "2024 Postseason",
+   "categories": [
+    {
+     "displayName": "Postseason",
+     "type": "event",
+     "splitType": "3",
+     "events": [
+      {
+       "eventId": "401671889",
+       "stats": [
+        "21",
+        "32",
+        "257",
+        "65.6",
+        "8.0",
+        "3",
+        "2",
+        "50",
+        "6",
+        "95.4",
+        "10.0",
+        "4",
+        "25",
+        "6.3",
+        "0",
+        "8"
+       ]
+      },
+      {
+       "eventId": "401671887",
+       "stats": [
+        "18",
+        "26",
+        "245",
+        "69.2",
+        "9.4",
+        "1",
+        "0",
+        "31",
+        "2",
+        "111.9",
+        "85.4",
+        "11",
+        "43",
+        "3.9",
+        "2",
+        "12"
+       ]
+      },
+      {
+       "eventId": "401671884",
+       "stats": [
+        "16",
+        "25",
+        "177",
+        "64.0",
+        "7.1",
+        "1",
+        "0",
+        "49",
+        "3",
+        "98.2",
+        "63.3",
+        "7",
+        "14",
+        "2.0",
+        "0",
+        "15"
+       ]
+      }
+     ],
+     "totals": [
+      "55",
+      "83",
+      "679",
+      "66.3",
+      "8.2",
+      "5",
+      "2",
+      "50",
+      "11",
+      "101.4",
+      "59.0",
+      "22",
+      "82",
+      "3.7",
+      "2",
+      "15"
+     ]
+    }
+   ],
+   "summary": {
+    "displayName": "Postseason",
+    "stats": [
+     {
+      "displayName": "Totals",
+      "stats": [
+       "55",
+       "83",
+       "679",
+       "66.3",
+       "8.2",
+       "5",
+       "2",
+       "50",
+       "11",
+       "101.4",
+       "59.0",
+       "22",
+       "82",
+       "3.7",
+       "2",
+       "15"
+      ],
+      "type": "total"
+     }
+    ]
+   }
+  },
+  {
+   "displayName": "2024 Regular Season",
+   "displayTeam": "KC",
+   "categories": [
+    {
+     "displayName": "Regular Season Stats",
+     "type": "event",
+     "splitType": "2",
+     "events": [
+      {
+       "eventId": "401671799",
+       "stats": [
+        "29",
+        "38",
+        "320",
+        "76.3",
+        "8.4",
+        "3",
+        "0",
+        "49",
+        "0",
+        "127.1",
+        "88.5",
+        "1",
+        "12",
+        "12.0",
+        "0",
+        "12"
+       ]
+      },
+      {
+       "eventId": "401671780",
+       "stats": [
+        "28",
+        "41",
+        "260",
+        "68.3",
+        "6.3",
+        "1",
+        "0",
+        "36",
+        "1",
+        "93.5",
+        "85.1",
+        "5",
+        "33",
+        "6.6",
+        "1",
+        "15"
+       ]
+      },
+      {
+       "eventId": "401671854",
+       "stats": [
+        "19",
+        "38",
+        "159",
+        "50.0",
+        "4.2",
+        "2",
+        "0",
+        "23",
+        "0",
+        "78.7",
+        "55.4",
+        "2",
+        "14",
+        "7.0",
+        "0",
+        "10"
+       ]
+      },
+      {
+       "eventId": "401671788",
+       "stats": [
+        "24",
+        "37",
+        "210",
+        "64.9",
+        "5.7",
+        "1",
+        "0",
+        "26",
+        "3",
+        "88.8",
+        "54.7",
+        "4",
+        "17",
+        "4.3",
+        "0",
+        "10"
+       ]
+      },
+      {
+       "eventId": "401671806",
+       "stats": [
+        "26",
+        "46",
+        "306",
+        "56.5",
+        "6.7",
+        "1",
+        "0",
+        "34",
+        "5",
+        "84.1",
+        "43.7",
+        "2",
+        "4",
+        "2.0",
+        "0",
+        "5"
+       ]
+      },
+      {
+       "eventId": "401671651",
+       "stats": [
+        "27",
+        "37",
+        "269",
+        "73.0",
+        "7.3",
+        "3",
+        "0",
+        "35",
+        "5",
+        "120.2",
+        "63.3",
+        "5",
+        "60",
+        "12.0",
+        "0",
+        "33"
+       ]
+      },
+      {
+       "eventId": "401671665",
+       "stats": [
+        "23",
+        "33",
+        "196",
+        "69.7",
+        "5.9",
+        "3",
+        "2",
+        "31",
+        "2",
+        "90.0",
+        "56.3",
+        "0",
+        "0",
+        "0.0",
+        "0",
+        "0"
+       ]
+      },
+      {
+       "eventId": "401671637",
+       "stats": [
+        "28",
+        "42",
+        "266",
+        "66.7",
+        "6.3",
+        "1",
+        "0",
+        "35",
+        "4",
+        "92.0",
+        "52.8",
+        "3",
+        "19",
+        "6.3",
+        "0",
+        "12"
+       ]
+      },
+      {
+       "eventId": "401671688",
+       "stats": [
+        "34",
+        "44",
+        "291",
+        "77.3",
+        "6.6",
+        "3",
+        "0",
+        "35",
+        "4",
+        "116.8",
+        "75.0",
+        "2",
+        "9",
+        "4.5",
+        "0",
+        "7"
+       ]
+      },
+      {
+       "eventId": "401671671",
+       "stats": [
+        "27",
+        "38",
+        "262",
+        "71.1",
+        "6.9",
+        "2",
+        "1",
+        "25",
+        "1",
+        "96.6",
+        "83.4",
+        "6",
+        "17",
+        "2.8",
+        "0",
+        "14"
+       ]
+      },
+      {
+       "eventId": "401671777",
+       "stats": [
+        "16",
+        "27",
+        "154",
+        "59.3",
+        "5.7",
+        "0",
+        "2",
+        "26",
+        "2",
+        "44.4",
+        "78.7",
+        "5",
+        "39",
+        "7.8",
+        "1",
+        "33"
+       ]
+      },
+      {
+       "eventId": "401671687",
+       "stats": [
+        "28",
+        "39",
+        "331",
+        "71.8",
+        "8.5",
+        "0",
+        "1",
+        "50",
+        "2",
+        "86.6",
+        "60.4",
+        "6",
+        "22",
+        "3.7",
+        "0",
+        "9"
+       ]
+      },
+      {
+       "eventId": "401671674",
+       "stats": [
+        "19",
+        "29",
+        "245",
+        "65.5",
+        "8.4",
+        "1",
+        "1",
+        "54",
+        "3",
+        "89.0",
+        "63.0",
+        "5",
+        "12",
+        "2.4",
+        "0",
+        "13"
+       ]
+      },
+      {
+       "eventId": "401671793",
+       "stats": [
+        "26",
+        "39",
+        "217",
+        "66.7",
+        "5.6",
+        "2",
+        "1",
+        "27",
+        "0",
+        "87.2",
+        "55.8",
+        "6",
+        "17",
+        "2.8",
+        "0",
+        "15"
+       ]
+      },
+      {
+       "eventId": "401671670",
+       "stats": [
+        "18",
+        "25",
+        "151",
+        "72.0",
+        "6.0",
+        "2",
+        "2",
+        "44",
+        "2",
+        "80.6",
+        "27.4",
+        "4",
+        "29",
+        "7.3",
+        "0",
+        "9"
+       ]
+      },
+      {
+       "eventId": "401671789",
+       "stats": [
+        "20",
+        "28",
+        "291",
+        "71.4",
+        "10.4",
+        "1",
+        "1",
+        "35",
+        "2",
+        "101.9",
+        "65.9",
+        "2",
+        "3",
+        "1.5",
+        "0",
+        "4"
+       ]
+      }
+     ],
+     "totals": [
+      "392",
+      "581",
+      "3,928",
+      "67.5",
+      "6.8",
+      "26",
+      "11",
+      "54",
+      "36",
+      "93.5",
+      "64.6",
+      "58",
+      "307",
+      "5.3",
+      "2",
+      "33"
+     ]
+    }
+   ],
+   "summary": {
+    "displayName": "Regular Season Stats",
+    "stats": [
+     {
+      "displayName": "Totals",
+      "stats": [
+       "392",
+       "581",
+       "3,928",
+       "67.5",
+       "6.8",
+       "26",
+       "11",
+       "54",
+       "36",
+       "93.5",
+       "64.6",
+       "58",
+       "307",
+       "5.3",
+       "2",
+       "33"
+      ],
+      "type": "total"
+     }
+    ]
+   }
+  }
+ ]
+}

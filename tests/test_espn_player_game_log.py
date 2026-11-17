@@ -1,8 +1,11 @@
-"""Player game logs for WNBA, CFB and CBB from ESPN's athlete gamelog (issue 241).
+"""Player game logs for WNBA, CFB, CBB and NBA from ESPN's athlete gamelog (issue 241).
 
 Fixtures are ESPN's responses (links and logos stripped) for Jonquel Jones'
-2025 WNBA season, C.J. Stroud's 2022 Ohio State season and Cooper Flagg's
-2024-25 Duke season.
+2025 WNBA season, C.J. Stroud's 2022 Ohio State season, Cooper Flagg's
+2024-25 Duke season, Dyson Daniels' (play-in) and Anthony Edwards' (playoffs)
+2024-25 NBA seasons, Patrick Mahomes' 2024 NFL season, and three soccer logs:
+Cavan Sullivan's 2025 MLS season (playoffs), Sam Coffey's 2026-27 WSL season and
+Jaedyn Shaw's 2026 NWSL season (with and without an explicit season).
 """
 
 import json
@@ -10,7 +13,7 @@ from pathlib import Path
 
 import pytest
 
-from sports_skills import _espn_base, cbb, cfb, wnba
+from sports_skills import _espn_base, cbb, cfb, football, nba, nfl, wnba
 from sports_skills.cli import _REGISTRY
 
 FIXTURES = Path(__file__).parent / "fixtures" / "espn_gamelog"
@@ -158,9 +161,122 @@ def test_season_with_no_games_warns(espn):
     assert data["warnings"] == ["no regular games for player 2999101 in this season"]
 
 
-@pytest.mark.parametrize("league", ["wnba", "cfb", "cbb"])
+@pytest.mark.parametrize("league", ["wnba", "cfb", "cbb", "nba", "nfl"])
 def test_cli_registers_the_command(league):
     assert _REGISTRY[league]["get_player_game_log"] == {
         "required": ["player_id"],
+        "optional": ["season", "season_type", "sort_by", "descending", "limit", "fields"],
+    }
+
+
+def test_nba_reads_espn_by_espn_id_not_stats_nba_com(espn):
+    espn("nba_4594268_2025")
+    data = nba.get_player_game_log(player_id="4594268", season=2025, season_type="postseason")["data"]
+
+    assert espn.calls == [
+        "https://site.web.api.espn.com/apis/common/v3/sports/basketball/nba/athletes/4594268/gamelog?season=2025"
+    ]
+    assert (data["season"], data["count"]) == (2025, 15)
+    assert {g["season_type"] for g in data["games"]} == {"postseason"}
+    dates = [g["game_date"] for g in data["games"]]
+    assert dates == sorted(dates)
+    assert set(data["games"][0]["stats"]) >= {"minutes", "points", "totalRebounds", "assists"}
+
+
+def test_nba_play_in_is_its_own_season_type(espn):
+    espn("nba_4869342_2025")
+    regular = nba.get_player_game_log(player_id="4869342", season=2025)["data"]
+    play_in = nba.get_player_game_log(player_id="4869342", season=2025, season_type="playin")["data"]
+    every = nba.get_player_game_log(player_id="4869342", season=2025, season_type="all")["data"]
+
+    # ESPN names the group "2024-25 Play In Regular Season"; it must not count as regular season.
+    assert (regular["count"], play_in["count"]) == (76, 2)
+    assert {g["season_type"] for g in regular["games"]} == {"regular"}
+    assert {g["season_type"] for g in play_in["games"]} == {"playin"}
+    assert sorted({g["season_type"] for g in every["games"]}) == ["playin", "preseason", "regular"]
+    assert every["count"] == 76 + 2 + 4
+
+
+def test_nba_newest_first_shaping(espn):
+    espn("nba_4869342_2025")
+    data = nba.get_player_game_log(
+        player_id="4869342", season=2025, season_type="all", sort_by="game_date", descending=True, limit=3
+    )["data"]
+    assert (data["total_rows"], data["returned_rows"]) == (82, 3)
+    assert [g["season_type"] for g in data["games"]] == ["playin", "playin", "regular"]
+
+
+def test_nfl_super_bowl_row_and_position_stats(espn):
+    espn("nfl_3139477_2024")
+    data = nfl.get_player_game_log(player_id="3139477", season=2024, season_type="all")["data"]
+
+    assert espn.calls == [
+        "https://site.web.api.espn.com/apis/common/v3/sports/football/nfl/athletes/3139477/gamelog?season=2024"
+    ]
+    assert [g["season_type"] for g in data["games"]].count("regular") == 16
+    assert [g["season_type"] for g in data["games"]].count("postseason") == 3
+    super_bowl = data["games"][-1]
+    assert (super_bowl["note"], super_bowl["result"]) == ("Super Bowl LIX", "L")
+    assert {"passingYards", "passingTouchdowns", "rushingYards"} <= set(super_bowl["stats"])
+
+
+def test_soccer_needs_a_league_and_reads_only_that_league(espn):
+    result = football.get_player_game_log(player_id="384397", league_slug="")
+    assert result["status"] is False and "league_slug is required" in result["message"]
+    assert espn.calls == []
+
+    espn("soccer_usa.1_384397_2025")
+    data = football.get_player_game_log(player_id="384397", league_slug="usa.1", season=2025, season_type="all")["data"]
+    assert espn.calls == [
+        "https://site.web.api.espn.com/apis/common/v3/sports/soccer/usa.1/athletes/384397/gamelog?season=2025"
+    ]
+    # "Eastern Conference Playoffs - Round One" and "- Semifinals" are the postseason.
+    types = [g["season_type"] for g in data["games"]]
+    assert (types.count("regular"), types.count("postseason")) == (31, 3)
+    assert {g["result"] for g in data["games"]} <= {"W", "D", "L"}
+    assert {"totalGoals", "goalAssists", "totalShots"} <= set(data["games"][0]["stats"])
+    assert all(g["game_date"] for g in data["games"])
+
+
+def test_soccer_league_named_season_is_regular(espn):
+    espn("soccer_eng.w.1_335326_2026")
+    data = football.get_player_game_log(player_id="335326", league_slug="eng.w.1", season=2026)["data"]
+    # ESPN names the WSL group "2026-27 English Women's Super League".
+    assert data["count"] == 8
+    assert {g["season_type"] for g in data["games"]} == {"regular"}
+
+
+def test_soccer_without_a_season_asks_for_espns_season_explicitly(monkeypatch):
+    payloads = {
+        "gamelog": (FIXTURES / "soccer_usa.nwsl_346600_current.json").read_bytes(),
+        "gamelog?season=2026": (FIXTURES / "soccer_usa.nwsl_346600_2026.json").read_bytes(),
+    }
+    calls = []
+
+    def fetch(url, **kwargs):
+        calls.append(url)
+        return payloads[url.rsplit("/", 1)[1]], None
+
+    monkeypatch.setattr(_espn_base, "_http_fetch", fetch)
+    monkeypatch.setattr(_espn_base, "_cache", {})
+    data = football.get_player_game_log(player_id="346600", league_slug="usa.nwsl", season_type="all")["data"]
+
+    base = "https://site.web.api.espn.com/apis/common/v3/sports/soccer/usa.nwsl/athletes/346600/gamelog"
+    assert calls == [base, base + "?season=2026"]
+    types = [g["season_type"] for g in data["games"]]
+    assert (data["season"], types.count("regular"), types.count("postseason")) == (2026, 26, 2)
+
+
+def test_a_cup_inside_a_league_log_is_other(espn):
+    espn("soccer_usa.nwsl_346600_current")
+    every = football.get_player_game_log(player_id="346600", league_slug="usa.nwsl", season=2026, season_type="all")["data"]
+    regular = football.get_player_game_log(player_id="346600", league_slug="usa.nwsl", season=2026)["data"]
+    assert [g["season_type"] for g in every["games"]] == ["other"]
+    assert regular["count"] == 0
+
+
+def test_soccer_cli_requires_the_league():
+    assert _REGISTRY["football"]["get_player_game_log"] == {
+        "required": ["player_id", "league_slug"],
         "optional": ["season", "season_type", "sort_by", "descending", "limit", "fields"],
     }

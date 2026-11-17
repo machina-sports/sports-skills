@@ -20,6 +20,7 @@ from sports_skills._espn_base import (
     _HOST_FALLBACK_CODES,
     _SITE_API_HOSTS,
     _summarize_http_error,
+    espn_player_game_log,
     normalize_odds,
 )
 from sports_skills._espn_base import _USER_AGENT as _SHARED_USER_AGENT
@@ -4884,3 +4885,30 @@ def search_player(request_data):
         )
 
     return {"results": merged[:limit]}
+
+
+def get_player_game_log(request_data):
+    """One player's matches in one league and season, from ESPN's athlete gamelog.
+
+    Unlike get_player_season_stats (ESPN's last ~5 matches across competitions,
+    without dates), the league is required and only that league's matches are
+    returned, each dated. Never defaults to a league.
+    """
+    params = dict(request_data.get("params", {}))
+    league_slug = str(params.pop("league_slug", None) or "").strip()
+    if not league_slug:
+        return {
+            "error": True,
+            "message": "league_slug is required: the sports-skills slug (premier-league) or ESPN's code (usa.1).",
+        }
+    sport_path = f"soccer/{_espn_league_code(league_slug)}"
+    if params.get("season") in (None, ""):
+        # Without a season ESPN can answer a partial view (an NWSL player's 2026 log
+        # held only one Challenge Cup match, while season=2026 held 28). Read the
+        # season ESPN names there, then ask for that season explicitly.
+        probe = espn_player_game_log(sport_path, {"player_id": params.get("player_id"), "season_type": "all"})
+        if probe.get("error"):
+            return probe
+        if str(probe.get("season") or "").isdigit():
+            params["season"] = int(probe["season"])
+    return espn_player_game_log(sport_path, params)

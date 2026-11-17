@@ -1,0 +1,413 @@
+{
+ "filters": [
+  {
+   "displayName": "Season",
+   "name": "season",
+   "value": "2026",
+   "options": [
+    {
+     "value": "2026",
+     "displayValue": "2026-27"
+    },
+    {
+     "value": "2025",
+     "displayValue": "2025-26"
+    }
+   ]
+  },
+  {
+   "displayName": "Team",
+   "name": "team",
+   "value": "19257",
+   "options": [
+    {
+     "value": "19257",
+     "displayValue": "Manchester City"
+    },
+    {
+     "value": "15362",
+     "displayValue": "Portland Thorns FC"
+    },
+    {
+     "value": "2765",
+     "displayValue": "United States"
+    }
+   ]
+  },
+  {
+   "displayName": "League",
+   "name": "league",
+   "value": "eng.w.1",
+   "options": [
+    {
+     "value": "eng.w.fa",
+     "displayValue": "English Women's FA Cup",
+     "shortDisplayName": "Women's FA Cup"
+    },
+    {
+     "value": "eng.w.1",
+     "displayValue": "English Women's Super League",
+     "shortDisplayName": "Women's Super League"
+    },
+    {
+     "value": "uefa.wchampions",
+     "displayValue": "UEFA Women's Champions League",
+     "shortDisplayName": "UEFA Women's Champions League"
+    }
+   ]
+  }
+ ],
+ "labels": [
+  "G",
+  "A",
+  "SHOT",
+  "SOG",
+  "FC",
+  "FA",
+  "OFF",
+  "YC",
+  "RC"
+ ],
+ "names": [
+  "totalGoals",
+  "goalAssists",
+  "totalShots",
+  "shotsOnTarget",
+  "foulsCommitted",
+  "foulsSuffered",
+  "offsides",
+  "yellowCards",
+  "redCards"
+ ],
+ "displayNames": [
+  "Total Goals",
+  "Assists",
+  "Shots",
+  "Shots On Goal",
+  "Fouls Committed",
+  "Fouls Suffered",
+  "Offsides",
+  "Yellow Cards",
+  "Red Cards"
+ ],
+ "events": {
+  "401902865": {
+   "id": "401902865",
+   "atVs": "@",
+   "gameDate": "2026-11-14T13:30:00.000+00:00",
+   "score": "1-0",
+   "homeTeamId": "19970",
+   "awayTeamId": "19257",
+   "homeTeamScore": "1",
+   "awayTeamScore": "0",
+   "gameResult": "L",
+   "opponent": {
+    "id": "19970",
+    "displayName": "Chelsea",
+    "abbreviation": "CHE"
+   },
+   "leagueName": "English Women's Super League",
+   "leagueAbbreviation": "Women's Super League",
+   "leagueShortName": "Women's Super League",
+   "team": {
+    "id": "19257",
+    "abbreviation": "MNC",
+    "isAllStar": false
+   }
+  },
+  "401902868": {
+   "id": "401902868",
+   "atVs": "vs",
+   "gameDate": "2026-11-07T12:45:00.000+00:00",
+   "score": "5-0",
+   "homeTeamId": "19257",
+   "awayTeamId": "19975",
+   "homeTeamScore": "5",
+   "awayTeamScore": "0",
+   "gameResult": "W",
+   "opponent": {
+    "id": "19975",
+    "displayName": "West Ham United",
+    "abbreviation": "WHU"
+   },
+   "leagueName": "English Women's Super League",
+   "leagueAbbreviation": "Women's Super League",
+   "leagueShortName": "Women's Super League",
+   "team": {
+    "id": "19257",
+    "abbreviation": "MNC",
+    "isAllStar": false
+   }
+  },
+  "401902874": {
+   "id": "401902874",
+   "atVs": "@",
+   "gameDate": "2026-11-01T12:00:00.000+00:00",
+   "score": "2-1",
+   "homeTeamId": "21053",
+   "awayTeamId": "19257",
+   "homeTeamScore": "1",
+   "awayTeamScore": "2",
+   "gameResult": "W",
+   "opponent": {
+    "id": "21053",
+    "displayName": "London City Lionesses",
+    "abbreviation": "LCL"
+   },
+   "leagueName": "English Women's Super League",
+   "leagueAbbreviation": "Women's Super League",
+   "leagueShortName": "Women's Super League",
+   "team": {
+    "id": "19257",
+    "abbreviation": "MNC",
+    "isAllStar": false
+   }
+  },
+  "401902894": {
+   "id": "401902894",
+   "atVs": "vs",
+   "gameDate": "2026-10-04T15:30:00.000+00:00",
+   "score": "4-2",
+   "homeTeamId": "19257",
+   "awayTeamId": "19973",
+   "homeTeamScore": "4",
+   "awayTeamScore": "2",
+   "gameResult": "W",
+   "opponent": {
+    "id": "19973",
+    "displayName": "Arsenal",
+    "abbreviation": "ARS"
+   },
+   "leagueName": "English Women's Super League",
+   "leagueAbbreviation": "Women's Super League",
+   "leagueShortName": "Women's Super League",
+   "team": {
+    "id": "19257",
+    "abbreviation": "MNC",
+    "isAllStar": false
+   }
+  },
+  "401902907": {
+   "id": "401902907",
+   "atVs": "@",
+   "gameDate": "2026-09-26T12:30:00.000+00:00",
+   "score": "1-0",
+   "homeTeamId": "21035",
+   "awayTeamId": "19257",
+   "homeTeamScore": "0",
+   "awayTeamScore": "1",
+   "gameResult": "W",
+   "opponent": {
+    "id": "21035",
+    "displayName": "Charlton Athletic",
+    "abbreviation": "CHA"
+   },
+   "leagueName": "English Women's Super League",
+   "leagueAbbreviation": "Women's Super League",
+   "leagueShortName": "Women's Super League",
+   "team": {
+    "id": "19257",
+    "abbreviation": "MNC",
+    "isAllStar": false
+   }
+  },
+  "401902914": {
+   "id": "401902914",
+   "atVs": "vs",
+   "gameDate": "2026-09-18T18:00:00.000+00:00",
+   "score": "4-2",
+   "homeTeamId": "19257",
+   "awayTeamId": "19971",
+   "homeTeamScore": "4",
+   "awayTeamScore": "2",
+   "gameResult": "W",
+   "opponent": {
+    "id": "19971",
+    "displayName": "Liverpool",
+    "abbreviation": "LIV"
+   },
+   "leagueName": "English Women's Super League",
+   "leagueAbbreviation": "Women's Super League",
+   "leagueShortName": "Women's Super League",
+   "team": {
+    "id": "19257",
+    "abbreviation": "MNC",
+    "isAllStar": false
+   }
+  },
+  "401902915": {
+   "id": "401902915",
+   "atVs": "@",
+   "gameDate": "2026-09-13T17:30:00.000+00:00",
+   "score": "4-1",
+   "homeTeamId": "20707",
+   "awayTeamId": "19257",
+   "homeTeamScore": "1",
+   "awayTeamScore": "4",
+   "gameResult": "W",
+   "opponent": {
+    "id": "20707",
+    "displayName": "Aston Villa",
+    "abbreviation": "AVL"
+   },
+   "leagueName": "English Women's Super League",
+   "leagueAbbreviation": "Women's Super League",
+   "leagueShortName": "Women's Super League",
+   "team": {
+    "id": "19257",
+    "abbreviation": "MNC",
+    "isAllStar": false
+   }
+  },
+  "401902922": {
+   "id": "401902922",
+   "atVs": "vs",
+   "gameDate": "2026-09-06T13:30:00.000+00:00",
+   "score": "3-1",
+   "homeTeamId": "19257",
+   "awayTeamId": "19968",
+   "homeTeamScore": "3",
+   "awayTeamScore": "1",
+   "gameResult": "W",
+   "opponent": {
+    "id": "19968",
+    "displayName": "Birmingham City",
+    "abbreviation": "BIR"
+   },
+   "leagueName": "English Women's Super League",
+   "leagueAbbreviation": "Women's Super League",
+   "leagueShortName": "Women's Super League",
+   "team": {
+    "id": "19257",
+    "abbreviation": "MNC",
+    "isAllStar": false
+   }
+  }
+ },
+ "seasonTypes": [
+  {
+   "displayName": "2026-27 English Women's Super League",
+   "categories": [
+    {
+     "displayName": "2026-27 English Women's Super League Stats",
+     "type": "event",
+     "splitType": "1",
+     "events": [
+      {
+       "eventId": "401902865",
+       "stats": [
+        "0",
+        "0",
+        "0",
+        "0",
+        "0",
+        "2",
+        "0",
+        "0",
+        "0"
+       ]
+      },
+      {
+       "eventId": "401902868",
+       "stats": [
+        "0",
+        "0",
+        "0",
+        "0",
+        "0",
+        "0",
+        "0",
+        "0",
+        "0"
+       ]
+      },
+      {
+       "eventId": "401902874",
+       "stats": [
+        "0",
+        "0",
+        "0",
+        "0",
+        "0",
+        "0",
+        "0",
+        "0",
+        "0"
+       ]
+      },
+      {
+       "eventId": "401902894",
+       "stats": [
+        "0",
+        "0",
+        "0",
+        "0",
+        "0",
+        "0",
+        "0",
+        "0",
+        "0"
+       ]
+      },
+      {
+       "eventId": "401902907",
+       "stats": [
+        "0",
+        "0",
+        "0",
+        "0",
+        "2",
+        "1",
+        "0",
+        "1",
+        "0"
+       ]
+      },
+      {
+       "eventId": "401902914",
+       "stats": [
+        "0",
+        "0",
+        "0",
+        "0",
+        "0",
+        "0",
+        "0",
+        "0",
+        "0"
+       ]
+      },
+      {
+       "eventId": "401902915",
+       "stats": [
+        "0",
+        "0",
+        "0",
+        "0",
+        "0",
+        "1",
+        "0",
+        "0",
+        "0"
+       ]
+      },
+      {
+       "eventId": "401902922",
+       "stats": [
+        "0",
+        "0",
+        "0",
+        "0",
+        "0",
+        "1",
+        "0",
+        "0",
+        "0"
+       ]
+      }
+     ]
+    }
+   ]
+  }
+ ]
+}

@@ -116,6 +116,15 @@ Get full player statistical profile for a season.
 
 Returns `categories[]` with detailed stats including value, rank, and per-game averages.
 
+### get_player_game_log
+Get one player's games in a season via ESPN's athlete gamelog (`site.web.api.espn.com/apis/common/v3/sports/basketball/nba/athletes/{id}/gamelog`, one request). Unlike `get_nbastats_game_log`, it takes the ESPN athlete id and does not read stats.nba.com.
+- `player_id` (str, required): ESPN athlete ID. Find it with `get_team_roster`.
+- `season` (int, optional): The year the season ends (`2025` for 2024-25). Defaults to current.
+- `season_type` (str, optional): `regular` (default), `postseason`, `playin`, `preseason` or `all`. Play-in games are their own type, not regular-season games.
+- `sort_by`, `descending`, `limit`, `fields` (optional): Row shaping (`sort_by` then `limit`; `fields` always keeps `game_id`, `game_date`, `team_abbreviation`, `opponent`). Stat keys are addressable directly. With any set, the response adds `total_rows` and `returned_rows`.
+
+Returns `games[]`, oldest first: `game_id`, `game_date`, `team_abbreviation`, `opponent` (abbreviation), `opponent_id`, `opponent_name`, `home_away`, `result` (`W`/`L`), `team_score`, `opponent_score`, `season_type`, `note` (e.g. a playoff round), and `stats` keyed by ESPN's stat names (`points`, `totalRebounds`, `assists`, `minutes`, ...). An unknown `player_id` returns an error. Dyson Daniels (4869342) has 76 regular-season and 2 play-in rows in 2024-25.
+
 ### get_live_scoreboard
 Get real-time NBA scores from NBA CDN, with ESPN as a fallback. No parameters.
 

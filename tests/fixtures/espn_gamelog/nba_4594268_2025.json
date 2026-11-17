@@ -1,0 +1,4642 @@
+{
+ "filters": [
+  {
+   "displayName": "League",
+   "name": "league",
+   "value": "nba",
+   "options": [
+    {
+     "value": "mens-college-basketball",
+     "displayValue": "NCAA Men's Basketball",
+     "shortDisplayName": "NCAAM"
+    },
+    {
+     "value": "nba",
+     "displayValue": "National Basketball Association",
+     "shortDisplayName": "NBA"
+    }
+   ]
+  },
+  {
+   "displayName": "Season",
+   "name": "season",
+   "value": "2025",
+   "options": [
+    {
+     "value": "2027",
+     "displayValue": "2026-27"
+    },
+    {
+     "value": "2026",
+     "displayValue": "2025-26"
+    },
+    {
+     "value": "2025",
+     "displayValue": "2024-25"
+    },
+    {
+     "value": "2024",
+     "displayValue": "2023-24"
+    },
+    {
+     "value": "2023",
+     "displayValue": "2022-23"
+    },
+    {
+     "value": "2022",
+     "displayValue": "2021-22"
+    },
+    {
+     "value": "2021",
+     "displayValue": "2020-21"
+    }
+   ]
+  }
+ ],
+ "labels": [
+  "MIN",
+  "FG",
+  "FG%",
+  "3PT",
+  "3P%",
+  "FT",
+  "FT%",
+  "REB",
+  "AST",
+  "BLK",
+  "STL",
+  "PF",
+  "TO",
+  "PTS"
+ ],
+ "names": [
+  "minutes",
+  "fieldGoalsMade-fieldGoalsAttempted",
+  "fieldGoalPct",
+  "threePointFieldGoalsMade-threePointFieldGoalsAttempted",
+  "threePointPct",
+  "freeThrowsMade-freeThrowsAttempted",
+  "freeThrowPct",
+  "totalRebounds",
+  "assists",
+  "blocks",
+  "steals",
+  "fouls",
+  "turnovers",
+  "points"
+ ],
+ "displayNames": [
+  "Minutes",
+  "Field Goals Made-Attempted",
+  "Field Goal Percentage",
+  "3-Point Field Goals Made-Attempted",
+  "3-Point Field Goal Percentage",
+  "Free Throws Made-Attempted",
+  "Free Throw Percentage",
+  "Rebounds",
+  "Assists",
+  "Blocks",
+  "Steals",
+  "Fouls",
+  "Turnovers",
+  "Points"
+ ],
+ "events": {
+  "401773152": {
+   "id": "401773152",
+   "atVs": "@",
+   "gameDate": "2025-05-29T00:30:00.000+00:00",
+   "score": "124-94",
+   "homeTeamId": "25",
+   "awayTeamId": "16",
+   "homeTeamScore": "124",
+   "awayTeamScore": "94",
+   "gameResult": "L",
+   "opponent": {
+    "id": "25",
+    "displayName": "Oklahoma City Thunder",
+    "abbreviation": "OKC"
+   },
+   "leagueName": "National Basketball Association",
+   "leagueAbbreviation": "NBA",
+   "leagueShortName": "NBA",
+   "eventNote": "West Finals - Game 5",
+   "team": {
+    "id": "16",
+    "abbreviation": "MIN",
+    "isAllStar": false
+   }
+  },
+  "401773151": {
+   "id": "401773151",
+   "atVs": "vs",
+   "gameDate": "2025-05-27T00:30:00.000+00:00",
+   "score": "128-126",
+   "homeTeamId": "16",
+   "awayTeamId": "25",
+   "homeTeamScore": "126",
+   "awayTeamScore": "128",
+   "gameResult": "L",
+   "opponent": {
+    "id": "25",
+    "displayName": "Oklahoma City Thunder",
+    "abbreviation": "OKC"
+   },
+   "leagueName": "National Basketball Association",
+   "leagueAbbreviation": "NBA",
+   "leagueShortName": "NBA",
+   "eventNote": "West Finals - Game 4",
+   "team": {
+    "id": "16",
+    "abbreviation": "MIN",
+    "isAllStar": false
+   }
+  },
+  "401773150": {
+   "id": "401773150",
+   "atVs": "vs",
+   "gameDate": "2025-05-25T00:30:00.000+00:00",
+   "score": "143-101",
+   "homeTeamId": "16",
+   "awayTeamId": "25",
+   "homeTeamScore": "143",
+   "awayTeamScore": "101",
+   "gameResult": "W",
+   "opponent": {
+    "id": "25",
+    "displayName": "Oklahoma City Thunder",
+    "abbreviation": "OKC"
+   },
+   "leagueName": "National Basketball Association",
+   "leagueAbbreviation": "NBA",
+   "leagueShortName": "NBA",
+   "eventNote": "West Finals - Game 3",
+   "team": {
+    "id": "16",
+    "abbreviation": "MIN",
+    "isAllStar": false
+   }
+  },
+  "401773149": {
+   "id": "401773149",
+   "atVs": "@",
+   "gameDate": "2025-05-23T00:30:00.000+00:00",
+   "score": "118-103",
+   "homeTeamId": "25",
+   "awayTeamId": "16",
+   "homeTeamScore": "118",
+   "awayTeamScore": "103",
+   "gameResult": "L",
+   "opponent": {
+    "id": "25",
+    "displayName": "Oklahoma City Thunder",
+    "abbreviation": "OKC"
+   },
+   "leagueName": "National Basketball Association",
+   "leagueAbbreviation": "NBA",
+   "leagueShortName": "NBA",
+   "eventNote": "West Finals - Game 2",
+   "team": {
+    "id": "16",
+    "abbreviation": "MIN",
+    "isAllStar": false
+   }
+  },
+  "401773148": {
+   "id": "401773148",
+   "atVs": "@",
+   "gameDate": "2025-05-21T00:30:00.000+00:00",
+   "score": "114-88",
+   "homeTeamId": "25",
+   "awayTeamId": "16",
+   "homeTeamScore": "114",
+   "awayTeamScore": "88",
+   "gameResult": "L",
+   "opponent": {
+    "id": "25",
+    "displayName": "Oklahoma City Thunder",
+    "abbreviation": "OKC"
+   },
+   "leagueName": "National Basketball Association",
+   "leagueAbbreviation": "NBA",
+   "leagueShortName": "NBA",
+   "eventNote": "West Finals - Game 1",
+   "team": {
+    "id": "16",
+    "abbreviation": "MIN",
+    "isAllStar": false
+   }
+  },
+  "401769987": {
+   "id": "401769987",
+   "atVs": "vs",
+   "gameDate": "2025-05-15T01:30:00.000+00:00",
+   "score": "121-110",
+   "homeTeamId": "16",
+   "awayTeamId": "9",
+   "homeTeamScore": "121",
+   "awayTeamScore": "110",
+   "gameResult": "W",
+   "opponent": {
+    "id": "9",
+    "displayName": "Golden State Warriors",
+    "abbreviation": "GS"
+   },
+   "leagueName": "National Basketball Association",
+   "leagueAbbreviation": "NBA",
+   "leagueShortName": "NBA",
+   "eventNote": "West Semifinals - Game 5",
+   "team": {
+    "id": "16",
+    "abbreviation": "MIN",
+    "isAllStar": false
+   }
+  },
+  "401769840": {
+   "id": "401769840",
+   "atVs": "@",
+   "gameDate": "2025-05-13T02:00:00.000+00:00",
+   "score": "117-110",
+   "homeTeamId": "9",
+   "awayTeamId": "16",
+   "homeTeamScore": "110",
+   "awayTeamScore": "117",
+   "gameResult": "W",
+   "opponent": {
+    "id": "9",
+    "displayName": "Golden State Warriors",
+    "abbreviation": "GS"
+   },
+   "leagueName": "National Basketball Association",
+   "leagueAbbreviation": "NBA",
+   "leagueShortName": "NBA",
+   "eventNote": "West Semifinals - Game 4",
+   "team": {
+    "id": "16",
+    "abbreviation": "MIN",
+    "isAllStar": false
+   }
+  },
+  "401769839": {
+   "id": "401769839",
+   "atVs": "@",
+   "gameDate": "2025-05-11T00:30:00.000+00:00",
+   "score": "102-97",
+   "homeTeamId": "9",
+   "awayTeamId": "16",
+   "homeTeamScore": "97",
+   "awayTeamScore": "102",
+   "gameResult": "W",
+   "opponent": {
+    "id": "9",
+    "displayName": "Golden State Warriors",
+    "abbreviation": "GS"
+   },
+   "leagueName": "National Basketball Association",
+   "leagueAbbreviation": "NBA",
+   "leagueShortName": "NBA",
+   "eventNote": "West Semifinals - Game 3",
+   "team": {
+    "id": "16",
+    "abbreviation": "MIN",
+    "isAllStar": false
+   }
+  },
+  "401769838": {
+   "id": "401769838",
+   "atVs": "vs",
+   "gameDate": "2025-05-09T00:30:00.000+00:00",
+   "score": "117-93",
+   "homeTeamId": "16",
+   "awayTeamId": "9",
+   "homeTeamScore": "117",
+   "awayTeamScore": "93",
+   "gameResult": "W",
+   "opponent": {
+    "id": "9",
+    "displayName": "Golden State Warriors",
+    "abbreviation": "GS"
+   },
+   "leagueName": "National Basketball Association",
+   "leagueAbbreviation": "NBA",
+   "leagueShortName": "NBA",
+   "eventNote": "West Semifinals - Game 2",
+   "team": {
+    "id": "16",
+    "abbreviation": "MIN",
+    "isAllStar": false
+   }
+  },
+  "401769837": {
+   "id": "401769837",
+   "atVs": "vs",
+   "gameDate": "2025-05-07T01:30:00.000+00:00",
+   "score": "99-88",
+   "homeTeamId": "16",
+   "awayTeamId": "9",
+   "homeTeamScore": "88",
+   "awayTeamScore": "99",
+   "gameResult": "L",
+   "opponent": {
+    "id": "9",
+    "displayName": "Golden State Warriors",
+    "abbreviation": "GS"
+   },
+   "leagueName": "National Basketball Association",
+   "leagueAbbreviation": "NBA",
+   "leagueShortName": "NBA",
+   "eventNote": "West Semifinals - Game 1",
+   "team": {
+    "id": "16",
+    "abbreviation": "MIN",
+    "isAllStar": false
+   }
+  },
+  "401768058": {
+   "id": "401768058",
+   "atVs": "@",
+   "gameDate": "2025-05-01T02:00:00.000+00:00",
+   "score": "103-96",
+   "homeTeamId": "13",
+   "awayTeamId": "16",
+   "homeTeamScore": "96",
+   "awayTeamScore": "103",
+   "gameResult": "W",
+   "opponent": {
+    "id": "13",
+    "displayName": "Los Angeles Lakers",
+    "abbreviation": "LAL"
+   },
+   "leagueName": "National Basketball Association",
+   "leagueAbbreviation": "NBA",
+   "leagueShortName": "NBA",
+   "eventNote": "West 1st Round - Game 5",
+   "team": {
+    "id": "16",
+    "abbreviation": "MIN",
+    "isAllStar": false
+   }
+  },
+  "401768057": {
+   "id": "401768057",
+   "atVs": "vs",
+   "gameDate": "2025-04-27T19:50:00.000+00:00",
+   "score": "116-113",
+   "homeTeamId": "16",
+   "awayTeamId": "13",
+   "homeTeamScore": "116",
+   "awayTeamScore": "113",
+   "gameResult": "W",
+   "opponent": {
+    "id": "13",
+    "displayName": "Los Angeles Lakers",
+    "abbreviation": "LAL"
+   },
+   "leagueName": "National Basketball Association",
+   "leagueAbbreviation": "NBA",
+   "leagueShortName": "NBA",
+   "eventNote": "West 1st Round - Game 4",
+   "team": {
+    "id": "16",
+    "abbreviation": "MIN",
+    "isAllStar": false
+   }
+  },
+  "401768056": {
+   "id": "401768056",
+   "atVs": "vs",
+   "gameDate": "2025-04-26T01:53:00.000+00:00",
+   "score": "116-104",
+   "homeTeamId": "16",
+   "awayTeamId": "13",
+   "homeTeamScore": "116",
+   "awayTeamScore": "104",
+   "gameResult": "W",
+   "opponent": {
+    "id": "13",
+    "displayName": "Los Angeles Lakers",
+    "abbreviation": "LAL"
+   },
+   "leagueName": "National Basketball Association",
+   "leagueAbbreviation": "NBA",
+   "leagueShortName": "NBA",
+   "eventNote": "West 1st Round - Game 3",
+   "team": {
+    "id": "16",
+    "abbreviation": "MIN",
+    "isAllStar": false
+   }
+  },
+  "401767915": {
+   "id": "401767915",
+   "atVs": "@",
+   "gameDate": "2025-04-23T02:00:00.000+00:00",
+   "score": "94-85",
+   "homeTeamId": "13",
+   "awayTeamId": "16",
+   "homeTeamScore": "94",
+   "awayTeamScore": "85",
+   "gameResult": "L",
+   "opponent": {
+    "id": "13",
+    "displayName": "Los Angeles Lakers",
+    "abbreviation": "LAL"
+   },
+   "leagueName": "National Basketball Association",
+   "leagueAbbreviation": "NBA",
+   "leagueShortName": "NBA",
+   "eventNote": "West 1st Round - Game 2",
+   "team": {
+    "id": "16",
+    "abbreviation": "MIN",
+    "isAllStar": false
+   }
+  },
+  "401767821": {
+   "id": "401767821",
+   "atVs": "@",
+   "gameDate": "2025-04-20T00:30:00.000+00:00",
+   "score": "117-95",
+   "homeTeamId": "13",
+   "awayTeamId": "16",
+   "homeTeamScore": "95",
+   "awayTeamScore": "117",
+   "gameResult": "W",
+   "opponent": {
+    "id": "13",
+    "displayName": "Los Angeles Lakers",
+    "abbreviation": "LAL"
+   },
+   "leagueName": "National Basketball Association",
+   "leagueAbbreviation": "NBA",
+   "leagueShortName": "NBA",
+   "eventNote": "West 1st Round - Game 1",
+   "team": {
+    "id": "16",
+    "abbreviation": "MIN",
+    "isAllStar": false
+   }
+  },
+  "401705761": {
+   "id": "401705761",
+   "atVs": "vs",
+   "gameDate": "2025-04-13T19:30:00.000+00:00",
+   "score": "116-105",
+   "homeTeamId": "16",
+   "awayTeamId": "26",
+   "homeTeamScore": "116",
+   "awayTeamScore": "105",
+   "gameResult": "W",
+   "opponent": {
+    "id": "26",
+    "displayName": "Utah Jazz",
+    "abbreviation": "UTAH"
+   },
+   "leagueName": "National Basketball Association",
+   "leagueAbbreviation": "NBA",
+   "leagueShortName": "NBA",
+   "team": {
+    "id": "16",
+    "abbreviation": "MIN",
+    "isAllStar": false
+   }
+  },
+  "401705745": {
+   "id": "401705745",
+   "atVs": "vs",
+   "gameDate": "2025-04-12T01:00:00.000+00:00",
+   "score": "117-91",
+   "homeTeamId": "16",
+   "awayTeamId": "17",
+   "homeTeamScore": "117",
+   "awayTeamScore": "91",
+   "gameResult": "W",
+   "opponent": {
+    "id": "17",
+    "displayName": "Brooklyn Nets",
+    "abbreviation": "BKN"
+   },
+   "leagueName": "National Basketball Association",
+   "leagueAbbreviation": "NBA",
+   "leagueShortName": "NBA",
+   "team": {
+    "id": "16",
+    "abbreviation": "MIN",
+    "isAllStar": false
+   }
+  },
+  "401705736": {
+   "id": "401705736",
+   "atVs": "@",
+   "gameDate": "2025-04-11T01:30:00.000+00:00",
+   "score": "141-125",
+   "homeTeamId": "29",
+   "awayTeamId": "16",
+   "homeTeamScore": "125",
+   "awayTeamScore": "141",
+   "gameResult": "W",
+   "opponent": {
+    "id": "29",
+    "displayName": "Memphis Grizzlies",
+    "abbreviation": "MEM"
+   },
+   "leagueName": "National Basketball Association",
+   "leagueAbbreviation": "NBA",
+   "leagueShortName": "NBA",
+   "team": {
+    "id": "16",
+    "abbreviation": "MIN",
+    "isAllStar": false
+   }
+  },
+  "401705718": {
+   "id": "401705718",
+   "atVs": "@",
+   "gameDate": "2025-04-09T00:00:00.000+00:00",
+   "score": "110-103",
+   "homeTeamId": "15",
+   "awayTeamId": "16",
+   "homeTeamScore": "110",
+   "awayTeamScore": "103",
+   "gameResult": "L",
+   "opponent": {
+    "id": "15",
+    "displayName": "Milwaukee Bucks",
+    "abbreviation": "MIL"
+   },
+   "leagueName": "National Basketball Association",
+   "leagueAbbreviation": "NBA",
+   "leagueShortName": "NBA",
+   "team": {
+    "id": "16",
+    "abbreviation": "MIN",
+    "isAllStar": false
+   }
+  },
+  "401705696": {
+   "id": "401705696",
+   "atVs": "@",
+   "gameDate": "2025-04-05T23:00:00.000+00:00",
+   "score": "114-109",
+   "homeTeamId": "20",
+   "awayTeamId": "16",
+   "homeTeamScore": "109",
+   "awayTeamScore": "114",
+   "gameResult": "W",
+   "opponent": {
+    "id": "20",
+    "displayName": "Philadelphia 76ers",
+    "abbreviation": "PHI"
+   },
+   "leagueName": "National Basketball Association",
+   "leagueAbbreviation": "NBA",
+   "leagueShortName": "NBA",
+   "team": {
+    "id": "16",
+    "abbreviation": "MIN",
+    "isAllStar": false
+   }
+  },
+  "401705679": {
+   "id": "401705679",
+   "atVs": "@",
+   "gameDate": "2025-04-03T23:30:00.000+00:00",
+   "score": "105-90",
+   "homeTeamId": "17",
+   "awayTeamId": "16",
+   "homeTeamScore": "90",
+   "awayTeamScore": "105",
+   "gameResult": "W",
+   "opponent": {
+    "id": "17",
+    "displayName": "Brooklyn Nets",
+    "abbreviation": "BKN"
+   },
+   "leagueName": "National Basketball Association",
+   "leagueAbbreviation": "NBA",
+   "leagueShortName": "NBA",
+   "team": {
+    "id": "16",
+    "abbreviation": "MIN",
+    "isAllStar": false
+   }
+  },
+  "401705668": {
+   "id": "401705668",
+   "atVs": "@",
+   "gameDate": "2025-04-02T02:00:00.000+00:00",
+   "score": "140-139 2OT",
+   "homeTeamId": "7",
+   "awayTeamId": "16",
+   "homeTeamScore": "139",
+   "awayTeamScore": "140",
+   "gameResult": "W",
+   "opponent": {
+    "id": "7",
+    "displayName": "Denver Nuggets",
+    "abbreviation": "DEN"
+   },
+   "leagueName": "National Basketball Association",
+   "leagueAbbreviation": "NBA",
+   "leagueShortName": "NBA",
+   "team": {
+    "id": "16",
+    "abbreviation": "MIN",
+    "isAllStar": false
+   }
+  },
+  "401705650": {
+   "id": "401705650",
+   "atVs": "vs",
+   "gameDate": "2025-03-30T23:00:00.000+00:00",
+   "score": "123-104",
+   "homeTeamId": "16",
+   "awayTeamId": "8",
+   "homeTeamScore": "123",
+   "awayTeamScore": "104",
+   "gameResult": "W",
+   "opponent": {
+    "id": "8",
+    "displayName": "Detroit Pistons",
+    "abbreviation": "DET"
+   },
+   "leagueName": "National Basketball Association",
+   "leagueAbbreviation": "NBA",
+   "leagueShortName": "NBA",
+   "team": {
+    "id": "16",
+    "abbreviation": "MIN",
+    "isAllStar": false
+   }
+  },
+  "401705637": {
+   "id": "401705637",
+   "atVs": "vs",
+   "gameDate": "2025-03-29T00:00:00.000+00:00",
+   "score": "124-109",
+   "homeTeamId": "16",
+   "awayTeamId": "21",
+   "homeTeamScore": "124",
+   "awayTeamScore": "109",
+   "gameResult": "W",
+   "opponent": {
+    "id": "21",
+    "displayName": "Phoenix Suns",
+    "abbreviation": "PHX"
+   },
+   "leagueName": "National Basketball Association",
+   "leagueAbbreviation": "NBA",
+   "leagueShortName": "NBA",
+   "team": {
+    "id": "16",
+    "abbreviation": "MIN",
+    "isAllStar": false
+   }
+  },
+  "401705603": {
+   "id": "401705603",
+   "atVs": "@",
+   "gameDate": "2025-03-24T23:00:00.000+00:00",
+   "score": "119-103",
+   "homeTeamId": "11",
+   "awayTeamId": "16",
+   "homeTeamScore": "119",
+   "awayTeamScore": "103",
+   "gameResult": "L",
+   "opponent": {
+    "id": "11",
+    "displayName": "Indiana Pacers",
+    "abbreviation": "IND"
+   },
+   "leagueName": "National Basketball Association",
+   "leagueAbbreviation": "NBA",
+   "leagueShortName": "NBA",
+   "team": {
+    "id": "16",
+    "abbreviation": "MIN",
+    "isAllStar": false
+   }
+  },
+  "401705582": {
+   "id": "401705582",
+   "atVs": "vs",
+   "gameDate": "2025-03-22T00:00:00.000+00:00",
+   "score": "134-93",
+   "homeTeamId": "16",
+   "awayTeamId": "3",
+   "homeTeamScore": "134",
+   "awayTeamScore": "93",
+   "gameResult": "W",
+   "opponent": {
+    "id": "3",
+    "displayName": "New Orleans Pelicans",
+    "abbreviation": "NO"
+   },
+   "leagueName": "National Basketball Association",
+   "leagueAbbreviation": "NBA",
+   "leagueShortName": "NBA",
+   "team": {
+    "id": "16",
+    "abbreviation": "MIN",
+    "isAllStar": false
+   }
+  },
+  "401705567": {
+   "id": "401705567",
+   "atVs": "vs",
+   "gameDate": "2025-03-20T00:00:00.000+00:00",
+   "score": "119-115",
+   "homeTeamId": "16",
+   "awayTeamId": "3",
+   "homeTeamScore": "115",
+   "awayTeamScore": "119",
+   "gameResult": "L",
+   "opponent": {
+    "id": "3",
+    "displayName": "New Orleans Pelicans",
+    "abbreviation": "NO"
+   },
+   "leagueName": "National Basketball Association",
+   "leagueAbbreviation": "NBA",
+   "leagueShortName": "NBA",
+   "team": {
+    "id": "16",
+    "abbreviation": "MIN",
+    "isAllStar": false
+   }
+  },
+  "401705552": {
+   "id": "401705552",
+   "atVs": "vs",
+   "gameDate": "2025-03-18T00:00:00.000+00:00",
+   "score": "132-130 OT",
+   "homeTeamId": "16",
+   "awayTeamId": "11",
+   "homeTeamScore": "130",
+   "awayTeamScore": "132",
+   "gameResult": "L",
+   "opponent": {
+    "id": "11",
+    "displayName": "Indiana Pacers",
+    "abbreviation": "IND"
+   },
+   "leagueName": "National Basketball Association",
+   "leagueAbbreviation": "NBA",
+   "leagueShortName": "NBA",
+   "team": {
+    "id": "16",
+    "abbreviation": "MIN",
+    "isAllStar": false
+   }
+  },
+  "401705547": {
+   "id": "401705547",
+   "atVs": "vs",
+   "gameDate": "2025-03-16T23:00:00.000+00:00",
+   "score": "128-102",
+   "homeTeamId": "16",
+   "awayTeamId": "26",
+   "homeTeamScore": "128",
+   "awayTeamScore": "102",
+   "gameResult": "W",
+   "opponent": {
+    "id": "26",
+    "displayName": "Utah Jazz",
+    "abbreviation": "UTAH"
+   },
+   "leagueName": "National Basketball Association",
+   "leagueAbbreviation": "NBA",
+   "leagueShortName": "NBA",
+   "team": {
+    "id": "16",
+    "abbreviation": "MIN",
+    "isAllStar": false
+   }
+  },
+  "401705529": {
+   "id": "401705529",
+   "atVs": "vs",
+   "gameDate": "2025-03-15T00:00:00.000+00:00",
+   "score": "118-111",
+   "homeTeamId": "16",
+   "awayTeamId": "19",
+   "homeTeamScore": "118",
+   "awayTeamScore": "111",
+   "gameResult": "W",
+   "opponent": {
+    "id": "19",
+    "displayName": "Orlando Magic",
+    "abbreviation": "ORL"
+   },
+   "leagueName": "National Basketball Association",
+   "leagueAbbreviation": "NBA",
+   "leagueShortName": "NBA",
+   "team": {
+    "id": "16",
+    "abbreviation": "MIN",
+    "isAllStar": false
+   }
+  },
+  "401705518": {
+   "id": "401705518",
+   "atVs": "@",
+   "gameDate": "2025-03-13T02:00:00.000+00:00",
+   "score": "115-95",
+   "homeTeamId": "7",
+   "awayTeamId": "16",
+   "homeTeamScore": "95",
+   "awayTeamScore": "115",
+   "gameResult": "W",
+   "opponent": {
+    "id": "7",
+    "displayName": "Denver Nuggets",
+    "abbreviation": "DEN"
+   },
+   "leagueName": "National Basketball Association",
+   "leagueAbbreviation": "NBA",
+   "leagueShortName": "NBA",
+   "team": {
+    "id": "16",
+    "abbreviation": "MIN",
+    "isAllStar": false
+   }
+  },
+  "401705491": {
+   "id": "401705491",
+   "atVs": "vs",
+   "gameDate": "2025-03-10T00:00:00.000+00:00",
+   "score": "141-124",
+   "homeTeamId": "16",
+   "awayTeamId": "24",
+   "homeTeamScore": "141",
+   "awayTeamScore": "124",
+   "gameResult": "W",
+   "opponent": {
+    "id": "24",
+    "displayName": "San Antonio Spurs",
+    "abbreviation": "SA"
+   },
+   "leagueName": "National Basketball Association",
+   "leagueAbbreviation": "NBA",
+   "leagueShortName": "NBA",
+   "team": {
+    "id": "16",
+    "abbreviation": "MIN",
+    "isAllStar": false
+   }
+  },
+  "401705473": {
+   "id": "401705473",
+   "atVs": "@",
+   "gameDate": "2025-03-08T01:00:00.000+00:00",
+   "score": "106-104",
+   "homeTeamId": "14",
+   "awayTeamId": "16",
+   "homeTeamScore": "104",
+   "awayTeamScore": "106",
+   "gameResult": "W",
+   "opponent": {
+    "id": "14",
+    "displayName": "Miami Heat",
+    "abbreviation": "MIA"
+   },
+   "leagueName": "National Basketball Association",
+   "leagueAbbreviation": "NBA",
+   "leagueShortName": "NBA",
+   "team": {
+    "id": "16",
+    "abbreviation": "MIN",
+    "isAllStar": false
+   }
+  },
+  "401705458": {
+   "id": "401705458",
+   "atVs": "@",
+   "gameDate": "2025-03-06T00:00:00.000+00:00",
+   "score": "125-110",
+   "homeTeamId": "30",
+   "awayTeamId": "16",
+   "homeTeamScore": "110",
+   "awayTeamScore": "125",
+   "gameResult": "W",
+   "opponent": {
+    "id": "30",
+    "displayName": "Charlotte Hornets",
+    "abbreviation": "CHA"
+   },
+   "leagueName": "National Basketball Association",
+   "leagueAbbreviation": "NBA",
+   "leagueShortName": "NBA",
+   "team": {
+    "id": "16",
+    "abbreviation": "MIN",
+    "isAllStar": false
+   }
+  },
+  "401705453": {
+   "id": "401705453",
+   "atVs": "vs",
+   "gameDate": "2025-03-05T01:00:00.000+00:00",
+   "score": "126-112",
+   "homeTeamId": "16",
+   "awayTeamId": "20",
+   "homeTeamScore": "126",
+   "awayTeamScore": "112",
+   "gameResult": "W",
+   "opponent": {
+    "id": "20",
+    "displayName": "Philadelphia 76ers",
+    "abbreviation": "PHI"
+   },
+   "leagueName": "National Basketball Association",
+   "leagueAbbreviation": "NBA",
+   "leagueShortName": "NBA",
+   "team": {
+    "id": "16",
+    "abbreviation": "MIN",
+    "isAllStar": false
+   }
+  },
+  "401705439": {
+   "id": "401705439",
+   "atVs": "@",
+   "gameDate": "2025-03-03T02:30:00.000+00:00",
+   "score": "116-98",
+   "homeTeamId": "21",
+   "awayTeamId": "16",
+   "homeTeamScore": "98",
+   "awayTeamScore": "116",
+   "gameResult": "W",
+   "opponent": {
+    "id": "21",
+    "displayName": "Phoenix Suns",
+    "abbreviation": "PHX"
+   },
+   "leagueName": "National Basketball Association",
+   "leagueAbbreviation": "NBA",
+   "leagueShortName": "NBA",
+   "team": {
+    "id": "16",
+    "abbreviation": "MIN",
+    "isAllStar": false
+   }
+  },
+  "401705415": {
+   "id": "401705415",
+   "atVs": "@",
+   "gameDate": "2025-02-28T03:30:00.000+00:00",
+   "score": "111-102",
+   "homeTeamId": "13",
+   "awayTeamId": "16",
+   "homeTeamScore": "111",
+   "awayTeamScore": "102",
+   "gameResult": "L",
+   "opponent": {
+    "id": "13",
+    "displayName": "Los Angeles Lakers",
+    "abbreviation": "LAL"
+   },
+   "leagueName": "National Basketball Association",
+   "leagueAbbreviation": "NBA",
+   "leagueShortName": "NBA",
+   "team": {
+    "id": "16",
+    "abbreviation": "MIN",
+    "isAllStar": false
+   }
+  },
+  "401705392": {
+   "id": "401705392",
+   "atVs": "@",
+   "gameDate": "2025-02-25T01:00:00.000+00:00",
+   "score": "131-128 OT",
+   "homeTeamId": "25",
+   "awayTeamId": "16",
+   "homeTeamScore": "128",
+   "awayTeamScore": "131",
+   "gameResult": "W",
+   "opponent": {
+    "id": "25",
+    "displayName": "Oklahoma City Thunder",
+    "abbreviation": "OKC"
+   },
+   "leagueName": "National Basketball Association",
+   "leagueAbbreviation": "NBA",
+   "leagueShortName": "NBA",
+   "team": {
+    "id": "16",
+    "abbreviation": "MIN",
+    "isAllStar": false
+   }
+  },
+  "401705386": {
+   "id": "401705386",
+   "atVs": "vs",
+   "gameDate": "2025-02-24T02:50:00.000+00:00",
+   "score": "130-123",
+   "homeTeamId": "16",
+   "awayTeamId": "25",
+   "homeTeamScore": "123",
+   "awayTeamScore": "130",
+   "gameResult": "L",
+   "opponent": {
+    "id": "25",
+    "displayName": "Oklahoma City Thunder",
+    "abbreviation": "OKC"
+   },
+   "leagueName": "National Basketball Association",
+   "leagueAbbreviation": "NBA",
+   "leagueShortName": "NBA",
+   "team": {
+    "id": "16",
+    "abbreviation": "MIN",
+    "isAllStar": false
+   }
+  },
+  "401705367": {
+   "id": "401705367",
+   "atVs": "@",
+   "gameDate": "2025-02-22T02:30:00.000+00:00",
+   "score": "121-115",
+   "homeTeamId": "10",
+   "awayTeamId": "16",
+   "homeTeamScore": "121",
+   "awayTeamScore": "115",
+   "gameResult": "L",
+   "opponent": {
+    "id": "10",
+    "displayName": "Houston Rockets",
+    "abbreviation": "HOU"
+   },
+   "leagueName": "National Basketball Association",
+   "leagueAbbreviation": "NBA",
+   "leagueShortName": "NBA",
+   "team": {
+    "id": "16",
+    "abbreviation": "MIN",
+    "isAllStar": false
+   }
+  },
+  "401705353": {
+   "id": "401705353",
+   "atVs": "vs",
+   "gameDate": "2025-02-14T01:30:00.000+00:00",
+   "score": "116-101",
+   "homeTeamId": "16",
+   "awayTeamId": "25",
+   "homeTeamScore": "116",
+   "awayTeamScore": "101",
+   "gameResult": "W",
+   "opponent": {
+    "id": "25",
+    "displayName": "Oklahoma City Thunder",
+    "abbreviation": "OKC"
+   },
+   "leagueName": "National Basketball Association",
+   "leagueAbbreviation": "NBA",
+   "leagueShortName": "NBA",
+   "team": {
+    "id": "16",
+    "abbreviation": "MIN",
+    "isAllStar": false
+   }
+  },
+  "401705342": {
+   "id": "401705342",
+   "atVs": "vs",
+   "gameDate": "2025-02-13T01:00:00.000+00:00",
+   "score": "103-101",
+   "homeTeamId": "16",
+   "awayTeamId": "15",
+   "homeTeamScore": "101",
+   "awayTeamScore": "103",
+   "gameResult": "L",
+   "opponent": {
+    "id": "15",
+    "displayName": "Milwaukee Bucks",
+    "abbreviation": "MIL"
+   },
+   "leagueName": "National Basketball Association",
+   "leagueAbbreviation": "NBA",
+   "leagueShortName": "NBA",
+   "team": {
+    "id": "16",
+    "abbreviation": "MIN",
+    "isAllStar": false
+   }
+  },
+  "401705321": {
+   "id": "401705321",
+   "atVs": "@",
+   "gameDate": "2025-02-11T00:00:00.000+00:00",
+   "score": "128-107",
+   "homeTeamId": "5",
+   "awayTeamId": "16",
+   "homeTeamScore": "128",
+   "awayTeamScore": "107",
+   "gameResult": "L",
+   "opponent": {
+    "id": "5",
+    "displayName": "Cleveland Cavaliers",
+    "abbreviation": "CLE"
+   },
+   "leagueName": "National Basketball Association",
+   "leagueAbbreviation": "NBA",
+   "leagueShortName": "NBA",
+   "team": {
+    "id": "16",
+    "abbreviation": "MIN",
+    "isAllStar": false
+   }
+  },
+  "401705295": {
+   "id": "401705295",
+   "atVs": "vs",
+   "gameDate": "2025-02-07T01:00:00.000+00:00",
+   "score": "127-114",
+   "homeTeamId": "16",
+   "awayTeamId": "10",
+   "homeTeamScore": "127",
+   "awayTeamScore": "114",
+   "gameResult": "W",
+   "opponent": {
+    "id": "10",
+    "displayName": "Houston Rockets",
+    "abbreviation": "HOU"
+   },
+   "leagueName": "National Basketball Association",
+   "leagueAbbreviation": "NBA",
+   "leagueShortName": "NBA",
+   "team": {
+    "id": "16",
+    "abbreviation": "MIN",
+    "isAllStar": false
+   }
+  },
+  "401705289": {
+   "id": "401705289",
+   "atVs": "vs",
+   "gameDate": "2025-02-06T01:00:00.000+00:00",
+   "score": "127-108",
+   "homeTeamId": "16",
+   "awayTeamId": "4",
+   "homeTeamScore": "127",
+   "awayTeamScore": "108",
+   "gameResult": "W",
+   "opponent": {
+    "id": "4",
+    "displayName": "Chicago Bulls",
+    "abbreviation": "CHI"
+   },
+   "leagueName": "National Basketball Association",
+   "leagueAbbreviation": "NBA",
+   "leagueShortName": "NBA",
+   "team": {
+    "id": "16",
+    "abbreviation": "MIN",
+    "isAllStar": false
+   }
+  },
+  "401705270": {
+   "id": "401705270",
+   "atVs": "vs",
+   "gameDate": "2025-02-04T01:00:00.000+00:00",
+   "score": "116-114",
+   "homeTeamId": "16",
+   "awayTeamId": "23",
+   "homeTeamScore": "114",
+   "awayTeamScore": "116",
+   "gameResult": "L",
+   "opponent": {
+    "id": "23",
+    "displayName": "Sacramento Kings",
+    "abbreviation": "SAC"
+   },
+   "leagueName": "National Basketball Association",
+   "leagueAbbreviation": "NBA",
+   "leagueShortName": "NBA",
+   "team": {
+    "id": "16",
+    "abbreviation": "MIN",
+    "isAllStar": false
+   }
+  },
+  "401705243": {
+   "id": "401705243",
+   "atVs": "@",
+   "gameDate": "2025-01-31T02:00:00.000+00:00",
+   "score": "138-113",
+   "homeTeamId": "26",
+   "awayTeamId": "16",
+   "homeTeamScore": "113",
+   "awayTeamScore": "138",
+   "gameResult": "W",
+   "opponent": {
+    "id": "26",
+    "displayName": "Utah Jazz",
+    "abbreviation": "UTAH"
+   },
+   "leagueName": "National Basketball Association",
+   "leagueAbbreviation": "NBA",
+   "leagueShortName": "NBA",
+   "team": {
+    "id": "16",
+    "abbreviation": "MIN",
+    "isAllStar": false
+   }
+  },
+  "401705238": {
+   "id": "401705238",
+   "atVs": "@",
+   "gameDate": "2025-01-30T02:00:00.000+00:00",
+   "score": "121-113",
+   "homeTeamId": "21",
+   "awayTeamId": "16",
+   "homeTeamScore": "113",
+   "awayTeamScore": "121",
+   "gameResult": "W",
+   "opponent": {
+    "id": "21",
+    "displayName": "Phoenix Suns",
+    "abbreviation": "PHX"
+   },
+   "leagueName": "National Basketball Association",
+   "leagueAbbreviation": "NBA",
+   "leagueShortName": "NBA",
+   "team": {
+    "id": "16",
+    "abbreviation": "MIN",
+    "isAllStar": false
+   }
+  },
+  "401705222": {
+   "id": "401705222",
+   "atVs": "vs",
+   "gameDate": "2025-01-28T01:00:00.000+00:00",
+   "score": "100-92",
+   "homeTeamId": "16",
+   "awayTeamId": "1",
+   "homeTeamScore": "100",
+   "awayTeamScore": "92",
+   "gameResult": "W",
+   "opponent": {
+    "id": "1",
+    "displayName": "Atlanta Hawks",
+    "abbreviation": "ATL"
+   },
+   "leagueName": "National Basketball Association",
+   "leagueAbbreviation": "NBA",
+   "leagueShortName": "NBA",
+   "team": {
+    "id": "16",
+    "abbreviation": "MIN",
+    "isAllStar": false
+   }
+  },
+  "401705200": {
+   "id": "401705200",
+   "atVs": "vs",
+   "gameDate": "2025-01-25T20:00:00.000+00:00",
+   "score": "133-104",
+   "homeTeamId": "16",
+   "awayTeamId": "7",
+   "homeTeamScore": "133",
+   "awayTeamScore": "104",
+   "gameResult": "W",
+   "opponent": {
+    "id": "7",
+    "displayName": "Denver Nuggets",
+    "abbreviation": "DEN"
+   },
+   "leagueName": "National Basketball Association",
+   "leagueAbbreviation": "NBA",
+   "leagueShortName": "NBA",
+   "team": {
+    "id": "16",
+    "abbreviation": "MIN",
+    "isAllStar": false
+   }
+  },
+  "401705180": {
+   "id": "401705180",
+   "atVs": "@",
+   "gameDate": "2025-01-23T00:30:00.000+00:00",
+   "score": "115-114",
+   "homeTeamId": "6",
+   "awayTeamId": "16",
+   "homeTeamScore": "114",
+   "awayTeamScore": "115",
+   "gameResult": "W",
+   "opponent": {
+    "id": "6",
+    "displayName": "Dallas Mavericks",
+    "abbreviation": "DAL"
+   },
+   "leagueName": "National Basketball Association",
+   "leagueAbbreviation": "NBA",
+   "leagueShortName": "NBA",
+   "team": {
+    "id": "16",
+    "abbreviation": "MIN",
+    "isAllStar": false
+   }
+  },
+  "401705167": {
+   "id": "401705167",
+   "atVs": "@",
+   "gameDate": "2025-01-20T19:30:00.000+00:00",
+   "score": "108-106",
+   "homeTeamId": "29",
+   "awayTeamId": "16",
+   "homeTeamScore": "108",
+   "awayTeamScore": "106",
+   "gameResult": "L",
+   "opponent": {
+    "id": "29",
+    "displayName": "Memphis Grizzlies",
+    "abbreviation": "MEM"
+   },
+   "leagueName": "National Basketball Association",
+   "leagueAbbreviation": "NBA",
+   "leagueShortName": "NBA",
+   "team": {
+    "id": "16",
+    "abbreviation": "MIN",
+    "isAllStar": false
+   }
+  },
+  "401705156": {
+   "id": "401705156",
+   "atVs": "vs",
+   "gameDate": "2025-01-19T02:00:00.000+00:00",
+   "score": "124-117",
+   "homeTeamId": "16",
+   "awayTeamId": "5",
+   "homeTeamScore": "117",
+   "awayTeamScore": "124",
+   "gameResult": "L",
+   "opponent": {
+    "id": "5",
+    "displayName": "Cleveland Cavaliers",
+    "abbreviation": "CLE"
+   },
+   "leagueName": "National Basketball Association",
+   "leagueAbbreviation": "NBA",
+   "leagueShortName": "NBA",
+   "team": {
+    "id": "16",
+    "abbreviation": "MIN",
+    "isAllStar": false
+   }
+  },
+  "401705144": {
+   "id": "401705144",
+   "atVs": "@",
+   "gameDate": "2025-01-18T00:30:00.000+00:00",
+   "score": "116-99",
+   "homeTeamId": "18",
+   "awayTeamId": "16",
+   "homeTeamScore": "99",
+   "awayTeamScore": "116",
+   "gameResult": "W",
+   "opponent": {
+    "id": "18",
+    "displayName": "New York Knicks",
+    "abbreviation": "NY"
+   },
+   "leagueName": "National Basketball Association",
+   "leagueAbbreviation": "NBA",
+   "leagueShortName": "NBA",
+   "team": {
+    "id": "16",
+    "abbreviation": "MIN",
+    "isAllStar": false
+   }
+  },
+  "401705131": {
+   "id": "401705131",
+   "atVs": "vs",
+   "gameDate": "2025-01-16T02:30:00.000+00:00",
+   "score": "116-115",
+   "homeTeamId": "16",
+   "awayTeamId": "9",
+   "homeTeamScore": "115",
+   "awayTeamScore": "116",
+   "gameResult": "L",
+   "opponent": {
+    "id": "9",
+    "displayName": "Golden State Warriors",
+    "abbreviation": "GS"
+   },
+   "leagueName": "National Basketball Association",
+   "leagueAbbreviation": "NBA",
+   "leagueShortName": "NBA",
+   "team": {
+    "id": "16",
+    "abbreviation": "MIN",
+    "isAllStar": false
+   }
+  },
+  "401705114": {
+   "id": "401705114",
+   "atVs": "@",
+   "gameDate": "2025-01-14T00:00:00.000+00:00",
+   "score": "120-106",
+   "homeTeamId": "27",
+   "awayTeamId": "16",
+   "homeTeamScore": "106",
+   "awayTeamScore": "120",
+   "gameResult": "W",
+   "opponent": {
+    "id": "27",
+    "displayName": "Washington Wizards",
+    "abbreviation": "WSH"
+   },
+   "leagueName": "National Basketball Association",
+   "leagueAbbreviation": "NBA",
+   "leagueShortName": "NBA",
+   "team": {
+    "id": "16",
+    "abbreviation": "MIN",
+    "isAllStar": false
+   }
+  },
+  "401705101": {
+   "id": "401705101",
+   "atVs": "vs",
+   "gameDate": "2025-01-12T01:00:00.000+00:00",
+   "score": "127-125",
+   "homeTeamId": "16",
+   "awayTeamId": "29",
+   "homeTeamScore": "125",
+   "awayTeamScore": "127",
+   "gameResult": "L",
+   "opponent": {
+    "id": "29",
+    "displayName": "Memphis Grizzlies",
+    "abbreviation": "MEM"
+   },
+   "leagueName": "National Basketball Association",
+   "leagueAbbreviation": "NBA",
+   "leagueShortName": "NBA",
+   "team": {
+    "id": "16",
+    "abbreviation": "MIN",
+    "isAllStar": false
+   }
+  },
+  "401705085": {
+   "id": "401705085",
+   "atVs": "@",
+   "gameDate": "2025-01-10T00:00:00.000+00:00",
+   "score": "104-89",
+   "homeTeamId": "19",
+   "awayTeamId": "16",
+   "homeTeamScore": "89",
+   "awayTeamScore": "104",
+   "gameResult": "W",
+   "opponent": {
+    "id": "19",
+    "displayName": "Orlando Magic",
+    "abbreviation": "ORL"
+   },
+   "leagueName": "National Basketball Association",
+   "leagueAbbreviation": "NBA",
+   "leagueShortName": "NBA",
+   "team": {
+    "id": "16",
+    "abbreviation": "MIN",
+    "isAllStar": false
+   }
+  },
+  "401705071": {
+   "id": "401705071",
+   "atVs": "@",
+   "gameDate": "2025-01-08T01:00:00.000+00:00",
+   "score": "104-97",
+   "homeTeamId": "3",
+   "awayTeamId": "16",
+   "homeTeamScore": "97",
+   "awayTeamScore": "104",
+   "gameResult": "W",
+   "opponent": {
+    "id": "3",
+    "displayName": "New Orleans Pelicans",
+    "abbreviation": "NO"
+   },
+   "leagueName": "National Basketball Association",
+   "leagueAbbreviation": "NBA",
+   "leagueShortName": "NBA",
+   "team": {
+    "id": "16",
+    "abbreviation": "MIN",
+    "isAllStar": false
+   }
+  },
+  "401705066": {
+   "id": "401705066",
+   "atVs": "vs",
+   "gameDate": "2025-01-07T01:00:00.000+00:00",
+   "score": "108-106",
+   "homeTeamId": "16",
+   "awayTeamId": "12",
+   "homeTeamScore": "108",
+   "awayTeamScore": "106",
+   "gameResult": "W",
+   "opponent": {
+    "id": "12",
+    "displayName": "LA Clippers",
+    "abbreviation": "LAC"
+   },
+   "leagueName": "National Basketball Association",
+   "leagueAbbreviation": "NBA",
+   "leagueShortName": "NBA",
+   "team": {
+    "id": "16",
+    "abbreviation": "MIN",
+    "isAllStar": false
+   }
+  },
+  "401705045": {
+   "id": "401705045",
+   "atVs": "@",
+   "gameDate": "2025-01-05T00:00:00.000+00:00",
+   "score": "119-105",
+   "homeTeamId": "8",
+   "awayTeamId": "16",
+   "homeTeamScore": "119",
+   "awayTeamScore": "105",
+   "gameResult": "L",
+   "opponent": {
+    "id": "8",
+    "displayName": "Detroit Pistons",
+    "abbreviation": "DET"
+   },
+   "leagueName": "National Basketball Association",
+   "leagueAbbreviation": "NBA",
+   "leagueShortName": "NBA",
+   "team": {
+    "id": "16",
+    "abbreviation": "MIN",
+    "isAllStar": false
+   }
+  },
+  "401705030": {
+   "id": "401705030",
+   "atVs": "vs",
+   "gameDate": "2025-01-03T00:30:00.000+00:00",
+   "score": "118-115",
+   "homeTeamId": "16",
+   "awayTeamId": "2",
+   "homeTeamScore": "115",
+   "awayTeamScore": "118",
+   "gameResult": "L",
+   "opponent": {
+    "id": "2",
+    "displayName": "Boston Celtics",
+    "abbreviation": "BOS"
+   },
+   "leagueName": "National Basketball Association",
+   "leagueAbbreviation": "NBA",
+   "leagueShortName": "NBA",
+   "team": {
+    "id": "16",
+    "abbreviation": "MIN",
+    "isAllStar": false
+   }
+  },
+  "401705018": {
+   "id": "401705018",
+   "atVs": "@",
+   "gameDate": "2025-01-01T01:00:00.000+00:00",
+   "score": "113-105",
+   "homeTeamId": "25",
+   "awayTeamId": "16",
+   "homeTeamScore": "113",
+   "awayTeamScore": "105",
+   "gameResult": "L",
+   "opponent": {
+    "id": "25",
+    "displayName": "Oklahoma City Thunder",
+    "abbreviation": "OKC"
+   },
+   "leagueName": "National Basketball Association",
+   "leagueAbbreviation": "NBA",
+   "leagueShortName": "NBA",
+   "team": {
+    "id": "16",
+    "abbreviation": "MIN",
+    "isAllStar": false
+   }
+  },
+  "401705007": {
+   "id": "401705007",
+   "atVs": "vs",
+   "gameDate": "2024-12-30T02:00:00.000+00:00",
+   "score": "112-110",
+   "homeTeamId": "16",
+   "awayTeamId": "24",
+   "homeTeamScore": "112",
+   "awayTeamScore": "110",
+   "gameResult": "W",
+   "opponent": {
+    "id": "24",
+    "displayName": "San Antonio Spurs",
+    "abbreviation": "SA"
+   },
+   "leagueName": "National Basketball Association",
+   "leagueAbbreviation": "NBA",
+   "leagueShortName": "NBA",
+   "team": {
+    "id": "16",
+    "abbreviation": "MIN",
+    "isAllStar": false
+   }
+  },
+  "401704988": {
+   "id": "401704988",
+   "atVs": "@",
+   "gameDate": "2024-12-28T01:00:00.000+00:00",
+   "score": "113-112",
+   "homeTeamId": "10",
+   "awayTeamId": "16",
+   "homeTeamScore": "112",
+   "awayTeamScore": "113",
+   "gameResult": "W",
+   "opponent": {
+    "id": "10",
+    "displayName": "Houston Rockets",
+    "abbreviation": "HOU"
+   },
+   "leagueName": "National Basketball Association",
+   "leagueAbbreviation": "NBA",
+   "leagueShortName": "NBA",
+   "team": {
+    "id": "16",
+    "abbreviation": "MIN",
+    "isAllStar": false
+   }
+  },
+  "401704972": {
+   "id": "401704972",
+   "atVs": "@",
+   "gameDate": "2024-12-25T19:30:00.000+00:00",
+   "score": "105-99",
+   "homeTeamId": "6",
+   "awayTeamId": "16",
+   "homeTeamScore": "99",
+   "awayTeamScore": "105",
+   "gameResult": "W",
+   "opponent": {
+    "id": "6",
+    "displayName": "Dallas Mavericks",
+    "abbreviation": "DAL"
+   },
+   "leagueName": "National Basketball Association",
+   "leagueAbbreviation": "NBA",
+   "leagueShortName": "NBA",
+   "team": {
+    "id": "16",
+    "abbreviation": "MIN",
+    "isAllStar": false
+   }
+  },
+  "401704961": {
+   "id": "401704961",
+   "atVs": "@",
+   "gameDate": "2024-12-24T00:30:00.000+00:00",
+   "score": "117-104",
+   "homeTeamId": "1",
+   "awayTeamId": "16",
+   "homeTeamScore": "117",
+   "awayTeamScore": "104",
+   "gameResult": "L",
+   "opponent": {
+    "id": "1",
+    "displayName": "Atlanta Hawks",
+    "abbreviation": "ATL"
+   },
+   "leagueName": "National Basketball Association",
+   "leagueAbbreviation": "NBA",
+   "leagueShortName": "NBA",
+   "team": {
+    "id": "16",
+    "abbreviation": "MIN",
+    "isAllStar": false
+   }
+  },
+  "401704949": {
+   "id": "401704949",
+   "atVs": "vs",
+   "gameDate": "2024-12-22T01:00:00.000+00:00",
+   "score": "113-103",
+   "homeTeamId": "16",
+   "awayTeamId": "9",
+   "homeTeamScore": "103",
+   "awayTeamScore": "113",
+   "gameResult": "L",
+   "opponent": {
+    "id": "9",
+    "displayName": "Golden State Warriors",
+    "abbreviation": "GS"
+   },
+   "leagueName": "National Basketball Association",
+   "leagueAbbreviation": "NBA",
+   "leagueShortName": "NBA",
+   "team": {
+    "id": "16",
+    "abbreviation": "MIN",
+    "isAllStar": false
+   }
+  },
+  "401704933": {
+   "id": "401704933",
+   "atVs": "vs",
+   "gameDate": "2024-12-20T02:30:00.000+00:00",
+   "score": "133-107",
+   "homeTeamId": "16",
+   "awayTeamId": "18",
+   "homeTeamScore": "107",
+   "awayTeamScore": "133",
+   "gameResult": "L",
+   "opponent": {
+    "id": "18",
+    "displayName": "New York Knicks",
+    "abbreviation": "NY"
+   },
+   "leagueName": "National Basketball Association",
+   "leagueAbbreviation": "NBA",
+   "leagueShortName": "NBA",
+   "team": {
+    "id": "16",
+    "abbreviation": "MIN",
+    "isAllStar": false
+   }
+  },
+  "401736812": {
+   "id": "401736812",
+   "atVs": "@",
+   "gameDate": "2024-12-16T00:00:00.000+00:00",
+   "score": "106-92",
+   "homeTeamId": "24",
+   "awayTeamId": "16",
+   "homeTeamScore": "92",
+   "awayTeamScore": "106",
+   "gameResult": "W",
+   "opponent": {
+    "id": "24",
+    "displayName": "San Antonio Spurs",
+    "abbreviation": "SA"
+   },
+   "leagueName": "National Basketball Association",
+   "leagueAbbreviation": "NBA",
+   "leagueShortName": "NBA",
+   "team": {
+    "id": "16",
+    "abbreviation": "MIN",
+    "isAllStar": false
+   }
+  },
+  "401736804": {
+   "id": "401736804",
+   "atVs": "vs",
+   "gameDate": "2024-12-14T01:00:00.000+00:00",
+   "score": "97-87",
+   "homeTeamId": "16",
+   "awayTeamId": "13",
+   "homeTeamScore": "97",
+   "awayTeamScore": "87",
+   "gameResult": "W",
+   "opponent": {
+    "id": "13",
+    "displayName": "Los Angeles Lakers",
+    "abbreviation": "LAL"
+   },
+   "leagueName": "National Basketball Association",
+   "leagueAbbreviation": "NBA",
+   "leagueShortName": "NBA",
+   "team": {
+    "id": "16",
+    "abbreviation": "MIN",
+    "isAllStar": false
+   }
+  },
+  "401704921": {
+   "id": "401704921",
+   "atVs": "@",
+   "gameDate": "2024-12-09T01:30:00.000+00:00",
+   "score": "114-106",
+   "homeTeamId": "9",
+   "awayTeamId": "16",
+   "homeTeamScore": "114",
+   "awayTeamScore": "106",
+   "gameResult": "L",
+   "opponent": {
+    "id": "9",
+    "displayName": "Golden State Warriors",
+    "abbreviation": "GS"
+   },
+   "leagueName": "National Basketball Association",
+   "leagueAbbreviation": "NBA",
+   "leagueShortName": "NBA",
+   "team": {
+    "id": "16",
+    "abbreviation": "MIN",
+    "isAllStar": false
+   }
+  },
+  "401704904": {
+   "id": "401704904",
+   "atVs": "@",
+   "gameDate": "2024-12-07T03:00:00.000+00:00",
+   "score": "107-90",
+   "homeTeamId": "9",
+   "awayTeamId": "16",
+   "homeTeamScore": "90",
+   "awayTeamScore": "107",
+   "gameResult": "W",
+   "opponent": {
+    "id": "9",
+    "displayName": "Golden State Warriors",
+    "abbreviation": "GS"
+   },
+   "leagueName": "National Basketball Association",
+   "leagueAbbreviation": "NBA",
+   "leagueShortName": "NBA",
+   "team": {
+    "id": "16",
+    "abbreviation": "MIN",
+    "isAllStar": false
+   }
+  },
+  "401704890": {
+   "id": "401704890",
+   "atVs": "@",
+   "gameDate": "2024-12-05T03:30:00.000+00:00",
+   "score": "108-80",
+   "homeTeamId": "12",
+   "awayTeamId": "16",
+   "homeTeamScore": "80",
+   "awayTeamScore": "108",
+   "gameResult": "W",
+   "opponent": {
+    "id": "12",
+    "displayName": "LA Clippers",
+    "abbreviation": "LAC"
+   },
+   "leagueName": "National Basketball Association",
+   "leagueAbbreviation": "NBA",
+   "leagueShortName": "NBA",
+   "team": {
+    "id": "16",
+    "abbreviation": "MIN",
+    "isAllStar": false
+   }
+  },
+  "401704884": {
+   "id": "401704884",
+   "atVs": "vs",
+   "gameDate": "2024-12-03T01:00:00.000+00:00",
+   "score": "109-80",
+   "homeTeamId": "16",
+   "awayTeamId": "13",
+   "homeTeamScore": "109",
+   "awayTeamScore": "80",
+   "gameResult": "W",
+   "opponent": {
+    "id": "13",
+    "displayName": "Los Angeles Lakers",
+    "abbreviation": "LAL"
+   },
+   "leagueName": "National Basketball Association",
+   "leagueAbbreviation": "NBA",
+   "leagueShortName": "NBA",
+   "team": {
+    "id": "16",
+    "abbreviation": "MIN",
+    "isAllStar": false
+   }
+  },
+  "401703413": {
+   "id": "401703413",
+   "atVs": "vs",
+   "gameDate": "2024-11-30T00:30:00.000+00:00",
+   "score": "93-92",
+   "homeTeamId": "16",
+   "awayTeamId": "12",
+   "homeTeamScore": "93",
+   "awayTeamScore": "92",
+   "gameResult": "W",
+   "opponent": {
+    "id": "12",
+    "displayName": "LA Clippers",
+    "abbreviation": "LAC"
+   },
+   "leagueName": "National Basketball Association",
+   "leagueAbbreviation": "NBA",
+   "leagueShortName": "NBA",
+   "eventNote": "NBA Cup - Group Play",
+   "team": {
+    "id": "16",
+    "abbreviation": "MIN",
+    "isAllStar": false
+   }
+  },
+  "401704860": {
+   "id": "401704860",
+   "atVs": "vs",
+   "gameDate": "2024-11-28T01:00:00.000+00:00",
+   "score": "115-104",
+   "homeTeamId": "16",
+   "awayTeamId": "23",
+   "homeTeamScore": "104",
+   "awayTeamScore": "115",
+   "gameResult": "L",
+   "opponent": {
+    "id": "23",
+    "displayName": "Sacramento Kings",
+    "abbreviation": "SAC"
+   },
+   "leagueName": "National Basketball Association",
+   "leagueAbbreviation": "NBA",
+   "leagueShortName": "NBA",
+   "team": {
+    "id": "16",
+    "abbreviation": "MIN",
+    "isAllStar": false
+   }
+  },
+  "401703406": {
+   "id": "401703406",
+   "atVs": "vs",
+   "gameDate": "2024-11-27T01:00:00.000+00:00",
+   "score": "117-111 OT",
+   "homeTeamId": "16",
+   "awayTeamId": "10",
+   "homeTeamScore": "111",
+   "awayTeamScore": "117",
+   "gameResult": "L",
+   "opponent": {
+    "id": "10",
+    "displayName": "Houston Rockets",
+    "abbreviation": "HOU"
+   },
+   "leagueName": "National Basketball Association",
+   "leagueAbbreviation": "NBA",
+   "leagueShortName": "NBA",
+   "eventNote": "NBA Cup - Group Play",
+   "team": {
+    "id": "16",
+    "abbreviation": "MIN",
+    "isAllStar": false
+   }
+  },
+  "401704837": {
+   "id": "401704837",
+   "atVs": "@",
+   "gameDate": "2024-11-24T20:30:00.000+00:00",
+   "score": "107-105",
+   "homeTeamId": "2",
+   "awayTeamId": "16",
+   "homeTeamScore": "107",
+   "awayTeamScore": "105",
+   "gameResult": "L",
+   "opponent": {
+    "id": "2",
+    "displayName": "Boston Celtics",
+    "abbreviation": "BOS"
+   },
+   "leagueName": "National Basketball Association",
+   "leagueAbbreviation": "NBA",
+   "leagueShortName": "NBA",
+   "team": {
+    "id": "16",
+    "abbreviation": "MIN",
+    "isAllStar": false
+   }
+  },
+  "401704827": {
+   "id": "401704827",
+   "atVs": "@",
+   "gameDate": "2024-11-22T00:30:00.000+00:00",
+   "score": "110-105",
+   "homeTeamId": "28",
+   "awayTeamId": "16",
+   "homeTeamScore": "110",
+   "awayTeamScore": "105",
+   "gameResult": "L",
+   "opponent": {
+    "id": "28",
+    "displayName": "Toronto Raptors",
+    "abbreviation": "TOR"
+   },
+   "leagueName": "National Basketball Association",
+   "leagueAbbreviation": "NBA",
+   "leagueShortName": "NBA",
+   "team": {
+    "id": "16",
+    "abbreviation": "MIN",
+    "isAllStar": false
+   }
+  },
+  "401704800": {
+   "id": "401704800",
+   "atVs": "vs",
+   "gameDate": "2024-11-17T20:30:00.000+00:00",
+   "score": "120-117",
+   "homeTeamId": "16",
+   "awayTeamId": "21",
+   "homeTeamScore": "120",
+   "awayTeamScore": "117",
+   "gameResult": "W",
+   "opponent": {
+    "id": "21",
+    "displayName": "Phoenix Suns",
+    "abbreviation": "PHX"
+   },
+   "leagueName": "National Basketball Association",
+   "leagueAbbreviation": "NBA",
+   "leagueShortName": "NBA",
+   "team": {
+    "id": "16",
+    "abbreviation": "MIN",
+    "isAllStar": false
+   }
+  },
+  "401703389": {
+   "id": "401703389",
+   "atVs": "@",
+   "gameDate": "2024-11-16T03:00:00.000+00:00",
+   "score": "130-126 OT",
+   "homeTeamId": "23",
+   "awayTeamId": "16",
+   "homeTeamScore": "126",
+   "awayTeamScore": "130",
+   "gameResult": "W",
+   "opponent": {
+    "id": "23",
+    "displayName": "Sacramento Kings",
+    "abbreviation": "SAC"
+   },
+   "leagueName": "National Basketball Association",
+   "leagueAbbreviation": "NBA",
+   "leagueShortName": "NBA",
+   "eventNote": "NBA Cup - Group Play",
+   "team": {
+    "id": "16",
+    "abbreviation": "MIN",
+    "isAllStar": false
+   }
+  },
+  "401704792": {
+   "id": "401704792",
+   "atVs": "@",
+   "gameDate": "2024-11-14T03:00:00.000+00:00",
+   "score": "106-98",
+   "homeTeamId": "22",
+   "awayTeamId": "16",
+   "homeTeamScore": "106",
+   "awayTeamScore": "98",
+   "gameResult": "L",
+   "opponent": {
+    "id": "22",
+    "displayName": "Portland Trail Blazers",
+    "abbreviation": "POR"
+   },
+   "leagueName": "National Basketball Association",
+   "leagueAbbreviation": "NBA",
+   "leagueShortName": "NBA",
+   "team": {
+    "id": "16",
+    "abbreviation": "MIN",
+    "isAllStar": false
+   }
+  },
+  "401703377": {
+   "id": "401703377",
+   "atVs": "@",
+   "gameDate": "2024-11-13T03:00:00.000+00:00",
+   "score": "122-108",
+   "homeTeamId": "22",
+   "awayTeamId": "16",
+   "homeTeamScore": "122",
+   "awayTeamScore": "108",
+   "gameResult": "L",
+   "opponent": {
+    "id": "22",
+    "displayName": "Portland Trail Blazers",
+    "abbreviation": "POR"
+   },
+   "leagueName": "National Basketball Association",
+   "leagueAbbreviation": "NBA",
+   "leagueShortName": "NBA",
+   "eventNote": "NBA Cup - Group Play",
+   "team": {
+    "id": "16",
+    "abbreviation": "MIN",
+    "isAllStar": false
+   }
+  },
+  "401704772": {
+   "id": "401704772",
+   "atVs": "vs",
+   "gameDate": "2024-11-11T00:00:00.000+00:00",
+   "score": "95-94",
+   "homeTeamId": "16",
+   "awayTeamId": "14",
+   "homeTeamScore": "94",
+   "awayTeamScore": "95",
+   "gameResult": "L",
+   "opponent": {
+    "id": "14",
+    "displayName": "Miami Heat",
+    "abbreviation": "MIA"
+   },
+   "leagueName": "National Basketball Association",
+   "leagueAbbreviation": "NBA",
+   "leagueShortName": "NBA",
+   "team": {
+    "id": "16",
+    "abbreviation": "MIN",
+    "isAllStar": false
+   }
+  },
+  "401704759": {
+   "id": "401704759",
+   "atVs": "vs",
+   "gameDate": "2024-11-09T02:00:00.000+00:00",
+   "score": "127-102",
+   "homeTeamId": "16",
+   "awayTeamId": "22",
+   "homeTeamScore": "127",
+   "awayTeamScore": "102",
+   "gameResult": "W",
+   "opponent": {
+    "id": "22",
+    "displayName": "Portland Trail Blazers",
+    "abbreviation": "POR"
+   },
+   "leagueName": "National Basketball Association",
+   "leagueAbbreviation": "NBA",
+   "leagueShortName": "NBA",
+   "team": {
+    "id": "16",
+    "abbreviation": "MIN",
+    "isAllStar": false
+   }
+  },
+  "401704747": {
+   "id": "401704747",
+   "atVs": "@",
+   "gameDate": "2024-11-08T01:00:00.000+00:00",
+   "score": "135-119",
+   "homeTeamId": "4",
+   "awayTeamId": "16",
+   "homeTeamScore": "119",
+   "awayTeamScore": "135",
+   "gameResult": "W",
+   "opponent": {
+    "id": "4",
+    "displayName": "Chicago Bulls",
+    "abbreviation": "CHI"
+   },
+   "leagueName": "National Basketball Association",
+   "leagueAbbreviation": "NBA",
+   "leagueShortName": "NBA",
+   "team": {
+    "id": "16",
+    "abbreviation": "MIN",
+    "isAllStar": false
+   }
+  },
+  "401704728": {
+   "id": "401704728",
+   "atVs": "vs",
+   "gameDate": "2024-11-05T02:00:00.000+00:00",
+   "score": "114-93",
+   "homeTeamId": "16",
+   "awayTeamId": "30",
+   "homeTeamScore": "114",
+   "awayTeamScore": "93",
+   "gameResult": "W",
+   "opponent": {
+    "id": "30",
+    "displayName": "Charlotte Hornets",
+    "abbreviation": "CHA"
+   },
+   "leagueName": "National Basketball Association",
+   "leagueAbbreviation": "NBA",
+   "leagueShortName": "NBA",
+   "team": {
+    "id": "16",
+    "abbreviation": "MIN",
+    "isAllStar": false
+   }
+  },
+  "401704712": {
+   "id": "401704712",
+   "atVs": "@",
+   "gameDate": "2024-11-03T00:00:00.000+00:00",
+   "score": "113-103",
+   "homeTeamId": "24",
+   "awayTeamId": "16",
+   "homeTeamScore": "113",
+   "awayTeamScore": "103",
+   "gameResult": "L",
+   "opponent": {
+    "id": "24",
+    "displayName": "San Antonio Spurs",
+    "abbreviation": "SA"
+   },
+   "leagueName": "National Basketball Association",
+   "leagueAbbreviation": "NBA",
+   "leagueShortName": "NBA",
+   "team": {
+    "id": "16",
+    "abbreviation": "MIN",
+    "isAllStar": false
+   }
+  },
+  "401704705": {
+   "id": "401704705",
+   "atVs": "vs",
+   "gameDate": "2024-11-02T01:30:00.000+00:00",
+   "score": "119-116",
+   "homeTeamId": "16",
+   "awayTeamId": "7",
+   "homeTeamScore": "119",
+   "awayTeamScore": "116",
+   "gameResult": "W",
+   "opponent": {
+    "id": "7",
+    "displayName": "Denver Nuggets",
+    "abbreviation": "DEN"
+   },
+   "leagueName": "National Basketball Association",
+   "leagueAbbreviation": "NBA",
+   "leagueShortName": "NBA",
+   "team": {
+    "id": "16",
+    "abbreviation": "MIN",
+    "isAllStar": false
+   }
+  },
+  "401704680": {
+   "id": "401704680",
+   "atVs": "vs",
+   "gameDate": "2024-10-29T23:30:00.000+00:00",
+   "score": "120-114",
+   "homeTeamId": "16",
+   "awayTeamId": "6",
+   "homeTeamScore": "114",
+   "awayTeamScore": "120",
+   "gameResult": "L",
+   "opponent": {
+    "id": "6",
+    "displayName": "Dallas Mavericks",
+    "abbreviation": "DAL"
+   },
+   "leagueName": "National Basketball Association",
+   "leagueAbbreviation": "NBA",
+   "leagueShortName": "NBA",
+   "team": {
+    "id": "16",
+    "abbreviation": "MIN",
+    "isAllStar": false
+   }
+  },
+  "401704659": {
+   "id": "401704659",
+   "atVs": "vs",
+   "gameDate": "2024-10-27T00:00:00.000+00:00",
+   "score": "112-101",
+   "homeTeamId": "16",
+   "awayTeamId": "28",
+   "homeTeamScore": "112",
+   "awayTeamScore": "101",
+   "gameResult": "W",
+   "opponent": {
+    "id": "28",
+    "displayName": "Toronto Raptors",
+    "abbreviation": "TOR"
+   },
+   "leagueName": "National Basketball Association",
+   "leagueAbbreviation": "NBA",
+   "leagueShortName": "NBA",
+   "team": {
+    "id": "16",
+    "abbreviation": "MIN",
+    "isAllStar": false
+   }
+  },
+  "401704642": {
+   "id": "401704642",
+   "atVs": "@",
+   "gameDate": "2024-10-25T02:00:00.000+00:00",
+   "score": "117-115",
+   "homeTeamId": "23",
+   "awayTeamId": "16",
+   "homeTeamScore": "115",
+   "awayTeamScore": "117",
+   "gameResult": "W",
+   "opponent": {
+    "id": "23",
+    "displayName": "Sacramento Kings",
+    "abbreviation": "SAC"
+   },
+   "leagueName": "National Basketball Association",
+   "leagueAbbreviation": "NBA",
+   "leagueShortName": "NBA",
+   "team": {
+    "id": "16",
+    "abbreviation": "MIN",
+    "isAllStar": false
+   }
+  },
+  "401704628": {
+   "id": "401704628",
+   "atVs": "@",
+   "gameDate": "2024-10-23T02:00:00.000+00:00",
+   "score": "110-103",
+   "homeTeamId": "13",
+   "awayTeamId": "16",
+   "homeTeamScore": "110",
+   "awayTeamScore": "103",
+   "gameResult": "L",
+   "opponent": {
+    "id": "13",
+    "displayName": "Los Angeles Lakers",
+    "abbreviation": "LAL"
+   },
+   "leagueName": "National Basketball Association",
+   "leagueAbbreviation": "NBA",
+   "leagueShortName": "NBA",
+   "team": {
+    "id": "16",
+    "abbreviation": "MIN",
+    "isAllStar": false
+   }
+  },
+  "401717011": {
+   "id": "401717011",
+   "atVs": "@",
+   "gameDate": "2024-10-17T00:00:00.000+00:00",
+   "score": "125-123",
+   "homeTeamId": "4",
+   "awayTeamId": "16",
+   "homeTeamScore": "125",
+   "awayTeamScore": "123",
+   "gameResult": "L",
+   "opponent": {
+    "id": "4",
+    "displayName": "Chicago Bulls",
+    "abbreviation": "CHI"
+   },
+   "leagueName": "National Basketball Association",
+   "leagueAbbreviation": "NBA",
+   "leagueShortName": "NBA",
+   "team": {
+    "id": "16",
+    "abbreviation": "MIN",
+    "isAllStar": false
+   }
+  },
+  "401716992": {
+   "id": "401716992",
+   "atVs": "@",
+   "gameDate": "2024-10-13T22:00:00.000+00:00",
+   "score": "115-110",
+   "homeTeamId": "18",
+   "awayTeamId": "16",
+   "homeTeamScore": "115",
+   "awayTeamScore": "110",
+   "gameResult": "L",
+   "opponent": {
+    "id": "18",
+    "displayName": "New York Knicks",
+    "abbreviation": "NY"
+   },
+   "leagueName": "National Basketball Association",
+   "leagueAbbreviation": "NBA",
+   "leagueShortName": "NBA",
+   "team": {
+    "id": "16",
+    "abbreviation": "MIN",
+    "isAllStar": false
+   }
+  },
+  "401716984": {
+   "id": "401716984",
+   "atVs": "vs",
+   "gameDate": "2024-10-11T23:00:00.000+00:00",
+   "score": "121-111",
+   "homeTeamId": "16",
+   "awayTeamId": "20",
+   "homeTeamScore": "121",
+   "awayTeamScore": "111",
+   "gameResult": "W",
+   "opponent": {
+    "id": "20",
+    "displayName": "Philadelphia 76ers",
+    "abbreviation": "PHI"
+   },
+   "leagueName": "National Basketball Association",
+   "leagueAbbreviation": "NBA",
+   "leagueShortName": "NBA",
+   "team": {
+    "id": "16",
+    "abbreviation": "MIN",
+    "isAllStar": false
+   }
+  }
+ },
+ "seasonTypes": [
+  {
+   "displayName": "2024-25 Postseason",
+   "displayTeam": "MIN",
+   "categories": [
+    {
+     "displayName": "Conference Finals",
+     "type": "event",
+     "splitType": "conference_finals",
+     "events": [
+      {
+       "eventId": "401773152",
+       "stats": [
+        "39",
+        "7-18",
+        "38.9",
+        "1-7",
+        "14.3",
+        "4-6",
+        "66.7",
+        "6",
+        "2",
+        "1",
+        "0",
+        "2",
+        "3",
+        "19"
+       ]
+      },
+      {
+       "eventId": "401773151",
+       "stats": [
+        "41",
+        "5-13",
+        "38.5",
+        "1-7",
+        "14.3",
+        "5-7",
+        "71.4",
+        "4",
+        "6",
+        "0",
+        "0",
+        "3",
+        "5",
+        "16"
+       ]
+      },
+      {
+       "eventId": "401773150",
+       "stats": [
+        "30",
+        "12-17",
+        "70.6",
+        "5-8",
+        "62.5",
+        "1-2",
+        "50.0",
+        "9",
+        "6",
+        "0",
+        "2",
+        "2",
+        "4",
+        "30"
+       ]
+      },
+      {
+       "eventId": "401773149",
+       "stats": [
+        "40",
+        "12-26",
+        "46.2",
+        "1-9",
+        "11.1",
+        "7-10",
+        "70.0",
+        "9",
+        "6",
+        "1",
+        "0",
+        "1",
+        "0",
+        "32"
+       ]
+      },
+      {
+       "eventId": "401773148",
+       "stats": [
+        "37",
+        "5-13",
+        "38.5",
+        "3-8",
+        "37.5",
+        "5-7",
+        "71.4",
+        "9",
+        "3",
+        "1",
+        "0",
+        "4",
+        "4",
+        "18"
+       ]
+      }
+     ],
+     "totals": [
+      "37.4",
+      "8.2-17.4",
+      "47.1",
+      "2.2-7.8",
+      "28.2",
+      "4.4-6.4",
+      "68.8",
+      "7.4",
+      "4.6",
+      "0.6",
+      "0.4",
+      "2.4",
+      "3.2",
+      "23.0"
+     ]
+    },
+    {
+     "displayName": "Conference Semifinals",
+     "type": "event",
+     "splitType": "conference_semifinals",
+     "events": [
+      {
+       "eventId": "401769987",
+       "stats": [
+        "41",
+        "8-15",
+        "53.3",
+        "5-9",
+        "55.6",
+        "1-2",
+        "50.0",
+        "7",
+        "12",
+        "3",
+        "1",
+        "3",
+        "7",
+        "22"
+       ]
+      },
+      {
+       "eventId": "401769840",
+       "stats": [
+        "33",
+        "11-21",
+        "52.4",
+        "6-11",
+        "54.5",
+        "2-3",
+        "66.7",
+        "4",
+        "5",
+        "0",
+        "2",
+        "5",
+        "3",
+        "30"
+       ]
+      },
+      {
+       "eventId": "401769839",
+       "stats": [
+        "44",
+        "13-28",
+        "46.4",
+        "5-14",
+        "35.7",
+        "5-8",
+        "62.5",
+        "4",
+        "4",
+        "1",
+        "0",
+        "0",
+        "3",
+        "36"
+       ]
+      },
+      {
+       "eventId": "401769838",
+       "stats": [
+        "34",
+        "6-13",
+        "46.2",
+        "2-4",
+        "50.0",
+        "6-8",
+        "75.0",
+        "9",
+        "5",
+        "1",
+        "3",
+        "1",
+        "1",
+        "20"
+       ]
+      },
+      {
+       "eventId": "401769837",
+       "stats": [
+        "42",
+        "9-22",
+        "40.9",
+        "1-5",
+        "20.0",
+        "4-5",
+        "80.0",
+        "14",
+        "2",
+        "1",
+        "3",
+        "1",
+        "3",
+        "23"
+       ]
+      }
+     ],
+     "totals": [
+      "38.8",
+      "9.4-19.8",
+      "47.5",
+      "3.8-8.6",
+      "44.2",
+      "3.6-5.2",
+      "69.2",
+      "7.6",
+      "5.6",
+      "1.2",
+      "1.8",
+      "2.0",
+      "3.4",
+      "26.2"
+     ]
+    },
+    {
+     "displayName": "Conference Quarterfinals",
+     "type": "event",
+     "splitType": "conference_quarterfinals",
+     "events": [
+      {
+       "eventId": "401768058",
+       "stats": [
+        "43",
+        "5-19",
+        "26.3",
+        "0-11",
+        "0.0",
+        "5-8",
+        "62.5",
+        "11",
+        "8",
+        "0",
+        "3",
+        "1",
+        "0",
+        "15"
+       ]
+      },
+      {
+       "eventId": "401768057",
+       "stats": [
+        "44",
+        "12-23",
+        "52.2",
+        "5-10",
+        "50.0",
+        "14-17",
+        "82.4",
+        "9",
+        "6",
+        "1",
+        "0",
+        "2",
+        "1",
+        "43"
+       ]
+      },
+      {
+       "eventId": "401768056",
+       "stats": [
+        "42",
+        "12-26",
+        "46.2",
+        "5-10",
+        "50.0",
+        "0-0",
+        "0.0",
+        "8",
+        "8",
+        "1",
+        "2",
+        "2",
+        "2",
+        "29"
+       ]
+      },
+      {
+       "eventId": "401767915",
+       "stats": [
+        "40",
+        "10-22",
+        "45.5",
+        "2-8",
+        "25.0",
+        "3-4",
+        "75.0",
+        "6",
+        "0",
+        "0",
+        "0",
+        "1",
+        "2",
+        "25"
+       ]
+      },
+      {
+       "eventId": "401767821",
+       "stats": [
+        "35",
+        "8-22",
+        "36.4",
+        "4-9",
+        "44.4",
+        "2-2",
+        "100.0",
+        "8",
+        "9",
+        "0",
+        "1",
+        "4",
+        "1",
+        "22"
+       ]
+      }
+     ],
+     "totals": [
+      "40.8",
+      "9.4-22.4",
+      "42.0",
+      "3.2-9.6",
+      "33.3",
+      "4.8-6.2",
+      "77.4",
+      "8.4",
+      "6.2",
+      "0.4",
+      "1.2",
+      "2.0",
+      "1.2",
+      "26.8"
+     ]
+    },
+    {
+     "displayName": "Postseason",
+     "type": "total",
+     "splitType": "3",
+     "totals": [
+      "585",
+      "135-298",
+      "45.3",
+      "46-130",
+      "35.4",
+      "64-89",
+      "71.9",
+      "117",
+      "82",
+      "11",
+      "17",
+      "32",
+      "39",
+      "380"
+     ]
+    }
+   ],
+   "summary": {
+    "displayName": "Postseason",
+    "stats": [
+     {
+      "displayName": "Totals",
+      "stats": [
+       "585",
+       "135-298",
+       "45.3",
+       "46-130",
+       "35.4",
+       "64-89",
+       "71.9",
+       "117",
+       "82",
+       "11",
+       "17",
+       "32",
+       "39",
+       "380"
+      ],
+      "type": "total"
+     }
+    ]
+   }
+  },
+  {
+   "displayName": "2024-25 Regular Season",
+   "displayTeam": "MIN",
+   "categories": [
+    {
+     "displayName": "april",
+     "type": "event",
+     "splitType": "april",
+     "events": [
+      {
+       "eventId": "401705761",
+       "stats": [
+        "40",
+        "15-31",
+        "48.4",
+        "7-18",
+        "38.9",
+        "6-7",
+        "85.7",
+        "6",
+        "5",
+        "1",
+        "3",
+        "1",
+        "2",
+        "43"
+       ]
+      },
+      {
+       "eventId": "401705745",
+       "stats": [
+        "31",
+        "4-11",
+        "36.4",
+        "1-7",
+        "14.3",
+        "0-0",
+        "0.0",
+        "4",
+        "5",
+        "2",
+        "1",
+        "3",
+        "0",
+        "9"
+       ]
+      },
+      {
+       "eventId": "401705736",
+       "stats": [
+        "38",
+        "13-19",
+        "68.4",
+        "7-11",
+        "63.6",
+        "11-13",
+        "84.6",
+        "5",
+        "3",
+        "1",
+        "1",
+        "3",
+        "5",
+        "44"
+       ]
+      },
+      {
+       "eventId": "401705718",
+       "stats": [
+        "39",
+        "10-27",
+        "37.0",
+        "2-11",
+        "18.2",
+        "3-3",
+        "100.0",
+        "7",
+        "4",
+        "1",
+        "1",
+        "4",
+        "2",
+        "25"
+       ]
+      },
+      {
+       "eventId": "401705696",
+       "stats": [
+        "38",
+        "12-21",
+        "57.1",
+        "6-13",
+        "46.2",
+        "7-8",
+        "87.5",
+        "2",
+        "2",
+        "1",
+        "1",
+        "1",
+        "2",
+        "37"
+       ]
+      },
+      {
+       "eventId": "401705679",
+       "stats": [
+        "32",
+        "10-15",
+        "66.7",
+        "5-10",
+        "50.0",
+        "3-5",
+        "60.0",
+        "5",
+        "3",
+        "1",
+        "2",
+        "3",
+        "2",
+        "28"
+       ]
+      },
+      {
+       "eventId": "401705668",
+       "stats": [
+        "50",
+        "12-25",
+        "48.0",
+        "5-15",
+        "33.3",
+        "5-7",
+        "71.4",
+        "10",
+        "8",
+        "0",
+        "1",
+        "4",
+        "5",
+        "34"
+       ]
+      }
+     ],
+     "totals": [
+      "38.3",
+      "10.9-21.3",
+      "51.0",
+      "4.7-12.1",
+      "38.8",
+      "5.0-6.1",
+      "81.4",
+      "5.6",
+      "4.3",
+      "1.0",
+      "1.4",
+      "2.7",
+      "2.6",
+      "31.4"
+     ]
+    },
+    {
+     "displayName": "march",
+     "type": "event",
+     "splitType": "march",
+     "events": [
+      {
+       "eventId": "401705650",
+       "stats": [
+        "36",
+        "9-19",
+        "47.4",
+        "4-10",
+        "40.0",
+        "3-4",
+        "75.0",
+        "6",
+        "4",
+        "2",
+        "0",
+        "4",
+        "4",
+        "25"
+       ]
+      },
+      {
+       "eventId": "401705637",
+       "stats": [
+        "28",
+        "8-19",
+        "42.1",
+        "4-10",
+        "40.0",
+        "0-0",
+        "0.0",
+        "4",
+        "5",
+        "0",
+        "1",
+        "1",
+        "2",
+        "20"
+       ]
+      },
+      {
+       "eventId": "401705603",
+       "stats": [
+        "34",
+        "7-19",
+        "36.8",
+        "1-11",
+        "9.1",
+        "2-3",
+        "66.7",
+        "2",
+        "4",
+        "0",
+        "1",
+        "2",
+        "3",
+        "17"
+       ]
+      },
+      {
+       "eventId": "401705582",
+       "stats": [
+        "26",
+        "6-13",
+        "46.2",
+        "3-7",
+        "42.9",
+        "2-2",
+        "100.0",
+        "3",
+        "5",
+        "0",
+        "2",
+        "0",
+        "3",
+        "17"
+       ]
+      },
+      {
+       "eventId": "401705567",
+       "stats": [
+        "38",
+        "5-19",
+        "26.3",
+        "4-10",
+        "40.0",
+        "15-17",
+        "88.2",
+        "6",
+        "4",
+        "1",
+        "1",
+        "0",
+        "2",
+        "29"
+       ]
+      },
+      {
+       "eventId": "401705552",
+       "stats": [
+        "41",
+        "9-24",
+        "37.5",
+        "1-11",
+        "9.1",
+        "19-20",
+        "95.0",
+        "3",
+        "5",
+        "2",
+        "2",
+        "3",
+        "3",
+        "38"
+       ]
+      },
+      {
+       "eventId": "401705547",
+       "stats": [
+        "31",
+        "16-27",
+        "59.3",
+        "5-14",
+        "35.7",
+        "4-6",
+        "66.7",
+        "2",
+        "2",
+        "0",
+        "1",
+        "1",
+        "1",
+        "41"
+       ]
+      },
+      {
+       "eventId": "401705529",
+       "stats": [
+        "39",
+        "9-19",
+        "47.4",
+        "3-8",
+        "37.5",
+        "7-8",
+        "87.5",
+        "4",
+        "5",
+        "1",
+        "0",
+        "2",
+        "3",
+        "28"
+       ]
+      },
+      {
+       "eventId": "401705518",
+       "stats": [
+        "35",
+        "10-22",
+        "45.5",
+        "5-12",
+        "41.7",
+        "4-5",
+        "80.0",
+        "4",
+        "6",
+        "0",
+        "1",
+        "2",
+        "3",
+        "29"
+       ]
+      },
+      {
+       "eventId": "401705491",
+       "stats": [
+        "30",
+        "10-15",
+        "66.7",
+        "2-5",
+        "40.0",
+        "3-3",
+        "100.0",
+        "3",
+        "3",
+        "0",
+        "1",
+        "0",
+        "3",
+        "25"
+       ]
+      },
+      {
+       "eventId": "401705473",
+       "stats": [
+        "39",
+        "4-10",
+        "40.0",
+        "3-8",
+        "37.5",
+        "2-4",
+        "50.0",
+        "13",
+        "6",
+        "0",
+        "0",
+        "1",
+        "2",
+        "13"
+       ]
+      },
+      {
+       "eventId": "401705458",
+       "stats": [
+        "38",
+        "9-20",
+        "45.0",
+        "6-13",
+        "46.2",
+        "5-8",
+        "62.5",
+        "3",
+        "6",
+        "1",
+        "2",
+        "2",
+        "0",
+        "29"
+       ]
+      },
+      {
+       "eventId": "401705453",
+       "stats": [
+        "30",
+        "5-11",
+        "45.5",
+        "2-6",
+        "33.3",
+        "6-7",
+        "85.7",
+        "5",
+        "1",
+        "0",
+        "0",
+        "2",
+        "2",
+        "18"
+       ]
+      },
+      {
+       "eventId": "401705439",
+       "stats": [
+        "36",
+        "12-22",
+        "54.5",
+        "6-14",
+        "42.9",
+        "14-14",
+        "100.0",
+        "5",
+        "7",
+        "0",
+        "2",
+        "0",
+        "1",
+        "44"
+       ]
+      }
+     ],
+     "totals": [
+      "34.3",
+      "8.5-18.5",
+      "45.9",
+      "3.5-9.9",
+      "35.3",
+      "6.1-7.2",
+      "85.1",
+      "4.5",
+      "4.5",
+      "0.5",
+      "1.0",
+      "1.4",
+      "2.3",
+      "26.6"
+     ]
+    },
+    {
+     "displayName": "february",
+     "type": "event",
+     "splitType": "february",
+     "events": [
+      {
+       "eventId": "401705415",
+       "stats": [
+        "26",
+        "6-12",
+        "50.0",
+        "2-6",
+        "33.3",
+        "4-4",
+        "100.0",
+        "6",
+        "5",
+        "0",
+        "1",
+        "1",
+        "0",
+        "18"
+       ]
+      },
+      {
+       "eventId": "401705392",
+       "stats": [
+        "36",
+        "5-15",
+        "33.3",
+        "1-6",
+        "16.7",
+        "6-10",
+        "60.0",
+        "13",
+        "8",
+        "1",
+        "0",
+        "4",
+        "4",
+        "17"
+       ]
+      },
+      {
+       "eventId": "401705386",
+       "stats": [
+        "39",
+        "8-21",
+        "38.1",
+        "4-13",
+        "30.8",
+        "9-10",
+        "90.0",
+        "10",
+        "7",
+        "0",
+        "2",
+        "3",
+        "5",
+        "29"
+       ]
+      },
+      {
+       "eventId": "401705367",
+       "stats": [
+        "39",
+        "13-32",
+        "40.6",
+        "4-14",
+        "28.6",
+        "7-10",
+        "70.0",
+        "4",
+        "3",
+        "1",
+        "0",
+        "2",
+        "3",
+        "37"
+       ]
+      },
+      {
+       "eventId": "401705353",
+       "stats": [
+        "36",
+        "5-18",
+        "27.8",
+        "3-12",
+        "25.0",
+        "10-11",
+        "90.9",
+        "7",
+        "7",
+        "0",
+        "3",
+        "0",
+        "2",
+        "23"
+       ]
+      },
+      {
+       "eventId": "401705342",
+       "stats": [
+        "37",
+        "10-33",
+        "30.3",
+        "4-17",
+        "23.5",
+        "4-5",
+        "80.0",
+        "7",
+        "4",
+        "0",
+        "2",
+        "0",
+        "2",
+        "28"
+       ]
+      },
+      {
+       "eventId": "401705321",
+       "stats": [
+        "37",
+        "13-28",
+        "46.4",
+        "8-15",
+        "53.3",
+        "10-13",
+        "76.9",
+        "6",
+        "1",
+        "0",
+        "1",
+        "0",
+        "7",
+        "44"
+       ]
+      },
+      {
+       "eventId": "401705295",
+       "stats": [
+        "38",
+        "11-25",
+        "44.0",
+        "5-12",
+        "41.7",
+        "14-15",
+        "93.3",
+        "7",
+        "6",
+        "1",
+        "0",
+        "3",
+        "4",
+        "41"
+       ]
+      },
+      {
+       "eventId": "401705289",
+       "stats": [
+        "37",
+        "13-28",
+        "46.4",
+        "6-14",
+        "42.9",
+        "17-18",
+        "94.4",
+        "9",
+        "3",
+        "1",
+        "1",
+        "2",
+        "5",
+        "49"
+       ]
+      },
+      {
+       "eventId": "401705270",
+       "stats": [
+        "38",
+        "7-21",
+        "33.3",
+        "3-10",
+        "30.0",
+        "4-4",
+        "100.0",
+        "6",
+        "4",
+        "1",
+        "2",
+        "3",
+        "3",
+        "21"
+       ]
+      }
+     ],
+     "totals": [
+      "36.2",
+      "9.1-23.3",
+      "39.1",
+      "4.0-11.9",
+      "33.6",
+      "8.5-10.0",
+      "85.0",
+      "7.5",
+      "4.8",
+      "0.5",
+      "1.2",
+      "1.8",
+      "3.5",
+      "30.7"
+     ]
+    },
+    {
+     "displayName": "january",
+     "type": "event",
+     "splitType": "january",
+     "events": [
+      {
+       "eventId": "401705243",
+       "stats": [
+        "35",
+        "12-18",
+        "66.7",
+        "6-9",
+        "66.7",
+        "6-7",
+        "85.7",
+        "6",
+        "11",
+        "3",
+        "0",
+        "3",
+        "3",
+        "36"
+       ]
+      },
+      {
+       "eventId": "401705238",
+       "stats": [
+        "40",
+        "11-20",
+        "55.0",
+        "3-8",
+        "37.5",
+        "8-9",
+        "88.9",
+        "7",
+        "5",
+        "4",
+        "2",
+        "2",
+        "7",
+        "33"
+       ]
+      },
+      {
+       "eventId": "401705222",
+       "stats": [
+        "35",
+        "6-20",
+        "30.0",
+        "2-11",
+        "18.2",
+        "9-13",
+        "69.2",
+        "5",
+        "4",
+        "1",
+        "2",
+        "2",
+        "3",
+        "23"
+       ]
+      },
+      {
+       "eventId": "401705200",
+       "stats": [
+        "33",
+        "14-23",
+        "60.9",
+        "3-8",
+        "37.5",
+        "3-4",
+        "75.0",
+        "1",
+        "9",
+        "0",
+        "0",
+        "4",
+        "3",
+        "34"
+       ]
+      },
+      {
+       "eventId": "401705180",
+       "stats": [
+        "37",
+        "6-19",
+        "31.6",
+        "2-7",
+        "28.6",
+        "7-8",
+        "87.5",
+        "5",
+        "7",
+        "0",
+        "0",
+        "0",
+        "3",
+        "21"
+       ]
+      },
+      {
+       "eventId": "401705167",
+       "stats": [
+        "38",
+        "8-19",
+        "42.1",
+        "3-8",
+        "37.5",
+        "13-18",
+        "72.2",
+        "4",
+        "3",
+        "1",
+        "0",
+        "1",
+        "5",
+        "32"
+       ]
+      },
+      {
+       "eventId": "401705156",
+       "stats": [
+        "41",
+        "9-22",
+        "40.9",
+        "4-9",
+        "44.4",
+        "6-6",
+        "100.0",
+        "3",
+        "5",
+        "1",
+        "1",
+        "2",
+        "2",
+        "28"
+       ]
+      },
+      {
+       "eventId": "401705144",
+       "stats": [
+        "38",
+        "12-21",
+        "57.1",
+        "8-13",
+        "61.5",
+        "4-4",
+        "100.0",
+        "13",
+        "7",
+        "0",
+        "0",
+        "0",
+        "6",
+        "36"
+       ]
+      },
+      {
+       "eventId": "401705131",
+       "stats": [
+        "41",
+        "7-19",
+        "36.8",
+        "4-9",
+        "44.4",
+        "10-11",
+        "90.9",
+        "8",
+        "2",
+        "1",
+        "1",
+        "1",
+        "5",
+        "28"
+       ]
+      },
+      {
+       "eventId": "401705114",
+       "stats": [
+        "36",
+        "14-25",
+        "56.0",
+        "5-11",
+        "45.5",
+        "8-8",
+        "100.0",
+        "6",
+        "7",
+        "1",
+        "3",
+        "2",
+        "7",
+        "41"
+       ]
+      },
+      {
+       "eventId": "401705101",
+       "stats": [
+        "39",
+        "4-13",
+        "30.8",
+        "0-5",
+        "0.0",
+        "7-7",
+        "100.0",
+        "5",
+        "6",
+        "0",
+        "1",
+        "3",
+        "6",
+        "15"
+       ]
+      },
+      {
+       "eventId": "401705085",
+       "stats": [
+        "36",
+        "5-19",
+        "26.3",
+        "4-11",
+        "36.4",
+        "7-9",
+        "77.8",
+        "3",
+        "7",
+        "0",
+        "2",
+        "2",
+        "2",
+        "21"
+       ]
+      },
+      {
+       "eventId": "401705071",
+       "stats": [
+        "38",
+        "10-21",
+        "47.6",
+        "7-11",
+        "63.6",
+        "5-6",
+        "83.3",
+        "9",
+        "3",
+        "0",
+        "2",
+        "3",
+        "4",
+        "32"
+       ]
+      },
+      {
+       "eventId": "401705066",
+       "stats": [
+        "37",
+        "14-29",
+        "48.3",
+        "6-13",
+        "46.2",
+        "3-4",
+        "75.0",
+        "7",
+        "8",
+        "0",
+        "1",
+        "2",
+        "2",
+        "37"
+       ]
+      },
+      {
+       "eventId": "401705045",
+       "stats": [
+        "44",
+        "16-31",
+        "51.6",
+        "10-15",
+        "66.7",
+        "11-12",
+        "91.7",
+        "6",
+        "2",
+        "0",
+        "0",
+        "4",
+        "6",
+        "53"
+       ]
+      },
+      {
+       "eventId": "401705030",
+       "stats": [
+        "36",
+        "5-16",
+        "31.3",
+        "2-9",
+        "22.2",
+        "3-4",
+        "75.0",
+        "4",
+        "6",
+        "0",
+        "0",
+        "0",
+        "2",
+        "15"
+       ]
+      }
+     ],
+     "totals": [
+      "37.9",
+      "9.6-20.9",
+      "45.7",
+      "4.3-9.8",
+      "43.9",
+      "6.9-8.1",
+      "84.6",
+      "5.8",
+      "5.8",
+      "0.8",
+      "0.9",
+      "1.9",
+      "4.1",
+      "30.3"
+     ]
+    },
+    {
+     "displayName": "december",
+     "type": "event",
+     "splitType": "december",
+     "events": [
+      {
+       "eventId": "401705018",
+       "stats": [
+        "39",
+        "6-12",
+        "50.0",
+        "4-7",
+        "57.1",
+        "4-4",
+        "100.0",
+        "7",
+        "2",
+        "1",
+        "0",
+        "3",
+        "3",
+        "20"
+       ]
+      },
+      {
+       "eventId": "401705007",
+       "stats": [
+        "38",
+        "6-20",
+        "30.0",
+        "1-9",
+        "11.1",
+        "1-1",
+        "100.0",
+        "8",
+        "4",
+        "1",
+        "0",
+        "1",
+        "2",
+        "14"
+       ]
+      },
+      {
+       "eventId": "401704988",
+       "stats": [
+        "35",
+        "9-17",
+        "52.9",
+        "4-8",
+        "50.0",
+        "2-3",
+        "66.7",
+        "5",
+        "3",
+        "1",
+        "0",
+        "3",
+        "3",
+        "24"
+       ]
+      },
+      {
+       "eventId": "401704972",
+       "stats": [
+        "39",
+        "11-24",
+        "45.8",
+        "4-7",
+        "57.1",
+        "0-0",
+        "0.0",
+        "8",
+        "5",
+        "1",
+        "2",
+        "0",
+        "4",
+        "26"
+       ]
+      },
+      {
+       "eventId": "401704961",
+       "stats": [
+        "32",
+        "7-20",
+        "35.0",
+        "1-7",
+        "14.3",
+        "1-1",
+        "100.0",
+        "6",
+        "4",
+        "0",
+        "2",
+        "1",
+        "5",
+        "16"
+       ]
+      },
+      {
+       "eventId": "401704949",
+       "stats": [
+        "39",
+        "6-20",
+        "30.0",
+        "4-11",
+        "36.4",
+        "3-4",
+        "75.0",
+        "7",
+        "5",
+        "0",
+        "0",
+        "4",
+        "1",
+        "19"
+       ]
+      },
+      {
+       "eventId": "401704933",
+       "stats": [
+        "34",
+        "7-16",
+        "43.8",
+        "3-7",
+        "42.9",
+        "0-0",
+        "0.0",
+        "5",
+        "7",
+        "1",
+        "3",
+        "0",
+        "2",
+        "17"
+       ]
+      },
+      {
+       "eventId": "401736812",
+       "stats": [
+        "28",
+        "10-21",
+        "47.6",
+        "3-7",
+        "42.9",
+        "3-3",
+        "100.0",
+        "5",
+        "2",
+        "0",
+        "0",
+        "3",
+        "1",
+        "26"
+       ]
+      },
+      {
+       "eventId": "401736804",
+       "stats": [
+        "33",
+        "9-20",
+        "45.0",
+        "2-7",
+        "28.6",
+        "3-5",
+        "60.0",
+        "6",
+        "1",
+        "1",
+        "1",
+        "1",
+        "5",
+        "23"
+       ]
+      },
+      {
+       "eventId": "401704921",
+       "stats": [
+        "37",
+        "10-19",
+        "52.6",
+        "5-9",
+        "55.6",
+        "2-2",
+        "100.0",
+        "5",
+        "6",
+        "0",
+        "1",
+        "3",
+        "6",
+        "27"
+       ]
+      },
+      {
+       "eventId": "401704904",
+       "stats": [
+        "35",
+        "11-18",
+        "61.1",
+        "4-10",
+        "40.0",
+        "4-4",
+        "100.0",
+        "4",
+        "9",
+        "2",
+        "1",
+        "1",
+        "4",
+        "30"
+       ]
+      },
+      {
+       "eventId": "401704890",
+       "stats": [
+        "26",
+        "5-14",
+        "35.7",
+        "4-9",
+        "44.4",
+        "2-2",
+        "100.0",
+        "6",
+        "4",
+        "0",
+        "4",
+        "3",
+        "2",
+        "16"
+       ]
+      },
+      {
+       "eventId": "401704884",
+       "stats": [
+        "27",
+        "3-13",
+        "23.1",
+        "1-5",
+        "20.0",
+        "1-2",
+        "50.0",
+        "7",
+        "3",
+        "0",
+        "2",
+        "1",
+        "3",
+        "8"
+       ]
+      }
+     ],
+     "totals": [
+      "34.0",
+      "7.7-18.0",
+      "42.7",
+      "3.1-7.9",
+      "38.8",
+      "2.0-2.4",
+      "83.9",
+      "6.1",
+      "4.2",
+      "0.6",
+      "1.2",
+      "1.8",
+      "3.2",
+      "20.5"
+     ]
+    },
+    {
+     "displayName": "november",
+     "type": "event",
+     "splitType": "november",
+     "events": [
+      {
+       "eventId": "401703413",
+       "stats": [
+        "36",
+        "7-21",
+        "33.3",
+        "4-9",
+        "44.4",
+        "3-5",
+        "60.0",
+        "4",
+        "3",
+        "0",
+        "2",
+        "0",
+        "4",
+        "21"
+       ]
+      },
+      {
+       "eventId": "401704860",
+       "stats": [
+        "37",
+        "9-24",
+        "37.5",
+        "4-9",
+        "44.4",
+        "7-8",
+        "87.5",
+        "5",
+        "5",
+        "0",
+        "3",
+        "0",
+        "1",
+        "29"
+       ]
+      },
+      {
+       "eventId": "401703406",
+       "stats": [
+        "43",
+        "8-22",
+        "36.4",
+        "3-12",
+        "25.0",
+        "10-10",
+        "100.0",
+        "10",
+        "1",
+        "3",
+        "1",
+        "1",
+        "3",
+        "29"
+       ]
+      },
+      {
+       "eventId": "401704837",
+       "stats": [
+        "39",
+        "9-21",
+        "42.9",
+        "6-11",
+        "54.5",
+        "4-4",
+        "100.0",
+        "9",
+        "7",
+        "0",
+        "0",
+        "3",
+        "3",
+        "28"
+       ]
+      },
+      {
+       "eventId": "401704827",
+       "stats": [
+        "36",
+        "9-20",
+        "45.0",
+        "5-9",
+        "55.6",
+        "3-3",
+        "100.0",
+        "3",
+        "2",
+        "2",
+        "2",
+        "4",
+        "2",
+        "26"
+       ]
+      },
+      {
+       "eventId": "401704800",
+       "stats": [
+        "39",
+        "9-14",
+        "64.3",
+        "3-7",
+        "42.9",
+        "3-3",
+        "100.0",
+        "4",
+        "6",
+        "0",
+        "1",
+        "2",
+        "2",
+        "24"
+       ]
+      },
+      {
+       "eventId": "401703389",
+       "stats": [
+        "42",
+        "14-27",
+        "51.9",
+        "6-14",
+        "42.9",
+        "2-2",
+        "100.0",
+        "5",
+        "2",
+        "0",
+        "0",
+        "4",
+        "2",
+        "36"
+       ]
+      },
+      {
+       "eventId": "401704792",
+       "stats": [
+        "40",
+        "10-25",
+        "40.0",
+        "0-9",
+        "0.0",
+        "4-4",
+        "100.0",
+        "4",
+        "4",
+        "1",
+        "4",
+        "2",
+        "3",
+        "24"
+       ]
+      },
+      {
+       "eventId": "401703377",
+       "stats": [
+        "37",
+        "8-19",
+        "42.1",
+        "4-10",
+        "40.0",
+        "6-6",
+        "100.0",
+        "0",
+        "3",
+        "1",
+        "2",
+        "2",
+        "1",
+        "26"
+       ]
+      },
+      {
+       "eventId": "401704772",
+       "stats": [
+        "37",
+        "8-24",
+        "33.3",
+        "4-14",
+        "28.6",
+        "2-3",
+        "66.7",
+        "5",
+        "6",
+        "0",
+        "2",
+        "3",
+        "6",
+        "22"
+       ]
+      },
+      {
+       "eventId": "401704759",
+       "stats": [
+        "30",
+        "12-21",
+        "57.1",
+        "9-15",
+        "60.0",
+        "4-5",
+        "80.0",
+        "6",
+        "5",
+        "1",
+        "1",
+        "2",
+        "6",
+        "37"
+       ]
+      },
+      {
+       "eventId": "401704747",
+       "stats": [
+        "35",
+        "13-23",
+        "56.5",
+        "5-9",
+        "55.6",
+        "2-2",
+        "100.0",
+        "8",
+        "6",
+        "1",
+        "0",
+        "2",
+        "2",
+        "33"
+       ]
+      },
+      {
+       "eventId": "401704728",
+       "stats": [
+        "29",
+        "6-11",
+        "54.5",
+        "4-6",
+        "66.7",
+        "5-7",
+        "71.4",
+        "5",
+        "1",
+        "0",
+        "1",
+        "1",
+        "1",
+        "21"
+       ]
+      },
+      {
+       "eventId": "401704712",
+       "stats": [
+        "36",
+        "8-17",
+        "47.1",
+        "3-7",
+        "42.9",
+        "2-4",
+        "50.0",
+        "5",
+        "2",
+        "0",
+        "2",
+        "0",
+        "3",
+        "21"
+       ]
+      },
+      {
+       "eventId": "401704705",
+       "stats": [
+        "38",
+        "11-23",
+        "47.8",
+        "7-14",
+        "50.0",
+        "0-0",
+        "0.0",
+        "4",
+        "4",
+        "1",
+        "1",
+        "1",
+        "2",
+        "29"
+       ]
+      }
+     ],
+     "totals": [
+      "37.0",
+      "9.4-20.8",
+      "45.2",
+      "4.5-10.3",
+      "43.2",
+      "3.8-4.4",
+      "86.4",
+      "5.1",
+      "3.8",
+      "0.7",
+      "1.5",
+      "1.8",
+      "2.7",
+      "27.1"
+     ]
+    },
+    {
+     "displayName": "october",
+     "type": "event",
+     "splitType": "october",
+     "events": [
+      {
+       "eventId": "401704680",
+       "stats": [
+        "37",
+        "12-20",
+        "60.0",
+        "7-13",
+        "53.8",
+        "6-12",
+        "50.0",
+        "6",
+        "3",
+        "1",
+        "0",
+        "1",
+        "5",
+        "37"
+       ]
+      },
+      {
+       "eventId": "401704659",
+       "stats": [
+        "39",
+        "9-21",
+        "42.9",
+        "5-12",
+        "41.7",
+        "1-3",
+        "33.3",
+        "6",
+        "4",
+        "1",
+        "1",
+        "3",
+        "4",
+        "24"
+       ]
+      },
+      {
+       "eventId": "401704642",
+       "stats": [
+        "39",
+        "10-24",
+        "41.7",
+        "5-15",
+        "33.3",
+        "7-7",
+        "100.0",
+        "7",
+        "4",
+        "0",
+        "1",
+        "4",
+        "3",
+        "32"
+       ]
+      },
+      {
+       "eventId": "401704628",
+       "stats": [
+        "41",
+        "10-25",
+        "40.0",
+        "5-13",
+        "38.5",
+        "2-3",
+        "66.7",
+        "6",
+        "3",
+        "0",
+        "0",
+        "3",
+        "4",
+        "27"
+       ]
+      }
+     ],
+     "totals": [
+      "39.3",
+      "10.3-22.5",
+      "45.6",
+      "5.5-13.3",
+      "41.5",
+      "4.0-6.3",
+      "64.0",
+      "6.3",
+      "3.5",
+      "0.5",
+      "0.5",
+      "2.8",
+      "4.0",
+      "30.0"
+     ]
+    }
+   ],
+   "summary": {
+    "displayName": "Regular Season Stats",
+    "stats": [
+     {
+      "displayName": "Averages",
+      "stats": [
+       "36.3",
+       "9.1-20.4",
+       "44.7",
+       "4.1-10.3",
+       "39.5",
+       "5.3-6.3",
+       "83.7",
+       "5.7",
+       "4.5",
+       "0.6",
+       "1.2",
+       "1.9",
+       "3.2",
+       "27.6"
+      ],
+      "type": "avg"
+     },
+     {
+      "displayName": "Totals",
+      "stats": [
+       "2871",
+       "721-1612",
+       "44.7",
+       "320-811",
+       "39.5",
+       "415-496",
+       "83.7",
+       "450",
+       "359",
+       "51",
+       "91",
+       "150",
+       "249",
+       "2177"
+      ],
+      "type": "total"
+     }
+    ]
+   }
+  },
+  {
+   "displayName": "2024-25 Preseason",
+   "categories": [
+    {
+     "displayName": "Preseason",
+     "type": "event",
+     "events": [
+      {
+       "eventId": "401717011",
+       "stats": [
+        "30",
+        "6-23",
+        "26.1",
+        "3-16",
+        "18.8",
+        "1-1",
+        "100.0",
+        "3",
+        "3",
+        "0",
+        "0",
+        "3",
+        "2",
+        "16"
+       ]
+      },
+      {
+       "eventId": "401716992",
+       "stats": [
+        "27",
+        "11-19",
+        "57.9",
+        "8-13",
+        "61.5",
+        "1-2",
+        "50.0",
+        "2",
+        "3",
+        "0",
+        "0",
+        "2",
+        "3",
+        "31"
+       ]
+      },
+      {
+       "eventId": "401716984",
+       "stats": [
+        "24",
+        "7-14",
+        "50.0",
+        "2-8",
+        "25.0",
+        "0-1",
+        "0.0",
+        "4",
+        "3",
+        "0",
+        "1",
+        "1",
+        "1",
+        "16"
+       ]
+      }
+     ]
+    }
+   ]
+  }
+ ]
+}

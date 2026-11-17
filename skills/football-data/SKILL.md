@@ -136,6 +136,7 @@ When a piece of the composition isn't covered (e.g. xG outside the top 5, H2H fo
 | `get_missing_players` | Injured/doubtful players (Premier League only) |
 | `get_season_transfers` | Transfer history via Transfermarkt |
 | `get_player_season_stats` | Player season stats via ESPN |
+| `get_player_game_log` | One player's dated matches in one league and season via ESPN (`league_slug` required) |
 | `get_player_profile` | Player profile (FPL and/or Transfermarkt) |
 
 See `references/api-reference.md` for full parameter lists, return shapes, and data coverage table.

@@ -135,6 +135,15 @@ Get full player statistical profile for a season.
 
 Returns `categories[]` with detailed stats including value, rank, and per-game averages.
 
+### get_player_game_log
+Get one player's games in a season via ESPN's athlete gamelog (`site.web.api.espn.com/apis/common/v3/sports/football/nfl/athletes/{id}/gamelog`, one request).
+- `player_id` (str, required): ESPN athlete ID. Find it with `get_team_roster`.
+- `season` (int, optional): Season year (`2024` for the 2024 season and its playoffs). Defaults to current.
+- `season_type` (str, optional): `regular` (default), `postseason`, `preseason` or `all`.
+- `sort_by`, `descending`, `limit`, `fields` (optional): Row shaping (`sort_by` then `limit`; `fields` always keeps `game_id`, `game_date`, `team_abbreviation`, `opponent`). Stat keys are addressable directly. With any set, the response adds `total_rows` and `returned_rows`.
+
+Returns `games[]`, oldest first: `game_id`, `game_date`, `team_abbreviation`, `opponent`, `opponent_id`, `opponent_name`, `home_away`, `result`, `team_score`, `opponent_score`, `season_type`, `note` (e.g. `Super Bowl LIX`), and `stats` keyed by ESPN's stat names (`passingYards`, `rushingYards`, `receivingYards`, ...), which differ by position. Patrick Mahomes (3139477) has 16 regular-season and 3 playoff rows in 2024.
+
 ### get_nflverse_schedule
 Get schedules/results through the nflverse backend.
 - `season` (int, optional): Season year

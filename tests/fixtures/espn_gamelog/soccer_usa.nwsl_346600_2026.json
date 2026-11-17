@@ -1,0 +1,1210 @@
+{
+ "filters": [
+  {
+   "displayName": "Season",
+   "name": "season",
+   "value": "2026",
+   "options": [
+    {
+     "value": "2026",
+     "displayValue": "2026"
+    },
+    {
+     "value": "2024",
+     "displayValue": "2024"
+    },
+    {
+     "value": "2023",
+     "displayValue": "2023"
+    }
+   ]
+  },
+  {
+   "displayName": "Team",
+   "name": "team",
+   "value": "15364",
+   "options": [
+    {
+     "value": "15364",
+     "displayValue": "Gotham FC"
+    },
+    {
+     "value": "15366",
+     "displayValue": "North Carolina Courage"
+    },
+    {
+     "value": "21423",
+     "displayValue": "San Diego Wave FC"
+    },
+    {
+     "value": "2765",
+     "displayValue": "United States"
+    }
+   ]
+  },
+  {
+   "displayName": "League",
+   "name": "league",
+   "value": "usa.nwsl.cup",
+   "options": [
+    {
+     "value": "usa.nwsl",
+     "displayValue": "NWSL",
+     "shortDisplayName": "NWSL"
+    },
+    {
+     "value": "fifa.w.champions_cup",
+     "displayValue": "FIFA Women's Champions Cup",
+     "shortDisplayName": "Women's Champions Cup"
+    },
+    {
+     "value": "concacaf.w.champions_cup",
+     "displayValue": "Concacaf W Champions Cup",
+     "shortDisplayName": "W Champions Cup"
+    },
+    {
+     "value": "usa.nwsl.cup",
+     "displayValue": "NWSL Challenge Cup",
+     "shortDisplayName": "NWSL Challenge Cup"
+    }
+   ]
+  }
+ ],
+ "labels": [
+  "G",
+  "A",
+  "SHOT",
+  "SOG",
+  "FC",
+  "FA",
+  "OFF",
+  "YC",
+  "RC"
+ ],
+ "names": [
+  "totalGoals",
+  "goalAssists",
+  "totalShots",
+  "shotsOnTarget",
+  "foulsCommitted",
+  "foulsSuffered",
+  "offsides",
+  "yellowCards",
+  "redCards"
+ ],
+ "displayNames": [
+  "Total Goals",
+  "Assists",
+  "Shots",
+  "Shots On Goal",
+  "Fouls Committed",
+  "Fouls Suffered",
+  "Offsides",
+  "Yellow Cards",
+  "Red Cards"
+ ],
+ "events": {
+  "401933740": {
+   "id": "401933740",
+   "atVs": "vs",
+   "gameDate": "2026-11-15T20:00:00.000+00:00",
+   "score": "2-1",
+   "homeTeamId": "15364",
+   "awayTeamId": "20907",
+   "homeTeamScore": "1",
+   "awayTeamScore": "2",
+   "gameResult": "L",
+   "opponent": {
+    "id": "20907",
+    "displayName": "Kansas City Current",
+    "abbreviation": "KC"
+   },
+   "leagueName": "NWSL",
+   "leagueAbbreviation": "NWSL",
+   "leagueShortName": "NWSL",
+   "team": {
+    "id": "15364",
+    "abbreviation": "GFC",
+    "isAllStar": false
+   }
+  },
+  "401932958": {
+   "id": "401932958",
+   "atVs": "vs",
+   "gameDate": "2026-11-08T17:30:00.000+00:00",
+   "score": "1-0",
+   "homeTeamId": "15364",
+   "awayTeamId": "15363",
+   "homeTeamScore": "1",
+   "awayTeamScore": "0",
+   "gameResult": "W",
+   "opponent": {
+    "id": "15363",
+    "displayName": "Seattle Reign FC",
+    "abbreviation": "SEA"
+   },
+   "leagueName": "NWSL",
+   "leagueAbbreviation": "NWSL",
+   "leagueShortName": "NWSL",
+   "team": {
+    "id": "15364",
+    "abbreviation": "GFC",
+    "isAllStar": false
+   }
+  },
+  "401854034": {
+   "id": "401854034",
+   "atVs": "vs",
+   "gameDate": "2026-11-01T22:00:00.000+00:00",
+   "score": "2-0",
+   "homeTeamId": "15364",
+   "awayTeamId": "19141",
+   "homeTeamScore": "2",
+   "awayTeamScore": "0",
+   "gameResult": "W",
+   "opponent": {
+    "id": "19141",
+    "displayName": "Utah Royals",
+    "abbreviation": "UTA"
+   },
+   "leagueName": "NWSL",
+   "leagueAbbreviation": "NWSL",
+   "leagueShortName": "NWSL",
+   "team": {
+    "id": "15364",
+    "abbreviation": "GFC",
+    "isAllStar": false
+   }
+  },
+  "401854021": {
+   "id": "401854021",
+   "atVs": "@",
+   "gameDate": "2026-10-17T16:30:00.000+00:00",
+   "score": "1-0",
+   "homeTeamId": "15365",
+   "awayTeamId": "15364",
+   "homeTeamScore": "1",
+   "awayTeamScore": "0",
+   "gameResult": "L",
+   "opponent": {
+    "id": "15365",
+    "displayName": "Washington Spirit",
+    "abbreviation": "WAS"
+   },
+   "leagueName": "NWSL",
+   "leagueAbbreviation": "NWSL",
+   "leagueShortName": "NWSL",
+   "team": {
+    "id": "15364",
+    "abbreviation": "GFC",
+    "isAllStar": false
+   }
+  },
+  "401854019": {
+   "id": "401854019",
+   "atVs": "vs",
+   "gameDate": "2026-10-04T17:00:00.000+00:00",
+   "score": "1-1",
+   "homeTeamId": "15364",
+   "awayTeamId": "21422",
+   "homeTeamScore": "1",
+   "awayTeamScore": "1",
+   "gameResult": "D",
+   "opponent": {
+    "id": "21422",
+    "displayName": "Angel City FC",
+    "abbreviation": "LA"
+   },
+   "leagueName": "NWSL",
+   "leagueAbbreviation": "NWSL",
+   "leagueShortName": "NWSL",
+   "team": {
+    "id": "15364",
+    "abbreviation": "GFC",
+    "isAllStar": false
+   }
+  },
+  "401854010": {
+   "id": "401854010",
+   "atVs": "vs",
+   "gameDate": "2026-09-26T00:00:00.000+00:00",
+   "score": "3-1",
+   "homeTeamId": "15364",
+   "awayTeamId": "15360",
+   "homeTeamScore": "3",
+   "awayTeamScore": "1",
+   "gameResult": "W",
+   "opponent": {
+    "id": "15360",
+    "displayName": "Chicago Stars FC",
+    "abbreviation": "CHI"
+   },
+   "leagueName": "NWSL",
+   "leagueAbbreviation": "NWSL",
+   "leagueShortName": "NWSL",
+   "team": {
+    "id": "15364",
+    "abbreviation": "GFC",
+    "isAllStar": false
+   }
+  },
+  "401854005": {
+   "id": "401854005",
+   "atVs": "@",
+   "gameDate": "2026-09-19T22:30:00.000+00:00",
+   "score": "2-1",
+   "homeTeamId": "15366",
+   "awayTeamId": "15364",
+   "homeTeamScore": "1",
+   "awayTeamScore": "2",
+   "gameResult": "W",
+   "opponent": {
+    "id": "15366",
+    "displayName": "North Carolina Courage",
+    "abbreviation": "NC"
+   },
+   "leagueName": "NWSL",
+   "leagueAbbreviation": "NWSL",
+   "leagueShortName": "NWSL",
+   "team": {
+    "id": "15364",
+    "abbreviation": "GFC",
+    "isAllStar": false
+   }
+  },
+  "401853996": {
+   "id": "401853996",
+   "atVs": "@",
+   "gameDate": "2026-09-11T22:30:00.000+00:00",
+   "score": "2-1",
+   "homeTeamId": "20905",
+   "awayTeamId": "15364",
+   "homeTeamScore": "1",
+   "awayTeamScore": "2",
+   "gameResult": "W",
+   "opponent": {
+    "id": "20905",
+    "displayName": "Racing Louisville FC",
+    "abbreviation": "LOU"
+   },
+   "leagueName": "NWSL",
+   "leagueAbbreviation": "NWSL",
+   "leagueShortName": "NWSL",
+   "team": {
+    "id": "15364",
+    "abbreviation": "GFC",
+    "isAllStar": false
+   }
+  },
+  "401854081": {
+   "id": "401854081",
+   "atVs": "@",
+   "gameDate": "2026-09-06T18:00:00.000+00:00",
+   "score": "3-0",
+   "homeTeamId": "131563",
+   "awayTeamId": "15364",
+   "homeTeamScore": "3",
+   "awayTeamScore": "0",
+   "gameResult": "L",
+   "opponent": {
+    "id": "131563",
+    "displayName": "Denver Summit FC",
+    "abbreviation": "DEN"
+   },
+   "leagueName": "NWSL",
+   "leagueAbbreviation": "NWSL",
+   "leagueShortName": "NWSL",
+   "team": {
+    "id": "15364",
+    "abbreviation": "GFC",
+    "isAllStar": false
+   }
+  },
+  "401853984": {
+   "id": "401853984",
+   "atVs": "vs",
+   "gameDate": "2026-08-29T00:00:00.000+00:00",
+   "score": "1-1",
+   "homeTeamId": "15364",
+   "awayTeamId": "15362",
+   "homeTeamScore": "1",
+   "awayTeamScore": "1",
+   "gameResult": "D",
+   "opponent": {
+    "id": "15362",
+    "displayName": "Portland Thorns FC",
+    "abbreviation": "POR"
+   },
+   "leagueName": "NWSL",
+   "leagueAbbreviation": "NWSL",
+   "leagueShortName": "NWSL",
+   "team": {
+    "id": "15364",
+    "abbreviation": "GFC",
+    "isAllStar": false
+   }
+  },
+  "401853982": {
+   "id": "401853982",
+   "atVs": "@",
+   "gameDate": "2026-08-24T00:00:00.000+00:00",
+   "score": "0-0",
+   "homeTeamId": "21422",
+   "awayTeamId": "15364",
+   "homeTeamScore": "0",
+   "awayTeamScore": "0",
+   "gameResult": "D",
+   "opponent": {
+    "id": "21422",
+    "displayName": "Angel City FC",
+    "abbreviation": "LA"
+   },
+   "leagueName": "NWSL",
+   "leagueAbbreviation": "NWSL",
+   "leagueShortName": "NWSL",
+   "team": {
+    "id": "15364",
+    "abbreviation": "GFC",
+    "isAllStar": false
+   }
+  },
+  "401853969": {
+   "id": "401853969",
+   "atVs": "vs",
+   "gameDate": "2026-08-15T00:00:00.000+00:00",
+   "score": "2-1",
+   "homeTeamId": "15364",
+   "awayTeamId": "20907",
+   "homeTeamScore": "2",
+   "awayTeamScore": "1",
+   "gameResult": "W",
+   "opponent": {
+    "id": "20907",
+    "displayName": "Kansas City Current",
+    "abbreviation": "KC"
+   },
+   "leagueName": "NWSL",
+   "leagueAbbreviation": "NWSL",
+   "leagueShortName": "NWSL",
+   "team": {
+    "id": "15364",
+    "abbreviation": "GFC",
+    "isAllStar": false
+   }
+  },
+  "401853963": {
+   "id": "401853963",
+   "atVs": "vs",
+   "gameDate": "2026-08-08T00:25:00.000+00:00",
+   "score": "1-0",
+   "homeTeamId": "15364",
+   "awayTeamId": "21423",
+   "homeTeamScore": "1",
+   "awayTeamScore": "0",
+   "gameResult": "W",
+   "opponent": {
+    "id": "21423",
+    "displayName": "San Diego Wave FC",
+    "abbreviation": "SD"
+   },
+   "leagueName": "NWSL",
+   "leagueAbbreviation": "NWSL",
+   "leagueShortName": "NWSL",
+   "team": {
+    "id": "15364",
+    "abbreviation": "GFC",
+    "isAllStar": false
+   }
+  },
+  "401853959": {
+   "id": "401853959",
+   "atVs": "@",
+   "gameDate": "2026-08-02T00:00:00.000+00:00",
+   "score": "1-0",
+   "homeTeamId": "17346",
+   "awayTeamId": "15364",
+   "homeTeamScore": "0",
+   "awayTeamScore": "1",
+   "gameResult": "W",
+   "opponent": {
+    "id": "17346",
+    "displayName": "Houston Dash",
+    "abbreviation": "HOU"
+   },
+   "leagueName": "NWSL",
+   "leagueAbbreviation": "NWSL",
+   "leagueShortName": "NWSL",
+   "team": {
+    "id": "15364",
+    "abbreviation": "GFC",
+    "isAllStar": false
+   }
+  },
+  "401853955": {
+   "id": "401853955",
+   "atVs": "@",
+   "gameDate": "2026-07-30T02:00:00.000+00:00",
+   "score": "1-0",
+   "homeTeamId": "22187",
+   "awayTeamId": "15364",
+   "homeTeamScore": "0",
+   "awayTeamScore": "1",
+   "gameResult": "W",
+   "opponent": {
+    "id": "22187",
+    "displayName": "Bay FC",
+    "abbreviation": "BAY"
+   },
+   "leagueName": "NWSL",
+   "leagueAbbreviation": "NWSL",
+   "leagueShortName": "NWSL",
+   "team": {
+    "id": "15364",
+    "abbreviation": "GFC",
+    "isAllStar": false
+   }
+  },
+  "401853949": {
+   "id": "401853949",
+   "atVs": "@",
+   "gameDate": "2026-07-25T02:00:00.000+00:00",
+   "score": "2-2",
+   "homeTeamId": "15362",
+   "awayTeamId": "15364",
+   "homeTeamScore": "2",
+   "awayTeamScore": "2",
+   "gameResult": "D",
+   "opponent": {
+    "id": "15362",
+    "displayName": "Portland Thorns FC",
+    "abbreviation": "POR"
+   },
+   "leagueName": "NWSL",
+   "leagueAbbreviation": "NWSL",
+   "leagueShortName": "NWSL",
+   "team": {
+    "id": "15364",
+    "abbreviation": "GFC",
+    "isAllStar": false
+   }
+  },
+  "401853942": {
+   "id": "401853942",
+   "atVs": "vs",
+   "gameDate": "2026-07-18T18:30:00.000+00:00",
+   "score": "3-2",
+   "homeTeamId": "15364",
+   "awayTeamId": "15363",
+   "homeTeamScore": "3",
+   "awayTeamScore": "2",
+   "gameResult": "W",
+   "opponent": {
+    "id": "15363",
+    "displayName": "Seattle Reign FC",
+    "abbreviation": "SEA"
+   },
+   "leagueName": "NWSL",
+   "leagueAbbreviation": "NWSL",
+   "leagueShortName": "NWSL",
+   "team": {
+    "id": "15364",
+    "abbreviation": "GFC",
+    "isAllStar": false
+   }
+  },
+  "401853940": {
+   "id": "401853940",
+   "atVs": "vs",
+   "gameDate": "2026-07-16T00:00:00.000+00:00",
+   "score": "1-0",
+   "homeTeamId": "15364",
+   "awayTeamId": "15365",
+   "homeTeamScore": "1",
+   "awayTeamScore": "0",
+   "gameResult": "W",
+   "opponent": {
+    "id": "15365",
+    "displayName": "Washington Spirit",
+    "abbreviation": "WAS"
+   },
+   "leagueName": "NWSL",
+   "leagueAbbreviation": "NWSL",
+   "leagueShortName": "NWSL",
+   "team": {
+    "id": "15364",
+    "abbreviation": "GFC",
+    "isAllStar": false
+   }
+  },
+  "401853936": {
+   "id": "401853936",
+   "atVs": "@",
+   "gameDate": "2026-07-11T02:00:00.000+00:00",
+   "score": "3-1",
+   "homeTeamId": "19141",
+   "awayTeamId": "15364",
+   "homeTeamScore": "1",
+   "awayTeamScore": "3",
+   "gameResult": "W",
+   "opponent": {
+    "id": "19141",
+    "displayName": "Utah Royals",
+    "abbreviation": "UTA"
+   },
+   "leagueName": "NWSL",
+   "leagueAbbreviation": "NWSL",
+   "leagueShortName": "NWSL",
+   "team": {
+    "id": "15364",
+    "abbreviation": "GFC",
+    "isAllStar": false
+   }
+  },
+  "401853931": {
+   "id": "401853931",
+   "atVs": "@",
+   "gameDate": "2026-07-05T00:45:00.000+00:00",
+   "score": "2-0",
+   "homeTeamId": "21423",
+   "awayTeamId": "15364",
+   "homeTeamScore": "2",
+   "awayTeamScore": "0",
+   "gameResult": "L",
+   "opponent": {
+    "id": "21423",
+    "displayName": "San Diego Wave FC",
+    "abbreviation": "SD"
+   },
+   "leagueName": "NWSL",
+   "leagueAbbreviation": "NWSL",
+   "leagueShortName": "NWSL",
+   "team": {
+    "id": "15364",
+    "abbreviation": "GFC",
+    "isAllStar": false
+   }
+  },
+  "401853926": {
+   "id": "401853926",
+   "atVs": "vs",
+   "gameDate": "2026-05-31T19:00:00.000+00:00",
+   "score": "1-0",
+   "homeTeamId": "15364",
+   "awayTeamId": "17346",
+   "homeTeamScore": "1",
+   "awayTeamScore": "0",
+   "gameResult": "W",
+   "opponent": {
+    "id": "17346",
+    "displayName": "Houston Dash",
+    "abbreviation": "HOU"
+   },
+   "leagueName": "NWSL",
+   "leagueAbbreviation": "NWSL",
+   "leagueShortName": "NWSL",
+   "team": {
+    "id": "15364",
+    "abbreviation": "GFC",
+    "isAllStar": false
+   }
+  },
+  "401853910": {
+   "id": "401853910",
+   "atVs": "@",
+   "gameDate": "2026-05-16T02:00:00.000+00:00",
+   "score": "2-0",
+   "homeTeamId": "15363",
+   "awayTeamId": "15364",
+   "homeTeamScore": "0",
+   "awayTeamScore": "2",
+   "gameResult": "W",
+   "opponent": {
+    "id": "15363",
+    "displayName": "Seattle Reign FC",
+    "abbreviation": "SEA"
+   },
+   "leagueName": "NWSL",
+   "leagueAbbreviation": "NWSL",
+   "leagueShortName": "NWSL",
+   "team": {
+    "id": "15364",
+    "abbreviation": "GFC",
+    "isAllStar": false
+   }
+  },
+  "401854052": {
+   "id": "401854052",
+   "atVs": "vs",
+   "gameDate": "2026-05-09T22:30:00.000+00:00",
+   "score": "1-1",
+   "homeTeamId": "15364",
+   "awayTeamId": "131562",
+   "homeTeamScore": "1",
+   "awayTeamScore": "1",
+   "gameResult": "D",
+   "opponent": {
+    "id": "131562",
+    "displayName": "Boston Legacy FC",
+    "abbreviation": "BOS"
+   },
+   "leagueName": "NWSL",
+   "leagueAbbreviation": "NWSL",
+   "leagueShortName": "NWSL",
+   "team": {
+    "id": "15364",
+    "abbreviation": "GFC",
+    "isAllStar": false
+   }
+  },
+  "401853899": {
+   "id": "401853899",
+   "atVs": "vs",
+   "gameDate": "2026-05-03T21:00:00.000+00:00",
+   "score": "1-0",
+   "homeTeamId": "15364",
+   "awayTeamId": "20905",
+   "homeTeamScore": "1",
+   "awayTeamScore": "0",
+   "gameResult": "W",
+   "opponent": {
+    "id": "20905",
+    "displayName": "Racing Louisville FC",
+    "abbreviation": "LOU"
+   },
+   "leagueName": "NWSL",
+   "leagueAbbreviation": "NWSL",
+   "leagueShortName": "NWSL",
+   "team": {
+    "id": "15364",
+    "abbreviation": "GFC",
+    "isAllStar": false
+   }
+  },
+  "401853892": {
+   "id": "401853892",
+   "atVs": "@",
+   "gameDate": "2026-04-30T00:00:00.000+00:00",
+   "score": "2-0",
+   "homeTeamId": "15360",
+   "awayTeamId": "15364",
+   "homeTeamScore": "0",
+   "awayTeamScore": "2",
+   "gameResult": "W",
+   "opponent": {
+    "id": "15360",
+    "displayName": "Chicago Stars FC",
+    "abbreviation": "CHI"
+   },
+   "leagueName": "NWSL",
+   "leagueAbbreviation": "NWSL",
+   "leagueShortName": "NWSL",
+   "team": {
+    "id": "15364",
+    "abbreviation": "GFC",
+    "isAllStar": false
+   }
+  },
+  "401853887": {
+   "id": "401853887",
+   "atVs": "vs",
+   "gameDate": "2026-04-25T17:00:00.000+00:00",
+   "score": "3-0",
+   "homeTeamId": "15364",
+   "awayTeamId": "22187",
+   "homeTeamScore": "3",
+   "awayTeamScore": "0",
+   "gameResult": "W",
+   "opponent": {
+    "id": "22187",
+    "displayName": "Bay FC",
+    "abbreviation": "BAY"
+   },
+   "leagueName": "NWSL",
+   "leagueAbbreviation": "NWSL",
+   "leagueShortName": "NWSL",
+   "team": {
+    "id": "15364",
+    "abbreviation": "GFC",
+    "isAllStar": false
+   }
+  },
+  "401853882": {
+   "id": "401853882",
+   "atVs": "@",
+   "gameDate": "2026-04-04T20:00:00.000+00:00",
+   "score": "2-1",
+   "homeTeamId": "20907",
+   "awayTeamId": "15364",
+   "homeTeamScore": "2",
+   "awayTeamScore": "1",
+   "gameResult": "L",
+   "opponent": {
+    "id": "20907",
+    "displayName": "Kansas City Current",
+    "abbreviation": "KC"
+   },
+   "leagueName": "NWSL",
+   "leagueAbbreviation": "NWSL",
+   "leagueShortName": "NWSL",
+   "team": {
+    "id": "15364",
+    "abbreviation": "GFC",
+    "isAllStar": false
+   }
+  },
+  "401854039": {
+   "id": "401854039",
+   "atVs": "@",
+   "gameDate": "2026-03-14T16:30:00.000+00:00",
+   "score": "1-0",
+   "homeTeamId": "131562",
+   "awayTeamId": "15364",
+   "homeTeamScore": "0",
+   "awayTeamScore": "1",
+   "gameResult": "W",
+   "opponent": {
+    "id": "131562",
+    "displayName": "Boston Legacy FC",
+    "abbreviation": "BOS"
+   },
+   "leagueName": "NWSL",
+   "leagueAbbreviation": "NWSL",
+   "leagueShortName": "NWSL",
+   "team": {
+    "id": "15364",
+    "abbreviation": "GFC",
+    "isAllStar": false
+   }
+  }
+ },
+ "seasonTypes": [
+  {
+   "displayName": "Regular Season",
+   "categories": [
+    {
+     "displayName": "Regular Season Stats",
+     "type": "event",
+     "splitType": "1",
+     "events": [
+      {
+       "eventId": "401854034",
+       "stats": [
+        "1",
+        "0",
+        "2",
+        "1",
+        "0",
+        "0",
+        "0",
+        "1",
+        "0"
+       ]
+      },
+      {
+       "eventId": "401854021",
+       "stats": [
+        "0",
+        "0",
+        "0",
+        "0",
+        "0",
+        "0",
+        "0",
+        "0",
+        "0"
+       ]
+      },
+      {
+       "eventId": "401854019",
+       "stats": [
+        "1",
+        "0",
+        "3",
+        "1",
+        "0",
+        "0",
+        "0",
+        "0",
+        "0"
+       ]
+      },
+      {
+       "eventId": "401854010",
+       "stats": [
+        "2",
+        "0",
+        "2",
+        "2",
+        "1",
+        "1",
+        "1",
+        "0",
+        "0"
+       ]
+      },
+      {
+       "eventId": "401854005",
+       "stats": [
+        "0",
+        "0",
+        "0",
+        "0",
+        "0",
+        "2",
+        "0",
+        "0",
+        "0"
+       ]
+      },
+      {
+       "eventId": "401853996",
+       "stats": [
+        "1",
+        "1",
+        "1",
+        "1",
+        "0",
+        "0",
+        "0",
+        "0",
+        "0"
+       ]
+      },
+      {
+       "eventId": "401854081",
+       "stats": [
+        "0",
+        "0",
+        "1",
+        "0",
+        "1",
+        "3",
+        "1",
+        "0",
+        "0"
+       ]
+      },
+      {
+       "eventId": "401853984",
+       "stats": [
+        "1",
+        "0",
+        "4",
+        "2",
+        "0",
+        "2",
+        "0",
+        "0",
+        "0"
+       ]
+      },
+      {
+       "eventId": "401853982",
+       "stats": [
+        "0",
+        "0",
+        "1",
+        "0",
+        "1",
+        "0",
+        "0",
+        "1",
+        "0"
+       ]
+      },
+      {
+       "eventId": "401853969",
+       "stats": [
+        "0",
+        "1",
+        "3",
+        "2",
+        "0",
+        "1",
+        "0",
+        "0",
+        "0"
+       ]
+      },
+      {
+       "eventId": "401853963",
+       "stats": [
+        "1",
+        "0",
+        "2",
+        "1",
+        "3",
+        "0",
+        "0",
+        "0",
+        "0"
+       ]
+      },
+      {
+       "eventId": "401853959",
+       "stats": [
+        "0",
+        "0",
+        "2",
+        "1",
+        "0",
+        "1",
+        "0",
+        "0",
+        "0"
+       ]
+      },
+      {
+       "eventId": "401853955",
+       "stats": [
+        "0",
+        "0",
+        "1",
+        "0",
+        "2",
+        "2",
+        "0",
+        "0",
+        "0"
+       ]
+      },
+      {
+       "eventId": "401853949",
+       "stats": [
+        "0",
+        "0",
+        "2",
+        "0",
+        "1",
+        "1",
+        "0",
+        "0",
+        "0"
+       ]
+      },
+      {
+       "eventId": "401853942",
+       "stats": [
+        "0",
+        "2",
+        "4",
+        "1",
+        "4",
+        "0",
+        "0",
+        "0",
+        "0"
+       ]
+      },
+      {
+       "eventId": "401853940",
+       "stats": [
+        "0",
+        "0",
+        "1",
+        "0",
+        "2",
+        "1",
+        "1",
+        "0",
+        "0"
+       ]
+      },
+      {
+       "eventId": "401853936",
+       "stats": [
+        "0",
+        "0",
+        "3",
+        "1",
+        "0",
+        "0",
+        "0",
+        "0",
+        "0"
+       ]
+      },
+      {
+       "eventId": "401853931",
+       "stats": [
+        "0",
+        "0",
+        "2",
+        "1",
+        "0",
+        "1",
+        "0",
+        "0",
+        "0"
+       ]
+      },
+      {
+       "eventId": "401853926",
+       "stats": [
+        "0",
+        "0",
+        "1",
+        "0",
+        "1",
+        "2",
+        "0",
+        "0",
+        "0"
+       ]
+      },
+      {
+       "eventId": "401853910",
+       "stats": [
+        "1",
+        "0",
+        "5",
+        "1",
+        "1",
+        "1",
+        "0",
+        "1",
+        "0"
+       ]
+      },
+      {
+       "eventId": "401854052",
+       "stats": [
+        "1",
+        "0",
+        "1",
+        "1",
+        "2",
+        "1",
+        "0",
+        "0",
+        "0"
+       ]
+      },
+      {
+       "eventId": "401853899",
+       "stats": [
+        "1",
+        "0",
+        "4",
+        "2",
+        "1",
+        "2",
+        "1",
+        "0",
+        "0"
+       ]
+      },
+      {
+       "eventId": "401853892",
+       "stats": [
+        "0",
+        "1",
+        "2",
+        "0",
+        "2",
+        "3",
+        "0",
+        "0",
+        "0"
+       ]
+      },
+      {
+       "eventId": "401853887",
+       "stats": [
+        "0",
+        "0",
+        "2",
+        "2",
+        "1",
+        "4",
+        "0",
+        "0",
+        "0"
+       ]
+      },
+      {
+       "eventId": "401853882",
+       "stats": [
+        "1",
+        "0",
+        "2",
+        "1",
+        "0",
+        "1",
+        "0",
+        "0",
+        "0"
+       ]
+      },
+      {
+       "eventId": "401854039",
+       "stats": [
+        "0",
+        "0",
+        "2",
+        "1",
+        "0",
+        "2",
+        "0",
+        "0",
+        "0"
+       ]
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "displayName": "Playoffs - Quarterfinals",
+   "categories": [
+    {
+     "displayName": "Playoffs - Quarterfinals Stats",
+     "type": "event",
+     "splitType": "2",
+     "events": [
+      {
+       "eventId": "401932958",
+       "stats": [
+        "0",
+        "0",
+        "2",
+        "0",
+        "1",
+        "2",
+        "1",
+        "1",
+        "0"
+       ]
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "displayName": "Playoffs - Semifinals",
+   "categories": [
+    {
+     "displayName": "Playoffs - Semifinals Stats",
+     "type": "event",
+     "splitType": "3",
+     "events": [
+      {
+       "eventId": "401933740",
+       "stats": [
+        "0",
+        "0",
+        "2",
+        "0",
+        "3",
+        "3",
+        "1",
+        "0",
+        "0"
+       ]
+      }
+     ]
+    }
+   ]
+  }
+ ]
+}
