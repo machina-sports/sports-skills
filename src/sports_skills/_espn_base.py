@@ -537,15 +537,19 @@ def espn_fitt_request(sport_path, resource, params=None):
 
 
 #: ``season_type`` values accepted by ``espn_player_game_log``.
-_GAME_LOG_SEASON_TYPES = ("regular", "postseason", "preseason", "all")
+_GAME_LOG_SEASON_TYPES = ("regular", "postseason", "preseason", "playin", "all")
 
 #: Columns ``fields`` always keeps on a game-log row.
 GAME_LOG_IDENTITY = ("game_id", "game_date", "team_abbreviation", "opponent")
 
 
 def _game_log_season_type(display_name):
-    """``"2025 Postseason"`` -> postseason; ``"2024-25 Season"`` -> regular."""
+    """``"2025 Postseason"`` -> postseason; ``"2024-25 Season"`` -> regular;
+    NBA's ``"2024-25 Play In Regular Season"`` -> playin, so the play-in tournament
+    is not counted as regular-season games."""
     name = str(display_name or "")
+    if "Play In" in name or "Play-In" in name:
+        return "playin"
     if "Postseason" in name:
         return "postseason"
     if "Preseason" in name:

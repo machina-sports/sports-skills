@@ -1,8 +1,9 @@
-"""Player game logs for WNBA, CFB and CBB from ESPN's athlete gamelog (issue 241).
+"""Player game logs for WNBA, CFB, CBB and NBA from ESPN's athlete gamelog (issue 241).
 
 Fixtures are ESPN's responses (links and logos stripped) for Jonquel Jones'
-2025 WNBA season, C.J. Stroud's 2022 Ohio State season and Cooper Flagg's
-2024-25 Duke season.
+2025 WNBA season, C.J. Stroud's 2022 Ohio State season, Cooper Flagg's
+2024-25 Duke season, and Dyson Daniels' (play-in) and Anthony Edwards'
+(playoffs) 2024-25 NBA seasons.
 """
 
 import json
@@ -10,7 +11,7 @@ from pathlib import Path
 
 import pytest
 
-from sports_skills import _espn_base, cbb, cfb, wnba
+from sports_skills import _espn_base, cbb, cfb, nba, wnba
 from sports_skills.cli import _REGISTRY
 
 FIXTURES = Path(__file__).parent / "fixtures" / "espn_gamelog"
@@ -158,9 +159,46 @@ def test_season_with_no_games_warns(espn):
     assert data["warnings"] == ["no regular games for player 2999101 in this season"]
 
 
-@pytest.mark.parametrize("league", ["wnba", "cfb", "cbb"])
+@pytest.mark.parametrize("league", ["wnba", "cfb", "cbb", "nba"])
 def test_cli_registers_the_command(league):
     assert _REGISTRY[league]["get_player_game_log"] == {
         "required": ["player_id"],
         "optional": ["season", "season_type", "sort_by", "descending", "limit", "fields"],
     }
+
+
+def test_nba_reads_espn_by_espn_id_not_stats_nba_com(espn):
+    espn("nba_4594268_2025")
+    data = nba.get_player_game_log(player_id="4594268", season=2025, season_type="postseason")["data"]
+
+    assert espn.calls == [
+        "https://site.web.api.espn.com/apis/common/v3/sports/basketball/nba/athletes/4594268/gamelog?season=2025"
+    ]
+    assert (data["season"], data["count"]) == (2025, 15)
+    assert {g["season_type"] for g in data["games"]} == {"postseason"}
+    dates = [g["game_date"] for g in data["games"]]
+    assert dates == sorted(dates)
+    assert set(data["games"][0]["stats"]) >= {"minutes", "points", "totalRebounds", "assists"}
+
+
+def test_nba_play_in_is_its_own_season_type(espn):
+    espn("nba_4869342_2025")
+    regular = nba.get_player_game_log(player_id="4869342", season=2025)["data"]
+    play_in = nba.get_player_game_log(player_id="4869342", season=2025, season_type="playin")["data"]
+    every = nba.get_player_game_log(player_id="4869342", season=2025, season_type="all")["data"]
+
+    # ESPN names the group "2024-25 Play In Regular Season"; it must not count as regular season.
+    assert (regular["count"], play_in["count"]) == (76, 2)
+    assert {g["season_type"] for g in regular["games"]} == {"regular"}
+    assert {g["season_type"] for g in play_in["games"]} == {"playin"}
+    assert sorted({g["season_type"] for g in every["games"]}) == ["playin", "preseason", "regular"]
+    assert every["count"] == 76 + 2 + 4
+
+
+def test_nba_newest_first_shaping(espn):
+    espn("nba_4869342_2025")
+    data = nba.get_player_game_log(
+        player_id="4869342", season=2025, season_type="all", sort_by="game_date", descending=True, limit=3
+    )["data"]
+    assert (data["total_rows"], data["returned_rows"]) == (82, 3)
+    assert [g["season_type"] for g in data["games"]] == ["playin", "playin", "regular"]
