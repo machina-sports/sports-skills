@@ -47,6 +47,9 @@ from sports_skills.football._connector import (
     get_missing_players as _get_missing_players,
 )
 from sports_skills.football._connector import (
+    get_player_game_log as _get_player_game_log,
+)
+from sports_skills.football._connector import (
     get_player_profile as _get_player_profile,
 )
 from sports_skills.football._connector import (
@@ -416,3 +419,56 @@ def get_player_season_stats(*, player_id: str, league_slug: str | None = None) -
             Defaults to "eng.1".
     """
     return wrap(_get_player_season_stats(_params(player_id=player_id, league_slug=league_slug)))
+
+
+def get_player_game_log(
+    *,
+    player_id: str,
+    league_slug: str,
+    season: int | None = None,
+    season_type: str | None = None,
+    sort_by: str | None = None,
+    descending: bool | None = None,
+    limit: int | None = None,
+    fields: str | None = None,
+) -> dict:
+    """Get one player's matches in one league and season via ESPN.
+
+    One row per match, oldest first: game_id, game_date, team_abbreviation,
+    opponent (abbreviation), opponent_id, opponent_name, home_away, result
+    ("W"/"D"/"L"), team_score and opponent_score (the player's side first),
+    season_type, note, and the match's stat line in stats, keyed by ESPN's stat
+    names (totalGoals, goalAssists, totalShots, shotsOnTarget, ...). Only the
+    named league's matches; get_player_season_stats is the last ~5 across
+    competitions, without dates.
+
+    Args:
+        player_id: ESPN athlete ID.
+        league_slug: Required. sports-skills league slug ("premier-league") or
+            ESPN's code ("usa.1", "usa.nwsl", "eng.w.1"). No default league.
+        season: Season year as ESPN files it (2026 for MLS 2026). Defaults to the
+            player's current season in that league.
+        season_type: "regular" (default), "postseason" (playoffs), "preseason" or
+            "all". A cup inside a league's log (e.g. NWSL Challenge Cup) is only
+            in "all".
+        sort_by: Optional column to sort rows by, e.g. game_date or a stat key.
+            Numeric-aware; missing values sort last.
+        descending: Sort direction when sort_by is given. Defaults to true.
+        limit: Optional max rows to return, applied after sort_by.
+        fields: Optional comma-separated columns to keep, e.g. "result,totalGoals".
+            Always keeps game_id, game_date, team_abbreviation, opponent. Unknown names return the valid columns.
+    """
+    return wrap(
+        _get_player_game_log(
+            _params(
+                player_id=player_id,
+                league_slug=league_slug,
+                season=season,
+                season_type=season_type,
+                sort_by=sort_by,
+                descending=descending,
+                limit=limit,
+                fields=fields,
+            )
+        )
+    )

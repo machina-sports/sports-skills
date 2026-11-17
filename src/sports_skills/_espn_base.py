@@ -544,19 +544,27 @@ GAME_LOG_IDENTITY = ("game_id", "game_date", "team_abbreviation", "opponent")
 
 
 def _game_log_season_type(display_name):
-    """``"2025 Postseason"`` -> postseason; ``"2024-25 Season"`` -> regular;
-    NBA's ``"2024-25 Play In Regular Season"`` -> playin, so the play-in tournament
-    is not counted as regular-season games."""
+    """ESPN's season group name -> season_type.
+
+    ``"2025 Postseason"`` and soccer's ``"Eastern Conference Playoffs - Round One"``
+    -> postseason; NBA's ``"2024-25 Play In Regular Season"`` -> playin, so the
+    play-in tournament is not counted as regular-season games; a cup inside a
+    league's log (``"2026 NWSL Challenge Cup"``) -> other; ``"2024-25 Season"``,
+    ``"Regular Season"`` and a league named for its season (``"2026-27 English
+    Women's Super League"``) -> regular.
+    """
     name = str(display_name or "")
     if "Play In" in name or "Play-In" in name:
         return "playin"
-    if "Postseason" in name:
+    if "Postseason" in name or "Playoff" in name:
         return "postseason"
     if "Preseason" in name:
         return "preseason"
     if name.endswith("Season"):
         return "regular"
-    return "other"
+    if any(word in name for word in ("Cup", "Challenge", "Shield", "Trophy", "Tournament")):
+        return "other"
+    return "regular" if name else "other"
 
 
 def espn_player_game_log(sport_path, params):

@@ -277,6 +277,16 @@ Get player season stats via ESPN.
 
 The gamelog only carries the player's most recent matches (about five), across competitions; filter by `event_id` against a schedule when you need one competition.
 
+### get_player_game_log
+Get one player's matches in one league and season via ESPN's athlete gamelog (`site.web.api.espn.com/apis/common/v3/sports/soccer/{league}/athletes/{id}/gamelog`). Unlike `get_player_season_stats`, every row is dated and only the named league's matches are returned.
+- `player_id` (str, required): ESPN athlete ID
+- `league_slug` (str, required): sports-skills league slug (`premier-league`, …) or ESPN code (`usa.1`, `usa.nwsl`, `eng.w.1`). There is no default league.
+- `season` (int, optional): Season year as ESPN files it (`2026` for MLS 2026, `2026` for the 2026-27 WSL). Without it, ESPN's season for that player is read first and then requested explicitly (two requests), because ESPN's unseasoned answer can be partial.
+- `season_type` (str, optional): `regular` (default), `postseason` (conference or league playoffs), `preseason` or `all`. A cup inside a league's log (e.g. `2026 NWSL Challenge Cup`) has `season_type` `other` and appears only with `all`.
+- `sort_by`, `descending`, `limit`, `fields` (optional): Row shaping, as in the other game logs.
+
+Returns `games[]`, oldest first: `game_id`, `game_date`, `team_abbreviation`, `opponent`, `opponent_id`, `opponent_name`, `home_away`, `result` (`W`/`D`/`L`), `team_score`, `opponent_score`, `season_type`, `note`, and `stats` keyed by ESPN's stat names (`totalGoals`, `goalAssists`, `totalShots`, `shotsOnTarget`, `foulsCommitted`, `foulsSuffered`, `offsides`, `yellowCards`, `redCards`). Cavan Sullivan (384397) has 31 regular-season and 3 playoff rows in MLS 2025.
+
 ### get_player_profile
 Get player profile via FPL and/or Transfermarkt.
 - `fpl_id` (str, optional): FPL player ID (PL players only)

@@ -66,6 +66,10 @@ _REGISTRY = {
         },
         "get_player_profile": {"optional": ["player_id", "fpl_id", "tm_player_id"]},
         "get_player_season_stats": {"required": ["player_id"], "optional": ["league_slug"]},
+        "get_player_game_log": {
+            "required": ["player_id", "league_slug"],
+            "optional": ["season", "season_type", *_SHAPING],
+        },
     },
     "polymarket": {
         "get_sports_markets": {
@@ -366,6 +370,7 @@ _REGISTRY = {
         "get_depth_chart": {"required": ["team_id"]},
         "get_team_stats": {"required": ["team_id"], "optional": ["season_year", "season_type"]},
         "get_player_stats": {"required": ["player_id"], "optional": ["season_year", "season_type"]},
+        "get_player_game_log": {"required": ["player_id"], "optional": ["season", "season_type", *_SHAPING]},
         "get_nflverse_schedule": {"optional": ["season", "week", *_SHAPING]},
         "get_nflverse_weekly_rosters": {"optional": ["season", "week", "team", *_SHAPING]},
         "get_nflverse_player_stats": {

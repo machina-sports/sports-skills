@@ -1,0 +1,160 @@
+{
+ "filters": [
+  {
+   "displayName": "Season",
+   "name": "season",
+   "value": "2026",
+   "options": [
+    {
+     "value": "2026",
+     "displayValue": "2026"
+    },
+    {
+     "value": "2024",
+     "displayValue": "2024"
+    },
+    {
+     "value": "2023",
+     "displayValue": "2023"
+    }
+   ]
+  },
+  {
+   "displayName": "Team",
+   "name": "team",
+   "value": "15364",
+   "options": [
+    {
+     "value": "15364",
+     "displayValue": "Gotham FC"
+    },
+    {
+     "value": "15366",
+     "displayValue": "North Carolina Courage"
+    },
+    {
+     "value": "21423",
+     "displayValue": "San Diego Wave FC"
+    },
+    {
+     "value": "2765",
+     "displayValue": "United States"
+    }
+   ]
+  },
+  {
+   "displayName": "League",
+   "name": "league",
+   "value": "usa.nwsl.cup",
+   "options": [
+    {
+     "value": "usa.nwsl",
+     "displayValue": "NWSL",
+     "shortDisplayName": "NWSL"
+    },
+    {
+     "value": "fifa.w.champions_cup",
+     "displayValue": "FIFA Women's Champions Cup",
+     "shortDisplayName": "Women's Champions Cup"
+    },
+    {
+     "value": "concacaf.w.champions_cup",
+     "displayValue": "Concacaf W Champions Cup",
+     "shortDisplayName": "W Champions Cup"
+    },
+    {
+     "value": "usa.nwsl.cup",
+     "displayValue": "NWSL Challenge Cup",
+     "shortDisplayName": "NWSL Challenge Cup"
+    }
+   ]
+  }
+ ],
+ "labels": [
+  "G",
+  "A",
+  "SHOT",
+  "SOG",
+  "FC",
+  "FA",
+  "OFF",
+  "YC",
+  "RC"
+ ],
+ "names": [
+  "totalGoals",
+  "goalAssists",
+  "totalShots",
+  "shotsOnTarget",
+  "foulsCommitted",
+  "foulsSuffered",
+  "offsides",
+  "yellowCards",
+  "redCards"
+ ],
+ "displayNames": [
+  "Total Goals",
+  "Assists",
+  "Shots",
+  "Shots On Goal",
+  "Fouls Committed",
+  "Fouls Suffered",
+  "Offsides",
+  "Yellow Cards",
+  "Red Cards"
+ ],
+ "events": {
+  "401853856": {
+   "id": "401853856",
+   "atVs": "vs",
+   "gameDate": "2026-06-27T00:00:00.000+00:00",
+   "score": "2-0",
+   "homeTeamId": "15364",
+   "awayTeamId": "20907",
+   "homeTeamScore": "2",
+   "awayTeamScore": "0",
+   "gameResult": "W",
+   "opponent": {
+    "id": "20907",
+    "displayName": "Kansas City Current",
+    "abbreviation": "KC"
+   },
+   "leagueName": "NWSL Challenge Cup",
+   "leagueAbbreviation": "NWSL Challenge Cup",
+   "leagueShortName": "NWSL Challenge Cup",
+   "team": {
+    "id": "15364",
+    "abbreviation": "GFC",
+    "isAllStar": false
+   }
+  }
+ },
+ "seasonTypes": [
+  {
+   "displayName": "2026 NWSL Challenge Cup",
+   "categories": [
+    {
+     "displayName": "2026 NWSL Challenge Cup Stats",
+     "type": "event",
+     "splitType": "1",
+     "events": [
+      {
+       "eventId": "401853856",
+       "stats": [
+        "0",
+        "0",
+        "3",
+        "0",
+        "0",
+        "1",
+        "0",
+        "0",
+        "0"
+       ]
+      }
+     ]
+    }
+   ]
+  }
+ ]
+}

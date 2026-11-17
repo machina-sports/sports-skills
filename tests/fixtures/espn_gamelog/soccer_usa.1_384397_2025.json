@@ -1,0 +1,1436 @@
+{
+ "filters": [
+  {
+   "displayName": "Season",
+   "name": "season",
+   "value": "2025",
+   "options": [
+    {
+     "value": "2026",
+     "displayValue": "2026"
+    },
+    {
+     "value": "2025",
+     "displayValue": "2025"
+    },
+    {
+     "value": "2024",
+     "displayValue": "2024"
+    }
+   ]
+  },
+  {
+   "displayName": "Team",
+   "name": "team",
+   "value": "10739",
+   "options": [
+    {
+     "value": "10739",
+     "displayValue": "Philadelphia Union"
+    },
+    {
+     "value": "660",
+     "displayValue": "United States"
+    },
+    {
+     "value": "17975",
+     "displayValue": "United States U17"
+    }
+   ]
+  },
+  {
+   "displayName": "League",
+   "name": "league",
+   "value": "usa.1",
+   "options": [
+    {
+     "value": "usa.1",
+     "displayValue": "MLS",
+     "shortDisplayName": "MLS"
+    },
+    {
+     "value": "concacaf.leagues.cup",
+     "displayValue": "Leagues Cup",
+     "shortDisplayName": "Leagues Cup"
+    },
+    {
+     "value": "concacaf.champions",
+     "displayValue": "Concacaf Champions Cup",
+     "shortDisplayName": "Concacaf Champions Cup"
+    },
+    {
+     "value": "usa.open",
+     "displayValue": "U.S. Open Cup",
+     "shortDisplayName": "U.S. Open Cup"
+    }
+   ]
+  }
+ ],
+ "labels": [
+  "G",
+  "A",
+  "SHOT",
+  "SOG",
+  "FC",
+  "FA",
+  "OFF",
+  "YC",
+  "RC"
+ ],
+ "names": [
+  "totalGoals",
+  "goalAssists",
+  "totalShots",
+  "shotsOnTarget",
+  "foulsCommitted",
+  "foulsSuffered",
+  "offsides",
+  "yellowCards",
+  "redCards"
+ ],
+ "displayNames": [
+  "Total Goals",
+  "Assists",
+  "Shots",
+  "Shots On Goal",
+  "Fouls Committed",
+  "Fouls Suffered",
+  "Offsides",
+  "Yellow Cards",
+  "Red Cards"
+ ],
+ "events": {
+  "760834": {
+   "id": "760834",
+   "atVs": "vs",
+   "gameDate": "2025-11-24T00:45:00.000+00:00",
+   "score": "1-0",
+   "homeTeamId": "10739",
+   "awayTeamId": "17606",
+   "homeTeamScore": "0",
+   "awayTeamScore": "1",
+   "gameResult": "L",
+   "opponent": {
+    "id": "17606",
+    "displayName": "New York City FC",
+    "abbreviation": "NYC"
+   },
+   "leagueName": "MLS",
+   "leagueAbbreviation": "MLS",
+   "leagueShortName": "MLS",
+   "team": {
+    "id": "10739",
+    "abbreviation": "PHI",
+    "isAllStar": false
+   }
+  },
+  "760068": {
+   "id": "760068",
+   "atVs": "@",
+   "gameDate": "2025-11-01T21:30:00.000+00:00",
+   "score": "3-0",
+   "homeTeamId": "182",
+   "awayTeamId": "10739",
+   "homeTeamScore": "0",
+   "awayTeamScore": "3",
+   "gameResult": "W",
+   "opponent": {
+    "id": "182",
+    "displayName": "Chicago Fire FC",
+    "abbreviation": "CHI"
+   },
+   "leagueName": "MLS",
+   "leagueAbbreviation": "MLS",
+   "leagueShortName": "MLS",
+   "eventNote": "Game 2",
+   "team": {
+    "id": "10739",
+    "abbreviation": "PHI",
+    "isAllStar": false
+   }
+  },
+  "760067": {
+   "id": "760067",
+   "atVs": "vs",
+   "gameDate": "2025-10-26T21:30:00.000+00:00",
+   "score": "2-2",
+   "homeTeamId": "10739",
+   "awayTeamId": "182",
+   "homeTeamScore": "2",
+   "awayTeamScore": "2",
+   "gameResult": "D",
+   "opponent": {
+    "id": "182",
+    "displayName": "Chicago Fire FC",
+    "abbreviation": "CHI"
+   },
+   "leagueName": "MLS",
+   "leagueAbbreviation": "MLS",
+   "leagueShortName": "MLS",
+   "eventNote": "Game 1, PHI wins 4-2 on penalties",
+   "team": {
+    "id": "10739",
+    "abbreviation": "PHI",
+    "isAllStar": false
+   }
+  },
+  "727299": {
+   "id": "727299",
+   "atVs": "@",
+   "gameDate": "2025-10-18T22:00:00.000+00:00",
+   "score": "2-0",
+   "homeTeamId": "21300",
+   "awayTeamId": "10739",
+   "homeTeamScore": "2",
+   "awayTeamScore": "0",
+   "gameResult": "L",
+   "opponent": {
+    "id": "21300",
+    "displayName": "Charlotte FC",
+    "abbreviation": "CLT"
+   },
+   "leagueName": "MLS",
+   "leagueAbbreviation": "MLS",
+   "leagueShortName": "MLS",
+   "team": {
+    "id": "10739",
+    "abbreviation": "PHI",
+    "isAllStar": false
+   }
+  },
+  "727283": {
+   "id": "727283",
+   "atVs": "vs",
+   "gameDate": "2025-10-04T23:30:00.000+00:00",
+   "score": "1-0",
+   "homeTeamId": "10739",
+   "awayTeamId": "17606",
+   "homeTeamScore": "1",
+   "awayTeamScore": "0",
+   "gameResult": "W",
+   "opponent": {
+    "id": "17606",
+    "displayName": "New York City FC",
+    "abbreviation": "NYC"
+   },
+   "leagueName": "MLS",
+   "leagueAbbreviation": "MLS",
+   "leagueShortName": "MLS",
+   "team": {
+    "id": "10739",
+    "abbreviation": "PHI",
+    "isAllStar": false
+   }
+  },
+  "727249": {
+   "id": "727249",
+   "atVs": "vs",
+   "gameDate": "2025-09-20T18:30:00.000+00:00",
+   "score": "1-0",
+   "homeTeamId": "10739",
+   "awayTeamId": "189",
+   "homeTeamScore": "1",
+   "awayTeamScore": "0",
+   "gameResult": "W",
+   "opponent": {
+    "id": "189",
+    "displayName": "New England Revolution",
+    "abbreviation": "NE"
+   },
+   "leagueName": "MLS",
+   "leagueAbbreviation": "MLS",
+   "leagueShortName": "MLS",
+   "team": {
+    "id": "10739",
+    "abbreviation": "PHI",
+    "isAllStar": false
+   }
+  },
+  "727243": {
+   "id": "727243",
+   "atVs": "@",
+   "gameDate": "2025-09-14T01:35:00.000+00:00",
+   "score": "7-0",
+   "homeTeamId": "9727",
+   "awayTeamId": "10739",
+   "homeTeamScore": "7",
+   "awayTeamScore": "0",
+   "gameResult": "L",
+   "opponent": {
+    "id": "9727",
+    "displayName": "Vancouver Whitecaps",
+    "abbreviation": "VAN"
+   },
+   "leagueName": "MLS",
+   "leagueAbbreviation": "MLS",
+   "leagueShortName": "MLS",
+   "team": {
+    "id": "10739",
+    "abbreviation": "PHI",
+    "isAllStar": false
+   }
+  },
+  "727220": {
+   "id": "727220",
+   "atVs": "@",
+   "gameDate": "2025-08-30T23:30:00.000+00:00",
+   "score": "1-0",
+   "homeTeamId": "18267",
+   "awayTeamId": "10739",
+   "homeTeamScore": "0",
+   "awayTeamScore": "1",
+   "gameResult": "W",
+   "opponent": {
+    "id": "18267",
+    "displayName": "FC Cincinnati",
+    "abbreviation": "CIN"
+   },
+   "leagueName": "MLS",
+   "leagueAbbreviation": "MLS",
+   "leagueShortName": "MLS",
+   "team": {
+    "id": "10739",
+    "abbreviation": "PHI",
+    "isAllStar": false
+   }
+  },
+  "727200": {
+   "id": "727200",
+   "atVs": "vs",
+   "gameDate": "2025-08-23T23:30:00.000+00:00",
+   "score": "4-0",
+   "homeTeamId": "10739",
+   "awayTeamId": "182",
+   "homeTeamScore": "4",
+   "awayTeamScore": "0",
+   "gameResult": "W",
+   "opponent": {
+    "id": "182",
+    "displayName": "Chicago Fire FC",
+    "abbreviation": "CHI"
+   },
+   "leagueName": "MLS",
+   "leagueAbbreviation": "MLS",
+   "leagueShortName": "MLS",
+   "team": {
+    "id": "10739",
+    "abbreviation": "PHI",
+    "isAllStar": false
+   }
+  },
+  "727189": {
+   "id": "727189",
+   "atVs": "@",
+   "gameDate": "2025-08-16T23:30:00.000+00:00",
+   "score": "1-0",
+   "homeTeamId": "190",
+   "awayTeamId": "10739",
+   "homeTeamScore": "1",
+   "awayTeamScore": "0",
+   "gameResult": "L",
+   "opponent": {
+    "id": "190",
+    "displayName": "Red Bull New York",
+    "abbreviation": "RBNY"
+   },
+   "leagueName": "MLS",
+   "leagueAbbreviation": "MLS",
+   "leagueShortName": "MLS",
+   "team": {
+    "id": "10739",
+    "abbreviation": "PHI",
+    "isAllStar": false
+   }
+  },
+  "727170": {
+   "id": "727170",
+   "atVs": "vs",
+   "gameDate": "2025-08-09T23:30:00.000+00:00",
+   "score": "1-1",
+   "homeTeamId": "10739",
+   "awayTeamId": "7318",
+   "homeTeamScore": "1",
+   "awayTeamScore": "1",
+   "gameResult": "D",
+   "opponent": {
+    "id": "7318",
+    "displayName": "Toronto FC",
+    "abbreviation": "TOR"
+   },
+   "leagueName": "MLS",
+   "leagueAbbreviation": "MLS",
+   "leagueShortName": "MLS",
+   "team": {
+    "id": "10739",
+    "abbreviation": "PHI",
+    "isAllStar": false
+   }
+  },
+  "727149": {
+   "id": "727149",
+   "atVs": "@",
+   "gameDate": "2025-07-20T00:30:00.000+00:00",
+   "score": "1-1",
+   "homeTeamId": "6077",
+   "awayTeamId": "10739",
+   "homeTeamScore": "1",
+   "awayTeamScore": "1",
+   "gameResult": "D",
+   "opponent": {
+    "id": "6077",
+    "displayName": "Houston Dynamo FC",
+    "abbreviation": "HOU"
+   },
+   "leagueName": "MLS",
+   "leagueAbbreviation": "MLS",
+   "leagueShortName": "MLS",
+   "team": {
+    "id": "10739",
+    "abbreviation": "PHI",
+    "isAllStar": false
+   }
+  },
+  "727129": {
+   "id": "727129",
+   "atVs": "vs",
+   "gameDate": "2025-07-16T23:30:00.000+00:00",
+   "score": "2-1",
+   "homeTeamId": "10739",
+   "awayTeamId": "9720",
+   "homeTeamScore": "2",
+   "awayTeamScore": "1",
+   "gameResult": "W",
+   "opponent": {
+    "id": "9720",
+    "displayName": "CF Montréal",
+    "abbreviation": "MTL"
+   },
+   "leagueName": "MLS",
+   "leagueAbbreviation": "MLS",
+   "leagueShortName": "MLS",
+   "team": {
+    "id": "10739",
+    "abbreviation": "PHI",
+    "isAllStar": false
+   }
+  },
+  "727113": {
+   "id": "727113",
+   "atVs": "vs",
+   "gameDate": "2025-07-12T23:30:00.000+00:00",
+   "score": "2-0",
+   "homeTeamId": "10739",
+   "awayTeamId": "190",
+   "homeTeamScore": "2",
+   "awayTeamScore": "0",
+   "gameResult": "W",
+   "opponent": {
+    "id": "190",
+    "displayName": "Red Bull New York",
+    "abbreviation": "RBNY"
+   },
+   "leagueName": "MLS",
+   "leagueAbbreviation": "MLS",
+   "leagueShortName": "MLS",
+   "team": {
+    "id": "10739",
+    "abbreviation": "PHI",
+    "isAllStar": false
+   }
+  },
+  "727104": {
+   "id": "727104",
+   "atVs": "@",
+   "gameDate": "2025-07-06T00:30:00.000+00:00",
+   "score": "1-0",
+   "homeTeamId": "18986",
+   "awayTeamId": "10739",
+   "homeTeamScore": "1",
+   "awayTeamScore": "0",
+   "gameResult": "L",
+   "opponent": {
+    "id": "18986",
+    "displayName": "Nashville SC",
+    "abbreviation": "NSH"
+   },
+   "leagueName": "MLS",
+   "leagueAbbreviation": "MLS",
+   "leagueShortName": "MLS",
+   "team": {
+    "id": "10739",
+    "abbreviation": "PHI",
+    "isAllStar": false
+   }
+  },
+  "727094": {
+   "id": "727094",
+   "atVs": "@",
+   "gameDate": "2025-06-29T22:00:00.000+00:00",
+   "score": "1-0",
+   "homeTeamId": "183",
+   "awayTeamId": "10739",
+   "homeTeamScore": "1",
+   "awayTeamScore": "0",
+   "gameResult": "L",
+   "opponent": {
+    "id": "183",
+    "displayName": "Columbus Crew",
+    "abbreviation": "CLB"
+   },
+   "leagueName": "MLS",
+   "leagueAbbreviation": "MLS",
+   "leagueShortName": "MLS",
+   "team": {
+    "id": "10739",
+    "abbreviation": "PHI",
+    "isAllStar": false
+   }
+  },
+  "727058": {
+   "id": "727058",
+   "atVs": "vs",
+   "gameDate": "2025-06-14T23:30:00.000+00:00",
+   "score": "2-1",
+   "homeTeamId": "10739",
+   "awayTeamId": "21300",
+   "homeTeamScore": "2",
+   "awayTeamScore": "1",
+   "gameResult": "W",
+   "opponent": {
+    "id": "21300",
+    "displayName": "Charlotte FC",
+    "abbreviation": "CLT"
+   },
+   "leagueName": "MLS",
+   "leagueAbbreviation": "MLS",
+   "leagueShortName": "MLS",
+   "team": {
+    "id": "10739",
+    "abbreviation": "PHI",
+    "isAllStar": false
+   }
+  },
+  "727043": {
+   "id": "727043",
+   "atVs": "@",
+   "gameDate": "2025-06-01T00:30:00.000+00:00",
+   "score": "0-0",
+   "homeTeamId": "185",
+   "awayTeamId": "10739",
+   "homeTeamScore": "0",
+   "awayTeamScore": "0",
+   "gameResult": "D",
+   "opponent": {
+    "id": "185",
+    "displayName": "FC Dallas",
+    "abbreviation": "DAL"
+   },
+   "leagueName": "MLS",
+   "leagueAbbreviation": "MLS",
+   "leagueShortName": "MLS",
+   "team": {
+    "id": "10739",
+    "abbreviation": "PHI",
+    "isAllStar": false
+   }
+  },
+  "727026": {
+   "id": "727026",
+   "atVs": "@",
+   "gameDate": "2025-05-28T23:30:00.000+00:00",
+   "score": "2-1",
+   "homeTeamId": "7318",
+   "awayTeamId": "10739",
+   "homeTeamScore": "1",
+   "awayTeamScore": "2",
+   "gameResult": "W",
+   "opponent": {
+    "id": "7318",
+    "displayName": "Toronto FC",
+    "abbreviation": "TOR"
+   },
+   "leagueName": "MLS",
+   "leagueAbbreviation": "MLS",
+   "leagueShortName": "MLS",
+   "team": {
+    "id": "10739",
+    "abbreviation": "PHI",
+    "isAllStar": false
+   }
+  },
+  "727012": {
+   "id": "727012",
+   "atVs": "vs",
+   "gameDate": "2025-05-24T23:30:00.000+00:00",
+   "score": "3-3",
+   "homeTeamId": "10739",
+   "awayTeamId": "20232",
+   "homeTeamScore": "3",
+   "awayTeamScore": "3",
+   "gameResult": "D",
+   "opponent": {
+    "id": "20232",
+    "displayName": "Inter Miami CF",
+    "abbreviation": "MIA"
+   },
+   "leagueName": "MLS",
+   "leagueAbbreviation": "MLS",
+   "leagueShortName": "MLS",
+   "team": {
+    "id": "10739",
+    "abbreviation": "PHI",
+    "isAllStar": false
+   }
+  },
+  "726994": {
+   "id": "726994",
+   "atVs": "@",
+   "gameDate": "2025-05-17T23:30:00.000+00:00",
+   "score": "1-0",
+   "homeTeamId": "18418",
+   "awayTeamId": "10739",
+   "homeTeamScore": "0",
+   "awayTeamScore": "1",
+   "gameResult": "W",
+   "opponent": {
+    "id": "18418",
+    "displayName": "Atlanta United FC",
+    "abbreviation": "ATL"
+   },
+   "leagueName": "MLS",
+   "leagueAbbreviation": "MLS",
+   "leagueShortName": "MLS",
+   "team": {
+    "id": "10739",
+    "abbreviation": "PHI",
+    "isAllStar": false
+   }
+  },
+  "726981": {
+   "id": "726981",
+   "atVs": "vs",
+   "gameDate": "2025-05-14T23:30:00.000+00:00",
+   "score": "3-2",
+   "homeTeamId": "10739",
+   "awayTeamId": "187",
+   "homeTeamScore": "3",
+   "awayTeamScore": "2",
+   "gameResult": "W",
+   "opponent": {
+    "id": "187",
+    "displayName": "LA Galaxy",
+    "abbreviation": "LA"
+   },
+   "leagueName": "MLS",
+   "leagueAbbreviation": "MLS",
+   "leagueShortName": "MLS",
+   "team": {
+    "id": "10739",
+    "abbreviation": "PHI",
+    "isAllStar": false
+   }
+  },
+  "726966": {
+   "id": "726966",
+   "atVs": "vs",
+   "gameDate": "2025-05-10T23:30:00.000+00:00",
+   "score": "2-2",
+   "homeTeamId": "10739",
+   "awayTeamId": "183",
+   "homeTeamScore": "2",
+   "awayTeamScore": "2",
+   "gameResult": "D",
+   "opponent": {
+    "id": "183",
+    "displayName": "Columbus Crew",
+    "abbreviation": "CLB"
+   },
+   "leagueName": "MLS",
+   "leagueAbbreviation": "MLS",
+   "leagueShortName": "MLS",
+   "team": {
+    "id": "10739",
+    "abbreviation": "PHI",
+    "isAllStar": false
+   }
+  },
+  "726950": {
+   "id": "726950",
+   "atVs": "@",
+   "gameDate": "2025-05-03T23:30:00.000+00:00",
+   "score": "2-1",
+   "homeTeamId": "9720",
+   "awayTeamId": "10739",
+   "homeTeamScore": "1",
+   "awayTeamScore": "2",
+   "gameResult": "W",
+   "opponent": {
+    "id": "9720",
+    "displayName": "CF Montréal",
+    "abbreviation": "MTL"
+   },
+   "leagueName": "MLS",
+   "leagueAbbreviation": "MLS",
+   "leagueShortName": "MLS",
+   "team": {
+    "id": "10739",
+    "abbreviation": "PHI",
+    "isAllStar": false
+   }
+  },
+  "726936": {
+   "id": "726936",
+   "atVs": "vs",
+   "gameDate": "2025-04-26T20:30:00.000+00:00",
+   "score": "3-0",
+   "homeTeamId": "10739",
+   "awayTeamId": "193",
+   "homeTeamScore": "3",
+   "awayTeamScore": "0",
+   "gameResult": "W",
+   "opponent": {
+    "id": "193",
+    "displayName": "D.C. United",
+    "abbreviation": "DC"
+   },
+   "leagueName": "MLS",
+   "leagueAbbreviation": "MLS",
+   "leagueShortName": "MLS",
+   "team": {
+    "id": "10739",
+    "abbreviation": "PHI",
+    "isAllStar": false
+   }
+  },
+  "726923": {
+   "id": "726923",
+   "atVs": "vs",
+   "gameDate": "2025-04-19T23:30:00.000+00:00",
+   "score": "3-0",
+   "homeTeamId": "10739",
+   "awayTeamId": "18418",
+   "homeTeamScore": "3",
+   "awayTeamScore": "0",
+   "gameResult": "W",
+   "opponent": {
+    "id": "18418",
+    "displayName": "Atlanta United FC",
+    "abbreviation": "ATL"
+   },
+   "leagueName": "MLS",
+   "leagueAbbreviation": "MLS",
+   "leagueShortName": "MLS",
+   "team": {
+    "id": "10739",
+    "abbreviation": "PHI",
+    "isAllStar": false
+   }
+  },
+  "726907": {
+   "id": "726907",
+   "atVs": "@",
+   "gameDate": "2025-04-12T23:30:00.000+00:00",
+   "score": "1-0",
+   "homeTeamId": "17606",
+   "awayTeamId": "10739",
+   "homeTeamScore": "1",
+   "awayTeamScore": "0",
+   "gameResult": "L",
+   "opponent": {
+    "id": "17606",
+    "displayName": "New York City FC",
+    "abbreviation": "NYC"
+   },
+   "leagueName": "MLS",
+   "leagueAbbreviation": "MLS",
+   "leagueShortName": "MLS",
+   "team": {
+    "id": "10739",
+    "abbreviation": "PHI",
+    "isAllStar": false
+   }
+  },
+  "726891": {
+   "id": "726891",
+   "atVs": "vs",
+   "gameDate": "2025-04-05T23:30:00.000+00:00",
+   "score": "0-0",
+   "homeTeamId": "10739",
+   "awayTeamId": "12011",
+   "homeTeamScore": "0",
+   "awayTeamScore": "0",
+   "gameResult": "D",
+   "opponent": {
+    "id": "12011",
+    "displayName": "Orlando City SC",
+    "abbreviation": "ORL"
+   },
+   "leagueName": "MLS",
+   "leagueAbbreviation": "MLS",
+   "leagueShortName": "MLS",
+   "team": {
+    "id": "10739",
+    "abbreviation": "PHI",
+    "isAllStar": false
+   }
+  },
+  "726876": {
+   "id": "726876",
+   "atVs": "@",
+   "gameDate": "2025-03-29T23:30:00.000+00:00",
+   "score": "2-1",
+   "homeTeamId": "20232",
+   "awayTeamId": "10739",
+   "homeTeamScore": "2",
+   "awayTeamScore": "1",
+   "gameResult": "L",
+   "opponent": {
+    "id": "20232",
+    "displayName": "Inter Miami CF",
+    "abbreviation": "MIA"
+   },
+   "leagueName": "MLS",
+   "leagueAbbreviation": "MLS",
+   "leagueShortName": "MLS",
+   "team": {
+    "id": "10739",
+    "abbreviation": "PHI",
+    "isAllStar": false
+   }
+  },
+  "726862": {
+   "id": "726862",
+   "atVs": "vs",
+   "gameDate": "2025-03-22T23:30:00.000+00:00",
+   "score": "1-0",
+   "homeTeamId": "10739",
+   "awayTeamId": "21812",
+   "homeTeamScore": "1",
+   "awayTeamScore": "0",
+   "gameResult": "W",
+   "opponent": {
+    "id": "21812",
+    "displayName": "St. Louis CITY SC",
+    "abbreviation": "STL"
+   },
+   "leagueName": "MLS",
+   "leagueAbbreviation": "MLS",
+   "leagueShortName": "MLS",
+   "team": {
+    "id": "10739",
+    "abbreviation": "PHI",
+    "isAllStar": false
+   }
+  },
+  "726856": {
+   "id": "726856",
+   "atVs": "vs",
+   "gameDate": "2025-03-16T18:25:00.000+00:00",
+   "score": "3-1",
+   "homeTeamId": "10739",
+   "awayTeamId": "18986",
+   "homeTeamScore": "1",
+   "awayTeamScore": "3",
+   "gameResult": "L",
+   "opponent": {
+    "id": "18986",
+    "displayName": "Nashville SC",
+    "abbreviation": "NSH"
+   },
+   "leagueName": "MLS",
+   "leagueAbbreviation": "MLS",
+   "leagueShortName": "MLS",
+   "team": {
+    "id": "10739",
+    "abbreviation": "PHI",
+    "isAllStar": false
+   }
+  },
+  "726835": {
+   "id": "726835",
+   "atVs": "@",
+   "gameDate": "2025-03-09T00:30:00.000+00:00",
+   "score": "2-0",
+   "homeTeamId": "189",
+   "awayTeamId": "10739",
+   "homeTeamScore": "0",
+   "awayTeamScore": "2",
+   "gameResult": "W",
+   "opponent": {
+    "id": "189",
+    "displayName": "New England Revolution",
+    "abbreviation": "NE"
+   },
+   "leagueName": "MLS",
+   "leagueAbbreviation": "MLS",
+   "leagueShortName": "MLS",
+   "team": {
+    "id": "10739",
+    "abbreviation": "PHI",
+    "isAllStar": false
+   }
+  },
+  "726819": {
+   "id": "726819",
+   "atVs": "vs",
+   "gameDate": "2025-03-02T00:30:00.000+00:00",
+   "score": "4-1",
+   "homeTeamId": "10739",
+   "awayTeamId": "18267",
+   "homeTeamScore": "4",
+   "awayTeamScore": "1",
+   "gameResult": "W",
+   "opponent": {
+    "id": "18267",
+    "displayName": "FC Cincinnati",
+    "abbreviation": "CIN"
+   },
+   "leagueName": "MLS",
+   "leagueAbbreviation": "MLS",
+   "leagueShortName": "MLS",
+   "team": {
+    "id": "10739",
+    "abbreviation": "PHI",
+    "isAllStar": false
+   }
+  },
+  "726805": {
+   "id": "726805",
+   "atVs": "@",
+   "gameDate": "2025-02-23T00:30:00.000+00:00",
+   "score": "4-2",
+   "homeTeamId": "12011",
+   "awayTeamId": "10739",
+   "homeTeamScore": "2",
+   "awayTeamScore": "4",
+   "gameResult": "W",
+   "opponent": {
+    "id": "12011",
+    "displayName": "Orlando City SC",
+    "abbreviation": "ORL"
+   },
+   "leagueName": "MLS",
+   "leagueAbbreviation": "MLS",
+   "leagueShortName": "MLS",
+   "team": {
+    "id": "10739",
+    "abbreviation": "PHI",
+    "isAllStar": false
+   }
+  }
+ },
+ "seasonTypes": [
+  {
+   "displayName": "Regular Season",
+   "categories": [
+    {
+     "displayName": "Regular Season Stats",
+     "type": "event",
+     "splitType": "1",
+     "events": [
+      {
+       "eventId": "727299",
+       "stats": [
+        "0",
+        "0",
+        "2",
+        "1",
+        "0",
+        "0",
+        "1",
+        "0",
+        "0"
+       ]
+      },
+      {
+       "eventId": "727283",
+       "stats": [
+        "0",
+        "0",
+        "0",
+        "0",
+        "0",
+        "0",
+        "0",
+        "0",
+        "0"
+       ]
+      },
+      {
+       "eventId": "727249",
+       "stats": [
+        "0",
+        "0",
+        "0",
+        "0",
+        "0",
+        "0",
+        "0",
+        "0",
+        "0"
+       ]
+      },
+      {
+       "eventId": "727243",
+       "stats": [
+        "0",
+        "0",
+        "0",
+        "0",
+        "0",
+        "0",
+        "0",
+        "0",
+        "0"
+       ]
+      },
+      {
+       "eventId": "727220",
+       "stats": [
+        "0",
+        "0",
+        "0",
+        "0",
+        "0",
+        "0",
+        "0",
+        "0",
+        "0"
+       ]
+      },
+      {
+       "eventId": "727200",
+       "stats": [
+        "0",
+        "0",
+        "2",
+        "0",
+        "1",
+        "0",
+        "0",
+        "0",
+        "0"
+       ]
+      },
+      {
+       "eventId": "727189",
+       "stats": [
+        "0",
+        "0",
+        "0",
+        "0",
+        "0",
+        "0",
+        "0",
+        "0",
+        "0"
+       ]
+      },
+      {
+       "eventId": "727170",
+       "stats": [
+        "0",
+        "0",
+        "0",
+        "0",
+        "0",
+        "0",
+        "0",
+        "0",
+        "0"
+       ]
+      },
+      {
+       "eventId": "727149",
+       "stats": [
+        "0",
+        "0",
+        "0",
+        "0",
+        "0",
+        "0",
+        "0",
+        "0",
+        "0"
+       ]
+      },
+      {
+       "eventId": "727129",
+       "stats": [
+        "0",
+        "0",
+        "0",
+        "0",
+        "0",
+        "0",
+        "0",
+        "0",
+        "0"
+       ]
+      },
+      {
+       "eventId": "727113",
+       "stats": [
+        "0",
+        "0",
+        "0",
+        "0",
+        "0",
+        "0",
+        "0",
+        "0",
+        "0"
+       ]
+      },
+      {
+       "eventId": "727104",
+       "stats": [
+        "0",
+        "0",
+        "1",
+        "0",
+        "1",
+        "1",
+        "0",
+        "1",
+        "0"
+       ]
+      },
+      {
+       "eventId": "727094",
+       "stats": [
+        "0",
+        "0",
+        "1",
+        "0",
+        "1",
+        "0",
+        "0",
+        "0",
+        "0"
+       ]
+      },
+      {
+       "eventId": "727058",
+       "stats": [
+        "0",
+        "0",
+        "0",
+        "0",
+        "0",
+        "0",
+        "0",
+        "0",
+        "0"
+       ]
+      },
+      {
+       "eventId": "727043",
+       "stats": [
+        "0",
+        "0",
+        "0",
+        "0",
+        "0",
+        "0",
+        "0",
+        "0",
+        "0"
+       ]
+      },
+      {
+       "eventId": "727026",
+       "stats": [
+        "0",
+        "0",
+        "0",
+        "0",
+        "0",
+        "0",
+        "0",
+        "0",
+        "0"
+       ]
+      },
+      {
+       "eventId": "727012",
+       "stats": [
+        "0",
+        "0",
+        "0",
+        "0",
+        "0",
+        "0",
+        "0",
+        "0",
+        "0"
+       ]
+      },
+      {
+       "eventId": "726994",
+       "stats": [
+        "0",
+        "0",
+        "0",
+        "0",
+        "0",
+        "0",
+        "0",
+        "0",
+        "0"
+       ]
+      },
+      {
+       "eventId": "726981",
+       "stats": [
+        "0",
+        "0",
+        "0",
+        "0",
+        "0",
+        "0",
+        "0",
+        "0",
+        "0"
+       ]
+      },
+      {
+       "eventId": "726966",
+       "stats": [
+        "0",
+        "0",
+        "0",
+        "0",
+        "0",
+        "0",
+        "0",
+        "0",
+        "0"
+       ]
+      },
+      {
+       "eventId": "726950",
+       "stats": [
+        "0",
+        "0",
+        "0",
+        "0",
+        "0",
+        "0",
+        "0",
+        "0",
+        "0"
+       ]
+      },
+      {
+       "eventId": "726936",
+       "stats": [
+        "0",
+        "0",
+        "0",
+        "0",
+        "1",
+        "1",
+        "0",
+        "0",
+        "0"
+       ]
+      },
+      {
+       "eventId": "726923",
+       "stats": [
+        "0",
+        "0",
+        "0",
+        "0",
+        "0",
+        "0",
+        "0",
+        "0",
+        "0"
+       ]
+      },
+      {
+       "eventId": "726907",
+       "stats": [
+        "0",
+        "0",
+        "0",
+        "0",
+        "0",
+        "0",
+        "0",
+        "0",
+        "0"
+       ]
+      },
+      {
+       "eventId": "726891",
+       "stats": [
+        "0",
+        "0",
+        "0",
+        "0",
+        "0",
+        "0",
+        "0",
+        "0",
+        "0"
+       ]
+      },
+      {
+       "eventId": "726876",
+       "stats": [
+        "0",
+        "0",
+        "0",
+        "0",
+        "0",
+        "0",
+        "0",
+        "0",
+        "0"
+       ]
+      },
+      {
+       "eventId": "726862",
+       "stats": [
+        "0",
+        "0",
+        "0",
+        "0",
+        "0",
+        "0",
+        "0",
+        "0",
+        "0"
+       ]
+      },
+      {
+       "eventId": "726856",
+       "stats": [
+        "0",
+        "0",
+        "0",
+        "0",
+        "0",
+        "0",
+        "0",
+        "0",
+        "0"
+       ]
+      },
+      {
+       "eventId": "726835",
+       "stats": [
+        "0",
+        "0",
+        "0",
+        "0",
+        "0",
+        "0",
+        "0",
+        "0",
+        "0"
+       ]
+      },
+      {
+       "eventId": "726819",
+       "stats": [
+        "0",
+        "0",
+        "0",
+        "0",
+        "0",
+        "0",
+        "0",
+        "0",
+        "0"
+       ]
+      },
+      {
+       "eventId": "726805",
+       "stats": [
+        "0",
+        "0",
+        "0",
+        "0",
+        "0",
+        "0",
+        "0",
+        "0",
+        "0"
+       ]
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "displayName": "Eastern Conference Playoffs - Round One",
+   "categories": [
+    {
+     "displayName": "Eastern Conference Playoffs - Round One Stats",
+     "type": "event",
+     "splitType": "5",
+     "events": [
+      {
+       "eventId": "760068",
+       "stats": [
+        "0",
+        "0",
+        "0",
+        "0",
+        "0",
+        "0",
+        "0",
+        "0",
+        "0"
+       ]
+      },
+      {
+       "eventId": "760067",
+       "stats": [
+        "0",
+        "0",
+        "0",
+        "0",
+        "0",
+        "1",
+        "1",
+        "0",
+        "0"
+       ]
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "displayName": "Eastern Conference Playoffs - Semifinals",
+   "categories": [
+    {
+     "displayName": "Eastern Conference Playoffs - Semifinals Stats",
+     "type": "event",
+     "splitType": "13",
+     "events": [
+      {
+       "eventId": "760834",
+       "stats": [
+        "0",
+        "0",
+        "0",
+        "0",
+        "1",
+        "0",
+        "0",
+        "0",
+        "0"
+       ]
+      }
+     ]
+    }
+   ]
+  }
+ ]
+}

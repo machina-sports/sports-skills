@@ -92,6 +92,7 @@ Derive the current year from the system prompt's date (e.g., `currentDate: 2026-
 | `get_depth_chart` | Depth chart for a team |
 | `get_team_stats` | Team statistical profile |
 | `get_player_stats` | Player statistical profile |
+| `get_player_game_log` | One player's games in a season via ESPN, by ESPN athlete id (opponent, home/away, result, stat line) |
 | `get_nflverse_schedule` | nflverse-backed schedules/results table (carries `espn_event_id`) |
 | `get_nflverse_weekly_rosters` | nflverse-backed weekly rosters |
 | `get_nflverse_player_stats` | nflverse-backed player stats — season totals by default |

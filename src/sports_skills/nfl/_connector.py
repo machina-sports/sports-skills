@@ -21,6 +21,7 @@ from sports_skills._espn_base import (
     default_standings_season,
     epoch_seconds,
     espn_core_request,
+    espn_player_game_log,
     espn_request,
     espn_summary,
     espn_web_request,
@@ -961,3 +962,7 @@ def get_player_stats(request_data):
     result["season_year"] = season_year
     result["season_type"] = season_type
     return result
+
+
+def get_player_game_log(request_data):
+    return espn_player_game_log(SPORT_PATH, request_data.get("params", {}))
