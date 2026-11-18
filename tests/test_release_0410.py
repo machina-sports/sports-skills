@@ -1,4 +1,4 @@
-"""Release gates for the sports-skills 0.40.9 distribution candidate."""
+"""Release gates for the sports-skills 0.40.10 distribution candidate."""
 
 import ast
 import email
@@ -17,11 +17,11 @@ from pathlib import Path
 import pytest
 
 ROOT = Path(__file__).resolve().parents[1]
-VERSION = "0.40.9"
+VERSION = "0.40.10"
 TAG = f"v{VERSION}"
-REVIEWED_SOURCE_COMMIT = "45403a54f9d898a6077229ba0832c70f1377863a"
-REVIEWED_SOURCE_TREE = "5c78c02a5c8e7bb6ffdb3baeeff6460012ad7a68"
-SOURCE_DATE_EPOCH = 1794940519
+REVIEWED_SOURCE_COMMIT = "fbcfd25515ab19f8d9d349a42ee3b074696bd70c"
+REVIEWED_SOURCE_TREE = "28e1ead1a9eb98b912903149f705cd98f3d8a9a2"
+SOURCE_DATE_EPOCH = 1794961340
 AUTHORITY = ROOT / "release" / VERSION / "SHA256SUMS"
 REVIEW_RECEIPT = ROOT / "release" / VERSION / "review-receipt.json"
 WHEEL_NAME = f"sports_skills-{VERSION}-py3-none-any.whl"
@@ -122,18 +122,18 @@ def release_builds(tmp_path_factory):
     return _build(first), _build(second)
 
 
-def test_every_active_version_surface_is_0409():
+def test_every_active_version_surface_is_0410():
     pyproject = (ROOT / "pyproject.toml").read_text(encoding="utf-8")
     package = (ROOT / "src/sports_skills/__init__.py").read_text(encoding="utf-8")
     phase1 = (ROOT / "src/sports_skills/canonical/_phase1.py").read_text(encoding="utf-8")
     lock = (ROOT / "uv.lock").read_text(encoding="utf-8")
     changelog = (ROOT / "CHANGELOG.md").read_text(encoding="utf-8")
 
-    assert re.search(r'^version = "0\.40\.9"$', pyproject, re.MULTILINE)
-    assert re.search(r'^__version__ = "0\.40\.9"$', package, re.MULTILINE)
-    assert '"package_version": "0.40.9"' in phase1
-    assert re.search(r'(?ms)^name = "sports-skills"\nversion = "0\.40\.9"$', lock)
-    assert changelog.startswith("## [0.40.9]\n")
+    assert re.search(r'^version = "0\.40\.10"$', pyproject, re.MULTILINE)
+    assert re.search(r'^__version__ = "0\.40\.10"$', package, re.MULTILINE)
+    assert '"package_version": "0.40.10"' in phase1
+    assert re.search(r'(?ms)^name = "sports-skills"\nversion = "0\.40\.10"$', lock)
+    assert changelog.startswith("## [0.40.10]\n")
     assert "## [Unreleased]" not in changelog
     assert "\n## [0.40.8]\n" in changelog
     entry = changelog.split("\n## [0.40.8]\n", 1)[0]
@@ -585,7 +585,7 @@ def test_installed_wheel_imports_resources_wrappers_and_owner_inventory(release_
 def test_installed_probe_checks_polymarket_surface_without_importing_it():
     probe = (ROOT / "packaging/probe_installed.py").read_text(encoding="utf-8")
     tree = ast.parse(probe)
-    assert 'VERSION = "0.40.9"' in probe
+    assert 'VERSION = "0.40.10"' in probe
     assert 'POLYMARKET_TODAYS_PARAMS = ("offset", "date", "timezone", "sports_market_types", "compact")' in probe
     assert '"sports_skills/polymarket/__init__.py"' in probe
     imported = {

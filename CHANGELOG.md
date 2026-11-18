@@ -1,3 +1,9 @@
+## [0.40.10]
+
+### Fixed
+- Use the Polymarket scheduled start to distinguish consecutive games between the same teams.
+- Match Gemini’s abbreviated Clippers and Lakers team labels.
+
 ## [0.40.9]
 
 ### Fixed
