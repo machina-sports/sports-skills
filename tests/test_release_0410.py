@@ -135,10 +135,10 @@ def test_every_active_version_surface_is_0410():
     assert re.search(r'(?ms)^name = "sports-skills"\nversion = "0\.40\.10"$', lock)
     assert changelog.startswith("## [0.40.10]\n")
     assert "## [Unreleased]" not in changelog
-    assert "\n## [0.40.8]\n" in changelog
-    entry = changelog.split("\n## [0.40.8]\n", 1)[0]
-    assert "**polymarket: large event pages.**" in entry
-    assert "**markets: Kalshi games in `compare_odds`.**" in entry
+    assert "\n## [0.40.9]\n" in changelog
+    entry = changelog.split("\n## [0.40.9]\n", 1)[0]
+    assert "Polymarket scheduled start" in entry
+    assert "Clippers and Lakers" in entry
 
 
 def test_release_source_and_epoch_match_review_receipt():
@@ -175,12 +175,12 @@ def test_release_source_and_epoch_match_review_receipt():
 
 
 def test_previous_release_receipt_is_unchanged():
-    receipt = json.loads((ROOT / "release/0.40.8/review-receipt.json").read_text(encoding="ascii"))
+    receipt = json.loads((ROOT / "release/0.40.9/review-receipt.json").read_text(encoding="ascii"))
     assert receipt == {
         "schema": "sports-skills-release-review-receipt-v1",
-        "reviewed_source_commit": "46f36220d7aa38df09c6c710cf553652fc286c8d",
-        "reviewed_source_tree": "0f5ddb01210c48f50e73634e6cc80782cdbfa893",
-        "source_date_epoch": 1794881821,
+        "reviewed_source_commit": "45403a54f9d898a6077229ba0832c70f1377863a",
+        "reviewed_source_tree": "5c78c02a5c8e7bb6ffdb3baeeff6460012ad7a68",
+        "source_date_epoch": 1794940519,
     }
 
 
@@ -413,6 +413,14 @@ def test_artifacts_ship_polymarket_gzip_and_kalshi_ticker_matching(release_build
     assert 'series_ticker=f"{series}GAME"' in markets
     assert '"nba": {"GS": "GSW", "NO": "NOP", "NY": "NYK", "SA": "SAS", "UTAH": "UTA", "WSH": "WAS"}' in markets
     assert "_search_kalshi_game(identity, sport, report=report)" in markets
+
+
+def test_artifacts_ship_rematch_start_and_gemini_la_labels(release_builds):
+    markets = _shipped_source(release_builds, "sports_skills/markets/_connector.py")
+    assert 'if scheduled and not _same_start(scheduled, identity["start_utc"]):' in markets
+    assert '"game_start_time": market.get("game_start_time") or event.get("game_start_time"),' in markets
+    assert '{"Los Angeles C": "LA Clippers", "Los Angeles L": "Los Angeles Lakers"}.get(label, label)' in markets
+    assert '_side_for_label(team_label) != o["side"]' in markets
 
 
 def test_artifacts_ship_polymarket_dated_reads_and_broad_sport_listing(release_builds):
