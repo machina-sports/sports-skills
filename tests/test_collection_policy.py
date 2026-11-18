@@ -15,6 +15,25 @@ def test_non_release_paths_defer_to_other_ignore_hooks():
     assert collection_policy.pytest_ignore_collect(Path("tests/test_markets.py"), None) is None
 
 
+def test_active_release_proof_defers_to_other_ignore_hooks(monkeypatch):
+    monkeypatch.delenv("SPORTS_SKILLS_VERIFY_RELEASE_036", raising=False)
+    monkeypatch.delenv("SPORTS_SKILLS_VERIFY_RELEASE_037", raising=False)
+    monkeypatch.delenv("SPORTS_SKILLS_VERIFY_RELEASE_038", raising=False)
+    monkeypatch.delenv("SPORTS_SKILLS_VERIFY_RELEASE_039", raising=False)
+    monkeypatch.delenv("SPORTS_SKILLS_VERIFY_RELEASE_040", raising=False)
+    monkeypatch.delenv("SPORTS_SKILLS_VERIFY_RELEASE_0401", raising=False)
+    monkeypatch.delenv("SPORTS_SKILLS_VERIFY_RELEASE_0402", raising=False)
+    monkeypatch.delenv("SPORTS_SKILLS_VERIFY_RELEASE_0403", raising=False)
+    monkeypatch.delenv("SPORTS_SKILLS_VERIFY_RELEASE_0404", raising=False)
+    monkeypatch.delenv("SPORTS_SKILLS_VERIFY_RELEASE_0405", raising=False)
+    monkeypatch.delenv("SPORTS_SKILLS_VERIFY_RELEASE_0406", raising=False)
+    monkeypatch.delenv("SPORTS_SKILLS_VERIFY_RELEASE_0407", raising=False)
+    monkeypatch.delenv("SPORTS_SKILLS_VERIFY_RELEASE_0408", raising=False)
+    monkeypatch.delenv("SPORTS_SKILLS_VERIFY_RELEASE_0409", raising=False)
+    monkeypatch.delenv("SPORTS_SKILLS_VERIFY_RELEASE_0410", raising=False)
+    assert collection_policy.pytest_ignore_collect(Path("tests/test_release_0411.py"), None) is None
+
+
 @pytest.mark.parametrize(
     ("name", "variable", "other"),
     [
@@ -31,7 +50,8 @@ def test_non_release_paths_defer_to_other_ignore_hooks():
         ("test_release_0406.py", "SPORTS_SKILLS_VERIFY_RELEASE_0406", "SPORTS_SKILLS_VERIFY_RELEASE_0405"),
         ("test_release_0407.py", "SPORTS_SKILLS_VERIFY_RELEASE_0407", "SPORTS_SKILLS_VERIFY_RELEASE_0406"),
         ("test_release_0408.py", "SPORTS_SKILLS_VERIFY_RELEASE_0408", "SPORTS_SKILLS_VERIFY_RELEASE_0407"),
-        ("test_release_0410.py", "SPORTS_SKILLS_VERIFY_RELEASE_0410", "SPORTS_SKILLS_VERIFY_RELEASE_0408"),
+        ("test_release_0409.py", "SPORTS_SKILLS_VERIFY_RELEASE_0409", "SPORTS_SKILLS_VERIFY_RELEASE_0408"),
+        ("test_release_0410.py", "SPORTS_SKILLS_VERIFY_RELEASE_0410", "SPORTS_SKILLS_VERIFY_RELEASE_0409"),
     ],
 )
 def test_historical_release_proof_is_opt_in(monkeypatch, name, variable, other):
