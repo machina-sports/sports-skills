@@ -553,3 +553,25 @@ def test_cli_registry_and_schema_expose_compare_market_url():
     assert tool["parameters"]["required"] == ["url"]
     assert tool["parameters"]["properties"]["url"]["type"] == "string"
     assert "description" in tool["parameters"]["properties"]["url"]
+
+
+@pytest.mark.parametrize("scheduled", ["2026-10-12T01:00:00Z", "2026-10-11T18:00:00-07:00"])
+def test_source_start_disambiguates_consecutive_day_rematch(env, scheduled):
+    env["poly"].return_value["data"]["game_start_time"] = scheduled
+    env["board"].by_date = {
+        "2026-10-11": [
+            _espn_event("401999", "2026-10-11T01:00Z"),
+            _espn_event("401772", "2026-10-12T01:00Z"),
+        ]
+    }
+    result = markets.compare_market_url(url=POLY_URL)
+    assert result["status"], result["message"]
+    assert result["data"]["source_market"]["espn_event_id"] == "401772"
+
+
+@pytest.mark.parametrize("scheduled", ["garbage", "2026-10-12T02:00:00Z"])
+def test_invalid_or_conflicting_source_start_refuses_match(env, scheduled):
+    env["poly"].return_value["data"]["game_start_time"] = scheduled
+    result = markets.compare_market_url(url=POLY_URL)
+    assert not result["status"]
+    env["compare"].assert_not_called()

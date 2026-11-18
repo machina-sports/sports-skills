@@ -856,3 +856,46 @@ def test_compare_odds_reports_partial_pagination(upstream, peers_silent):
     data = _compare(peers_silent)
     assert data["sources"]["gemini"]["outcome"] == "ok"
     assert "503" in str(data["sources"]["gemini"].get("warnings")) + str(data.get("warnings"))
+
+
+@pytest.mark.parametrize("label,team", [("Los Angeles C", "LA Clippers"), ("Los Angeles L", "Los Angeles Lakers")])
+def test_la_contract_labels_match_only_correct_team(peers_silent, label, team):
+    market = {
+        "ticker": "test",
+        "league": "NBA",
+        "market_type": "moneyline",
+        "market_subject": "contest",
+        "market_scope": "full_contest",
+        "status": "active",
+        "start_time": "2026-10-23T23:00:00Z",
+        "outcomes": [
+            {
+                "label": label,
+                "side": "home",
+                "status": "active",
+                "market_state": "open",
+                "is_combo": False,
+                "buy_yes": 0.6,
+            },
+            {
+                "label": "Minnesota",
+                "side": "away",
+                "status": "active",
+                "market_state": "open",
+                "is_combo": False,
+                "buy_yes": 0.4,
+            },
+        ],
+    }
+    summary = _summary()
+    summary["data"]["competitors"][0]["team"]["name"] = team
+    espn = types.SimpleNamespace(get_game_summary=lambda event_id: summary)
+    with (
+        patch.object(peers_silent, "_search_gemini", return_value=[{"markets": [market]}]),
+        patch.object(peers_silent, "_load_sport_module", return_value=espn),
+    ):
+        assert _compare(peers_silent)["sources"]["gemini"]["outcome"] == "ok"
+        summary["data"]["competitors"][0]["team"]["name"] = (
+            "Los Angeles Lakers" if label.endswith("C") else "LA Clippers"
+        )
+        assert _compare(peers_silent)["sources"]["gemini"]["outcome"] == "unmatched"
