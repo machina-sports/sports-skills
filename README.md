@@ -95,6 +95,7 @@ npx skills add machina-sports/sports-skills@nba-data
 | [`esports`](https://skills.sh/machina-sports/sports-skills/esports) | Esports (Dota 2 + LoL) | 6 | OpenDota, Leaguepedia (Cargo) |
 | [`sports-news`](https://skills.sh/machina-sports/sports-skills/sports-news) | Multi-sport News | 2 | Any RSS feed, Google News |
 | [`metadata`](https://skills.sh/machina-sports/sports-skills/metadata) | Team logos, player photos | 5 | TheSportsDB (free API) |
+| [`sports-images`](https://skills.sh/machina-sports/sports-skills/sports-images) | Open-licensed 4K photos (players, teams, venues) | 3 | Wikimedia Commons, Wikidata |
 
 ### Prediction Markets
 

@@ -24,7 +24,7 @@ ROOT = Path(__file__).resolve().parents[1]
 SKILLS = ROOT / "skills"
 
 #: Modules whose skill directory is not `<module>` or `<module>-data`.
-SKILL_DIR_OVERRIDES = {"news": "sports-news", "f1": "fastf1"}
+SKILL_DIR_OVERRIDES = {"news": "sports-news", "f1": "fastf1", "images": "sports-images"}
 
 
 def _skill_dir(module: str) -> Path:

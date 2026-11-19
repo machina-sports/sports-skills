@@ -1,7 +1,8 @@
 """Record/replay for providers that bypass the shared ``_http_fetch``.
 
 nflverse, FastF1, Kalshi, Polymarket, OpenDota/Leaguepedia, Cricsheet, Nevobo,
-TFRRS/The Stride Report, TheSportsDB, ProphetX, openfootball and Google News.
+TFRRS/The Stride Report, TheSportsDB, Wikimedia (Wikidata and Commons), ProphetX,
+openfootball and Google News.
 
 Each provider is recorded against a fake upstream, then replayed with sockets
 blocked; the public tool function must return the identical result.
@@ -29,6 +30,7 @@ from sports_skills import (
     cricket,
     esports,
     football,
+    images,
     kalshi,
     metadata,
     news,
@@ -40,6 +42,7 @@ from sports_skills import (
 )
 from sports_skills.esports import _connector as esports_conn
 from sports_skills.football import _connector as football_conn
+from sports_skills.images import _connector as images_conn
 from sports_skills.kalshi import _connector as kalshi_conn
 from sports_skills.metadata import _connector as metadata_conn
 from sports_skills.nfl import _nflverse
@@ -53,6 +56,7 @@ _CACHES = (
     polymarket_conn._cache,
     esports_conn._cache,
     metadata_conn._cache,
+    images_conn._cache,
     prophetx_conn._cache,
     _nevobo._cache,
     xctf_conn._cache,
@@ -132,6 +136,7 @@ _WAITS = (
     (polymarket_conn._RateLimiter, "acquire"),
     (esports_conn._RateLimiter, "acquire"),
     (metadata_conn._limiter, "acquire"),
+    (images_conn._limiter, "acquire"),
     (prophetx_conn._RateLimiter, "acquire"),
     (football_conn._RateLimiter, "acquire"),
     (_espn_base.RateLimiter, "acquire"),
@@ -857,6 +862,27 @@ _LONGTAIL = [
         "thesportsdb",
         {"searchteams.php": json.dumps({"teams": [{"idTeam": "133604", "strTeam": "Arsenal"}]}).encode()},
         lambda: metadata.search_teams(query="Arsenal"),
+    ),
+    (
+        "wikimedia",
+        {
+            "action=wbsearchentities": json.dumps({"search": [{"id": "Q9617"}]}).encode(),
+            "action=wbgetentities": json.dumps(
+                {
+                    "entities": {
+                        "Q9617": {
+                            "labels": {"en": {"value": "Arsenal F.C."}},
+                            "descriptions": {"en": {"value": "association football club in London, England"}},
+                            "claims": {
+                                "P641": [{"mainsnak": {"datavalue": {"value": {"id": "Q2736"}}}}],
+                                "P118": [{"mainsnak": {"datavalue": {"value": {"id": "Q9448"}}}}],
+                            },
+                        }
+                    }
+                }
+            ).encode(),
+        },
+        lambda: images.search_entities(query="Arsenal"),
     ),
     ("prophetx", _PROPHETX_ROUTES, lambda: prophetx.get_tournaments(limit=10)),
     ("openfootball", _FOOTBALL_ROUTES, lambda: football.get_season_standings(season_id="premier-league-2019")),
