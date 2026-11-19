@@ -8,6 +8,7 @@ Examples:
     sports-skills polymarket get_sports_markets --limit=20
     sports-skills kalshi get_markets --series_ticker=KXNBA
     sports-skills news fetch_items --query="Arsenal" --limit=5
+    sports-skills images find_images --name="Bukayo Saka" --min_long_edge=3840
     sports-skills f1 get_race_schedule --year=2025
     sports-skills nfl get_scoreboard
     sports-skills nfl get_standings --season=2025
@@ -297,6 +298,24 @@ _REGISTRY = {
         "get_player_photo": {"required": ["player_name"]},
         "search_teams": {"required": ["query"]},
         "search_players": {"required": ["query"]},
+    },
+    "images": {
+        "search_entities": {"required": ["query"], "optional": ["kind", "limit", "language"]},
+        "find_images": {
+            "optional": [
+                "name",
+                "qid",
+                "kind",
+                "min_long_edge",
+                "limit",
+                "orientation",
+                "allow_sharealike",
+                "sort",
+                "width",
+                "language",
+            ]
+        },
+        "get_image": {"required": ["file"], "optional": ["width"]},
     },
     "news": {
         "fetch_feed": {
@@ -621,6 +640,7 @@ _BOOL_PARAMS = {
     "descending",
     "with_nested_markets",
     "compact",
+    "allow_sharealike",
 }
 
 # Params that should be parsed as int
@@ -651,6 +671,8 @@ _INT_PARAMS = {
     "lookback_hours",
     "max_seasons",
     "depth",
+    "min_long_edge",
+    "width",
 }
 
 # Int params that also accept documented string forms (see _parse_value).
@@ -759,6 +781,10 @@ def _load_module(name):
         from sports_skills import metadata
 
         return metadata
+    elif name == "images":
+        from sports_skills import images
+
+        return images
     elif name == "news":
         from sports_skills import news
 
@@ -1197,12 +1223,12 @@ def _storefront_discovery(args, remaining):
 def main():
     parser = argparse.ArgumentParser(
         prog="sports-skills",
-        description="Lightweight CLI for sports data — football, F1, NFL, NBA, NBA G League, WNBA, NHL, MLB, tennis, cricket, CFB, CBB, golf, volleyball, prediction markets, betting analysis, metadata, and news.",
+        description="Lightweight CLI for sports data — football, F1, NFL, NBA, NBA G League, WNBA, NHL, MLB, tennis, cricket, CFB, CBB, golf, volleyball, prediction markets, betting analysis, metadata, images, and news.",
     )
     parser.add_argument(
         "module",
         nargs="?",
-        help="Module name: football, f1, nfl, nba, gleague, wnba, nhl, mlb, tennis, cricket, cfb, cbb, golf, volleyball, xctf, esports, polymarket, polymarket-trading, kalshi, prophetx, novig, gemini, betting, markets, metadata, news",
+        help="Module name: football, f1, nfl, nba, gleague, wnba, nhl, mlb, tennis, cricket, cfb, cbb, golf, volleyball, xctf, esports, polymarket, polymarket-trading, kalshi, prophetx, novig, gemini, betting, markets, metadata, images, news",
     )
     parser.add_argument("command", nargs="?", help="Command name (e.g., get_season_standings)")
     parser.add_argument("--version", action="store_true", help="Show version")

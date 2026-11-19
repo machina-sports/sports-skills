@@ -74,6 +74,7 @@ SLUG_TO_CLI_MODULE = {
     "betting": "betting",
     "markets": "markets",
     "metadata": "metadata",
+    "sports-images": "images",
 }
 
 # CLI module → Python import name, where they differ (the CLI routes
@@ -137,6 +138,7 @@ CATEGORY_MAP = {
     "sports-news": "News & Tools",
     "sports-reporter": "News & Tools",
     "metadata": "News & Tools",
+    "sports-images": "News & Tools",
     "espn-api": "News & Tools",
     "machina": "Machina",
     "world-cup": "Machina",
@@ -200,6 +202,7 @@ SKILL_ICONS = {
     "sports-news": "news",
     "sports-reporter": "pen",
     "metadata": "image",
+    "sports-images": "image",
     "espn-api": "code",
     "machina": "spark",
     "world-cup": "globe",
@@ -235,6 +238,7 @@ SKILL_HIGHLIGHTS = {
     "sports-news": "RSS · Atom · Google News",
     "sports-reporter": "Previews · recaps · profiles",
     "metadata": "Logos · player photos · venues",
+    "sports-images": "Open-licensed 4K photos · credit lines",
     "espn-api": "Raw ESPN reference for long-tail leagues",
     "machina": "Licensed feeds via machina-cli + MCP",
     "world-cup": "FIFA World Cup 2026 intelligence",
@@ -273,6 +277,7 @@ DATA_SOURCES = {
     "volleyball-data": "Nevobo API",
     "xctf-data": "TFRRS, The Stride Report",
     "metadata": "TheSportsDB",
+    "sports-images": "Wikimedia Commons, Wikidata",
     "espn-api": "ESPN",
     "sports-news": "RSS / Google News",
     "sports-reporter": "RSS / Google News",
