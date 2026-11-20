@@ -3176,21 +3176,54 @@ def _parse_at_time(value) -> int | None:
 
 
 def _candle_close(candle: dict) -> float | None:
-    """Yes price (0-1) from a Kalshi candlestick's close."""
-    price = candle.get("price") or {}
+    """Yes price (0-1) from a Kalshi candlestick's close, or None if unusable.
+
+    ``close_dollars`` wins over the legacy integer-cent ``close``; an explicit
+    zero is a real price. Non-finite or out-of-range closes are rejected.
+    """
+    price = candle.get("price") if isinstance(candle, dict) else None
+    if not isinstance(price, dict):
+        return None
     raw = price.get("close_dollars")
     if raw not in (None, ""):
-        try:
-            return float(raw)
-        except (TypeError, ValueError):
+        value = _finite(raw)
+    else:
+        legacy = price.get("close")
+        if legacy in (None, ""):
             return None
-    legacy = price.get("close")
-    if legacy not in (None, ""):
-        try:
-            return float(legacy) / 100.0
-        except (TypeError, ValueError):
-            return None
-    return None
+        value = _finite(legacy)
+        if value is not None:
+            value /= 100.0
+    if value is None or not 0.0 <= value <= 1.0:
+        return None
+    return value
+
+
+def _candle_timestamp(value) -> int | None:
+    """Integer Unix timestamp from a candle's end_period_ts, or None."""
+    if isinstance(value, bool):
+        return None
+    try:
+        timestamp = int(value)
+    except (TypeError, ValueError, OverflowError):
+        return None
+    return timestamp if not isinstance(value, float) or value == timestamp else None
+
+
+def _kalshi_candle_points(candles, start_ts: int, end_ts: int) -> list[tuple[int, float]]:
+    """Valid (timestamp, yes price) points inside [start_ts, end_ts], oldest first."""
+    points = []
+    for candle in candles if isinstance(candles, list) else []:
+        if not isinstance(candle, dict):
+            continue
+        ts = _candle_timestamp(candle.get("end_period_ts"))
+        if ts is None or not start_ts <= ts <= end_ts:
+            continue
+        price = _candle_close(candle)
+        if price is not None:
+            points.append((ts, price))
+    points.sort(key=lambda point: point[0])
+    return points
 
 
 def _price_pair(yes_price: float, at_time: int) -> dict:
@@ -3200,6 +3233,28 @@ def _price_pair(yes_price: float, at_time: int) -> dict:
         "yes": {"price": yes, "at_time": at_time},
         "no": {"price": round(1.0 - yes, 4), "at_time": at_time},
     }
+
+
+def _poly_history_point(point) -> tuple[int, float] | None:
+    """(timestamp, yes price 0-1) from a Polymarket history row, or None.
+
+    A row without a timestamp, or whose ``p`` is missing, null, malformed,
+    negative, non-finite or above 1, is unusable — never a 0.0 price. A
+    genuine 0 is kept.
+    """
+    if not isinstance(point, dict):
+        return None
+    ts = point.get("t")
+    if ts is None or isinstance(ts, bool):
+        return None
+    try:
+        ts = int(ts)
+    except (TypeError, ValueError, OverflowError):
+        return None
+    price = _finite(point.get("p"))
+    if price is None or price > 1:
+        return None
+    return ts, price
 
 
 def _kalshi_price_at(ticker: str, at_time: int) -> tuple[float, int] | None:
@@ -3212,22 +3267,21 @@ def _kalshi_price_at(ticker: str, at_time: int) -> tuple[float, int] | None:
 
     series_ticker = ticker.split("-", 1)[0]
     for period, lookback in ((60, 7 * 86400), (1440, 31 * 86400)):
+        start_ts = at_time - lookback
         result = kalshi.get_market_candlesticks(
             series_ticker=series_ticker,
             ticker=ticker,
-            start_ts=at_time - lookback,
+            start_ts=start_ts,
             end_ts=at_time,
             period_interval=period,
         )
         if not result.get("status"):
             continue
-        candles = result.get("data", {}).get("candlesticks", []) or []
-        candles = [c for c in candles if c.get("end_period_ts")]
-        candles.sort(key=lambda c: c["end_period_ts"])
-        for candle in reversed(candles):
-            price = _candle_close(candle)
-            if price is not None:
-                return price, int(candle["end_period_ts"])
+        candles = (result.get("data") or {}).get("candlesticks")
+        points = _kalshi_candle_points(candles, start_ts, at_time)
+        if points:
+            ts, price = points[-1]
+            return price, ts
     return None
 
 
@@ -3297,11 +3351,11 @@ def get_market_price(request_data: dict) -> dict:
             if not result.get("status"):
                 return _error(f"Polymarket history fetch failed: {result.get('message', '')}")
             history = result.get("data", {}).get("history", []) or []
-            points = [p for p in history if p.get("t") is not None and int(p["t"]) <= at_time]
+            parsed = (_poly_history_point(p) for p in history)
+            points = [pt for pt in parsed if pt is not None and pt[0] <= at_time]
             if not points:
                 return _error(f"No Polymarket price found for token at or before {at_time}")
-            last = max(points, key=lambda p: int(p["t"]))
-            yes_price, ts = float(last.get("p", 0)), int(last["t"])
+            ts, yes_price = max(points, key=lambda pt: pt[0])
             source = "history"
         else:
             result = polymarket.get_market_prices(token_id=token_id)
@@ -3327,6 +3381,10 @@ def get_market_price(request_data: dict) -> dict:
 
 
 _HISTORY_INTERVALS = {"1m": 1, "1h": 60, "1d": 1440}
+
+# Widest absolute startTs/endTs span CLOB /prices-history was observed to
+# accept (15 days passed; 30 days returned 400 "interval too long").
+_POLY_MAX_BOUNDED_SPAN = 15 * 86400
 
 
 def get_price_history(request_data: dict) -> dict:
@@ -3365,6 +3423,7 @@ def get_price_history(request_data: dict) -> dict:
         return _error("start_time must be before end_time")
 
     points = []
+    coverage_note = ""
 
     if venue == "kalshi":
         if not ticker:
@@ -3382,11 +3441,9 @@ def get_price_history(request_data: dict) -> dict:
         )
         if not result.get("status"):
             return _error(f"Kalshi candlesticks fetch failed: {result.get('message', '')}")
-        for candle in result.get("data", {}).get("candlesticks", []) or []:
-            ts = candle.get("end_period_ts")
-            price = _candle_close(candle)
-            if ts is not None and price is not None:
-                points.append({"timestamp": int(ts), "price": round(price, 4)})
+        candles = (result.get("data") or {}).get("candlesticks")
+        for ts, price in _kalshi_candle_points(candles, start_time, end_time):
+            points.append({"timestamp": ts, "price": round(price, 4)})
 
     else:  # polymarket
         if not token_id:
@@ -3395,33 +3452,57 @@ def get_price_history(request_data: dict) -> dict:
 
         from sports_skills import polymarket
 
-        span = end_time - start_time
-        clob_interval = "1d" if span <= 86400 else "1w" if span <= 7 * 86400 else "1m" if span <= 31 * 86400 else "max"
-        result = polymarket.get_price_history(
-            token_id=token_id,
-            interval=clob_interval,
-            fidelity=_HISTORY_INTERVALS[interval],
-        )
+        fidelity = _HISTORY_INTERVALS[interval]
+        if end_time - start_time <= _POLY_MAX_BOUNDED_SPAN:
+            # Absolute bounds, not a relative interval preset anchored at "now".
+            result = polymarket.get_price_history(
+                token_id=token_id,
+                start_time=start_time,
+                end_time=end_time,
+                fidelity=fidelity,
+            )
+        else:
+            # CLOB rejects wider absolute windows ("interval too long"); keep
+            # the former relative preset. It is anchored at "now", so it need
+            # not cover the requested window.
+            clob_interval = "1m" if end_time - start_time <= 31 * 86400 else "max"
+            fidelity = max(fidelity, 10)
+            result = polymarket.get_price_history(token_id=token_id, interval=clob_interval, fidelity=fidelity)
+            coverage_note = (
+                f"Polymarket window exceeds {_POLY_MAX_BOUNDED_SPAN // 86400} days, so it was fetched with the "
+                f"provider's '{clob_interval}' interval preset (relative to now) at {fidelity}-minute fidelity. "
+                "Only the points that preset "
+                "returned inside the requested window are shown; coverage may be partial."
+            )
         if not result.get("status"):
             return _error(f"Polymarket history fetch failed: {result.get('message', '')}")
+        # The live endpoint has returned points past endTs; keep the inclusive
+        # local filter.
         for p in result.get("data", {}).get("history", []) or []:
-            ts = p.get("t")
-            if ts is None or not (start_time <= int(ts) <= end_time):
+            parsed = _poly_history_point(p)
+            if parsed is None or not (start_time <= parsed[0] <= end_time):
                 continue
-            points.append({"timestamp": int(ts), "price": round(float(p.get("p", 0)), 4)})
+            ts, price = parsed
+            points.append({"timestamp": ts, "price": round(price, 4)})
 
     points.sort(key=lambda p: p["timestamp"])
+    data = {
+        "venue": venue,
+        "identifier": identifier,
+        "interval": interval,
+        "start_time": start_time,
+        "end_time": end_time,
+        "points": points,
+        "count": len(points),
+    }
+    message = f"Retrieved {len(points)} price point(s) from {venue}."
+    if coverage_note:
+        data["coverage"] = "possibly_partial"
+        data["warnings"] = [coverage_note]
+        message = f"{message} {coverage_note}"
     return _success(
-        {
-            "venue": venue,
-            "identifier": identifier,
-            "interval": interval,
-            "start_time": start_time,
-            "end_time": end_time,
-            "points": points,
-            "count": len(points),
-        },
-        f"Retrieved {len(points)} price point(s) from {venue}.",
+        data,
+        message,
     )
 
 

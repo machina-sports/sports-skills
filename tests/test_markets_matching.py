@@ -2,6 +2,8 @@
 
 from unittest.mock import patch
 
+import pytest
+
 from sports_skills.markets._connector import (
     _parse_at_time,
     _parse_kalshi_game_event,
@@ -375,6 +377,62 @@ class TestGetMarketPrice:
         assert result["data"]["yes"]["at_time"] == 1779940800
         assert result["data"]["source"] == "history"
 
+    @staticmethod
+    def _poly_as_of(mock_poly, history, at_time=1500):
+        mock_poly.get_price_history.return_value = {
+            "status": True,
+            "data": {"history": history},
+        }
+        return get_market_price(
+            {"params": {"venue": "polymarket", "token_id": "t1", "at_time": at_time}}
+        )
+
+    @patch("sports_skills.polymarket")
+    def test_polymarket_at_time_skips_later_row_without_price(self, mock_poly):
+        # A later in-window row with no usable "p" must not surface as a false
+        # 0.0; the older valid quote is used with ITS timestamp, and a valid
+        # quote after at_time is never selected.
+        result = self._poly_as_of(
+            mock_poly,
+            [
+                {"t": 1000, "p": 0.68},
+                {"t": 1200},  # missing p
+                {"t": 1300, "p": None},
+                {"t": 1400, "p": "abc"},
+                {"t": 2000, "p": 0.9},  # after at_time — excluded
+            ],
+        )
+
+        assert result["status"] is True
+        assert result["data"]["yes"] == {"price": 0.68, "at_time": 1000}
+        assert result["data"]["no"] == {"price": 0.32, "at_time": 1000}
+        assert result["data"]["source"] == "history"
+
+    @patch("sports_skills.polymarket")
+    def test_polymarket_at_time_all_invalid_is_no_price_error(self, mock_poly):
+        result = self._poly_as_of(
+            mock_poly,
+            [
+                {"t": 1000},
+                {"t": 1100, "p": None},
+                {"t": 1200, "p": "abc"},
+                {"t": 2000, "p": 0.9},  # valid but after at_time
+            ],
+        )
+
+        assert result["status"] is False
+        assert "No Polymarket price found for token at or before 1500" in result["message"]
+
+    @patch("sports_skills.polymarket")
+    def test_polymarket_at_time_keeps_genuine_zero(self, mock_poly):
+        result = self._poly_as_of(
+            mock_poly,
+            [{"t": 1000, "p": 0.68}, {"t": 1100, "p": 0}, {"t": 1200}],
+        )
+
+        assert result["status"] is True
+        assert result["data"]["yes"] == {"price": 0.0, "at_time": 1100}
+
     def test_invalid_venue(self):
         result = get_market_price({"params": {"venue": "espn", "ticker": "X"}})
         assert result["status"] is False
@@ -457,10 +515,99 @@ class TestGetPriceHistory:
         )
 
         assert result["status"] is True
+        # The requested window is sent upstream as explicit bounds; a coarse
+        # CLOB interval preset would fetch the wrong span.
+        mock_poly.get_price_history.assert_called_once()
+        call = mock_poly.get_price_history.call_args
+        assert call.kwargs["start_time"] == 100
+        assert call.kwargs["end_time"] == 1000
+        assert call.kwargs["fidelity"] == 60
+        assert "interval" not in call.kwargs
+        # Upstream may still return rows outside the window; they stay dropped.
         assert result["data"]["points"] == [
             {"timestamp": 150, "price": 0.4},
             {"timestamp": 950, "price": 0.5},
         ]
+
+    @patch("sports_skills.polymarket")
+    def test_polymarket_wide_window_falls_back_to_interval_preset(self, mock_poly):
+        # CLOB rejects absolute spans over ~15 days, so a 20-day window keeps
+        # the former relative preset and says coverage may be partial.
+        end = 100 + 20 * 86400
+        mock_poly.get_price_history.return_value = {
+            "status": True,
+            "data": {
+                "history": [
+                    {"t": 50, "p": 0.3},  # before window — dropped
+                    {"t": 100, "p": 0.4},  # inclusive start
+                    {"t": end, "p": 0.5},  # inclusive end
+                    {"t": end + 1, "p": 0.6},  # after window — dropped
+                ]
+            },
+        }
+
+        result = get_price_history(
+            {
+                "params": {
+                    "venue": "polymarket",
+                    "token_id": "t1",
+                    "interval": "1m",
+                    "start_time": 100,
+                    "end_time": end,
+                }
+            }
+        )
+
+        mock_poly.get_price_history.assert_called_once_with(token_id="t1", interval="1m", fidelity=10)
+        assert result["status"] is True
+        assert result["data"]["points"] == [
+            {"timestamp": 100, "price": 0.4},
+            {"timestamp": end, "price": 0.5},
+        ]
+        assert result["data"]["coverage"] == "possibly_partial"
+        assert "may be partial" in result["data"]["warnings"][0]
+        assert "may be partial" in result["message"]
+
+    @patch("sports_skills.polymarket")
+    def test_polymarket_history_missing_price_not_zero(self, mock_poly):
+        # Upstream sent {"t": 1000} with no "p"; it surfaced as a false 0.0
+        # price. A point without a usable price must be dropped, while a
+        # genuine 0 and a valid price are kept.
+        mock_poly.get_price_history.return_value = {
+            "status": True,
+            "data": {
+                "history": [
+                    {"t": 1000},  # missing p — dropped
+                    {"t": 1001, "p": 0.68},
+                    {"t": 1002, "p": 0},  # genuine zero — kept
+                    {"t": 1003, "p": None},  # null p — dropped
+                    {"t": 1004, "p": "abc"},  # malformed p — dropped
+                    {"t": 1005, "p": -0.1},
+                    {"t": 1006, "p": 1.1},
+                    {"t": 1007, "p": float("nan")},
+                    {"t": float("inf"), "p": 0.5},
+                ]
+            },
+        }
+
+        result = get_price_history(
+            {
+                "params": {
+                    "venue": "polymarket",
+                    "token_id": "t1",
+                    "interval": "1h",
+                    "start_time": 1,
+                    "end_time": 2000,
+                }
+            }
+        )
+
+        assert result["status"] is True
+        assert result["data"]["points"] == [
+            {"timestamp": 1001, "price": 0.68},
+            {"timestamp": 1002, "price": 0.0},
+        ]
+        assert result["data"]["count"] == 2
 
     def test_invalid_interval(self):
         result = get_price_history(
@@ -480,6 +627,226 @@ class TestGetPriceHistory:
             }
         )
         assert result["status"] is False
+
+
+# ============================================================
+# Kalshi candle validation (history + as-of)
+# ============================================================
+
+_KALSHI_TICKER = "KXMENWORLDCUP-26-FR"
+
+# Each of these must be skipped, never priced and never crash the lookup.
+_INVALID_KALSHI_CANDLES = {
+    "missing_price_block": {"end_period_ts": 900},
+    "empty_price_block": {"end_period_ts": 900, "price": {}},
+    "nan_close": {"end_period_ts": 900, "price": {"close_dollars": "NaN"}},
+    "inf_close": {"end_period_ts": 900, "price": {"close_dollars": "inf"}},
+    "neg_inf_close": {"end_period_ts": 900, "price": {"close_dollars": "-inf"}},
+    "close_above_one": {"end_period_ts": 900, "price": {"close_dollars": "1.5000"}},
+    "close_below_zero": {"end_period_ts": 900, "price": {"close_dollars": "-0.1000"}},
+    "legacy_cents_above_100": {"end_period_ts": 900, "price": {"close": 150}},
+    "legacy_cents_negative": {"end_period_ts": 900, "price": {"close": -5}},
+    "legacy_cents_nan": {"end_period_ts": 900, "price": {"close": "NaN"}},
+    "garbage_timestamp": {"end_period_ts": "garbage", "price": {"close_dollars": "0.3000"}},
+    "none_timestamp": {"end_period_ts": None, "price": {"close_dollars": "0.3000"}},
+    "nan_timestamp": {"end_period_ts": float("nan"), "price": {"close_dollars": "0.3000"}},
+    "inf_timestamp": {"end_period_ts": float("inf"), "price": {"close_dollars": "0.3000"}},
+}
+
+
+def _kalshi_candles(mock_kalshi, candles):
+    mock_kalshi.get_market_candlesticks.return_value = {
+        "status": True,
+        "data": {"candlesticks": candles},
+    }
+
+
+def _kalshi_history(start_time=100, end_time=1000):
+    return get_price_history(
+        {
+            "params": {
+                "venue": "kalshi",
+                "ticker": _KALSHI_TICKER,
+                "interval": "1h",
+                "start_time": start_time,
+                "end_time": end_time,
+            }
+        }
+    )
+
+
+def _kalshi_as_of(at_time=1000):
+    return get_market_price({"params": {"venue": "kalshi", "ticker": _KALSHI_TICKER, "at_time": at_time}})
+
+
+class TestKalshiHistoryCandleValidation:
+    @patch("sports_skills.kalshi")
+    def test_keeps_zero_and_legacy_cents_skips_invalid_and_post_cutoff(self, mock_kalshi):
+        _kalshi_candles(
+            mock_kalshi,
+            [
+                {"end_period_ts": 100, "price": {"close_dollars": "0.0000"}},  # genuine zero
+                {"end_period_ts": 200, "price": {"close": 42}},  # legacy cents
+                {"end_period_ts": 300, "price": {"close": 0}},  # legacy genuine zero
+                *_INVALID_KALSHI_CANDLES.values(),
+                {"end_period_ts": 950, "price": {"close_dollars": "0.6000"}},
+                # Upstream returned it, but it is past end_time.
+                {"end_period_ts": 1500, "price": {"close_dollars": "0.9000"}},
+            ],
+        )
+
+        result = _kalshi_history()
+
+        assert result["status"] is True
+        assert result["data"]["points"] == [
+            {"timestamp": 100, "price": 0.0},
+            {"timestamp": 200, "price": 0.42},
+            {"timestamp": 300, "price": 0.0},
+            {"timestamp": 950, "price": 0.6},
+        ]
+        assert result["data"]["count"] == 4
+
+    @pytest.mark.parametrize("case", sorted(_INVALID_KALSHI_CANDLES))
+    @patch("sports_skills.kalshi")
+    def test_each_invalid_candle_is_skipped(self, mock_kalshi, case):
+        _kalshi_candles(
+            mock_kalshi,
+            [
+                {"end_period_ts": 500, "price": {"close_dollars": "0.2500"}},
+                _INVALID_KALSHI_CANDLES[case],
+            ],
+        )
+
+        result = _kalshi_history()
+
+        assert result["status"] is True
+        assert result["data"]["points"] == [{"timestamp": 500, "price": 0.25}]
+
+    @patch("sports_skills.kalshi")
+    def test_post_cutoff_candle_alone_yields_no_points(self, mock_kalshi):
+        _kalshi_candles(mock_kalshi, [{"end_period_ts": 1001, "price": {"close_dollars": "0.5000"}}])
+
+        result = _kalshi_history(end_time=1000)
+
+        assert result["status"] is True
+        assert result["data"]["points"] == []
+
+
+class TestKalshiAsOfCandleValidation:
+    @patch("sports_skills.kalshi")
+    def test_genuine_zero_close_is_the_price(self, mock_kalshi):
+        _kalshi_candles(
+            mock_kalshi,
+            [
+                {"end_period_ts": 500, "price": {"close_dollars": "0.4000"}},
+                {"end_period_ts": 900, "price": {"close_dollars": "0.0000"}},
+            ],
+        )
+
+        result = _kalshi_as_of(1000)
+
+        assert result["status"] is True
+        assert result["data"]["yes"] == {"price": 0.0, "at_time": 900}
+        assert result["data"]["no"] == {"price": 1.0, "at_time": 900}
+        assert result["data"]["source"] == "candlestick"
+
+    @patch("sports_skills.kalshi")
+    def test_legacy_cents_close_is_scaled(self, mock_kalshi):
+        _kalshi_candles(mock_kalshi, [{"end_period_ts": 900, "price": {"close": 42}}])
+
+        result = _kalshi_as_of(1000)
+
+        assert result["status"] is True
+        assert result["data"]["yes"] == {"price": 0.42, "at_time": 900}
+
+    @patch("sports_skills.kalshi")
+    def test_candle_after_at_time_is_ignored(self, mock_kalshi):
+        # Upstream may hand back a candle closing past the requested instant;
+        # pricing from it would leak the future into an as-of answer.
+        _kalshi_candles(
+            mock_kalshi,
+            [
+                {"end_period_ts": 900, "price": {"close_dollars": "0.3000"}},
+                {"end_period_ts": 1001, "price": {"close_dollars": "0.9000"}},
+            ],
+        )
+
+        result = _kalshi_as_of(1000)
+
+        assert result["status"] is True
+        assert result["data"]["yes"] == {"price": 0.3, "at_time": 900}
+
+    @patch("sports_skills.kalshi")
+    def test_only_post_cutoff_candles_is_an_error(self, mock_kalshi):
+        _kalshi_candles(mock_kalshi, [{"end_period_ts": 1001, "price": {"close_dollars": "0.9000"}}])
+
+        result = _kalshi_as_of(1000)
+
+        assert result["status"] is False
+
+    @pytest.mark.parametrize("case", sorted(_INVALID_KALSHI_CANDLES))
+    @patch("sports_skills.kalshi")
+    def test_invalid_newest_candle_falls_back_to_older_valid(self, mock_kalshi, case):
+        # The invalid candle (ts 900, or an unusable ts) must not shadow the
+        # older valid close.
+        _kalshi_candles(
+            mock_kalshi,
+            [
+                {"end_period_ts": 500, "price": {"close_dollars": "0.2500"}},
+                _INVALID_KALSHI_CANDLES[case],
+            ],
+        )
+
+        result = _kalshi_as_of(1000)
+
+        assert result["status"] is True
+        assert result["data"]["yes"] == {"price": 0.25, "at_time": 500}
+
+    @pytest.mark.parametrize("case", sorted(_INVALID_KALSHI_CANDLES))
+    @patch("sports_skills.kalshi")
+    def test_only_invalid_candles_is_an_error(self, mock_kalshi, case):
+        _kalshi_candles(mock_kalshi, [_INVALID_KALSHI_CANDLES[case]])
+
+        result = _kalshi_as_of(1000)
+
+        assert result["status"] is False
+
+
+# ============================================================
+# polymarket.get_price_history request boundary
+# ============================================================
+
+
+class TestPolymarketPriceHistoryRequest:
+    @patch("sports_skills.polymarket._connector._clob_request")
+    def test_bounded_window_sends_start_end_without_interval(self, mock_clob):
+        from sports_skills import polymarket
+
+        mock_clob.return_value = {"history": []}
+
+        result = polymarket.get_price_history(token_id="t1", start_time=100, end_time=1000, fidelity=60)
+
+        assert result["status"] is True
+        mock_clob.assert_called_once_with(
+            "/prices-history",
+            params={"market": "t1", "startTs": 100, "endTs": 1000, "fidelity": 60},
+            ttl=60,
+        )
+
+    @patch("sports_skills.polymarket._connector._clob_request")
+    def test_unbounded_keeps_interval_default(self, mock_clob):
+        from sports_skills import polymarket
+
+        mock_clob.return_value = {"history": []}
+
+        result = polymarket.get_price_history(token_id="t1")
+
+        assert result["status"] is True
+        mock_clob.assert_called_once_with(
+            "/prices-history",
+            params={"market": "t1", "interval": "max", "fidelity": 120},
+            ttl=60,
+        )
 
 
 # ============================================================
