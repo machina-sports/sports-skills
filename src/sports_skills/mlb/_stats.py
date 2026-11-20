@@ -226,7 +226,7 @@ def find_mlb_player(request_data: dict[str, Any]) -> dict[str, Any]:
     name = params.get("name")
     if not name:
         raise _MlbStatsError("name is required")
-    data = _request("people/search", {"names": str(name)})
+    data = _request("people/search", {"names": str(name), "hydrate": "currentTeam"})
     needle = _fold(str(name).strip())
     players = []
     for p in data.get("people", []):

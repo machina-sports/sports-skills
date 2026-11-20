@@ -112,6 +112,15 @@ class TestFindPlayer:
         p = _stats.find_mlb_player({"params": {"name": "acuna"}})["players"][0]
         assert {"player_id", "name", "is_active", "position", "team"} <= set(p)
 
+    def test_asks_for_the_current_team(self, offline):
+        _stats.find_mlb_player({"params": {"name": "acuna"}})
+        assert offline[0][1]["hydrate"] == "currentTeam"
+
+    def test_team_is_the_current_team(self, offline):
+        players = _stats.find_mlb_player({"params": {"name": "acuna"}})["players"]
+        acuna = next(p for p in players if p["name"] == "Ronald Acuña Jr.")
+        assert acuna["team"] == "Atlanta Braves"
+
     def test_missing_name_is_reported(self, offline):
         out = _stats.find_mlb_player({"params": {}})
         assert out["error"] is True
