@@ -212,6 +212,136 @@ def test_timeline_keeps_stoppage_time_as_added_time():
     assert [(e["minute"], e["added_time"]) for e in tl] == [(45, 3), (59, 0), (90, 7)]
 
 
+def test_timeline_reads_period_and_wallclock():
+    summary = {
+        "keyEvents": [
+            {
+                "id": "1",
+                "type": {"text": "Yellow Card"},
+                "period": {"number": 1},
+                "clock": {"displayValue": "24'"},
+                "wallclock": "2026-11-08T14:24:44Z",
+            },
+            {
+                "id": "2",
+                "type": {"text": "Goal"},
+                "period": {"number": 2},
+                "clock": {"displayValue": "70'"},
+                "wallclock": "2026-11-08T15:31:02Z",
+            },
+        ]
+    }
+    tl = c._normalize_espn_summary_timeline(summary)
+    assert [(e["period"], e["datetime"]) for e in tl] == [
+        (1, "2026-11-08T14:24:44Z"),
+        (2, "2026-11-08T15:31:02Z"),
+    ]
+
+
+def test_timeline_without_period_or_wallclock_keeps_empty_strings():
+    tl = c._normalize_espn_summary_timeline(LA_LIGA_SUMMARY)
+    assert {(e["period"], e["datetime"]) for e in tl} == {("", "")}
+
+
+def test_timeline_scalar_period_yields_empty_string():
+    # ESPN (e.g. eng.1 event 740705) sends ``period`` as an object; a bare scalar is not
+    # a shape we read, so it must degrade to "" instead of raising on ``.get``.
+    summary = {
+        "keyEvents": [
+            {
+                "id": "1",
+                "type": {"text": "Goal"},
+                "period": 2,
+                "clock": {"displayValue": "70'"},
+                "wallclock": "2026-11-08T15:31:02Z",
+            }
+        ]
+    }
+    (event,) = c._normalize_espn_summary_timeline(summary)
+    assert event["period"] == ""
+    assert event["datetime"] == "2026-11-08T15:31:02Z"
+
+
+def _roster_player(pid, *, subbed_in=False, subbed_out=False, sub_clock=None):
+    plays = []
+    if sub_clock:
+        plays.append({"clock": {"displayValue": sub_clock}, "substitution": True})
+    return {
+        "athlete": {"id": pid, "displayName": pid},
+        "starter": not subbed_in,
+        "subbedIn": subbed_in,
+        "subbedOut": subbed_out,
+        "plays": plays,
+    }
+
+
+def test_sub_minute_comes_from_the_substitution_play():
+    summary = {
+        "rosters": [
+            {
+                "team": {"id": "364", "displayName": "Liverpool"},
+                "roster": [
+                    _roster_player("out", subbed_out=True, sub_clock="60'"),
+                    _roster_player("in", subbed_in=True, sub_clock="60'"),
+                    _roster_player("late", subbed_in=True, sub_clock="90'+2'"),
+                    _roster_player("starter"),
+                ],
+            }
+        ]
+    }
+    (team,) = c._normalize_espn_summary_players(summary)
+    minutes = {p["id"]: p["sub_minute"] for p in team["players"]}
+    assert minutes == {"out": 60, "in": 60, "late": 90, "starter": None}
+
+
+def _players_by_id(roster):
+    summary = {"rosters": [{"team": {"id": "364", "displayName": "Liverpool"}, "roster": roster}]}
+    (team,) = c._normalize_espn_summary_players(summary)
+    return {p["id"]: p for p in team["players"]}
+
+
+def test_sub_minute_skips_null_or_unreadable_clock_and_uses_next_valid_play():
+    entry = {
+        "athlete": {"id": "in", "displayName": "in"},
+        "starter": False,
+        "subbedIn": True,
+        "subbedOut": False,
+        "plays": [
+            {"clock": {"displayValue": None}, "substitution": True},
+            {"clock": {"displayValue": "--"}, "substitution": True},
+            {"clock": None, "substitution": True},
+            {"clock": {"displayValue": "67'"}, "substitution": True},
+        ],
+    }
+    assert _players_by_id([entry])["in"]["sub_minute"] == 67
+
+
+def test_sub_minute_preserves_explicit_zero_sub_minute():
+    entry = _roster_player("in", subbed_in=True, sub_clock="60'")
+    entry["subMinute"] = 0
+    assert _players_by_id([entry])["in"]["sub_minute"] == 0
+
+
+def test_sub_minute_subbed_in_and_out_uses_first_valid_substitution_in_provider_order():
+    # Convention: a player both subbed in and out gets the minute of the first valid
+    # substitution play as ESPN orders them (here: the entry). No extra fields are added.
+    entry = {
+        "athlete": {"id": "both", "displayName": "both"},
+        "starter": False,
+        "subbedIn": True,
+        "subbedOut": True,
+        "plays": [
+            {"clock": {"displayValue": None}, "substitution": True},
+            {"clock": {"displayValue": "46'"}, "substitution": True},
+            {"clock": {"displayValue": "80'"}, "substitution": True},
+        ],
+    }
+    player = _players_by_id([entry])["both"]
+    assert player["sub_minute"] == 46
+    assert player["subbed_in"] is True and player["subbed_out"] is True
+    assert not {"sub_in_minute", "sub_out_minute"} & set(player)
+
+
 def test_serie_b_is_wired_like_serie_a():
     serie_a = c.LEAGUES["serie-a"]
     serie_b = c.LEAGUES["serie-b"]
