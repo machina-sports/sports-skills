@@ -1415,3 +1415,120 @@ class TestPickcenterNullShapes:
         odds = normalize_summary_odds(summary)
         assert odds["line"] == "close"
         assert (odds["home_odds"], odds["away_odds"]) == (-298, 240)
+
+
+# ============================================================
+# Per-quote provenance in compare_odds side_prices
+# ============================================================
+
+_PROVENANCE_KEYS = {"market_id", "contract_id", "outcome_id", "price_kind", "observed_at", "retrieved_at"}
+_QUOTE_KEYS = {"venue", "implied_probability", "price_basis", "execution_guaranteed"} | _PROVENANCE_KEYS
+
+
+def _novig_cached_event():
+    """NOVIG_GAME_EVENT after a fetched book: `_search_novig` copies the book's
+    outcome ids and its cached-snapshot metadata onto the market entry."""
+    event = copy.deepcopy(NOVIG_GAME_EVENT)
+    market = event["markets"][0]
+    market["outcomes"][0]["id"] = "01a0f000-0000-7000-8000-0000000000b1"
+    market["outcomes"][1]["id"] = "01a0f000-0000-7000-8000-0000000000b2"
+    market.update(price_basis="cached_snapshot", retrieved_at="2026-09-21T23:40:00Z")
+    return event
+
+
+def _gemini_cached_market():
+    """`_gemini_market` plus the contract ids and retrieval time gemini normalizes."""
+    market = _gemini_market("G1", 0.56, 0.45)
+    market["retrieved_at"] = "2026-11-19T23:10:00Z"
+    for contract, suffix in zip(market["outcomes"], ("LAL", "BOS")):
+        contract.update(id=f"contract-{suffix}", instrument_symbol=f"G1-{suffix}")
+    return market
+
+
+def _provenance_of(quote):
+    return {key: quote[key] for key in sorted(_PROVENANCE_KEYS)}
+
+
+class TestQuoteProvenance:
+    def test_every_venue_quote_carries_its_own_identity_and_provenance(self):
+        prophetx = _prophetx_event([PROPHETX_FULL_GAME_MARKET])
+        result = _compare(
+            NFL_SUMMARY,
+            kalshi=[_kalshi_event()],
+            poly=[POLY_GAME_MARKET],
+            prophetx=[prophetx],
+            novig=[_novig_cached_event()],
+        )
+        side_prices = result["data"]["side_prices"]
+        for side in ("home", "away"):
+            assert all(set(q) == _QUOTE_KEYS for q in side_prices[side]["quotes"])
+            assert _venues(result, side) == ["espn", "polymarket", "prophetx", "novig", "kalshi"]
+
+        home = {q["venue"]: _provenance_of(q) for q in side_prices["home"]["quotes"]}
+        away = {q["venue"]: _provenance_of(q) for q in side_prices["away"]["quotes"]}
+        unknown = dict.fromkeys(_PROVENANCE_KEYS)
+
+        # ESPN: a sportsbook close line, no contract ids, no published capture time.
+        assert home["espn"] == away["espn"] == dict(unknown, price_kind="american_moneyline_close")
+        # Polymarket: the selected market and the outcome's own CLOB token.
+        assert home["polymarket"] == dict(unknown, market_id="5320", contract_id="222", price_kind="outcome_price")
+        assert away["polymarket"] == dict(unknown, market_id="5320", contract_id="111", price_kind="outcome_price")
+        # ProphetX: the per-event market key; the search shape keeps no outcome ids.
+        assert (
+            home["prophetx"]
+            == away["prophetx"]
+            == dict(unknown, market_id="1700008786:219", price_kind="odds_american")
+        )
+        # Novig: cached derived ask with the book's ORIGINAL retrieval time.
+        novig_market = "01a0f000-0000-7000-8000-000000000002"
+        assert home["novig"] == dict(
+            unknown,
+            market_id=novig_market,
+            outcome_id="01a0f000-0000-7000-8000-0000000000b1",
+            price_kind="derived_ask",
+            retrieved_at="2026-09-21T23:40:00Z",
+        )
+        assert away["novig"]["outcome_id"] == "01a0f000-0000-7000-8000-0000000000b2"
+        # Kalshi: the validated ticker per side, under its event; price field unknown.
+        assert home["kalshi"] == dict(unknown, market_id="KXNFLGAME-26SEP21NYGLAR", contract_id=KALSHI_HOME_TICKER)
+        assert away["kalshi"] == dict(unknown, market_id="KXNFLGAME-26SEP21NYGLAR", contract_id=KALSHI_AWAY_TICKER)
+        # Nothing was dated: kickoff is never an observation time.
+        assert all(q["observed_at"] is None for s in ("home", "away") for q in side_prices[s]["quotes"])
+
+        # Numbers, existing keys, ranking and arbitrage are untouched.
+        assert [q["implied_probability"] for q in side_prices["away"]["quotes"][1:]] == [0.265, 0.2703, 0.28, 0.26]
+        assert all(
+            q["price_basis"] == "reference" and q["execution_guaranteed"] is False
+            for s in ("home", "away")
+            for q in side_prices[s]["quotes"]
+        )
+        assert side_prices["away"]["lowest_reference"] == side_prices["away"]["quotes"][4]
+        assert _labels(result) == ["kalshi_Los Angeles Rams", "kalshi_New York Giants"]
+        assert result["data"]["arbitrage_check"]["price_basis"] == "reference"
+        assert result["data"]["completeness"]["complete"] is True
+
+        # The catalog-shaped fixture (no book metadata) stays unknown, not invented.
+        plain = _compare(dict(NFL_SUMMARY, odds=None), novig=[NOVIG_GAME_EVENT])
+        quote = plain["data"]["side_prices"]["home"]["quotes"][0]
+        assert quote["venue"] == "novig"
+        assert (quote["outcome_id"], quote["retrieved_at"], quote["observed_at"]) == (None, None, None)
+        assert quote["price_kind"] == "derived_ask"
+
+    def test_gemini_buy_yes_keeps_contract_identity_and_original_retrieval(self):
+        cached = _compare_nba([{"event_ticker": "G1", "markets": [_gemini_cached_market()]}])
+        quotes = {q["venue"]: q for q in cached["data"]["side_prices"]["home"]["quotes"]}
+        assert _provenance_of(quotes["gemini"]) == {
+            "contract_id": "G1-LAL",
+            "market_id": "G1",
+            "observed_at": None,
+            "outcome_id": "contract-LAL",
+            "price_kind": "buy_yes",
+            "retrieved_at": "2026-11-19T23:10:00Z",
+        }
+        assert quotes["gemini"]["implied_probability"] == 0.56
+        assert quotes["kalshi"]["contract_id"] == f"{NBA_KALSHI_EVENT}-LAL"
+
+        plain = _compare_nba([{"event_ticker": "G1", "markets": [_gemini_market("G1", 0.56, 0.45)]}])
+        quote = next(q for q in plain["data"]["side_prices"]["away"]["quotes"] if q["venue"] == "gemini")
+        assert (quote["contract_id"], quote["outcome_id"], quote["retrieved_at"]) == (None, None, None)
+        assert (quote["market_id"], quote["price_kind"]) == ("G1", "buy_yes")

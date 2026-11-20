@@ -1428,6 +1428,31 @@ def search_entity(request_data: dict) -> dict:
     )
 
 
+def _provenance(
+    market_id=None, contract_id=None, outcome_id=None, price_kind=None, observed_at=None, retrieved_at=None
+) -> dict:
+    """Where one compared quote came from. Anything the source did not provide stays None.
+
+    market_id: the venue's two-way game market (Kalshi event ticker, Polymarket
+        market id, ProphetX market key, Novig market id, Gemini event ticker).
+    contract_id: the tradable instrument for this side (Kalshi market ticker,
+        Polymarket CLOB token, Gemini instrument symbol).
+    outcome_id: the venue's outcome id inside the market (Novig, Gemini contract id).
+    price_kind: the source field (or known semantics) the price was read from.
+    observed_at: the venue's own observation time for the quote — never a
+        kickoff or an unrelated record update.
+    retrieved_at: the original retrieval time the provider module recorded.
+    """
+    return {
+        "market_id": market_id,
+        "contract_id": contract_id,
+        "outcome_id": outcome_id,
+        "price_kind": price_kind,
+        "observed_at": observed_at,
+        "retrieved_at": retrieved_at,
+    }
+
+
 def compare_odds(request_data: dict) -> dict:
     """ESPN odds + prediction market prices, normalized side-by-side + arb check.
 
@@ -1542,12 +1567,26 @@ def compare_odds(request_data: dict) -> dict:
     # cheapest implied probability for each side. Summing every venue's full
     # outcome set double-counts the same propositions and can never identify a
     # real cross-venue arbitrage.
+    # Each entry is (implied probability, label, provenance); see _provenance.
     side_prices = {"home": [], "away": []}
+    espn_provenance = None
+    if book:
+        line = book.get("line")
+        # A sportsbook line, not a venue contract: no market/contract/outcome
+        # ids. ESPN publishes no capture time today, so observed_at stays None.
+        espn_provenance = _provenance(
+            price_kind=f"american_moneyline_{line}" if line and line != "unlabeled" else "american_moneyline",
+            observed_at=book.get("captured_at"),
+        )
     if espn_comparison.get("home") and espn_comparison["home"]["implied_probability"] > 0:
-        side_prices["home"].append((espn_comparison["home"]["implied_probability"], f"espn_{home_team}"))
+        side_prices["home"].append(
+            (espn_comparison["home"]["implied_probability"], f"espn_{home_team}", espn_provenance)
+        )
 
     if espn_comparison.get("away") and espn_comparison["away"]["implied_probability"] > 0:
-        side_prices["away"].append((espn_comparison["away"]["implied_probability"], f"espn_{away_team}"))
+        side_prices["away"].append(
+            (espn_comparison["away"]["implied_probability"], f"espn_{away_team}", espn_provenance)
+        )
 
     def _side_for_label(label):
         normalized = _normalize_name(str(label or ""))
@@ -1590,10 +1629,22 @@ def compare_odds(request_data: dict) -> dict:
     if poly_warning:
         warnings.append(poly_warning)
         _reject("polymarket", poly_warning)
+    # The one admitted moneyline these outcomes belong to (by object identity).
+    poly_market = next(
+        (m for m in poly_valid if any(o is outcome for o in m.get("outcomes") or [] for outcome in poly_outcomes)),
+        {},
+    )
     for outcome in poly_outcomes:
         side = _side_for_label(outcome.get("outcome"))
         if side:
-            side_prices[side].append((outcome["price"], f"poly_{outcome.get('outcome', '')}"))
+            provenance = _provenance(
+                market_id=poly_market.get("market_id") or None,
+                # The CLOB token is the tradable contract for this outcome.
+                contract_id=outcome.get("token_id") or None,
+                # Gamma outcomePrices: a reference price, no venue timestamp.
+                price_kind="outcome_price",
+            )
+            side_prices[side].append((outcome["price"], f"poly_{outcome.get('outcome', '')}", provenance))
 
     # ProphetX exposes odds only when a public order book exists. Only the
     # exact full-game "Moneyline" of a date-compatible event joins the pool:
@@ -1671,11 +1722,19 @@ def compare_odds(request_data: dict) -> dict:
             "— refusing to pool separate ProphetX markets",
         )
     elif px_candidates:
-        for outcome in px_candidates[0][1].get("outcomes", []):
+        px_market = px_candidates[0][1]
+        for outcome in px_market.get("outcomes", []):
             prob = outcome.get("implied_probability") or 0
             side = _side_for_label(outcome.get("outcome"))
             if side and 0 < prob < 1:
-                side_prices[side].append((prob, f"prophetx_{outcome.get('outcome', '')}"))
+                # The search shape carries no outcome/line ids and no retrieval
+                # time (ProphetX stamps retrieved_at at normalization, cache hits
+                # included, so it is not an original retrieval time anyway).
+                provenance = _provenance(
+                    market_id=str(px_market.get("market_key") or "").strip() or None,
+                    price_kind="odds_american",
+                )
+                side_prices[side].append((prob, f"prophetx_{outcome.get('outcome', '')}", provenance))
 
     # Novig: exactly ONE full-game MONEY market of a date-compatible event,
     # with both outcome labels naming distinct sides of this game (labels are
@@ -1722,7 +1781,19 @@ def compare_odds(request_data: dict) -> dict:
             for outcome in game_ml["outcomes"]:
                 prob = _normalize_price(float(outcome["derived_ask"]), "novig")["implied_probability"]
                 if 0 < prob < 1:
-                    legs[_novig_side(outcome.get("outcome"))] = (prob, f"novig_{outcome.get('outcome', '')}")
+                    # Cached book snapshot: retrieved_at is the original fetch
+                    # time (kept across cache hits), not an exchange timestamp.
+                    provenance = _provenance(
+                        market_id=game_ml.get("market_id"),
+                        outcome_id=outcome.get("id"),
+                        price_kind="derived_ask",
+                        retrieved_at=game_ml.get("retrieved_at"),
+                    )
+                    legs[_novig_side(outcome.get("outcome"))] = (
+                        prob,
+                        f"novig_{outcome.get('outcome', '')}",
+                        provenance,
+                    )
         if len(legs) == 2:
             for side, leg in legs.items():
                 side_prices[side].append(leg)
@@ -1748,6 +1819,7 @@ def compare_odds(request_data: dict) -> dict:
     kalshi_legs: dict[str, dict[str, float]] = {"home": {}, "away": {}}
     kalshi_events: dict[str, list[str]] = {"home": [], "away": []}
     kalshi_conflicts: list[str] = []
+    kalshi_event_of: dict[str, str | None] = {}
     for event in kalshi_matches:
         event_ref = str(event.get("event_ticker") or "unnamed event")
         legs: dict[str, dict[str, float]] = {}
@@ -1783,6 +1855,7 @@ def compare_odds(request_data: dict) -> dict:
                         kalshi_conflicts.append(f"{ticker} ({known} vs {probability})")
                         continue
                     kalshi_legs[side].setdefault(ticker, probability)
+                    kalshi_event_of.setdefault(ticker, event.get("event_ticker") or None)
                     if event_ref not in kalshi_events[side]:
                         kalshi_events[side].append(event_ref)
         elif legs:
@@ -1806,8 +1879,16 @@ def compare_odds(request_data: dict) -> dict:
         )
     elif kalshi_legs["home"] and kalshi_legs["away"]:
         for side in ("home", "away"):
-            probability = next(iter(kalshi_legs[side].values()))
-            side_prices[side].append((probability, f"kalshi_{identity[side]['name']}"))
+            # The validated ticker itself, never one rebuilt from a team label.
+            ticker, probability = next(iter(kalshi_legs[side].items()))
+            provenance = _provenance(
+                market_id=kalshi_event_of.get(ticker),
+                contract_id=ticker,
+                # yes_price is yes_bid or, absent that key, last_price; which
+                # one is not recorded in the search shape, so it stays unknown.
+                price_kind=None,
+            )
+            side_prices[side].append((probability, f"kalshi_{identity[side]['name']}", provenance))
 
     # Gemini: exactly ONE active full-contest moneyline of this league starting
     # at this game's exact instant, whose two open single-leg contracts name
@@ -1861,8 +1942,18 @@ def compare_odds(request_data: dict) -> dict:
         tickers = ", ".join(str(m.get("ticker")) for m in gemini_candidates)
         _reject("gemini", f"ambiguous full-game candidates: {tickers} — refusing to pool separate Gemini markets")
     elif gemini_candidates:
-        for o in gemini_candidates[0]["outcomes"]:
-            side_prices[o["side"]].append((o["buy_yes"], f"gemini_{o.get('label', '')}"))
+        gemini_market = gemini_candidates[0]
+        for o in gemini_market["outcomes"]:
+            # Cached public event snapshot: retrieved_at is the original fetch
+            # time (kept across cache hits); Gemini sends no quote timestamp.
+            provenance = _provenance(
+                market_id=gemini_market.get("ticker"),
+                contract_id=o.get("instrument_symbol"),
+                outcome_id=o.get("id"),
+                price_kind="buy_yes",
+                retrieved_at=gemini_market.get("retrieved_at"),
+            )
+            side_prices[o["side"]].append((o["buy_yes"], f"gemini_{o.get('label', '')}", provenance))
     else:
         for reason in gemini_rejections:
             _reject("gemini", reason)
@@ -1871,7 +1962,7 @@ def compare_odds(request_data: dict) -> dict:
     all_labels = []
     if side_prices["home"] and side_prices["away"]:
         for side in ("home", "away"):
-            probability, label = min(side_prices[side], key=lambda candidate: candidate[0])
+            probability, label, _prov = min(side_prices[side], key=lambda candidate: candidate[0])
             all_probs.append(probability)
             all_labels.append(label)
 
@@ -1897,7 +1988,7 @@ def compare_odds(request_data: dict) -> dict:
 
     # A source counts as usable only if it actually priced one of this game's
     # sides — transport success and a non-empty market list do not.
-    contributed = {label.split("_", 1)[0] for prices in side_prices.values() for _prob, label in prices}
+    contributed = {label.split("_", 1)[0] for prices in side_prices.values() for _prob, label, _prov in prices}
     for venue, prefix in (
         ("polymarket", "poly"),
         ("prophetx", "prophetx"),
@@ -1917,8 +2008,9 @@ def compare_odds(request_data: dict) -> dict:
                 "implied_probability": probability,
                 "price_basis": "reference",
                 "execution_guaranteed": False,
+                **provenance,
             }
-            for probability, label in side_prices[side]
+            for probability, label, provenance in side_prices[side]
         ]
         lowest = min(quotes, key=lambda quote: quote["implied_probability"], default=None)
         return {"team": team, "quotes": quotes, "lowest_reference": lowest}
