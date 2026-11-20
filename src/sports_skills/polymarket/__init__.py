@@ -298,17 +298,32 @@ def search_markets(
 
 
 def get_price_history(
-    *, token_id: str, interval: str = "max", fidelity: int = 120
+    *,
+    token_id: str,
+    interval: str = "max",
+    fidelity: int = 120,
+    start_time: int | None = None,
+    end_time: int | None = None,
 ) -> dict:
     """Get historical price data for a market over time.
 
     Args:
         token_id: CLOB token ID (the long numeric outcome identifier).
         interval: Time range — "1d", "1w", "1m", or "max" (default: "max").
+            Ignored when start_time or end_time is given.
         fidelity: Resolution of data points in minutes (default: 120).
+        start_time: Optional window start, Unix seconds (CLOB startTs).
+        end_time: Optional window end, Unix seconds (CLOB endTs). The upstream
+            may still return points outside the window; filter locally.
     """
     return _get_price_history(
-        _req(token_id=token_id, interval=interval, fidelity=fidelity)
+        _req(
+            token_id=token_id,
+            interval=interval,
+            fidelity=fidelity,
+            start_time=start_time,
+            end_time=end_time,
+        )
     )
 
 

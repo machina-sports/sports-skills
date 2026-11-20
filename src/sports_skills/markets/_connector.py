@@ -3382,6 +3382,10 @@ def get_market_price(request_data: dict) -> dict:
 
 _HISTORY_INTERVALS = {"1m": 1, "1h": 60, "1d": 1440}
 
+# Widest absolute startTs/endTs span CLOB /prices-history was observed to
+# accept (15 days passed; 30 days returned 400 "interval too long").
+_POLY_MAX_BOUNDED_SPAN = 15 * 86400
+
 
 def get_price_history(request_data: dict) -> dict:
     """Price history for a market on either venue, in one shape.
@@ -3419,6 +3423,7 @@ def get_price_history(request_data: dict) -> dict:
         return _error("start_time must be before end_time")
 
     points = []
+    coverage_note = ""
 
     if venue == "kalshi":
         if not ticker:
@@ -3447,15 +3452,32 @@ def get_price_history(request_data: dict) -> dict:
 
         from sports_skills import polymarket
 
-        span = end_time - start_time
-        clob_interval = "1d" if span <= 86400 else "1w" if span <= 7 * 86400 else "1m" if span <= 31 * 86400 else "max"
-        result = polymarket.get_price_history(
-            token_id=token_id,
-            interval=clob_interval,
-            fidelity=_HISTORY_INTERVALS[interval],
-        )
+        fidelity = _HISTORY_INTERVALS[interval]
+        if end_time - start_time <= _POLY_MAX_BOUNDED_SPAN:
+            # Absolute bounds, not a relative interval preset anchored at "now".
+            result = polymarket.get_price_history(
+                token_id=token_id,
+                start_time=start_time,
+                end_time=end_time,
+                fidelity=fidelity,
+            )
+        else:
+            # CLOB rejects wider absolute windows ("interval too long"); keep
+            # the former relative preset. It is anchored at "now", so it need
+            # not cover the requested window.
+            clob_interval = "1m" if end_time - start_time <= 31 * 86400 else "max"
+            fidelity = max(fidelity, 10)
+            result = polymarket.get_price_history(token_id=token_id, interval=clob_interval, fidelity=fidelity)
+            coverage_note = (
+                f"Polymarket window exceeds {_POLY_MAX_BOUNDED_SPAN // 86400} days, so it was fetched with the "
+                f"provider's '{clob_interval}' interval preset (relative to now) at {fidelity}-minute fidelity. "
+                "Only the points that preset "
+                "returned inside the requested window are shown; coverage may be partial."
+            )
         if not result.get("status"):
             return _error(f"Polymarket history fetch failed: {result.get('message', '')}")
+        # The live endpoint has returned points past endTs; keep the inclusive
+        # local filter.
         for p in result.get("data", {}).get("history", []) or []:
             parsed = _poly_history_point(p)
             if parsed is None or not (start_time <= parsed[0] <= end_time):
@@ -3464,17 +3486,23 @@ def get_price_history(request_data: dict) -> dict:
             points.append({"timestamp": ts, "price": round(price, 4)})
 
     points.sort(key=lambda p: p["timestamp"])
+    data = {
+        "venue": venue,
+        "identifier": identifier,
+        "interval": interval,
+        "start_time": start_time,
+        "end_time": end_time,
+        "points": points,
+        "count": len(points),
+    }
+    message = f"Retrieved {len(points)} price point(s) from {venue}."
+    if coverage_note:
+        data["coverage"] = "possibly_partial"
+        data["warnings"] = [coverage_note]
+        message = f"{message} {coverage_note}"
     return _success(
-        {
-            "venue": venue,
-            "identifier": identifier,
-            "interval": interval,
-            "start_time": start_time,
-            "end_time": end_time,
-            "points": points,
-            "count": len(points),
-        },
-        f"Retrieved {len(points)} price point(s) from {venue}.",
+        data,
+        message,
     )
 
 

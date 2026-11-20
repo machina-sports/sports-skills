@@ -515,10 +515,58 @@ class TestGetPriceHistory:
         )
 
         assert result["status"] is True
+        # The requested window is sent upstream as explicit bounds; a coarse
+        # CLOB interval preset would fetch the wrong span.
+        mock_poly.get_price_history.assert_called_once()
+        call = mock_poly.get_price_history.call_args
+        assert call.kwargs["start_time"] == 100
+        assert call.kwargs["end_time"] == 1000
+        assert call.kwargs["fidelity"] == 60
+        assert "interval" not in call.kwargs
+        # Upstream may still return rows outside the window; they stay dropped.
         assert result["data"]["points"] == [
             {"timestamp": 150, "price": 0.4},
             {"timestamp": 950, "price": 0.5},
         ]
+
+    @patch("sports_skills.polymarket")
+    def test_polymarket_wide_window_falls_back_to_interval_preset(self, mock_poly):
+        # CLOB rejects absolute spans over ~15 days, so a 20-day window keeps
+        # the former relative preset and says coverage may be partial.
+        end = 100 + 20 * 86400
+        mock_poly.get_price_history.return_value = {
+            "status": True,
+            "data": {
+                "history": [
+                    {"t": 50, "p": 0.3},  # before window — dropped
+                    {"t": 100, "p": 0.4},  # inclusive start
+                    {"t": end, "p": 0.5},  # inclusive end
+                    {"t": end + 1, "p": 0.6},  # after window — dropped
+                ]
+            },
+        }
+
+        result = get_price_history(
+            {
+                "params": {
+                    "venue": "polymarket",
+                    "token_id": "t1",
+                    "interval": "1m",
+                    "start_time": 100,
+                    "end_time": end,
+                }
+            }
+        )
+
+        mock_poly.get_price_history.assert_called_once_with(token_id="t1", interval="1m", fidelity=10)
+        assert result["status"] is True
+        assert result["data"]["points"] == [
+            {"timestamp": 100, "price": 0.4},
+            {"timestamp": end, "price": 0.5},
+        ]
+        assert result["data"]["coverage"] == "possibly_partial"
+        assert "may be partial" in result["data"]["warnings"][0]
+        assert "may be partial" in result["message"]
 
     @patch("sports_skills.polymarket")
     def test_polymarket_history_missing_price_not_zero(self, mock_poly):
@@ -762,6 +810,43 @@ class TestKalshiAsOfCandleValidation:
         result = _kalshi_as_of(1000)
 
         assert result["status"] is False
+
+
+# ============================================================
+# polymarket.get_price_history request boundary
+# ============================================================
+
+
+class TestPolymarketPriceHistoryRequest:
+    @patch("sports_skills.polymarket._connector._clob_request")
+    def test_bounded_window_sends_start_end_without_interval(self, mock_clob):
+        from sports_skills import polymarket
+
+        mock_clob.return_value = {"history": []}
+
+        result = polymarket.get_price_history(token_id="t1", start_time=100, end_time=1000, fidelity=60)
+
+        assert result["status"] is True
+        mock_clob.assert_called_once_with(
+            "/prices-history",
+            params={"market": "t1", "startTs": 100, "endTs": 1000, "fidelity": 60},
+            ttl=60,
+        )
+
+    @patch("sports_skills.polymarket._connector._clob_request")
+    def test_unbounded_keeps_interval_default(self, mock_clob):
+        from sports_skills import polymarket
+
+        mock_clob.return_value = {"history": []}
+
+        result = polymarket.get_price_history(token_id="t1")
+
+        assert result["status"] is True
+        mock_clob.assert_called_once_with(
+            "/prices-history",
+            params={"market": "t1", "interval": "max", "fidelity": 120},
+            ttl=60,
+        )
 
 
 # ============================================================
