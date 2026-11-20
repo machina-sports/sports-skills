@@ -1153,8 +1153,11 @@ def get_price_history(request_data):
 
     Params:
         token_id (str): CLOB token ID (required)
-        interval (str): Time range - "1d", "1w", "1m", "max" (default: "max")
+        interval (str): Time range - "1d", "1w", "1m", "max" (default: "max").
+            Ignored when start_time or end_time is given.
         fidelity (int): Resolution of data points in minutes (default: 120)
+        start_time (int): Optional Unix seconds; sent as CLOB ``startTs``.
+        end_time (int): Optional Unix seconds; sent as CLOB ``endTs``.
     """
     try:
         params = request_data.get("params", {})
@@ -1163,11 +1166,19 @@ def get_price_history(request_data):
         if not token_id:
             return _error("token_id is required")
 
-        query = {
-            "market": token_id,
-            "interval": params.get("interval", "max"),
-            "fidelity": int(params.get("fidelity", 120)),
-        }
+        start_time = params.get("start_time")
+        end_time = params.get("end_time")
+        query = {"market": token_id}
+        if start_time is None and end_time is None:
+            query["interval"] = params.get("interval", "max")
+        else:
+            # An explicit window replaces the relative interval preset; CLOB
+            # takes absolute bounds or an interval, not both.
+            if start_time is not None:
+                query["startTs"] = int(start_time)
+            if end_time is not None:
+                query["endTs"] = int(end_time)
+        query["fidelity"] = int(params.get("fidelity", 120))
 
         response = _clob_request("/prices-history", params=query, ttl=60)
         err = _check_error(response)
