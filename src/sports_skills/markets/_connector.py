@@ -815,14 +815,24 @@ _COMPARE_REFERENCE_NOTE = (
     "or midpoint, a Novig ask derived as the complement of the best opposite bid in a "
     "cached order-book snapshot, or a Gemini buy-YES price from a cached public event "
     "snapshot), not an executable quote — no size or fill is implied. "
-    "side_prices.lowest_reference is the lowest such reference per side: not executable, "
-    "not fee-adjusted, and not a bet recommendation."
+    "Quotes are listed, not ranked: side_prices.*.lowest_reference and arbitrage_check stay "
+    "null, and ranking_status / ranking_reason say why."
 )
 
-_ARB_REFERENCE_NOTE = (
-    "Built from reference prices (book odds, last/mid market prices), not from executable "
-    "quotes. Confirm both legs on each venue's order book before treating this as arbitrage."
+# compare_odds coverage (which venues priced this game) is not ranking
+# eligibility (whether those prices may be ordered or pooled against each
+# other). Ranking needs proof the venues settle this game identically, that
+# each price means the same thing, and that the quotes were observed at the
+# same moment. No current feed supplies that proof, so no lane ranks.
+_RANKING_INSUFFICIENT_REASON = (
+    "Admitted quotes are reported but not ranked or pooled: current feeds do not establish "
+    "that these venues settle this game identically (ties, postponement, overtime, voids), "
+    "that their prices mean the same thing (sportsbook line, bid or last trade, derived ask, "
+    "buy-YES snapshot), or that they were observed at the same moment (most carry no "
+    "observation time; cached snapshots carry only a retrieval time). lowest_reference and "
+    "arbitrage_check are therefore null."
 )
+_RANKING_NO_QUOTES_REASON = "No venue quote was admitted for either side of this game, so there is nothing to rank."
 
 
 def _finite(value):
@@ -1454,7 +1464,12 @@ def _provenance(
 
 
 def compare_odds(request_data: dict) -> dict:
-    """ESPN odds + prediction market prices, normalized side-by-side + arb check.
+    """ESPN odds + prediction market prices, normalized side-by-side.
+
+    Admitted quotes are listed per side but never ranked or pooled:
+    ``lowest_reference`` and ``arbitrage_check`` stay null and
+    ``ranking_status`` is ``insufficient_evidence`` (quotes exist) or
+    ``no_quotes``, with ``ranking_reason`` explaining why.
 
     Params:
         sport (str): Sport key (nba, nfl, etc.).
@@ -1561,12 +1576,10 @@ def compare_odds(request_data: dict) -> dict:
     prophetx_matches = found["prophetx"]
     novig_matches = found["novig"]
 
-    # Check for arbitrage if we have matching market prices
-    arb_check = None
-    # Gather one price per mutually exclusive side across venues, then keep the
-    # cheapest implied probability for each side. Summing every venue's full
-    # outcome set double-counts the same propositions and can never identify a
-    # real cross-venue arbitrage.
+    # Gather each admitted venue's price per side. They are reported side by
+    # side but never ranked or pooled into an arbitrage check: nothing here
+    # proves equal settlement, equal price meaning or contemporaneous
+    # observation across venues (see _RANKING_INSUFFICIENT_REASON).
     # Each entry is (implied probability, label, provenance); see _provenance.
     side_prices = {"home": [], "away": []}
     espn_provenance = None
@@ -1958,33 +1971,11 @@ def compare_odds(request_data: dict) -> dict:
         for reason in gemini_rejections:
             _reject("gemini", reason)
 
-    all_probs = []
-    all_labels = []
-    if side_prices["home"] and side_prices["away"]:
-        for side in ("home", "away"):
-            probability, label, _prov = min(side_prices[side], key=lambda candidate: candidate[0])
-            all_probs.append(probability)
-            all_labels.append(label)
-
-    if len(all_probs) >= 2:
-        try:
-            from sports_skills.betting._calcs import find_arbitrage
-
-            arb_result = find_arbitrage(
-                {
-                    "params": {
-                        "market_probs": all_probs,
-                        "labels": all_labels,
-                    }
-                }
-            )
-            if arb_result.get("status"):
-                arb_check = arb_result["data"]
-                # None of these legs is a quote anyone has committed to fill.
-                arb_check["price_basis"] = "reference"
-                arb_check["note"] = _ARB_REFERENCE_NOTE
-        except Exception as exc:
-            warnings.append(f"Arbitrage check failed: {exc}")
+    # Eligibility, not coverage: a usable source still cannot be ranked.
+    if side_prices["home"] or side_prices["away"]:
+        ranking_status, ranking_reason = "insufficient_evidence", _RANKING_INSUFFICIENT_REASON
+    else:
+        ranking_status, ranking_reason = "no_quotes", _RANKING_NO_QUOTES_REASON
 
     # A source counts as usable only if it actually priced one of this game's
     # sides — transport success and a non-empty market list do not.
@@ -1999,8 +1990,9 @@ def compare_odds(request_data: dict) -> dict:
         if prefix in contributed:
             sources[venue]["outcome"] = "ok"
 
-    # The admitted legs, per side, for direct comparison. Ties keep the first
-    # admitted quote (gathering order: espn, polymarket, prophetx, novig, kalshi, gemini).
+    # The admitted legs, per side, in gathering order (espn, polymarket,
+    # prophetx, novig, kalshi, gemini). lowest_reference stays null: no lane
+    # has the evidence to rank one venue's quote against another's.
     def _side_view(side: str, team: str) -> dict:
         quotes = [
             {
@@ -2012,8 +2004,7 @@ def compare_odds(request_data: dict) -> dict:
             }
             for probability, label, provenance in side_prices[side]
         ]
-        lowest = min(quotes, key=lambda quote: quote["implied_probability"], default=None)
-        return {"team": team, "quotes": quotes, "lowest_reference": lowest}
+        return {"team": team, "quotes": quotes, "lowest_reference": None}
 
     usable = [name for name, report in sources.items() if report["outcome"] == "ok"]
     data = {
@@ -2028,11 +2019,14 @@ def compare_odds(request_data: dict) -> dict:
         "prophetx_markets": prophetx_matches,
         "novig_markets": novig_matches,
         "gemini_markets": found["gemini"],
-        "arbitrage_check": arb_check,
+        "arbitrage_check": None,
         "side_prices": {"home": _side_view("home", home_team), "away": _side_view("away", away_team)},
         # Nothing compared here is a quote anyone has committed to fill.
         "price_basis": "reference",
         "price_basis_note": _COMPARE_REFERENCE_NOTE,
+        # Ranking eligibility, separate from source coverage below.
+        "ranking_status": ranking_status,
+        "ranking_reason": ranking_reason,
         "sources": sources,
         "completeness": {
             "usable_sources": usable,

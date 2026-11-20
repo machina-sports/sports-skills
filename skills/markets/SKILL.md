@@ -3,7 +3,7 @@ name: markets
 description: |
   Markets orchestration — connects ESPN live schedules with Kalshi and Polymarket prediction markets. Unified dashboards, odds comparison, entity search, and bet evaluation across platforms.
 
-  Use when: user wants to see prediction market odds alongside ESPN game schedules, compare odds across platforms, search for a team/player on Kalshi or Polymarket, check for arbitrage between ESPN odds and prediction markets, or evaluate a specific game's market value.
+  Use when: user wants to see prediction market odds alongside ESPN game schedules, compare odds across platforms, search for a team/player on Kalshi or Polymarket, or evaluate a specific game's market value.
   Don't use when: user wants raw prediction market data without ESPN context — use polymarket or kalshi directly. For pure odds math (conversion, de-vigging, Kelly) — use betting. For live scores without market data — use the sport-specific skill.
 license: MIT
 metadata:
@@ -71,13 +71,13 @@ sports-skills markets get_todays_markets --sport=nba
 ```
 Returns each game with ESPN info, DraftKings odds, and matching Kalshi, Polymarket, ProphetX, Novig and Gemini (`gemini_markets`) markets. Gemini dashboard discovery covers NBA, WNBA, NFL, CFB, MLB and NHL; it does not verify that each search hit is the same contract.
 
-### Find Arb on a Specific Game
+### Compare Odds on a Specific Game
 
 1. Get the ESPN event ID: `get_sport_schedule --sport=nba`
 2. Compare odds: `compare_odds --sport=nba --event_id=<id>`
-3. If arbitrage detected, response includes allocation percentages and ROI — computed from **reference** prices (`price_basis: "reference"`), so confirm both legs on each venue's order book before trading it.
-4. `sources` and `completeness` say which venues actually priced this game; a provider error is reported as `error`, not as "no markets".
-5. For a direct price comparison read `side_prices.home` / `side_prices.away`: each lists `quotes` (`venue`, `implied_probability`, `price_basis: "reference"`, `execution_guaranteed: false`) admitted as this game's full-game moneyline, plus `lowest_reference` (`null` when a side has no quote; ties keep the first-listed venue). The lowest reference is not an executable quote, not fee-adjusted, and not a bet recommendation. Check `warnings` and `completeness.complete` before calling a comparison complete.
+3. Read `side_prices.home` / `side_prices.away`: each lists `quotes` (`venue`, `implied_probability`, `price_basis: "reference"`, `execution_guaranteed: false`, plus provenance) admitted as this game's full-game moneyline, in venue order. Every price is a **reference** price, not an executable quote.
+4. Quotes are **listed, not ranked**. `lowest_reference` (per side) and `arbitrage_check` are always `null`, and `ranking_status` says why: `insufficient_evidence` when quotes exist (no current feed proves the venues settle this game identically, that their prices mean the same thing, or that they were observed at the same moment), `no_quotes` when none were admitted. `ranking_reason` gives the explanation in words. Do not pick a "best" venue or report an arbitrage from these quotes.
+5. Coverage is separate from ranking: `sources` and `completeness` say which venues actually priced this game; a provider error is reported as `error`, not as "no markets". Check `warnings` and `completeness.complete` before calling a comparison complete.
 6. Venues searched: Kalshi, Polymarket, ProphetX and Novig. Novig counts only when the event date matches and a full-game `MONEY` market has a two-way order book. Its price is the derived ask (1 − best opposite bid), a cached snapshot. Catalog-only markets, spreads and period markets show up in `novig_markets` but never price a side. `search_entity` and `get_todays_markets` also include a `novig` section with the same results.
 7. Gemini (nba only) counts only for exactly one active, full-contest moneyline (`moneyline`/`contest`/`full_contest`) of the same league whose `startTime` equals ESPN's start instant, with exactly two active, open, non-combo contracts whose sides agree with ESPN's teams and whose buy-YES prices are both in (0, 1). Its price is that buy-YES price from a cached public snapshot — a reference, not an executable quote, and volume says nothing about liquidity. Child markets (spreads, totals, props, periods), combos, three-way markets, closed/settled contracts, missing or malformed prices, other start times and duplicate candidates are refused with a reason in `sources.gemini.detail`; they still appear in `gemini_markets`. A Gemini failure is `error`; a partial scan (later page failed or scan truncated) is listed in `sources.gemini.warnings`.
 
@@ -131,7 +131,7 @@ User says: "Compare the odds for this Celtics game across ESPN and Polymarket"
 Actions:
 1. Get event_id from `get_sport_schedule(sport="nba")`
 2. Call `compare_odds(sport="nba", event_id="<id>")`
-Result: `side_prices` per side (admitted reference quotes + `lowest_reference`) and an arbitrage check on reference prices
+Result: `side_prices` per side (admitted reference quotes, unranked) with `ranking_status` explaining why no lowest quote or arbitrage check is given
 
 Example 4: Full market evaluation
 User says: "Is there edge on the Chiefs game?"
