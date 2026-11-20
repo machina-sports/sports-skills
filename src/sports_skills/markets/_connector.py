@@ -3202,6 +3202,28 @@ def _price_pair(yes_price: float, at_time: int) -> dict:
     }
 
 
+def _poly_history_point(point) -> tuple[int, float] | None:
+    """(timestamp, yes price 0-1) from a Polymarket history row, or None.
+
+    A row without a timestamp, or whose ``p`` is missing, null, malformed,
+    negative, non-finite or above 1, is unusable — never a 0.0 price. A
+    genuine 0 is kept.
+    """
+    if not isinstance(point, dict):
+        return None
+    ts = point.get("t")
+    if ts is None or isinstance(ts, bool):
+        return None
+    try:
+        ts = int(ts)
+    except (TypeError, ValueError, OverflowError):
+        return None
+    price = _finite(point.get("p"))
+    if price is None or price > 1:
+        return None
+    return ts, price
+
+
 def _kalshi_price_at(ticker: str, at_time: int) -> tuple[float, int] | None:
     """Yes price (0-1) as of a timestamp, from Kalshi candlesticks.
 
@@ -3297,11 +3319,11 @@ def get_market_price(request_data: dict) -> dict:
             if not result.get("status"):
                 return _error(f"Polymarket history fetch failed: {result.get('message', '')}")
             history = result.get("data", {}).get("history", []) or []
-            points = [p for p in history if p.get("t") is not None and int(p["t"]) <= at_time]
+            parsed = (_poly_history_point(p) for p in history)
+            points = [pt for pt in parsed if pt is not None and pt[0] <= at_time]
             if not points:
                 return _error(f"No Polymarket price found for token at or before {at_time}")
-            last = max(points, key=lambda p: int(p["t"]))
-            yes_price, ts = float(last.get("p", 0)), int(last["t"])
+            ts, yes_price = max(points, key=lambda pt: pt[0])
             source = "history"
         else:
             result = polymarket.get_market_prices(token_id=token_id)
@@ -3405,10 +3427,11 @@ def get_price_history(request_data: dict) -> dict:
         if not result.get("status"):
             return _error(f"Polymarket history fetch failed: {result.get('message', '')}")
         for p in result.get("data", {}).get("history", []) or []:
-            ts = p.get("t")
-            if ts is None or not (start_time <= int(ts) <= end_time):
+            parsed = _poly_history_point(p)
+            if parsed is None or not (start_time <= parsed[0] <= end_time):
                 continue
-            points.append({"timestamp": int(ts), "price": round(float(p.get("p", 0)), 4)})
+            ts, price = parsed
+            points.append({"timestamp": ts, "price": round(price, 4)})
 
     points.sort(key=lambda p: p["timestamp"])
     return _success(
