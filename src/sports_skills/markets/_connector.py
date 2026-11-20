@@ -3176,21 +3176,54 @@ def _parse_at_time(value) -> int | None:
 
 
 def _candle_close(candle: dict) -> float | None:
-    """Yes price (0-1) from a Kalshi candlestick's close."""
-    price = candle.get("price") or {}
+    """Yes price (0-1) from a Kalshi candlestick's close, or None if unusable.
+
+    ``close_dollars`` wins over the legacy integer-cent ``close``; an explicit
+    zero is a real price. Non-finite or out-of-range closes are rejected.
+    """
+    price = candle.get("price") if isinstance(candle, dict) else None
+    if not isinstance(price, dict):
+        return None
     raw = price.get("close_dollars")
     if raw not in (None, ""):
-        try:
-            return float(raw)
-        except (TypeError, ValueError):
+        value = _finite(raw)
+    else:
+        legacy = price.get("close")
+        if legacy in (None, ""):
             return None
-    legacy = price.get("close")
-    if legacy not in (None, ""):
-        try:
-            return float(legacy) / 100.0
-        except (TypeError, ValueError):
-            return None
-    return None
+        value = _finite(legacy)
+        if value is not None:
+            value /= 100.0
+    if value is None or not 0.0 <= value <= 1.0:
+        return None
+    return value
+
+
+def _candle_timestamp(value) -> int | None:
+    """Integer Unix timestamp from a candle's end_period_ts, or None."""
+    if isinstance(value, bool):
+        return None
+    try:
+        timestamp = int(value)
+    except (TypeError, ValueError, OverflowError):
+        return None
+    return timestamp if not isinstance(value, float) or value == timestamp else None
+
+
+def _kalshi_candle_points(candles, start_ts: int, end_ts: int) -> list[tuple[int, float]]:
+    """Valid (timestamp, yes price) points inside [start_ts, end_ts], oldest first."""
+    points = []
+    for candle in candles if isinstance(candles, list) else []:
+        if not isinstance(candle, dict):
+            continue
+        ts = _candle_timestamp(candle.get("end_period_ts"))
+        if ts is None or not start_ts <= ts <= end_ts:
+            continue
+        price = _candle_close(candle)
+        if price is not None:
+            points.append((ts, price))
+    points.sort(key=lambda point: point[0])
+    return points
 
 
 def _price_pair(yes_price: float, at_time: int) -> dict:
@@ -3212,22 +3245,21 @@ def _kalshi_price_at(ticker: str, at_time: int) -> tuple[float, int] | None:
 
     series_ticker = ticker.split("-", 1)[0]
     for period, lookback in ((60, 7 * 86400), (1440, 31 * 86400)):
+        start_ts = at_time - lookback
         result = kalshi.get_market_candlesticks(
             series_ticker=series_ticker,
             ticker=ticker,
-            start_ts=at_time - lookback,
+            start_ts=start_ts,
             end_ts=at_time,
             period_interval=period,
         )
         if not result.get("status"):
             continue
-        candles = result.get("data", {}).get("candlesticks", []) or []
-        candles = [c for c in candles if c.get("end_period_ts")]
-        candles.sort(key=lambda c: c["end_period_ts"])
-        for candle in reversed(candles):
-            price = _candle_close(candle)
-            if price is not None:
-                return price, int(candle["end_period_ts"])
+        candles = (result.get("data") or {}).get("candlesticks")
+        points = _kalshi_candle_points(candles, start_ts, at_time)
+        if points:
+            ts, price = points[-1]
+            return price, ts
     return None
 
 
@@ -3382,11 +3414,9 @@ def get_price_history(request_data: dict) -> dict:
         )
         if not result.get("status"):
             return _error(f"Kalshi candlesticks fetch failed: {result.get('message', '')}")
-        for candle in result.get("data", {}).get("candlesticks", []) or []:
-            ts = candle.get("end_period_ts")
-            price = _candle_close(candle)
-            if ts is not None and price is not None:
-                points.append({"timestamp": int(ts), "price": round(price, 4)})
+        candles = (result.get("data") or {}).get("candlesticks")
+        for ts, price in _kalshi_candle_points(candles, start_time, end_time):
+            points.append({"timestamp": ts, "price": round(price, 4)})
 
     else:  # polymarket
         if not token_id:

@@ -2,6 +2,8 @@
 
 from unittest.mock import patch
 
+import pytest
+
 from sports_skills.markets._connector import (
     _parse_at_time,
     _parse_kalshi_game_event,
@@ -479,6 +481,189 @@ class TestGetPriceHistory:
                 }
             }
         )
+        assert result["status"] is False
+
+
+# ============================================================
+# Kalshi candle validation (history + as-of)
+# ============================================================
+
+_KALSHI_TICKER = "KXMENWORLDCUP-26-FR"
+
+# Each of these must be skipped, never priced and never crash the lookup.
+_INVALID_KALSHI_CANDLES = {
+    "missing_price_block": {"end_period_ts": 900},
+    "empty_price_block": {"end_period_ts": 900, "price": {}},
+    "nan_close": {"end_period_ts": 900, "price": {"close_dollars": "NaN"}},
+    "inf_close": {"end_period_ts": 900, "price": {"close_dollars": "inf"}},
+    "neg_inf_close": {"end_period_ts": 900, "price": {"close_dollars": "-inf"}},
+    "close_above_one": {"end_period_ts": 900, "price": {"close_dollars": "1.5000"}},
+    "close_below_zero": {"end_period_ts": 900, "price": {"close_dollars": "-0.1000"}},
+    "legacy_cents_above_100": {"end_period_ts": 900, "price": {"close": 150}},
+    "legacy_cents_negative": {"end_period_ts": 900, "price": {"close": -5}},
+    "legacy_cents_nan": {"end_period_ts": 900, "price": {"close": "NaN"}},
+    "garbage_timestamp": {"end_period_ts": "garbage", "price": {"close_dollars": "0.3000"}},
+    "none_timestamp": {"end_period_ts": None, "price": {"close_dollars": "0.3000"}},
+    "nan_timestamp": {"end_period_ts": float("nan"), "price": {"close_dollars": "0.3000"}},
+    "inf_timestamp": {"end_period_ts": float("inf"), "price": {"close_dollars": "0.3000"}},
+}
+
+
+def _kalshi_candles(mock_kalshi, candles):
+    mock_kalshi.get_market_candlesticks.return_value = {
+        "status": True,
+        "data": {"candlesticks": candles},
+    }
+
+
+def _kalshi_history(start_time=100, end_time=1000):
+    return get_price_history(
+        {
+            "params": {
+                "venue": "kalshi",
+                "ticker": _KALSHI_TICKER,
+                "interval": "1h",
+                "start_time": start_time,
+                "end_time": end_time,
+            }
+        }
+    )
+
+
+def _kalshi_as_of(at_time=1000):
+    return get_market_price({"params": {"venue": "kalshi", "ticker": _KALSHI_TICKER, "at_time": at_time}})
+
+
+class TestKalshiHistoryCandleValidation:
+    @patch("sports_skills.kalshi")
+    def test_keeps_zero_and_legacy_cents_skips_invalid_and_post_cutoff(self, mock_kalshi):
+        _kalshi_candles(
+            mock_kalshi,
+            [
+                {"end_period_ts": 100, "price": {"close_dollars": "0.0000"}},  # genuine zero
+                {"end_period_ts": 200, "price": {"close": 42}},  # legacy cents
+                {"end_period_ts": 300, "price": {"close": 0}},  # legacy genuine zero
+                *_INVALID_KALSHI_CANDLES.values(),
+                {"end_period_ts": 950, "price": {"close_dollars": "0.6000"}},
+                # Upstream returned it, but it is past end_time.
+                {"end_period_ts": 1500, "price": {"close_dollars": "0.9000"}},
+            ],
+        )
+
+        result = _kalshi_history()
+
+        assert result["status"] is True
+        assert result["data"]["points"] == [
+            {"timestamp": 100, "price": 0.0},
+            {"timestamp": 200, "price": 0.42},
+            {"timestamp": 300, "price": 0.0},
+            {"timestamp": 950, "price": 0.6},
+        ]
+        assert result["data"]["count"] == 4
+
+    @pytest.mark.parametrize("case", sorted(_INVALID_KALSHI_CANDLES))
+    @patch("sports_skills.kalshi")
+    def test_each_invalid_candle_is_skipped(self, mock_kalshi, case):
+        _kalshi_candles(
+            mock_kalshi,
+            [
+                {"end_period_ts": 500, "price": {"close_dollars": "0.2500"}},
+                _INVALID_KALSHI_CANDLES[case],
+            ],
+        )
+
+        result = _kalshi_history()
+
+        assert result["status"] is True
+        assert result["data"]["points"] == [{"timestamp": 500, "price": 0.25}]
+
+    @patch("sports_skills.kalshi")
+    def test_post_cutoff_candle_alone_yields_no_points(self, mock_kalshi):
+        _kalshi_candles(mock_kalshi, [{"end_period_ts": 1001, "price": {"close_dollars": "0.5000"}}])
+
+        result = _kalshi_history(end_time=1000)
+
+        assert result["status"] is True
+        assert result["data"]["points"] == []
+
+
+class TestKalshiAsOfCandleValidation:
+    @patch("sports_skills.kalshi")
+    def test_genuine_zero_close_is_the_price(self, mock_kalshi):
+        _kalshi_candles(
+            mock_kalshi,
+            [
+                {"end_period_ts": 500, "price": {"close_dollars": "0.4000"}},
+                {"end_period_ts": 900, "price": {"close_dollars": "0.0000"}},
+            ],
+        )
+
+        result = _kalshi_as_of(1000)
+
+        assert result["status"] is True
+        assert result["data"]["yes"] == {"price": 0.0, "at_time": 900}
+        assert result["data"]["no"] == {"price": 1.0, "at_time": 900}
+        assert result["data"]["source"] == "candlestick"
+
+    @patch("sports_skills.kalshi")
+    def test_legacy_cents_close_is_scaled(self, mock_kalshi):
+        _kalshi_candles(mock_kalshi, [{"end_period_ts": 900, "price": {"close": 42}}])
+
+        result = _kalshi_as_of(1000)
+
+        assert result["status"] is True
+        assert result["data"]["yes"] == {"price": 0.42, "at_time": 900}
+
+    @patch("sports_skills.kalshi")
+    def test_candle_after_at_time_is_ignored(self, mock_kalshi):
+        # Upstream may hand back a candle closing past the requested instant;
+        # pricing from it would leak the future into an as-of answer.
+        _kalshi_candles(
+            mock_kalshi,
+            [
+                {"end_period_ts": 900, "price": {"close_dollars": "0.3000"}},
+                {"end_period_ts": 1001, "price": {"close_dollars": "0.9000"}},
+            ],
+        )
+
+        result = _kalshi_as_of(1000)
+
+        assert result["status"] is True
+        assert result["data"]["yes"] == {"price": 0.3, "at_time": 900}
+
+    @patch("sports_skills.kalshi")
+    def test_only_post_cutoff_candles_is_an_error(self, mock_kalshi):
+        _kalshi_candles(mock_kalshi, [{"end_period_ts": 1001, "price": {"close_dollars": "0.9000"}}])
+
+        result = _kalshi_as_of(1000)
+
+        assert result["status"] is False
+
+    @pytest.mark.parametrize("case", sorted(_INVALID_KALSHI_CANDLES))
+    @patch("sports_skills.kalshi")
+    def test_invalid_newest_candle_falls_back_to_older_valid(self, mock_kalshi, case):
+        # The invalid candle (ts 900, or an unusable ts) must not shadow the
+        # older valid close.
+        _kalshi_candles(
+            mock_kalshi,
+            [
+                {"end_period_ts": 500, "price": {"close_dollars": "0.2500"}},
+                _INVALID_KALSHI_CANDLES[case],
+            ],
+        )
+
+        result = _kalshi_as_of(1000)
+
+        assert result["status"] is True
+        assert result["data"]["yes"] == {"price": 0.25, "at_time": 500}
+
+    @pytest.mark.parametrize("case", sorted(_INVALID_KALSHI_CANDLES))
+    @patch("sports_skills.kalshi")
+    def test_only_invalid_candles_is_an_error(self, mock_kalshi, case):
+        _kalshi_candles(mock_kalshi, [_INVALID_KALSHI_CANDLES[case]])
+
+        result = _kalshi_as_of(1000)
+
         assert result["status"] is False
 
 
