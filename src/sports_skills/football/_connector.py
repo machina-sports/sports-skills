@@ -19,6 +19,7 @@ from sports_skills import _replay
 from sports_skills._espn_base import (
     _HOST_FALLBACK_CODES,
     _SITE_API_HOSTS,
+    _as_dict,
     _summarize_http_error,
     espn_player_game_log,
     normalize_odds,
@@ -1762,7 +1763,7 @@ def _normalize_espn_summary_timeline(summary):
             "type": mapped_type,
             "minute": minute,
             "added_time": added_time,
-            "period": (ev.get("period") or {}).get("number", ""),
+            "period": _as_dict(ev.get("period")).get("number", ""),
             "datetime": ev.get("wallclock") or "",
             "team": {
                 "id": team_data.get("id", ""),
@@ -1834,6 +1835,29 @@ def _normalize_espn_summary_lineups(summary):
     return lineups
 
 
+def _substitution_minute(roster_entry):
+    """Minute of the player's substitution, e.g. 60 from "60'" or 90 from "90'+2'".
+
+    ESPN leaves subMinute unset and puts the clock on the substitution play.
+    Plays whose clock is missing, null or unreadable are skipped, and the first
+    readable substitution clock in ESPN's play order wins. A player who was both
+    subbed in and subbed out therefore gets the minute of the earlier listed
+    substitution (normally the entry); the later one is not reported here.
+    Stoppage time is dropped: "90'+2'" gives 90.
+    """
+    for play in roster_entry.get("plays") or []:
+        play = _as_dict(play)
+        if not play.get("substitution"):
+            continue
+        clock = _as_dict(play.get("clock")).get("displayValue")
+        if not isinstance(clock, str):
+            continue
+        minute = clock.split("'")[0].strip()
+        if minute.isdigit():
+            return int(minute)
+    return None
+
+
 def _normalize_espn_summary_players(summary):
     """Extract player-level statistics from ESPN summary rosters."""
     ha_map = _espn_home_away_map(summary)
@@ -1852,6 +1876,11 @@ def _normalize_espn_summary_players(summary):
                 stat_dict[s.get("name", "")] = s.get(
                     "value", s.get("displayValue", "0")
                 )
+            # An explicit subMinute (including 0) wins; missing, null or blank
+            # falls back to the substitution play's clock.
+            sub_minute = p.get("subMinute")
+            if sub_minute is None or (isinstance(sub_minute, str) and not sub_minute.strip()):
+                sub_minute = _substitution_minute(p)
             players.append(
                 {
                     "id": athlete.get("id", ""),
@@ -1863,7 +1892,7 @@ def _normalize_espn_summary_players(summary):
                     "starter": p.get("starter", False),
                     "subbed_in": p.get("subbedIn", False),
                     "subbed_out": p.get("subbedOut", False),
-                    "sub_minute": p.get("subMinute"),
+                    "sub_minute": sub_minute,
                     "statistics": stat_dict,
                 }
             )
