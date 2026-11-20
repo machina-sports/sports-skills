@@ -1762,8 +1762,8 @@ def _normalize_espn_summary_timeline(summary):
             "type": mapped_type,
             "minute": minute,
             "added_time": added_time,
-            "period": "",
-            "datetime": "",
+            "period": (ev.get("period") or {}).get("number", ""),
+            "datetime": ev.get("wallclock") or "",
             "team": {
                 "id": team_data.get("id", ""),
                 "name": team_data.get("displayName", team_data.get("name", "")),

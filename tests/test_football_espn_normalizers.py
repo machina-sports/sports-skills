@@ -212,6 +212,37 @@ def test_timeline_keeps_stoppage_time_as_added_time():
     assert [(e["minute"], e["added_time"]) for e in tl] == [(45, 3), (59, 0), (90, 7)]
 
 
+def test_timeline_reads_period_and_wallclock():
+    summary = {
+        "keyEvents": [
+            {
+                "id": "1",
+                "type": {"text": "Yellow Card"},
+                "period": {"number": 1},
+                "clock": {"displayValue": "24'"},
+                "wallclock": "2026-11-08T14:24:44Z",
+            },
+            {
+                "id": "2",
+                "type": {"text": "Goal"},
+                "period": {"number": 2},
+                "clock": {"displayValue": "70'"},
+                "wallclock": "2026-11-08T15:31:02Z",
+            },
+        ]
+    }
+    tl = c._normalize_espn_summary_timeline(summary)
+    assert [(e["period"], e["datetime"]) for e in tl] == [
+        (1, "2026-11-08T14:24:44Z"),
+        (2, "2026-11-08T15:31:02Z"),
+    ]
+
+
+def test_timeline_without_period_or_wallclock_keeps_empty_strings():
+    tl = c._normalize_espn_summary_timeline(LA_LIGA_SUMMARY)
+    assert {(e["period"], e["datetime"]) for e in tl} == {("", "")}
+
+
 def test_serie_b_is_wired_like_serie_a():
     serie_a = c.LEAGUES["serie-a"]
     serie_b = c.LEAGUES["serie-b"]
