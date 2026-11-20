@@ -1,3 +1,15 @@
+## [0.41.0]
+
+### Added
+- Add the `images` Python and CLI commands for finding open-licensed sports photos on Wikimedia Commons, with attribution and license metadata (#263).
+- Include per-quote market and outcome identity, price type, and observation and retrieval timestamps where available (#265).
+
+### Fixed
+- Exclude ambiguous Kalshi and ProphetX moneylines without dropping valid quotes from other venues (#264).
+- Preserve comparison quotes but withhold lowest-price and arbitrage conclusions when contract terms, quote types, or timing cannot be verified (#266).
+- Skip malformed Polymarket points and Kalshi candles. As-of reads do not use observations after the cutoff (#267, #268).
+- Request explicit Polymarket history bounds for windows up to 15 days; keep the local cutoff and label wider-window coverage as possibly partial (#269).
+
 ## [0.40.10]
 
 ### Fixed
