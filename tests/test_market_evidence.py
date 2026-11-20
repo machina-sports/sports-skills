@@ -5,6 +5,7 @@ Every fixture here is a minimal, source-faithful slice of a real public payload
 market). Network boundaries are mocked; nothing here places or prices an order.
 """
 
+import copy
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -987,6 +988,278 @@ class TestKalshiReferenceLegs:
         assert result["data"]["price_basis"] == "reference"
         assert "executable" in result["data"]["price_basis_note"].lower()
         assert result["data"]["arbitrage_check"]["price_basis"] == "reference"
+
+
+# ============================================================
+# Unique venue match — one game, one market per venue, never pooled
+# ============================================================
+
+# Both dates validate for a 00:15 UTC kickoff (US venue day / UTC day), so a
+# second Kalshi event dated the UTC day is an equally "qualifying" candidate.
+KALSHI_UTC_DAY_EVENT = "KXNFLGAME-26SEP22NYGLAR"
+
+
+def _venues(result, side):
+    return [q["venue"] for q in result["data"]["side_prices"][side]["quotes"]]
+
+
+def _venue_quote_count(result, venue):
+    return {side: _venues(result, side).count(venue) for side in ("home", "away")}
+
+
+class TestKalshiUniqueMatch:
+    """Two qualifying Kalshi events, or two tickers for one side, are not one market."""
+
+    def test_two_distinct_qualifying_events_are_refused_not_pooled(self):
+        other = _kalshi_event(
+            KALSHI_UTC_DAY_EVENT,
+            markets=[
+                {"ticker": f"{KALSHI_UTC_DAY_EVENT}-LAR", "yes_price": 60},
+                {"ticker": f"{KALSHI_UTC_DAY_EVENT}-NYG", "yes_price": 20},
+            ],
+        )
+        result = _compare(NFL_SUMMARY, kalshi=[_kalshi_event(), other], poly=[POLY_GAME_MARKET])
+        kalshi = result["data"]["sources"]["kalshi"]
+        assert kalshi["outcome"] == "unmatched"
+        assert "kalshi" not in result["data"]["completeness"]["usable_sources"]
+        assert _venue_quote_count(result, "kalshi") == {"home": 0, "away": 0}
+        assert not any(label.startswith("kalshi_") for label in _labels(result))
+        # Diagnostics name both candidates rather than a silent drop.
+        assert "ambiguous" in kalshi["detail"].lower()
+        assert "KXNFLGAME-26SEP21NYGLAR" in kalshi["detail"]
+        assert KALSHI_UTC_DAY_EVENT in kalshi["detail"]
+        # Mixing the two events' legs (0.60 + 0.20) must not manufacture an arb.
+        assert _labels(result) == ["poly_Rams", "poly_Giants"]
+        # The valid other venue and ESPN survive, and raw discovery is kept.
+        assert result["data"]["sources"]["polymarket"]["outcome"] == "ok"
+        assert result["data"]["sources"]["espn"]["outcome"] == "ok"
+        assert _venues(result, "home") == ["espn", "polymarket"]
+        assert _venues(result, "away") == ["espn", "polymarket"]
+        assert len(result["data"]["kalshi_markets"]) == 2
+        assert result["status"] is True
+
+    def test_two_distinct_tickers_for_one_side_are_refused_not_overwritten(self):
+        stray = f"{KALSHI_UTC_DAY_EVENT}-NYG"
+        event = _kalshi_event(
+            markets=[
+                {"ticker": KALSHI_HOME_TICKER, "yes_price": 73},
+                {"ticker": KALSHI_AWAY_TICKER, "yes_price": 26},
+                {"ticker": stray, "yes_price": 20},
+            ]
+        )
+        result = _compare(NFL_SUMMARY, kalshi=[event], poly=[POLY_GAME_MARKET])
+        kalshi = result["data"]["sources"]["kalshi"]
+        assert kalshi["outcome"] == "unmatched"
+        assert _venue_quote_count(result, "kalshi") == {"home": 0, "away": 0}
+        assert not any(label.startswith("kalshi_") for label in _labels(result))
+        assert KALSHI_AWAY_TICKER in kalshi["detail"]
+        assert stray in kalshi["detail"]
+        assert result["data"]["sources"]["polymarket"]["outcome"] == "ok"
+        assert result["status"] is True
+
+    def test_identical_repeated_event_copies_count_once(self):
+        event = _kalshi_event()
+        result = _compare(dict(NFL_SUMMARY, odds=None), kalshi=[event, copy.deepcopy(event)])
+        assert result["data"]["sources"]["kalshi"]["outcome"] == "ok"
+        assert _venue_quote_count(result, "kalshi") == {"home": 1, "away": 1}
+        assert _labels(result) == ["kalshi_Los Angeles Rams", "kalshi_New York Giants"]
+
+    def test_identical_repeated_ticker_within_one_event_counts_once(self):
+        markets = _kalshi_event()["markets"]
+        event = _kalshi_event(markets=markets + copy.deepcopy(markets))
+        result = _compare(dict(NFL_SUMMARY, odds=None), kalshi=[event])
+        assert result["data"]["sources"]["kalshi"]["outcome"] == "ok"
+        assert _venue_quote_count(result, "kalshi") == {"home": 1, "away": 1}
+
+
+PROPHETX_OTHER_EVENT_ID = 1700008799
+
+
+def _prophetx_moneyline(market_key, home_american, away_american):
+    def prob(american):
+        return round(100 / (american + 100), 4) if american > 0 else round(-american / (-american + 100), 4)
+
+    return {
+        "market_key": market_key,
+        "title": "Moneyline",
+        "type": "moneyline",
+        "total_stake": 1000.0,
+        "selections_available": True,
+        "outcomes": [
+            {
+                "outcome": f"Los Angeles Rams {home_american:+d}",
+                "odds_american": home_american,
+                "implied_probability": prob(home_american),
+            },
+            {
+                "outcome": f"New York Giants {away_american:+d}",
+                "odds_american": away_american,
+                "implied_probability": prob(away_american),
+            },
+        ],
+    }
+
+
+class TestProphetXUniqueMatch:
+    """Two qualifying ProphetX events, or two full-game Moneylines, are not one market."""
+
+    def test_two_distinct_qualifying_events_are_refused_not_pooled(self):
+        first = _prophetx_event([PROPHETX_FULL_GAME_MARKET])
+        second = dict(
+            _prophetx_event([_prophetx_moneyline(f"{PROPHETX_OTHER_EVENT_ID}:219", 100, 150)]),
+            event_id=PROPHETX_OTHER_EVENT_ID,
+        )
+        result = _compare(dict(NFL_SUMMARY, odds=None), kalshi=[_kalshi_event()], prophetx=[first, second])
+        prophetx = result["data"]["sources"]["prophetx"]
+        assert prophetx["outcome"] == "unmatched"
+        assert "prophetx" not in result["data"]["completeness"]["usable_sources"]
+        assert _venue_quote_count(result, "prophetx") == {"home": 0, "away": 0}
+        assert not any(label.startswith("prophetx_") for label in _labels(result))
+        assert "ambiguous" in prophetx["detail"].lower()
+        assert "1700008786" in prophetx["detail"]
+        assert str(PROPHETX_OTHER_EVENT_ID) in prophetx["detail"]
+        # Kalshi's valid pair is unaffected.
+        assert result["data"]["sources"]["kalshi"]["outcome"] == "ok"
+        assert _labels(result) == ["kalshi_Los Angeles Rams", "kalshi_New York Giants"]
+        assert len(result["data"]["prophetx_markets"]) == 2
+        assert result["status"] is True
+
+    def test_two_distinct_full_game_moneylines_in_one_event_are_refused(self):
+        twin = _prophetx_moneyline("1700008786:220", 100, 150)
+        event = _prophetx_event([PROPHETX_FULL_GAME_MARKET, twin])
+        result = _compare(dict(NFL_SUMMARY, odds=None), kalshi=[_kalshi_event()], prophetx=[event])
+        prophetx = result["data"]["sources"]["prophetx"]
+        assert prophetx["outcome"] == "unmatched"
+        assert _venue_quote_count(result, "prophetx") == {"home": 0, "away": 0}
+        assert "1700008786:219" in prophetx["detail"]
+        assert "1700008786:220" in prophetx["detail"]
+        assert result["data"]["sources"]["kalshi"]["outcome"] == "ok"
+        assert result["status"] is True
+
+    def test_identical_repeated_event_copies_count_once(self):
+        event = _prophetx_event([PROPHETX_FULL_GAME_MARKET])
+        result = _compare(dict(NFL_SUMMARY, odds=None), prophetx=[event, copy.deepcopy(event)])
+        assert result["data"]["sources"]["prophetx"]["outcome"] == "ok"
+        assert _venue_quote_count(result, "prophetx") == {"home": 1, "away": 1}
+        assert _labels(result) == ["prophetx_Los Angeles Rams -275", "prophetx_New York Giants +270"]
+
+    def test_identical_repeated_market_within_one_event_counts_once(self):
+        event = _prophetx_event([PROPHETX_FULL_GAME_MARKET, copy.deepcopy(PROPHETX_FULL_GAME_MARKET)])
+        result = _compare(dict(NFL_SUMMARY, odds=None), prophetx=[event])
+        assert result["data"]["sources"]["prophetx"]["outcome"] == "ok"
+        assert _venue_quote_count(result, "prophetx") == {"home": 1, "away": 1}
+
+
+class TestExistingVenueAmbiguityGuards:
+    """Polymarket, Novig and Gemini already refuse two candidates; keep it so."""
+
+    def test_two_distinct_polymarket_moneylines_are_refused(self):
+        twin = dict(
+            POLY_GAME_MARKET,
+            market_id="5399",
+            outcomes=[
+                {"token_id": "991", "outcome": "Giants", "price": 0.2},
+                {"token_id": "992", "outcome": "Rams", "price": 0.6},
+            ],
+        )
+        result = _compare(dict(NFL_SUMMARY, odds=None), kalshi=[_kalshi_event()], poly=[POLY_GAME_MARKET, twin])
+        assert result["data"]["sources"]["polymarket"]["outcome"] == "unmatched"
+        assert result["data"]["sources"]["polymarket"]["detail"]
+        assert _venue_quote_count(result, "polymarket") == {"home": 0, "away": 0}
+        assert result["data"]["sources"]["kalshi"]["outcome"] == "ok"
+
+    def test_two_distinct_novig_games_are_refused(self):
+        twin = copy.deepcopy(NOVIG_GAME_EVENT)
+        twin["event_id"] = "01a0f000-0000-7000-8000-000000000009"
+        twin["markets"][0]["market_id"] = "01a0f000-0000-7000-8000-00000000000a"
+        result = _compare(dict(NFL_SUMMARY, odds=None), kalshi=[_kalshi_event()], novig=[NOVIG_GAME_EVENT, twin])
+        novig = result["data"]["sources"]["novig"]
+        assert novig["outcome"] == "unmatched"
+        assert "ambiguous" in novig["detail"].lower()
+        assert _venue_quote_count(result, "novig") == {"home": 0, "away": 0}
+        assert result["data"]["sources"]["kalshi"]["outcome"] == "ok"
+
+
+# Gemini compares NBA only: a minimal normalized NBA summary (BOS @ LAL).
+NBA_SUMMARY = {
+    "game_info": {"start_time": "2026-11-20T00:30Z"},
+    "competitors": [
+        {"home_away": "home", "team": {"name": "Los Angeles Lakers", "abbreviation": "LAL"}},
+        {"home_away": "away", "team": {"name": "Boston Celtics", "abbreviation": "BOS"}},
+    ],
+    "odds": None,
+}
+NBA_KALSHI_EVENT = "KXNBAGAME-26NOV19BOSLAL"
+
+
+def _gemini_market(ticker, home_buy, away_buy):
+    from sports_skills.gemini._connector import LEAGUES
+
+    def contract(label, side, buy):
+        return {
+            "label": label,
+            "side": side,
+            "status": "active",
+            "market_state": "open",
+            "is_combo": False,
+            "buy_yes": buy,
+        }
+
+    return {
+        "ticker": ticker,
+        "league": LEAGUES["nba"][0],
+        "market_type": "moneyline",
+        "market_subject": "contest",
+        "market_scope": "full_contest",
+        "status": "active",
+        "start_time": "2026-11-20T00:30:00Z",
+        "outcomes": [contract("Los Angeles L", "home", home_buy), contract("Boston", "away", away_buy)],
+    }
+
+
+def _compare_nba(gemini):
+    kalshi = _kalshi_event(
+        NBA_KALSHI_EVENT,
+        markets=[
+            {"ticker": f"{NBA_KALSHI_EVENT}-LAL", "yes_price": 55},
+            {"ticker": f"{NBA_KALSHI_EVENT}-BOS", "yes_price": 44},
+        ],
+    )
+    with (
+        patch("sports_skills.markets._connector._load_sport_module") as load,
+        patch("sports_skills.markets._connector._search_kalshi") as k,
+        patch("sports_skills.markets._connector._search_polymarket") as p,
+        patch("sports_skills.markets._connector._search_prophetx") as px,
+        patch("sports_skills.markets._connector._search_novig") as nv,
+        patch("sports_skills.markets._connector._search_gemini") as gm,
+    ):
+        load.return_value = _sport_module(NBA_SUMMARY)
+        k.return_value = [kalshi]
+        p.return_value, px.return_value, nv.return_value = [], [], []
+        gm.return_value = gemini
+        return compare_odds({"params": {"sport": "nba", "event_id": "401900001"}})
+
+
+class TestGeminiAmbiguityGuard:
+    def test_a_single_gemini_moneyline_is_admitted(self):
+        # Positive control: the fixture itself is a valid Gemini candidate.
+        result = _compare_nba([{"event_ticker": "G1", "markets": [_gemini_market("G1", 0.56, 0.45)]}])
+        assert result["data"]["sources"]["gemini"]["outcome"] == "ok"
+        assert _venue_quote_count(result, "gemini") == {"home": 1, "away": 1}
+
+    def test_two_distinct_gemini_moneylines_are_refused(self):
+        result = _compare_nba(
+            [
+                {"event_ticker": "G1", "markets": [_gemini_market("G1", 0.56, 0.45)]},
+                {"event_ticker": "G2", "markets": [_gemini_market("G2", 0.40, 0.30)]},
+            ]
+        )
+        gemini = result["data"]["sources"]["gemini"]
+        assert gemini["outcome"] == "unmatched"
+        assert "ambiguous" in gemini["detail"].lower()
+        assert _venue_quote_count(result, "gemini") == {"home": 0, "away": 0}
+        assert result["data"]["sources"]["kalshi"]["outcome"] == "ok"
+        assert result["status"] is True
 
 
 class TestEvaluateMarketRequiresADate:

@@ -1560,8 +1560,16 @@ def compare_odds(request_data: dict) -> dict:
 
     def _reject(venue: str, reason: str) -> None:
         """Say why a searched market was not admitted, once, in the report."""
-        if not sources[venue]["detail"]:
+        if venue in sources and not sources[venue]["detail"]:
             sources[venue]["detail"] = reason
+
+    def _refuse_ambiguous(venue: str, reason: str) -> None:
+        """An ambiguity refusal leads the report; unrelated rejections never mask it."""
+        if venue not in sources:
+            return
+        previous = sources[venue]["detail"]
+        sources[venue]["detail"] = f"{reason}; {previous}" if previous else reason
+        warnings.append(f"{venue}: {reason}")
 
     # Discovery and admission are separate: every raw hit is still reported
     # below, but only a market proven to be THIS game's full-game moneyline —
@@ -1592,6 +1600,14 @@ def compare_odds(request_data: dict) -> dict:
     # derivative moneylines (1st-half, first-5-innings, to-score-a-touchdown)
     # share the type, and falling back to whichever came first prices a
     # different proposition than the ESPN home/away odds.
+    # Exactly ONE distinct full-game Moneyline may price this game: identical
+    # repeated copies (same event, key and quotes) count once, while two
+    # distinct candidates — or two snapshots of one market key that disagree —
+    # are different bets or an unresolvable conflict, and are refused.
+    px_candidates: list[tuple[str, dict]] = []
+    px_seen_content: set = set()
+    px_by_ref: dict = {}
+    px_conflicts: list[str] = []
     for px in prophetx_matches:
         if not _same_start(px.get("scheduled"), identity["start_utc"]):
             _reject(
@@ -1601,24 +1617,52 @@ def compare_odds(request_data: dict) -> dict:
                 f"{identity['start'] if identity['start_utc'] is not None else 'at an unstated time'}",
             )
             continue
-        game_ml = next(
-            (
-                m
-                for m in px.get("markets", [])
-                if m.get("type") == "moneyline"
-                and str(m.get("title") or "").strip() == "Moneyline"
-                and m.get("outcomes")
-            ),
-            None,
-        )
-        if game_ml is None:
+        game_mls = [
+            m
+            for m in px.get("markets", [])
+            if m.get("type") == "moneyline" and str(m.get("title") or "").strip() == "Moneyline" and m.get("outcomes")
+        ]
+        if not game_mls:
             _reject(
                 "prophetx",
                 f"ProphetX event '{px.get('title') or px.get('event_id')}' exposes no priced "
                 "full-game Moneyline (derivative moneylines price a different proposition)",
             )
             continue
-        for outcome in game_ml.get("outcomes", []):
+        for m in game_mls:
+            quotes = repr(
+                [
+                    (str(o.get("outcome") or ""), o.get("implied_probability"), o.get("odds_american"))
+                    for o in m.get("outcomes") or []
+                ]
+            )
+            event_ref, market_key = repr(px.get("event_id")), str(m.get("market_key") or "")
+            content = (event_ref, market_key, quotes)
+            if content in px_seen_content:
+                continue  # an identical repeated copy, not a second market
+            px_seen_content.add(content)
+            ref = f"{market_key or 'unkeyed Moneyline'} (event {px.get('event_id')})"
+            if market_key:
+                prior = px_by_ref.get((event_ref, market_key))
+                if prior is not None:
+                    px_conflicts.append(ref)
+                    continue
+                px_by_ref[(event_ref, market_key)] = quotes
+            px_candidates.append((ref, m))
+
+    if px_conflicts:
+        _refuse_ambiguous(
+            "prophetx",
+            f"conflicting ProphetX snapshots of {', '.join(px_conflicts)} — refusing to pick one price",
+        )
+    elif len(px_candidates) > 1:
+        _refuse_ambiguous(
+            "prophetx",
+            f"ambiguous full-game candidates: {', '.join(ref for ref, _ in px_candidates)} "
+            "— refusing to pool separate ProphetX markets",
+        )
+    elif px_candidates:
+        for outcome in px_candidates[0][1].get("outcomes", []):
             prob = outcome.get("implied_probability") or 0
             side = _side_for_label(outcome.get("outcome"))
             if side and 0 < prob < 1:
@@ -1686,10 +1730,20 @@ def compare_odds(request_data: dict) -> dict:
     # as this game's full-game winner market before either becomes a reference
     # leg — one contract alone is not a mutually exclusive pair. Prices arrive
     # as cents (73) or dollars (0.73); `_normalize_price` reads both.
+    #
+    # Exactly ONE validated ticker per side may price this game. Identical
+    # repeated copies (same ticker, same price) count once; two distinct
+    # tickers for one side — two qualifying events, or a stray contract inside
+    # one — are different bets, and a ticker quoted at two prices is a
+    # conflicting snapshot. Both are refused rather than pooled or overwritten.
+    kalshi_legs: dict[str, dict[str, float]] = {"home": {}, "away": {}}
+    kalshi_events: dict[str, list[str]] = {"home": [], "away": []}
+    kalshi_conflicts: list[str] = []
     for event in kalshi_matches:
-        legs: dict[str, tuple] = {}
+        event_ref = str(event.get("event_ticker") or "unnamed event")
+        legs: dict[str, dict[str, float]] = {}
         for market in event.get("markets") or []:
-            ticker = market.get("ticker", "")
+            ticker = str(market.get("ticker", "") or "")
             rejections = []
             for side in ("home", "away"):
                 reason = _kalshi_ticker_identity(ticker, sport, identity, side)
@@ -1704,20 +1758,47 @@ def compare_odds(request_data: dict) -> dict:
                 if not 0 < probability < 1:
                     rejections.append(f"Kalshi ticker '{ticker}' quotes {price}, not a probability")
                     continue
-                legs[side] = (probability, f"kalshi_{identity[side]['name']}")
+                side_legs = legs.setdefault(side, {})
+                if ticker in side_legs and side_legs[ticker] != probability:
+                    kalshi_conflicts.append(f"{ticker} ({side_legs[ticker]} vs {probability})")
+                side_legs.setdefault(ticker, probability)
             # A ticker rejected for both sides priced neither; one rejection is
             # only the other side of a market that did match.
             if len(rejections) == 2:
                 _reject("kalshi", rejections[0])
         if len(legs) == 2:
-            for side, leg in legs.items():
-                side_prices[side].append(leg)
+            for side, side_legs in legs.items():
+                for ticker, probability in side_legs.items():
+                    known = kalshi_legs[side].get(ticker)
+                    if known is not None and known != probability:
+                        kalshi_conflicts.append(f"{ticker} ({known} vs {probability})")
+                        continue
+                    kalshi_legs[side].setdefault(ticker, probability)
+                    if event_ref not in kalshi_events[side]:
+                        kalshi_events[side].append(event_ref)
         elif legs:
             _reject(
                 "kalshi",
                 f"Kalshi event '{event.get('event_ticker')}' priced only the "
                 f"{next(iter(legs))} side; half a market is not a comparison",
             )
+
+    if kalshi_conflicts:
+        _refuse_ambiguous(
+            "kalshi",
+            f"conflicting Kalshi snapshots of {', '.join(kalshi_conflicts)} — refusing to pick one price",
+        )
+    elif any(len(kalshi_legs[side]) > 1 for side in ("home", "away")):
+        tickers = ", ".join(t for side in ("home", "away") for t in kalshi_legs[side])
+        events = ", ".join(dict.fromkeys(kalshi_events["home"] + kalshi_events["away"]))
+        _refuse_ambiguous(
+            "kalshi",
+            f"ambiguous full-game candidates: {tickers} (events: {events}) — refusing to pool separate Kalshi markets",
+        )
+    elif kalshi_legs["home"] and kalshi_legs["away"]:
+        for side in ("home", "away"):
+            probability = next(iter(kalshi_legs[side].values()))
+            side_prices[side].append((probability, f"kalshi_{identity[side]['name']}"))
 
     # Gemini: exactly ONE active full-contest moneyline of this league starting
     # at this game's exact instant, whose two open single-leg contracts name
