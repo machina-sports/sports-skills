@@ -212,6 +212,38 @@ def test_timeline_keeps_stoppage_time_as_added_time():
     assert [(e["minute"], e["added_time"]) for e in tl] == [(45, 3), (59, 0), (90, 7)]
 
 
+def _roster_player(pid, *, subbed_in=False, subbed_out=False, sub_clock=None):
+    plays = []
+    if sub_clock:
+        plays.append({"clock": {"displayValue": sub_clock}, "substitution": True})
+    return {
+        "athlete": {"id": pid, "displayName": pid},
+        "starter": not subbed_in,
+        "subbedIn": subbed_in,
+        "subbedOut": subbed_out,
+        "plays": plays,
+    }
+
+
+def test_sub_minute_comes_from_the_substitution_play():
+    summary = {
+        "rosters": [
+            {
+                "team": {"id": "364", "displayName": "Liverpool"},
+                "roster": [
+                    _roster_player("out", subbed_out=True, sub_clock="60'"),
+                    _roster_player("in", subbed_in=True, sub_clock="60'"),
+                    _roster_player("late", subbed_in=True, sub_clock="90'+2'"),
+                    _roster_player("starter"),
+                ],
+            }
+        ]
+    }
+    (team,) = c._normalize_espn_summary_players(summary)
+    minutes = {p["id"]: p["sub_minute"] for p in team["players"]}
+    assert minutes == {"out": 60, "in": 60, "late": 90, "starter": None}
+
+
 def test_serie_b_is_wired_like_serie_a():
     serie_a = c.LEAGUES["serie-a"]
     serie_b = c.LEAGUES["serie-b"]

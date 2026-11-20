@@ -1834,6 +1834,19 @@ def _normalize_espn_summary_lineups(summary):
     return lineups
 
 
+def _substitution_minute(roster_entry):
+    """Minute of the player's substitution, e.g. 60 from "60'" or 90 from "90'+2'".
+
+    ESPN leaves subMinute unset and puts the clock on the substitution play.
+    """
+    for play in roster_entry.get("plays") or []:
+        if play.get("substitution"):
+            clock = (play.get("clock") or {}).get("displayValue", "")
+            minute = clock.split("'")[0].strip()
+            return int(minute) if minute.isdigit() else None
+    return None
+
+
 def _normalize_espn_summary_players(summary):
     """Extract player-level statistics from ESPN summary rosters."""
     ha_map = _espn_home_away_map(summary)
@@ -1863,7 +1876,7 @@ def _normalize_espn_summary_players(summary):
                     "starter": p.get("starter", False),
                     "subbed_in": p.get("subbedIn", False),
                     "subbed_out": p.get("subbedOut", False),
-                    "sub_minute": p.get("subMinute"),
+                    "sub_minute": p.get("subMinute") or _substitution_minute(p),
                     "statistics": stat_dict,
                 }
             )
