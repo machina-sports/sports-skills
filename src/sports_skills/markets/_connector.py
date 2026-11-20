@@ -1636,9 +1636,18 @@ def compare_odds(request_data: dict) -> dict:
                     for o in m.get("outcomes") or []
                 ]
             )
-            event_ref, market_key = repr(px.get("event_id")), str(m.get("market_key") or "")
+            event_ref, market_key = repr(px.get("event_id")), str(m.get("market_key") or "").strip()
+            raw_event_id = px.get("event_id")
+            identified = (
+                raw_event_id is not None
+                and not isinstance(raw_event_id, bool)
+                and bool(str(raw_event_id).strip())
+                and bool(market_key)
+            )
             content = (event_ref, market_key, quotes)
-            if content in px_seen_content:
+            # Only an identified copy (event ID AND market key) can be proven a
+            # repeat; matching prices alone may be two different games.
+            if identified and content in px_seen_content:
                 continue  # an identical repeated copy, not a second market
             px_seen_content.add(content)
             ref = f"{market_key or 'unkeyed Moneyline'} (event {px.get('event_id')})"

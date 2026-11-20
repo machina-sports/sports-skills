@@ -1149,6 +1149,30 @@ class TestProphetXUniqueMatch:
         assert result["data"]["sources"]["prophetx"]["outcome"] == "ok"
         assert _venue_quote_count(result, "prophetx") == {"home": 1, "away": 1}
 
+    def test_unidentified_events_with_identical_unkeyed_moneylines_are_not_deduplicated(self):
+        # Neither event ID nor market key is present, so matching prices and
+        # kickoff cannot prove the two separately returned events are one
+        # market — they may be two games. Refuse rather than collapse them.
+        unkeyed = {k: v for k, v in PROPHETX_FULL_GAME_MARKET.items() if k != "market_key"}
+        first = {k: v for k, v in _prophetx_event([unkeyed]).items() if k != "event_id"}
+        second = copy.deepcopy(first)
+        assert "event_id" not in first and "market_key" not in first["markets"][0]
+        assert first == second and first is not second
+        assert first["scheduled"] == "2026-09-22T00:15:00Z"
+
+        result = _compare(dict(NFL_SUMMARY, odds=None), kalshi=[_kalshi_event()], prophetx=[first, second])
+        prophetx = result["data"]["sources"]["prophetx"]
+        assert prophetx["outcome"] == "unmatched"
+        assert "ambiguous" in prophetx["detail"].lower()
+        assert "prophetx" not in result["data"]["completeness"]["usable_sources"]
+        assert _venue_quote_count(result, "prophetx") == {"home": 0, "away": 0}
+        assert not any(label.startswith("prophetx_") for label in _labels(result))
+        # The valid Kalshi peer still prices the game, and raw discovery is kept.
+        assert result["data"]["sources"]["kalshi"]["outcome"] == "ok"
+        assert _labels(result) == ["kalshi_Los Angeles Rams", "kalshi_New York Giants"]
+        assert len(result["data"]["prophetx_markets"]) == 2
+        assert result["status"] is True
+
 
 class TestExistingVenueAmbiguityGuards:
     """Polymarket, Novig and Gemini already refuse two candidates; keep it so."""
