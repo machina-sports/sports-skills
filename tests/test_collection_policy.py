@@ -31,7 +31,7 @@ def test_active_release_proof_defers_to_other_ignore_hooks(monkeypatch):
     monkeypatch.delenv("SPORTS_SKILLS_VERIFY_RELEASE_0408", raising=False)
     monkeypatch.delenv("SPORTS_SKILLS_VERIFY_RELEASE_0409", raising=False)
     monkeypatch.delenv("SPORTS_SKILLS_VERIFY_RELEASE_0410", raising=False)
-    assert collection_policy.pytest_ignore_collect(Path("tests/test_release_0411.py"), None) is None
+    assert collection_policy.pytest_ignore_collect(Path("tests/test_release_041.py"), None) is None
 
 
 @pytest.mark.parametrize(

@@ -1,4 +1,4 @@
-"""Build the 0.40.10 wheel and sdist with one reviewed source epoch."""
+"""Build the 0.41.0 wheel and sdist with one reviewed source epoch."""
 
 import gzip
 import os
@@ -9,9 +9,9 @@ import tarfile
 import tempfile
 from pathlib import Path
 
-REVIEWED_SOURCE_COMMIT = "fbcfd25515ab19f8d9d349a42ee3b074696bd70c"
-SOURCE_DATE_EPOCH = 1794961340
-VERSION = "0.40.10"
+REVIEWED_SOURCE_COMMIT = "f83c7f8c3bf78f6ccffc7bf3cf078a4d6f5db316"
+SOURCE_DATE_EPOCH = 1795194332
+VERSION = "0.41.0"
 EXPECTED_FILES = {
     f"sports_skills-{VERSION}-py3-none-any.whl",
     f"sports_skills-{VERSION}.tar.gz",
