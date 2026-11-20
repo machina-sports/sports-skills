@@ -6,7 +6,7 @@
 |---|---|---|---|
 | `get_todays_markets` | | sport, date | Fetch ESPN schedule → search supported Kalshi, Polymarket, ProphetX, Novig and Gemini listings → unified dashboard |
 | `search_entity` | query | sport | Search Kalshi, Polymarket, ProphetX, Novig and Gemini for a team/player/event name; each venue retains its supported sport coverage |
-| `compare_odds` | sport, event_id | | ESPN odds + prediction market prices → normalized side-by-side + arb check |
+| `compare_odds` | sport, event_id | | ESPN odds + prediction market prices → normalized side-by-side reference quotes (listed, not ranked) |
 | `get_sport_markets` | sport | status, limit | Sport-filtered market listing on both platforms (uses sport code, not text query) |
 | `get_sport_schedule` | | sport, date | Unified ESPN schedule across one or all sports |
 | `normalize_price` | price, source | | Convert any source format to common {implied_prob, american, decimal} |
@@ -30,7 +30,8 @@
 ### `compare_odds` notes
 
 - `sources` gives a per-source outcome (`ok` / `empty` / `error` / `unmatched`) and `completeness` lists which sources actually priced this game's sides. A provider that errored is distinguishable from one with genuinely no markets. When nothing is usable the call fails instead of returning an empty success.
-- `arbitrage_check` is built from reference prices and is labelled `price_basis: "reference"`. Confirm both legs on each venue's order book before treating it as executable.
+- `side_prices.home` / `side_prices.away` list every admitted reference quote with its provenance. They are not ranked: `lowest_reference` and `arbitrage_check` are always `null`.
+- `ranking_status` is `insufficient_evidence` when quotes exist, or `no_quotes` when none were admitted. `ranking_reason` explains it: current feeds do not prove that the venues settle this game identically, that their prices mean the same thing, or that they were observed at the same moment. Coverage (`sources`, `completeness`) does not imply ranking eligibility.
 
 ### Gemini coverage per command
 

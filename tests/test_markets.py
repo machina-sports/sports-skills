@@ -709,7 +709,7 @@ class TestCompareOddsMocked:
     @patch("sports_skills.markets._connector._search_polymarket")
     @patch("sports_skills.markets._connector._search_kalshi")
     @patch("sports_skills.markets._connector._load_sport_module")
-    def test_only_game_moneylines_join_arb_pool(self, mock_load, mock_kalshi, mock_poly, mock_prophetx):
+    def test_only_game_moneylines_price_sides(self, mock_load, mock_kalshi, mock_poly, mock_prophetx):
         mock_mod = MagicMock()
         mock_mod.get_game_summary.return_value = {
             "status": True,
@@ -787,22 +787,24 @@ class TestCompareOddsMocked:
 
         result = compare_odds({"params": {"sport": "nba", "event_id": "123"}})
         assert result["status"] is True
-        arb = result["data"]["arbitrage_check"]
-        assert arb is not None
-        labels = [a.get("label", "") for a in arb["allocations"]]
-        # One best price per mutually exclusive side: ProphetX is best for
-        # Celtics, Polymarket is best for Lakers.
-        assert labels == ["prophetx_Celtics -150", "poly_Lakers"]
-        assert arb["total_implied"] == pytest.approx(1.02)
-        assert not any("Over 220" in label for label in labels)  # non-moneyline stays out
-        assert not any("1H" in label for label in labels)  # derivative moneylines stay out
-        assert "poly_Yes" not in labels  # non-moneyline poly markets stay out
+        side_prices = result["data"]["side_prices"]
+        # Exactly the two full-game moneylines price sides: the first-inning
+        # Yes/No market, the 1st-half moneyline (0.5455) and the total (0.5238)
+        # stay out. "Lakers +130" does not name the away team closely enough.
+        home = [(q["venue"], q["implied_probability"], q["market_id"]) for q in side_prices["home"]["quotes"]]
+        away = [(q["venue"], q["implied_probability"], q["market_id"]) for q in side_prices["away"]["quotes"]]
+        assert home == [("polymarket", 0.61, "M1"), ("prophetx", 0.6, "19742:219")]
+        assert away == [("polymarket", 0.42, "M1")]
+        # Listed, not ranked or pooled.
+        assert result["data"]["arbitrage_check"] is None
+        assert side_prices["home"]["lowest_reference"] is None
+        assert result["data"]["ranking_status"] == "insufficient_evidence"
 
     @patch("sports_skills.markets._connector._search_prophetx")
     @patch("sports_skills.markets._connector._search_polymarket")
     @patch("sports_skills.markets._connector._search_kalshi")
     @patch("sports_skills.markets._connector._load_sport_module")
-    def test_cross_venue_arb_uses_best_price_per_side(self, mock_load, mock_kalshi, mock_poly, mock_prophetx):
+    def test_low_cross_venue_composite_is_not_an_arbitrage(self, mock_load, mock_kalshi, mock_poly, mock_prophetx):
         mock_mod = MagicMock()
         mock_mod.get_game_summary.return_value = {
             "status": True,
@@ -830,11 +832,20 @@ class TestCompareOddsMocked:
         mock_prophetx.return_value = []
 
         result = compare_odds({"params": {"sport": "nba", "event_id": "123"}})
-        arb = result["data"]["arbitrage_check"]
+        data = result["data"]
 
-        assert arb["arbitrage_found"] is True
-        assert arb["total_implied"] == pytest.approx(0.8)
-        assert [a["label"] for a in arb["allocations"]] == ["espn_Home Team", "poly_Away Team"]
+        # ESPN home 0.40 + Polymarket away 0.40 = 0.80 looks like an arbitrage,
+        # but nothing proves the two venues settle and observe alike: both
+        # quotes stay listed, and none is ranked or pooled.
+        home = [(q["venue"], q["implied_probability"]) for q in data["side_prices"]["home"]["quotes"]]
+        away = [(q["venue"], q["implied_probability"]) for q in data["side_prices"]["away"]["quotes"]]
+        assert home == [("espn", pytest.approx(0.4, abs=1e-4)), ("polymarket", 0.7)]
+        assert away == [("espn", pytest.approx(0.7, abs=1e-4)), ("polymarket", 0.4)]
+        assert data["arbitrage_check"] is None
+        assert data["side_prices"]["home"]["lowest_reference"] is None
+        assert data["side_prices"]["away"]["lowest_reference"] is None
+        assert data["ranking_status"] == "insufficient_evidence"
+        assert sorted(data["completeness"]["usable_sources"]) == ["espn", "polymarket"]
 
     @patch("sports_skills.markets._connector._search_prophetx")
     @patch("sports_skills.markets._connector._search_polymarket")
@@ -2280,8 +2291,10 @@ class TestCompareOddsKalshiByTicker:
         data = result["data"]
         assert data["sources"]["kalshi"]["outcome"] == "ok"
         assert [e["event_ticker"] for e in data["kalshi_markets"]] == ["KXNFLGAME-26NOV22MIABUF"]
-        labels = [a["label"] for a in data["arbitrage_check"]["allocations"]]
-        assert labels == ["kalshi_Buffalo Bills", "kalshi_Miami Dolphins"]
+        home = [(q["venue"], q["contract_id"], q["implied_probability"]) for q in data["side_prices"]["home"]["quotes"]]
+        away = [(q["venue"], q["contract_id"], q["implied_probability"]) for q in data["side_prices"]["away"]["quotes"]]
+        assert home == [("kalshi", "KXNFLGAME-26NOV22MIABUF-BUF", 0.74)]
+        assert away == [("kalshi", "KXNFLGAME-26NOV22MIABUF-MIA", 0.27)]
 
     def test_falls_back_to_the_text_search(self):
         calls = []

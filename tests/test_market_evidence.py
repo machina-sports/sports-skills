@@ -681,12 +681,12 @@ class TestPartialSources:
         assert result["data"]["completeness"]["usable_sources"] == ["espn"]
         assert result["data"]["completeness"]["complete"] is False
 
-    def test_reference_prices_are_not_called_executable_arbitrage(self):
+    def test_reference_prices_never_become_an_arbitrage_check(self):
         result = _compare(NFL_SUMMARY, poly=[POLY_GAME_MARKET])
-        arb = result["data"]["arbitrage_check"]
-        assert arb is not None
-        assert arb["price_basis"] == "reference"
-        assert "executable" in arb["note"].lower()
+        assert result["data"]["arbitrage_check"] is None
+        assert result["data"]["ranking_status"] == "insufficient_evidence"
+        assert result["data"]["price_basis"] == "reference"
+        assert "executable" in result["data"]["price_basis_note"].lower()
 
     def test_no_zero_price_is_invented_for_a_missing_field(self):
         priceless = dict(
@@ -793,9 +793,9 @@ def _kalshi_event(event_ticker="KXNFLGAME-26SEP21NYGLAR", markets=None):
     }
 
 
-def _labels(result):
-    arb = result["data"]["arbitrage_check"]
-    return [allocation.get("label", "") for allocation in (arb or {}).get("allocations", [])]
+def _quotes(result, side):
+    """(venue, implied probability) for each admitted quote on one side, in order."""
+    return [(q["venue"], q["implied_probability"]) for q in result["data"]["side_prices"][side]["quotes"]]
 
 
 def _dateless_summary(start_time=""):
@@ -805,20 +805,23 @@ def _dateless_summary(start_time=""):
 class TestSidePrices:
     """Admitted per-side reference quotes, exposed for direct comparison."""
 
-    def test_each_side_lists_admitted_venues_and_the_lowest_reference(self):
+    def test_each_side_lists_admitted_venues_without_ranking_them(self):
         result = _compare(NFL_SUMMARY, kalshi=[_kalshi_event()], poly=[POLY_GAME_MARKET], novig=[NOVIG_GAME_EVENT])
         home = result["data"]["side_prices"]["home"]
         away = result["data"]["side_prices"]["away"]
         assert home["team"] == "Los Angeles Rams"
         assert away["team"] == "New York Giants"
         assert [q["venue"] for q in home["quotes"]] == ["espn", "polymarket", "novig", "kalshi"]
+        assert [q["implied_probability"] for q in home["quotes"][1:]] == [0.735, 0.74, 0.73]
         assert [q["implied_probability"] for q in away["quotes"][1:]] == [0.265, 0.28, 0.26]
         assert all(q["price_basis"] == "reference" and q["execution_guaranteed"] is False for q in home["quotes"])
-        assert home["lowest_reference"] == home["quotes"][3]
-        assert away["lowest_reference"]["venue"] == "kalshi"
+        # Listed, not ranked: no lowest quote and no pooled arbitrage.
+        assert home["lowest_reference"] is None
+        assert away["lowest_reference"] is None
+        assert result["data"]["arbitrage_check"] is None
+        assert result["data"]["ranking_status"] == "insufficient_evidence"
         # Existing payloads are untouched.
         assert result["data"]["polymarket_markets"] == [POLY_GAME_MARKET]
-        assert result["data"]["arbitrage_check"]["price_basis"] == "reference"
 
     def test_rejected_wrong_game_market_is_excluded(self):
         result = _compare(NFL_SUMMARY, poly=[POLY_WRONG_DATE_MARKET])
@@ -833,9 +836,9 @@ class TestSidePrices:
             "lowest_reference": None,
         }
 
-    def test_ties_keep_the_first_admitted_quote(self):
-        # Polymarket and Kalshi both price the Rams at 0.73; gathering order
-        # (polymarket before kalshi) decides.
+    def test_equal_quotes_are_both_kept_in_gathering_order(self):
+        # Polymarket and Kalshi both price the Rams at 0.73: both are listed
+        # (polymarket before kalshi), and neither is picked as "lowest".
         poly = dict(
             POLY_GAME_MARKET,
             outcomes=[
@@ -844,7 +847,8 @@ class TestSidePrices:
             ],
         )
         result = _compare(dict(NFL_SUMMARY, odds=None), kalshi=[_kalshi_event()], poly=[poly])
-        assert result["data"]["side_prices"]["home"]["lowest_reference"]["venue"] == "polymarket"
+        assert _quotes(result, "home") == [("polymarket", 0.73), ("kalshi", 0.73)]
+        assert result["data"]["side_prices"]["home"]["lowest_reference"] is None
 
 
 class TestPolymarketDateAdmission:
@@ -854,9 +858,9 @@ class TestPolymarketDateAdmission:
         result = _compare(NFL_SUMMARY, poly=[POLY_WRONG_DATE_MARKET])
         assert result["data"]["sources"]["polymarket"]["outcome"] == "unmatched"
         assert "polymarket" not in result["data"]["completeness"]["usable_sources"]
-        assert not any(label.startswith("poly_") for label in _labels(result))
-        # 0.1 for the Giants in December is not an arbitrage against September.
-        assert result["data"]["arbitrage_check"]["arbitrage_found"] is False
+        # 0.1 for the Giants in December never prices this September game.
+        assert _venues(result, "home") == _venues(result, "away") == ["espn"]
+        assert result["data"]["arbitrage_check"] is None
 
     def test_wrong_date_moneyline_is_still_reported_as_raw_discovery(self):
         result = _compare(NFL_SUMMARY, poly=[POLY_WRONG_DATE_MARKET])
@@ -867,12 +871,13 @@ class TestPolymarketDateAdmission:
         first_half = dict(POLY_GAME_MARKET, market_id="5321", slug="nfl-nyg-la-2026-09-22-1h")
         result = _compare(dict(NFL_SUMMARY, odds=None), poly=[spread, first_half])
         assert result["data"]["sources"]["polymarket"]["outcome"] == "unmatched"
-        assert result["data"]["arbitrage_check"] is None
+        assert _quotes(result, "home") == _quotes(result, "away") == []
 
     def test_the_validated_moneyline_still_prices_this_game(self):
-        result = _compare(NFL_SUMMARY, poly=[POLY_GAME_MARKET])
+        result = _compare(dict(NFL_SUMMARY, odds=None), poly=[POLY_GAME_MARKET])
         assert result["data"]["sources"]["polymarket"]["outcome"] == "ok"
-        assert any(label.startswith("poly_") for label in _labels(result))
+        assert _quotes(result, "home") == [("polymarket", 0.735)]
+        assert _quotes(result, "away") == [("polymarket", 0.265)]
 
     def test_a_dateless_espn_summary_admits_no_market(self):
         result = _compare(_dateless_summary(), poly=[POLY_GAME_MARKET])
@@ -887,27 +892,28 @@ class TestProphetXDerivativeAdmission:
         event = _prophetx_event([PROPHETX_FIRST_HALF_MARKET])
         result = _compare(dict(NFL_SUMMARY, odds=None), prophetx=[event])
         assert result["data"]["sources"]["prophetx"]["outcome"] == "unmatched"
-        assert result["data"]["arbitrage_check"] is None
+        assert _quotes(result, "home") == _quotes(result, "away") == []
 
     def test_the_full_game_moneyline_is_not_shadowed_by_a_derivative(self):
         event = _prophetx_event([PROPHETX_FIRST_HALF_MARKET, PROPHETX_FULL_GAME_MARKET])
         result = _compare(dict(NFL_SUMMARY, odds=None), prophetx=[event])
         assert result["data"]["sources"]["prophetx"]["outcome"] == "ok"
-        labels = _labels(result)
-        assert labels == ["prophetx_Los Angeles Rams -275", "prophetx_New York Giants +270"]
+        # The full-game prices, not the first-half 0.6721 / 0.3448.
+        assert _quotes(result, "home") == [("prophetx", 0.7333)]
+        assert _quotes(result, "away") == [("prophetx", 0.2703)]
 
     def test_a_december_prophetx_event_is_not_this_game(self):
         event = _prophetx_event([PROPHETX_FULL_GAME_MARKET], scheduled="2026-12-22T01:15:00Z")
         result = _compare(dict(NFL_SUMMARY, odds=None), prophetx=[event])
         assert result["data"]["sources"]["prophetx"]["outcome"] == "unmatched"
-        assert result["data"]["arbitrage_check"] is None
+        assert _quotes(result, "home") == _quotes(result, "away") == []
 
     @pytest.mark.parametrize("scheduled", [None, "", "not-a-timestamp"])
     def test_an_undated_prophetx_event_cannot_be_matched(self, scheduled):
         event = _prophetx_event([PROPHETX_FULL_GAME_MARKET], scheduled=scheduled)
         result = _compare(dict(NFL_SUMMARY, odds=None), prophetx=[event])
         assert result["data"]["sources"]["prophetx"]["outcome"] == "unmatched"
-        assert result["data"]["arbitrage_check"] is None
+        assert _quotes(result, "home") == _quotes(result, "away") == []
 
 
 class TestKalshiReferenceLegs:
@@ -917,14 +923,14 @@ class TestKalshiReferenceLegs:
         result = _compare(NFL_SUMMARY, kalshi=[_kalshi_event()])
         assert result["data"]["sources"]["kalshi"]["outcome"] == "ok"
         assert "kalshi" in result["data"]["completeness"]["usable_sources"]
-        assert _labels(result) == ["kalshi_Los Angeles Rams", "kalshi_New York Giants"]
+        assert _venues(result, "home") == _venues(result, "away") == ["espn", "kalshi"]
+        home_kalshi = result["data"]["side_prices"]["home"]["quotes"][1]
+        assert home_kalshi["contract_id"] == KALSHI_HOME_TICKER
 
     def test_cent_prices_are_normalized_to_probabilities(self):
         result = _compare(dict(NFL_SUMMARY, odds=None), kalshi=[_kalshi_event()])
-        arb = result["data"]["arbitrage_check"]
-        probs = {a["label"]: a["market_prob"] for a in arb["allocations"]}
-        assert probs["kalshi_Los Angeles Rams"] == pytest.approx(0.73)
-        assert probs["kalshi_New York Giants"] == pytest.approx(0.26)
+        assert _quotes(result, "home") == [("kalshi", pytest.approx(0.73))]
+        assert _quotes(result, "away") == [("kalshi", pytest.approx(0.26))]
 
     def test_dollar_shaped_prices_are_read_as_probabilities_too(self):
         dollars = _kalshi_event(
@@ -934,9 +940,8 @@ class TestKalshiReferenceLegs:
             ]
         )
         result = _compare(dict(NFL_SUMMARY, odds=None), kalshi=[dollars])
-        arb = result["data"]["arbitrage_check"]
-        probs = {a["label"]: a["market_prob"] for a in arb["allocations"]}
-        assert probs["kalshi_Los Angeles Rams"] == pytest.approx(0.73)
+        assert _quotes(result, "home") == [("kalshi", pytest.approx(0.73))]
+        assert _quotes(result, "away") == [("kalshi", pytest.approx(0.26))]
 
     def test_kalshi_only_is_a_usable_complete_comparison(self):
         result = _compare(dict(NFL_SUMMARY, odds=None), kalshi=[_kalshi_event()])
@@ -963,13 +968,13 @@ class TestKalshiReferenceLegs:
     def test_a_december_kalshi_event_is_not_this_game(self):
         result = _compare(dict(NFL_SUMMARY, odds=None), kalshi=[_kalshi_event("KXNFLGAME-26DEC21NYGLAR")])
         assert result["data"]["sources"]["kalshi"]["outcome"] == "unmatched"
-        assert result["data"]["arbitrage_check"] is None
+        assert _quotes(result, "home") == _quotes(result, "away") == []
 
     def test_one_validated_side_is_not_half_a_market(self):
         one_side = _kalshi_event(markets=[{"ticker": "KXNFLGAME-26SEP21NYGLAR-LAR", "yes_price": 73}])
         result = _compare(dict(NFL_SUMMARY, odds=None), kalshi=[one_side])
         assert result["data"]["sources"]["kalshi"]["outcome"] == "unmatched"
-        assert result["data"]["arbitrage_check"] is None
+        assert _quotes(result, "home") == _quotes(result, "away") == []
 
     @pytest.mark.parametrize("price", [0, 100, None, "73", -5])
     def test_unusable_cent_prices_are_skipped(self, price):
@@ -981,13 +986,19 @@ class TestKalshiReferenceLegs:
         )
         result = _compare(dict(NFL_SUMMARY, odds=None), kalshi=[broken])
         assert result["data"]["sources"]["kalshi"]["outcome"] == "unmatched"
-        assert result["data"]["arbitrage_check"] is None
+        assert _quotes(result, "home") == _quotes(result, "away") == []
 
     def test_every_compared_price_is_labelled_a_reference(self):
         result = _compare(NFL_SUMMARY, kalshi=[_kalshi_event()], poly=[POLY_GAME_MARKET])
         assert result["data"]["price_basis"] == "reference"
         assert "executable" in result["data"]["price_basis_note"].lower()
-        assert result["data"]["arbitrage_check"]["price_basis"] == "reference"
+        assert all(
+            q["price_basis"] == "reference" and q["execution_guaranteed"] is False
+            for side in ("home", "away")
+            for q in result["data"]["side_prices"][side]["quotes"]
+        )
+        assert result["data"]["arbitrage_check"] is None
+        assert result["data"]["ranking_status"] == "insufficient_evidence"
 
 
 # ============================================================
@@ -1023,13 +1034,14 @@ class TestKalshiUniqueMatch:
         assert kalshi["outcome"] == "unmatched"
         assert "kalshi" not in result["data"]["completeness"]["usable_sources"]
         assert _venue_quote_count(result, "kalshi") == {"home": 0, "away": 0}
-        assert not any(label.startswith("kalshi_") for label in _labels(result))
         # Diagnostics name both candidates rather than a silent drop.
         assert "ambiguous" in kalshi["detail"].lower()
         assert "KXNFLGAME-26SEP21NYGLAR" in kalshi["detail"]
         assert KALSHI_UTC_DAY_EVENT in kalshi["detail"]
-        # Mixing the two events' legs (0.60 + 0.20) must not manufacture an arb.
-        assert _labels(result) == ["poly_Rams", "poly_Giants"]
+        # Neither event's legs (0.73/0.26 or 0.60/0.20) price a side.
+        assert _quotes(result, "home")[1:] == [("polymarket", 0.735)]
+        assert _quotes(result, "away")[1:] == [("polymarket", 0.265)]
+        assert result["data"]["arbitrage_check"] is None
         # The valid other venue and ESPN survive, and raw discovery is kept.
         assert result["data"]["sources"]["polymarket"]["outcome"] == "ok"
         assert result["data"]["sources"]["espn"]["outcome"] == "ok"
@@ -1051,7 +1063,6 @@ class TestKalshiUniqueMatch:
         kalshi = result["data"]["sources"]["kalshi"]
         assert kalshi["outcome"] == "unmatched"
         assert _venue_quote_count(result, "kalshi") == {"home": 0, "away": 0}
-        assert not any(label.startswith("kalshi_") for label in _labels(result))
         assert KALSHI_AWAY_TICKER in kalshi["detail"]
         assert stray in kalshi["detail"]
         assert result["data"]["sources"]["polymarket"]["outcome"] == "ok"
@@ -1061,8 +1072,8 @@ class TestKalshiUniqueMatch:
         event = _kalshi_event()
         result = _compare(dict(NFL_SUMMARY, odds=None), kalshi=[event, copy.deepcopy(event)])
         assert result["data"]["sources"]["kalshi"]["outcome"] == "ok"
-        assert _venue_quote_count(result, "kalshi") == {"home": 1, "away": 1}
-        assert _labels(result) == ["kalshi_Los Angeles Rams", "kalshi_New York Giants"]
+        assert _quotes(result, "home") == [("kalshi", 0.73)]
+        assert _quotes(result, "away") == [("kalshi", 0.26)]
 
     def test_identical_repeated_ticker_within_one_event_counts_once(self):
         markets = _kalshi_event()["markets"]
@@ -1114,13 +1125,13 @@ class TestProphetXUniqueMatch:
         assert prophetx["outcome"] == "unmatched"
         assert "prophetx" not in result["data"]["completeness"]["usable_sources"]
         assert _venue_quote_count(result, "prophetx") == {"home": 0, "away": 0}
-        assert not any(label.startswith("prophetx_") for label in _labels(result))
         assert "ambiguous" in prophetx["detail"].lower()
         assert "1700008786" in prophetx["detail"]
         assert str(PROPHETX_OTHER_EVENT_ID) in prophetx["detail"]
         # Kalshi's valid pair is unaffected.
         assert result["data"]["sources"]["kalshi"]["outcome"] == "ok"
-        assert _labels(result) == ["kalshi_Los Angeles Rams", "kalshi_New York Giants"]
+        assert _quotes(result, "home") == [("kalshi", 0.73)]
+        assert _quotes(result, "away") == [("kalshi", 0.26)]
         assert len(result["data"]["prophetx_markets"]) == 2
         assert result["status"] is True
 
@@ -1140,8 +1151,8 @@ class TestProphetXUniqueMatch:
         event = _prophetx_event([PROPHETX_FULL_GAME_MARKET])
         result = _compare(dict(NFL_SUMMARY, odds=None), prophetx=[event, copy.deepcopy(event)])
         assert result["data"]["sources"]["prophetx"]["outcome"] == "ok"
-        assert _venue_quote_count(result, "prophetx") == {"home": 1, "away": 1}
-        assert _labels(result) == ["prophetx_Los Angeles Rams -275", "prophetx_New York Giants +270"]
+        assert _quotes(result, "home") == [("prophetx", 0.7333)]
+        assert _quotes(result, "away") == [("prophetx", 0.2703)]
 
     def test_identical_repeated_market_within_one_event_counts_once(self):
         event = _prophetx_event([PROPHETX_FULL_GAME_MARKET, copy.deepcopy(PROPHETX_FULL_GAME_MARKET)])
@@ -1166,10 +1177,10 @@ class TestProphetXUniqueMatch:
         assert "ambiguous" in prophetx["detail"].lower()
         assert "prophetx" not in result["data"]["completeness"]["usable_sources"]
         assert _venue_quote_count(result, "prophetx") == {"home": 0, "away": 0}
-        assert not any(label.startswith("prophetx_") for label in _labels(result))
         # The valid Kalshi peer still prices the game, and raw discovery is kept.
         assert result["data"]["sources"]["kalshi"]["outcome"] == "ok"
-        assert _labels(result) == ["kalshi_Los Angeles Rams", "kalshi_New York Giants"]
+        assert _quotes(result, "home") == [("kalshi", 0.73)]
+        assert _quotes(result, "away") == [("kalshi", 0.26)]
         assert len(result["data"]["prophetx_markets"]) == 2
         assert result["status"] is True
 
@@ -1495,16 +1506,15 @@ class TestQuoteProvenance:
         # Nothing was dated: kickoff is never an observation time.
         assert all(q["observed_at"] is None for s in ("home", "away") for q in side_prices[s]["quotes"])
 
-        # Numbers, existing keys, ranking and arbitrage are untouched.
+        # Numbers and existing keys are untouched; ranking and arbitrage are withheld.
         assert [q["implied_probability"] for q in side_prices["away"]["quotes"][1:]] == [0.265, 0.2703, 0.28, 0.26]
         assert all(
             q["price_basis"] == "reference" and q["execution_guaranteed"] is False
             for s in ("home", "away")
             for q in side_prices[s]["quotes"]
         )
-        assert side_prices["away"]["lowest_reference"] == side_prices["away"]["quotes"][4]
-        assert _labels(result) == ["kalshi_Los Angeles Rams", "kalshi_New York Giants"]
-        assert result["data"]["arbitrage_check"]["price_basis"] == "reference"
+        assert side_prices["away"]["lowest_reference"] is None
+        assert result["data"]["arbitrage_check"] is None
         assert result["data"]["completeness"]["complete"] is True
 
         # The catalog-shaped fixture (no book metadata) stays unknown, not invented.
@@ -1532,3 +1542,93 @@ class TestQuoteProvenance:
         quote = next(q for q in plain["data"]["side_prices"]["away"]["quotes"] if q["venue"] == "gemini")
         assert (quote["contract_id"], quote["outcome_id"], quote["retrieved_at"]) == (None, None, None)
         assert (quote["market_id"], quote["price_kind"]) == ("G1", "buy_yes")
+
+
+# ============================================================
+# Reference ranking — admitted quotes are not proven comparable
+# ============================================================
+#
+# Admission proves a quote prices THIS game's full-game moneyline. It does not
+# prove the venues settle identically (ties, postponement, overtime, voids) or
+# that their prices were observed at the same moment: ESPN is an undated line,
+# Kalshi/Polymarket/ProphetX carry no observation time, and Novig/Gemini are
+# cached snapshots whose retrieved_at is a fetch time, not a quote time. Until
+# such evidence exists, no quote may be ranked "lowest" and no pool may be
+# called an arbitrage check — but every admitted quote and all coverage stay.
+
+
+def _assert_unranked(result):
+    data = result["data"]
+    assert data["ranking_status"] == "insufficient_evidence"
+    assert data["side_prices"]["home"]["lowest_reference"] is None
+    assert data["side_prices"]["away"]["lowest_reference"] is None
+    assert data["arbitrage_check"] is None
+    assert data["price_basis"] == "reference"
+
+
+class TestReferenceRankingRequiresEvidence:
+    def test_cached_novig_and_every_admitted_venue_are_kept_but_not_ranked(self):
+        result = _compare(
+            NFL_SUMMARY,
+            kalshi=[_kalshi_event()],
+            poly=[POLY_GAME_MARKET],
+            prophetx=[_prophetx_event([PROPHETX_FULL_GAME_MARKET])],
+            novig=[_novig_cached_event()],
+        )
+        assert result["status"] is True, result["message"]
+        _assert_unranked(result)
+        side_prices = result["data"]["side_prices"]
+        # Every admitted quote survives, in order, with its numbers and provenance.
+        for side in ("home", "away"):
+            assert _venues(result, side) == ["espn", "polymarket", "prophetx", "novig", "kalshi"]
+            assert all(set(q) == _QUOTE_KEYS for q in side_prices[side]["quotes"])
+        assert [q["implied_probability"] for q in side_prices["home"]["quotes"][1:]] == [0.735, 0.7333, 0.74, 0.73]
+        assert [q["implied_probability"] for q in side_prices["away"]["quotes"][1:]] == [0.265, 0.2703, 0.28, 0.26]
+        novig = next(q for q in side_prices["home"]["quotes"] if q["venue"] == "novig")
+        assert novig["retrieved_at"] == "2026-09-21T23:40:00Z"
+        # Coverage is untouched: every source still counts as usable.
+        assert all(report["outcome"] == "ok" for report in result["data"]["sources"].values())
+        assert result["data"]["completeness"]["complete"] is True
+        assert sorted(result["data"]["completeness"]["usable_sources"]) == [
+            "espn",
+            "kalshi",
+            "novig",
+            "polymarket",
+            "prophetx",
+        ]
+        assert result["data"]["polymarket_markets"] == [POLY_GAME_MARKET]
+
+    def test_cached_gemini_with_low_composite_prices_is_not_an_arbitrage(self):
+        # Gemini LAL 0.40 + Kalshi BOS 0.44 = 0.84 < 1: a composite that looks
+        # like a cross-venue arbitrage, built from a cached snapshot and an
+        # undated Kalshi price with no settlement-equivalence proof.
+        market = _gemini_market("G1", 0.40, 0.47)
+        market["retrieved_at"] = "2026-11-19T23:10:00Z"
+        for contract, suffix in zip(market["outcomes"], ("LAL", "BOS")):
+            contract.update(id=f"contract-{suffix}", instrument_symbol=f"G1-{suffix}")
+        result = _compare_nba([{"event_ticker": "G1", "markets": [market]}])
+        assert result["status"] is True, result["message"]
+        _assert_unranked(result)
+        side_prices = result["data"]["side_prices"]
+        assert [(q["venue"], q["implied_probability"]) for q in side_prices["home"]["quotes"]] == [
+            ("kalshi", 0.55),
+            ("gemini", 0.40),
+        ]
+        assert [(q["venue"], q["implied_probability"]) for q in side_prices["away"]["quotes"]] == [
+            ("kalshi", 0.44),
+            ("gemini", 0.47),
+        ]
+        gemini = next(q for q in side_prices["home"]["quotes"] if q["venue"] == "gemini")
+        assert gemini["retrieved_at"] == "2026-11-19T23:10:00Z"
+        assert result["data"]["sources"]["gemini"]["outcome"] == "ok"
+        assert result["data"]["sources"]["kalshi"]["outcome"] == "ok"
+        assert sorted(result["data"]["completeness"]["usable_sources"]) == ["gemini", "kalshi"]
+
+    def test_no_admitted_quotes_reports_no_quotes(self):
+        result = _compare(dict(NFL_SUMMARY, odds=None))
+        data = result["data"]
+        assert data["ranking_status"] == "no_quotes"
+        for side in ("home", "away"):
+            assert data["side_prices"][side]["quotes"] == []
+            assert data["side_prices"][side]["lowest_reference"] is None
+        assert data["arbitrage_check"] is None

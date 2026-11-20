@@ -87,12 +87,12 @@ def search_entity(*, query: str, sport: str | None = None) -> dict:
 
 
 def compare_odds(*, sport: str, event_id: str) -> dict:
-    """ESPN odds + prediction market prices, normalized side-by-side + arb check.
+    """List ESPN odds and prediction market reference prices side by side.
 
-    Searches Kalshi, Polymarket, ProphetX, Novig and (nba only) Gemini. ``side_prices`` lists, per
-    side, only the quotes admitted as this game's full-game moneyline, with the
-    lowest as ``lowest_reference`` — a reference price, not an executable or
-    fee-adjusted quote. Raw ``*_markets`` lists are discovery only.
+    Searches Kalshi, Polymarket, ProphetX, Novig and (NBA only) Gemini. ``side_prices``
+    lists admitted full-game moneyline quotes. ``lowest_reference`` and
+    ``arbitrage_check`` are null; ``ranking_status`` and ``ranking_reason`` explain why.
+    Raw ``*_markets`` lists are discovery only."
 
     Args:
         sport: Sport key (nba, nfl, etc.).
