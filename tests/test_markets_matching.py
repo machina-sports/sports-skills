@@ -375,6 +375,62 @@ class TestGetMarketPrice:
         assert result["data"]["yes"]["at_time"] == 1779940800
         assert result["data"]["source"] == "history"
 
+    @staticmethod
+    def _poly_as_of(mock_poly, history, at_time=1500):
+        mock_poly.get_price_history.return_value = {
+            "status": True,
+            "data": {"history": history},
+        }
+        return get_market_price(
+            {"params": {"venue": "polymarket", "token_id": "t1", "at_time": at_time}}
+        )
+
+    @patch("sports_skills.polymarket")
+    def test_polymarket_at_time_skips_later_row_without_price(self, mock_poly):
+        # A later in-window row with no usable "p" must not surface as a false
+        # 0.0; the older valid quote is used with ITS timestamp, and a valid
+        # quote after at_time is never selected.
+        result = self._poly_as_of(
+            mock_poly,
+            [
+                {"t": 1000, "p": 0.68},
+                {"t": 1200},  # missing p
+                {"t": 1300, "p": None},
+                {"t": 1400, "p": "abc"},
+                {"t": 2000, "p": 0.9},  # after at_time — excluded
+            ],
+        )
+
+        assert result["status"] is True
+        assert result["data"]["yes"] == {"price": 0.68, "at_time": 1000}
+        assert result["data"]["no"] == {"price": 0.32, "at_time": 1000}
+        assert result["data"]["source"] == "history"
+
+    @patch("sports_skills.polymarket")
+    def test_polymarket_at_time_all_invalid_is_no_price_error(self, mock_poly):
+        result = self._poly_as_of(
+            mock_poly,
+            [
+                {"t": 1000},
+                {"t": 1100, "p": None},
+                {"t": 1200, "p": "abc"},
+                {"t": 2000, "p": 0.9},  # valid but after at_time
+            ],
+        )
+
+        assert result["status"] is False
+        assert "No Polymarket price found for token at or before 1500" in result["message"]
+
+    @patch("sports_skills.polymarket")
+    def test_polymarket_at_time_keeps_genuine_zero(self, mock_poly):
+        result = self._poly_as_of(
+            mock_poly,
+            [{"t": 1000, "p": 0.68}, {"t": 1100, "p": 0}, {"t": 1200}],
+        )
+
+        assert result["status"] is True
+        assert result["data"]["yes"] == {"price": 0.0, "at_time": 1100}
+
     def test_invalid_venue(self):
         result = get_market_price({"params": {"venue": "espn", "ticker": "X"}})
         assert result["status"] is False
@@ -461,6 +517,47 @@ class TestGetPriceHistory:
             {"timestamp": 150, "price": 0.4},
             {"timestamp": 950, "price": 0.5},
         ]
+
+    @patch("sports_skills.polymarket")
+    def test_polymarket_history_missing_price_not_zero(self, mock_poly):
+        # Upstream sent {"t": 1000} with no "p"; it surfaced as a false 0.0
+        # price. A point without a usable price must be dropped, while a
+        # genuine 0 and a valid price are kept.
+        mock_poly.get_price_history.return_value = {
+            "status": True,
+            "data": {
+                "history": [
+                    {"t": 1000},  # missing p — dropped
+                    {"t": 1001, "p": 0.68},
+                    {"t": 1002, "p": 0},  # genuine zero — kept
+                    {"t": 1003, "p": None},  # null p — dropped
+                    {"t": 1004, "p": "abc"},  # malformed p — dropped
+                    {"t": 1005, "p": -0.1},
+                    {"t": 1006, "p": 1.1},
+                    {"t": 1007, "p": float("nan")},
+                    {"t": float("inf"), "p": 0.5},
+                ]
+            },
+        }
+
+        result = get_price_history(
+            {
+                "params": {
+                    "venue": "polymarket",
+                    "token_id": "t1",
+                    "interval": "1h",
+                    "start_time": 1,
+                    "end_time": 2000,
+                }
+            }
+        )
+
+        assert result["status"] is True
+        assert result["data"]["points"] == [
+            {"timestamp": 1001, "price": 0.68},
+            {"timestamp": 1002, "price": 0.0},
+        ]
+        assert result["data"]["count"] == 2
 
     def test_invalid_interval(self):
         result = get_price_history(
