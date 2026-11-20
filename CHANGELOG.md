@@ -1,3 +1,10 @@
+## [0.41.1]
+
+### Fixed
+- Populate the current team in MLB player search when MLB provides it (#274).
+- Populate ESPN football timeline periods and wall-clock timestamps when available (#275).
+- Recover missing ESPN football substitution minutes from the first readable substitution play in provider order (#276).
+
 ## [0.41.0]
 
 ### Added
