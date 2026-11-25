@@ -125,3 +125,83 @@ def test_recent_tournaments_newest_first():
     names = [t["name"] for t in g._normalize_player_overview(data)["recent_tournaments"]]
     assert names == ["BMW PGA Championship", "TOUR Championship", "The Open",
                      "Crown Australian Open"]
+
+
+# --- #279: tied golfers share a position -----------------------------------
+#
+# The scoreboard only sends a row order, so the connector handed tied golfers
+# 1, 2, 3 where ESPN's own leaderboard reads 1, T2, T2. ESPN's leaderboard
+# endpoint carries the displayed position, the tie flag and whether a golfer
+# missed the cut or withdrew.
+
+
+def _lb_golfer(pid, shown, is_tie, short_detail, description, rank=None):
+    """A competitor as ESPN's leaderboard endpoint sends it."""
+    name = "STATUS_FINISH" if short_detail == "F" else "STATUS_CUT"
+    return {
+        "id": pid,
+        "status": {
+            "type": {"name": name, "shortDetail": short_detail, "description": description},
+            "position": {"id": rank, "displayName": shown, "isTie": is_tie},
+        },
+    }
+
+
+# Marco Penge won the 2026 RSM Classic from a four-way playoff at -16; ESPN
+# reads 1, T2, T2. A missed cut and a withdrawal both arrive as STATUS_CUT,
+# with no position — and ESPN leaves isTie set on them regardless.
+LEADERBOARD_PAYLOAD = {"events": [{"competitions": [{"competitors": [
+    _lb_golfer("1", "1", False, "F", "Finish", rank="1"),
+    _lb_golfer("2", "T2", True, "F", "Finish", rank="2"),
+    _lb_golfer("3", "T2", True, "F", "Finish", rank="2"),
+    _lb_golfer("4", "-", True, "CUT", "Missed Cut", rank="76"),
+    _lb_golfer("5", "-", True, "WD", "Withdrawn", rank="126"),
+]}]}]}
+
+TIE_SCOREBOARD = {"events": [_event("401850981", "The RSM Classic", [
+    _golfer(str(n), f"Golfer {n}", [], order=n) for n in range(1, 6)
+])]}
+
+
+def _patch_leaderboard(monkeypatch, payload, calls=None):
+    """Serve ESPN's leaderboard endpoint; `payload` may be an error tuple."""
+    monkeypatch.setattr(g, "_cache_get", lambda key: None)
+    monkeypatch.setattr(g, "_cache_set", lambda *a, **kw: None)
+
+    def fake_fetch(url, **kw):
+        if calls is not None:
+            calls.append(url)
+        if "leaderboard" not in url:
+            return json.dumps({"date": "2026-11-19T08:00Z"}).encode(), None
+        if isinstance(payload, dict):
+            return json.dumps(payload).encode(), None
+        return None, payload
+
+    monkeypatch.setattr(g, "_http_fetch", fake_fetch)
+
+
+def test_leaderboard_ties_share_a_position(monkeypatch):
+    calls = []
+    monkeypatch.setattr(g, "espn_request", _fake_espn([], TIE_SCOREBOARD))
+    _patch_leaderboard(monkeypatch, LEADERBOARD_PAYLOAD, calls)
+
+    rows = g.get_leaderboard({"params": {"tour": "pga"}})["tournament"]["leaderboard"]
+    assert [r["position"] for r in rows] == ["1", "T2", "T2", "CUT", "WD"]
+    assert [r["position_rank"] for r in rows] == [1, 2, 2, None, None]
+    # the two tied golfers, and nobody else — ESPN's isTie on a golfer it shows
+    # no position for does not make one
+    assert [r["is_tie"] for r in rows] == [False, True, True, False, False]
+    assert [r["status"] for r in rows] == [
+        "finished", "finished", "finished", "cut", "withdrawn"
+    ]
+    assert any("leaderboard?event=401850981" in url for url in calls)
+
+
+def test_leaderboard_falls_back_to_row_order_without_espn_positions(monkeypatch):
+    monkeypatch.setattr(g, "espn_request", _fake_espn([], TIE_SCOREBOARD))
+    _patch_leaderboard(monkeypatch, {"error": True, "message": "503"})
+
+    rows = g.get_leaderboard({"params": {"tour": "pga"}})["tournament"]["leaderboard"]
+    assert [r["position"] for r in rows] == ["1", "2", "3", "4", "5"]
+    assert [r["position_rank"] for r in rows] == [1, 2, 3, 4, 5]
+    assert all(r["is_tie"] is False and r["status"] == "" for r in rows)

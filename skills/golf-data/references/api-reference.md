@@ -13,7 +13,10 @@ Without `event_id`/`date`, returns the current/most recent tournament with:
 - `leaderboard[]` sorted by position with golfer `id`, `name`, `country`, `score`, and `rounds[]`
 
 Each golfer in `leaderboard[]` has:
-- `position`: Leaderboard rank
+- `position`: Position as ESPN shows it — `"1"`, `"T2"` for a tie, `"CUT"` or `"WD"` for a golfer who is out
+- `position_rank`: That position as a number (`2` for both `"2"` and `"T2"`), `null` for a golfer with no position
+- `is_tie`: `true` when the golfer shares the position with another
+- `status`: `"finished"`, `"cut"`, `"withdrawn"`, `"disqualified"`, `"live"`, `"not_started"`
 - `name`: Golfer name
 - `country`: Nationality
 - `score`: Total score relative to par (e.g., "-17", "E", "+2")
