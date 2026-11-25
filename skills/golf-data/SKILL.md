@@ -80,7 +80,7 @@ Example 1: Current leaderboard
 User says: "What's the PGA leaderboard right now?"
 Actions:
 1. Call `get_leaderboard(tour="pga")`
-Result: Current tournament leaderboard sorted by position with each golfer's score and round-by-round breakdown
+Result: Current tournament leaderboard sorted by position with each golfer's score and round-by-round breakdown. Tied golfers share a position (`"T2"`, `is_tie: true`); a golfer who is out reads `"CUT"` or `"WD"`
 
 Example 2: Season schedule
 User says: "Show me the LPGA schedule for 2026"

@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import json
 import logging
+import urllib.parse
 
 from sports_skills._espn_base import (
     _USER_AGENT,
@@ -41,6 +42,21 @@ _TOUR_NAMES = {
 _GOLF_STATUS_MAP = {
     **ESPN_STATUS_MAP,
     "STATUS_PLAY_COMPLETE": "round_complete",
+}
+
+# ESPN's leaderboard endpoint, which carries the displayed position ESPN itself
+# shows ("T2") — the scoreboard only sends a row order. It takes the event id
+# alone; there is no per-tour path.
+_LEADERBOARD_URL = "https://site.web.api.espn.com/apis/site/v2/sports/golf/leaderboard"
+
+# ESPN files a withdrawal under STATUS_CUT too, and only the short detail tells
+# the two apart, so a golfer's standing is read from there before the type name.
+_GOLFER_STATUS_BY_DETAIL = {
+    "F": "finished",
+    "CUT": "cut",
+    "WD": "withdrawn",
+    "DQ": "disqualified",
+    "MDF": "made_cut_did_not_finish",
 }
 
 
@@ -79,8 +95,33 @@ def _holes_played(ls):
     return len(holes) if holes else None
 
 
-def _normalize_golfer(competitor):
-    """Normalize a golfer from the scoreboard competitors list."""
+def _golfer_status(status_type):
+    """The word for a golfer's standing: finished, cut, withdrawn, live..."""
+    detail = str(status_type.get("shortDetail", "") or "").strip().upper()
+    if detail in _GOLFER_STATUS_BY_DETAIL:
+        return _GOLFER_STATUS_BY_DETAIL[detail]
+    name = status_type.get("name", "")
+    if name in _GOLF_STATUS_MAP:
+        return _GOLF_STATUS_MAP[name]
+    return str(status_type.get("description", "") or "").strip().lower().replace(" ", "_")
+
+
+def _position_rank(position):
+    """The number behind a displayed position: 2 for both "2" and "T2"."""
+    for value in (position.get("id"), str(position.get("displayName", "") or "").lstrip("Tt")):
+        try:
+            return int(value)
+        except (TypeError, ValueError):
+            continue
+    return None
+
+
+def _normalize_golfer(competitor, standing=None):
+    """Normalize a golfer from the scoreboard competitors list.
+
+    ``standing`` is that golfer's entry from :func:`_leaderboard_positions`; the
+    row order is only used as a position when ESPN's leaderboard is unavailable.
+    """
     athlete = competitor.get("athlete", {})
     flag = athlete.get("flag", {})
 
@@ -97,8 +138,13 @@ def _normalize_golfer(competitor):
             "holes_played": _holes_played(ls),
         })
 
+    standing = standing or {}
+    order = competitor.get("order", "")
     return {
-        "position": competitor.get("order", ""),
+        "position": standing.get("position") or (str(order) if order != "" else ""),
+        "position_rank": standing.get("position_rank", order if isinstance(order, int) else None),
+        "is_tie": bool(standing.get("is_tie", False)),
+        "status": standing.get("status", ""),
         "id": str(competitor.get("id", "")),
         "name": athlete.get("displayName", athlete.get("fullName", "")),
         "country": flag.get("alt", ""),
@@ -107,8 +153,12 @@ def _normalize_golfer(competitor):
     }
 
 
-def _normalize_tournament(espn_event):
-    """Normalize a golf tournament from the scoreboard."""
+def _normalize_tournament(espn_event, positions=None):
+    """Normalize a golf tournament from the scoreboard.
+
+    ``positions`` maps a competitor id to its displayed position; see
+    :func:`_leaderboard_positions`.
+    """
     comp = espn_event.get("competitions", [{}])[0]
     status_obj = comp.get("status", espn_event.get("status", {}))
     status_type = status_obj.get("type", {}).get("name", "")
@@ -139,8 +189,12 @@ def _normalize_tournament(espn_event):
             broadcasts.append(name)
 
     # Leaderboard (competitors sorted by position)
+    positions = positions or {}
     competitors = comp.get("competitors", [])
-    leaderboard = [_normalize_golfer(c) for c in sorted(competitors, key=lambda x: x.get("order", 999))]
+    leaderboard = [
+        _normalize_golfer(c, positions.get(str(c.get("id", ""))))
+        for c in sorted(competitors, key=lambda x: x.get("order", 999))
+    ]
 
     return {
         "id": str(espn_event.get("id", "")),
@@ -363,6 +417,65 @@ def _scoreboard_events(tour, event_id=None, date=None):
     return events, None
 
 
+def _leaderboard_positions(event_id):
+    """Displayed position per competitor id, from ESPN's leaderboard endpoint.
+
+    The scoreboard only sends each golfer's row ``order``, which hands tied
+    golfers different positions (1, 2, 3 where ESPN shows 1, T2, T2) and says
+    nothing about a missed cut or a withdrawal. This endpoint sends both.
+
+    Returns ``{}`` when ESPN is unreachable or the field is not out yet, so the
+    leaderboard still comes back — off the row order alone, as before.
+    """
+    if not event_id:
+        return {}
+    cache_key = f"golf_positions:{event_id}"
+    cached = _cache_get(cache_key)
+    if cached is not None:
+        return cached
+
+    url = f"{_LEADERBOARD_URL}?event={urllib.parse.quote(str(event_id))}"
+    raw, err = _http_fetch(
+        url,
+        headers={"User-Agent": _USER_AGENT},
+        rate_limiter=_espn_rate_limiter,
+        max_retries=0,
+    )
+    if err:
+        logger.debug("No ESPN leaderboard for event %s: %s", event_id, err.get("message"))
+        return {}
+    try:
+        events = json.loads(raw.decode()).get("events", [])
+    except (json.JSONDecodeError, ValueError, AttributeError):
+        logger.debug("ESPN leaderboard for event %s is not JSON", event_id)
+        return {}
+
+    positions = {}
+    for event in events:
+        for competition in event.get("competitions", []):
+            for competitor in competition.get("competitors", []):
+                competitor_id = str(competitor.get("id", ""))
+                if not competitor_id:
+                    continue
+                status = competitor.get("status") or {}
+                status_type = status.get("type") or {}
+                position = status.get("position") or {}
+                shown = str(position.get("displayName", "") or "").strip()
+                # ESPN shows no position for a golfer who is out ("-") and
+                # reports the missed cut or withdrawal in its place. It leaves
+                # isTie set on some of them anyway, so neither the position nor
+                # the tie is read unless ESPN actually displays one.
+                ranked = bool(shown) and shown not in ("-", "--")
+                positions[competitor_id] = {
+                    "position": shown if ranked else (status_type.get("shortDetail") or shown),
+                    "position_rank": _position_rank(position) if ranked else None,
+                    "is_tie": ranked and bool(position.get("isTie")),
+                    "status": _golfer_status(status_type),
+                }
+    _cache_set(cache_key, positions, ttl=120)
+    return positions
+
+
 def get_leaderboard(request_data):
     """Get a tournament leaderboard (current, or the given event_id / date)."""
     params = request_data.get("params", {})
@@ -382,7 +495,7 @@ def get_leaderboard(request_data):
         }
 
     # Return the requested, or the current/most recent, tournament
-    tournament = _normalize_tournament(events[0])
+    tournament = _normalize_tournament(events[0], _leaderboard_positions(events[0].get("id")))
     return {
         "tour": _TOUR_NAMES[tour],
         "tournament": tournament,
