@@ -1,3 +1,9 @@
+## [0.41.2]
+
+### Fixed
+- Read golf leaderboard positions from ESPN's leaderboard endpoint: tied golfers share a position (`"T2"`, `is_tie`), and a missed cut or a withdrawal is reported as such instead of a row number. Each golfer also carries `position_rank` and a `status` (#281).
+- Search the daily markets dashboard the way each venue titles a game — Kalshi by its game-series ticker, the others by mascot — instead of by ESPN display name, which matched neither. Teams meeting on consecutive days are told apart by the day the game is played (#282).
+
 ## [0.41.1]
 
 ### Fixed
