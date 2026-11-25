@@ -1001,6 +1001,26 @@ def _calendar_days(start) -> set[str]:
     }
 
 
+def _venue_day(start) -> str:
+    """The US venue calendar day of a kickoff — the day a Kalshi ticker carries.
+
+    ``_calendar_days`` deliberately keeps both the UTC and the venue day so a
+    market dated by either one can match. That makes two meetings of the same
+    teams on consecutive days each validate against the other's ticker, which
+    this day tells apart. Empty when ESPN published no usable start time.
+    """
+    if not start:
+        return ""
+    try:
+        moment = _parse_iso_utc(start)
+    except (ValueError, TypeError):
+        return ""
+
+    from zoneinfo import ZoneInfo
+
+    return moment.astimezone(ZoneInfo("America/New_York")).date().isoformat()
+
+
 def _same_start(scheduled, start_utc) -> bool:
     """Require the same scheduled instant, not a nearby same-team game.
 
@@ -1061,6 +1081,7 @@ def _game_identity(summary_data: dict) -> dict | None:
         "start": start,
         "start_utc": start_utc,
         "dates": _calendar_days(start),
+        "venue_date": _venue_day(start),
     }
 
 
@@ -1101,6 +1122,37 @@ def _kalshi_event_date_pair(tail: str) -> tuple[str | None, str | None]:
     return f"20{yy}-{month:02d}-{int(dd):02d}", pair
 
 
+def _kalshi_event_date(event: dict) -> str | None:
+    """The date a Kalshi game event's ticker carries."""
+    parts = str(event.get("event_ticker") or "").split("-")
+    if len(parts) < 2:
+        return None
+    date, _pair = _kalshi_event_date_pair(parts[1])
+    return date
+
+
+def _on_the_venue_day(events: list[dict], identity: dict) -> list[dict]:
+    """Of several matching events, the ones dated the day the game is played.
+
+    A game validates against both the UTC and the venue calendar day, so teams
+    meeting on consecutive days match each other's ticker: Seattle at Edmonton
+    on Nov 27 (01:00 UTC on the 28th) also matched KXNHLGAME-26NOV28EDMSEA,
+    the next night's game with the teams swapped. Kalshi dates a ticker by the
+    venue day, so when any event carries it the others are a different meeting.
+
+    A lone event is kept whatever its date: there is nothing to tell apart, and
+    the two-day window is what reaches a late game whose venue day is its own.
+
+    This is the dashboard's rule, which lists what it found and has no way to
+    say "ambiguous". `compare_odds` prices a single game and abstains instead,
+    naming both candidates — see TestKalshiUniqueMatch.
+    """
+    venue_date = identity.get("venue_date")
+    if not venue_date or len(events) < 2:
+        return events
+    return [event for event in events if _kalshi_event_date(event) == venue_date] or events
+
+
 def _search_kalshi_game(identity: dict, sport: str, report: dict | None = None) -> list[dict]:
     """This game's Kalshi winner event, picked from the sport's game series by ticker.
 
@@ -1109,7 +1161,7 @@ def _search_kalshi_game(identity: dict, sport: str, report: dict | None = None) 
     series has no event for this game.
     """
     series = KALSHI_SERIES.get(sport)
-    if series:
+    if series and identity.get("dates"):
         events = _search_kalshi("", sport, report=report, series_ticker=f"{series}GAME")
         matched = [
             event
@@ -1272,6 +1324,24 @@ def _find_poly_game_market(sport: str, identity: dict, side: str, report: dict) 
 # ============================================================
 
 
+def _scheduled_game_identity(game: dict) -> dict | None:
+    """The identity `_game_identity` builds, from a dashboard scoreboard row.
+
+    `_extract_games` has already flattened ESPN's event into home and away team
+    dicts and a start time, so the dashboard reaches the same teams, start and
+    calendar days without fetching a summary per game.
+    """
+    return _game_identity(
+        {
+            "competitors": [
+                {"team": game.get("home") or {}, "home_away": "home"},
+                {"team": game.get("away") or {}, "home_away": "away"},
+            ],
+            "game_info": {"start_time": game.get("start_time")},
+        }
+    )
+
+
 def get_todays_markets(request_data: dict) -> dict:
     """Fetch ESPN schedule, search Kalshi, Polymarket, ProphetX, Novig and Gemini, return unified dashboard.
 
@@ -1305,16 +1375,30 @@ def get_todays_markets(request_data: dict) -> dict:
     # Search prediction markets for each game
     dashboard = []
     for game in games:
+        # ESPN display names match nothing on these venues: neither titles a
+        # game "Dallas Mavericks Denver Nuggets", and Kalshi titles games by
+        # city. Search the way compare_odds does — by mascot, and on Kalshi by
+        # the game series ticker. The display names are only left for a game
+        # ESPN named no teams for, where there is no identity to search from.
+        identity = _scheduled_game_identity(game)
         home_name = game["home"].get("name", "")
         away_name = game["away"].get("name", "")
-        search_query = f"{away_name} {home_name}" if away_name and home_name else game.get("name", "")
+        if identity:
+            search_query = _matchup_query(identity)
+        else:
+            search_query = f"{away_name} {home_name}" if away_name and home_name else game.get("name", "")
 
         kalshi_matches = []
         poly_matches = []
         prophetx_matches = []
 
         try:
-            kalshi_matches = _search_kalshi(search_query, game["sport"])
+            if identity:
+                kalshi_matches = _on_the_venue_day(
+                    _search_kalshi_game(identity, game["sport"]), identity
+                )
+            else:
+                kalshi_matches = _search_kalshi(search_query, game["sport"])
         except Exception as exc:
             warnings.append(f"Kalshi search failed for '{search_query}': {exc}")
 

@@ -19,6 +19,12 @@
 | `get_plays_near_timestamp` | sport, timestamp | game_id, window_seconds, mock_file_path | Plays in the window [timestamp - window_seconds, timestamp] |
 | `resolve_game_market` | sport, event_id | status | Resolve one ESPN game to its Kalshi game-winner market (home side) |
 
+### `get_todays_markets` notes
+
+- Each game is searched the way the venues title it, not by ESPN display name: Kalshi by the sport's `{series}GAME` ticker (team codes + date), the other venues by mascot (`"Heat 76ers"`). A game ESPN named no teams for keeps the display-name search.
+- `kalshi_markets` holds the game's winner event when its ticker proves the matchup and the date. When the series has no event for the game — markets not open yet, a sport with no mapped series — the text search's results are kept instead, and those are not ticker-proven.
+- Teams that meet on consecutive days are told apart by the day the game is played: a 01:00 UTC start belongs to the previous US venue day, which is the day Kalshi dates its ticker by. `compare_odds` prices one game and abstains on that ambiguity instead; the dashboard lists what it found.
+
 ### `evaluate_market` notes
 
 - Prices the side named by `outcome` (0 = home, default; 1 = away) at the **ask** from the venue's order book, plus `fee_per_contract`. A bid, a last trade or a midpoint is a reference price, not what a purchase costs.

@@ -2306,3 +2306,117 @@ class TestCompareOddsKalshiByTicker:
         self._compare(search)
 
         assert calls == [("", "KXNFLGAME"), ("Dolphins Bills", None)]
+
+
+# ============================================================
+# #280: the dashboard searches each venue the way it can be matched
+# ============================================================
+
+
+def _scheduled_game(sport, away_abbr, away_name, home_abbr, home_name, start_time):
+    """A row in the shape `_extract_games` hands `get_todays_markets`."""
+    return {
+        "sport": sport,
+        "event_id": "401900000",
+        "name": f"{away_name} at {home_name}",
+        "short_name": f"{away_abbr} @ {home_abbr}",
+        "start_time": start_time,
+        "status": "scheduled",
+        "status_detail": "",
+        "home": {"name": home_name, "abbreviation": home_abbr, "id": "1"},
+        "away": {"name": away_name, "abbreviation": away_abbr, "id": "2"},
+        "espn_odds": {},
+    }
+
+
+def _kalshi_game_event(series, tail, sides):
+    """A Kalshi game event in the shape `_search_kalshi` returns."""
+    return {
+        "source": "kalshi",
+        "event_ticker": f"{series}-{tail}",
+        "title": "Miami vs Philadelphia",
+        "status": "active",
+        "markets": [{"ticker": f"{series}-{tail}-{side}", "title": "Winner?"} for side in sides],
+    }
+
+
+class TestTodaysMarketsFindsKalshiGames:
+    """Kalshi titles games by city ("Miami vs Philadelphia") and Polymarket by
+    mascot, so the ESPN display names the dashboard searched with
+    ("Miami Heat Philadelphia 76ers") matched neither: on 2026-11-25 it found
+    markets for 0 of the 24 NBA, NHL and NFL games on the board.
+    """
+
+    @patch("sports_skills.markets._connector._search_prophetx")
+    @patch("sports_skills.markets._connector._search_polymarket")
+    @patch("sports_skills.markets._connector._search_kalshi")
+    @patch("sports_skills.markets._connector._fetch_all_schedules")
+    def test_kalshi_is_matched_by_ticker_and_the_rest_by_mascot(
+        self, mock_schedules, mock_kalshi, mock_poly, mock_prophetx
+    ):
+        mock_schedules.return_value = (
+            [_scheduled_game("nba", "MIA", "Miami Heat", "PHI", "Philadelphia 76ers",
+                             "2026-11-25T22:00Z")],
+            [],
+        )
+        this_game = _kalshi_game_event("KXNBAGAME", "26NOV25MIAPHI", ("MIA", "PHI"))
+        another_game = _kalshi_game_event("KXNBAGAME", "26NOV25CHICHA", ("CHI", "CHA"))
+        mock_kalshi.return_value = [this_game, another_game]
+        mock_poly.return_value = []
+        mock_prophetx.return_value = []
+
+        game = get_todays_markets({"params": {"sport": "nba"}})["data"]["games"][0]
+
+        # the sport's game series is read in full, and only this game's event kept
+        assert mock_kalshi.call_args.kwargs["series_ticker"] == "KXNBAGAME"
+        assert [e["event_ticker"] for e in game["kalshi_markets"]] == ["KXNBAGAME-26NOV25MIAPHI"]
+        # the other venues are asked by mascot, which is how they title a game
+        assert mock_poly.call_args[0][0] == "Heat 76ers"
+        assert mock_prophetx.call_args[0][0] == "Heat 76ers"
+
+    @patch("sports_skills.markets._connector._search_prophetx")
+    @patch("sports_skills.markets._connector._search_polymarket")
+    @patch("sports_skills.markets._connector._search_kalshi")
+    @patch("sports_skills.markets._connector._fetch_all_schedules")
+    def test_a_back_to_back_keeps_only_the_night_being_played(
+        self, mock_schedules, mock_kalshi, mock_poly, mock_prophetx
+    ):
+        # Seattle at Edmonton on Nov 27 starts 01:00 UTC on the 28th, so it is
+        # dated by both days — and matched the next night's game, teams
+        # swapped, as well as its own. Kalshi dates a ticker by the venue day.
+        mock_schedules.return_value = (
+            [_scheduled_game("nhl", "SEA", "Seattle Kraken", "EDM", "Edmonton Oilers",
+                             "2026-11-28T01:00Z")],
+            [],
+        )
+        mock_kalshi.return_value = [
+            _kalshi_game_event("KXNHLGAME", "26NOV27SEAEDM", ("SEA", "EDM")),
+            _kalshi_game_event("KXNHLGAME", "26NOV28EDMSEA", ("EDM", "SEA")),
+        ]
+        mock_poly.return_value = []
+        mock_prophetx.return_value = []
+
+        game = get_todays_markets({"params": {"sport": "nhl"}})["data"]["games"][0]
+        assert [e["event_ticker"] for e in game["kalshi_markets"]] == ["KXNHLGAME-26NOV27SEAEDM"]
+
+    @patch("sports_skills.markets._connector._search_prophetx")
+    @patch("sports_skills.markets._connector._search_polymarket")
+    @patch("sports_skills.markets._connector._search_kalshi")
+    @patch("sports_skills.markets._connector._fetch_all_schedules")
+    def test_without_a_start_time_kalshi_is_searched_by_text_alone(
+        self, mock_schedules, mock_kalshi, mock_poly, mock_prophetx
+    ):
+        # No start time means no date leg, so no ticker can be proven to be
+        # this game rather than a rematch. The series is not even read; the
+        # dashboard asks by mascot, and the game keeps whatever that finds.
+        mock_schedules.return_value = (
+            [_scheduled_game("nba", "MIA", "Miami Heat", "PHI", "Philadelphia 76ers", "")],
+            [],
+        )
+        mock_kalshi.return_value = []
+        mock_poly.return_value = []
+        mock_prophetx.return_value = []
+
+        get_todays_markets({"params": {"sport": "nba"}})
+        assert mock_kalshi.call_args[0][0] == "Heat 76ers"
+        assert "series_ticker" not in mock_kalshi.call_args.kwargs
