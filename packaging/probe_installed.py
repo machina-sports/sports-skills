@@ -14,7 +14,7 @@ import sys
 import types
 from pathlib import Path
 
-VERSION = "0.41.1"
+VERSION = "0.41.2"
 SCOREBOARD_SPORTS = ("nba", "nfl", "mlb", "nhl", "wnba", "cfb", "cbb")
 POLYMARKET_TODAYS_PARAMS = ("offset", "date", "timezone", "sports_market_types", "compact")
 GLEAGUE_SOURCES = ("__init__.py", "_cdn.py", "_connector.py", "_stats.py")
