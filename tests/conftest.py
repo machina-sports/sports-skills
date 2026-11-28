@@ -21,6 +21,7 @@ HISTORICAL_RELEASE_TESTS = {
     "test_release_0410.py": "SPORTS_SKILLS_VERIFY_RELEASE_0410",
     "test_release_041.py": "SPORTS_SKILLS_VERIFY_RELEASE_041",
     "test_release_0411.py": "SPORTS_SKILLS_VERIFY_RELEASE_0411",
+    "test_release_0412.py": "SPORTS_SKILLS_VERIFY_RELEASE_0412",
 }
 
 
