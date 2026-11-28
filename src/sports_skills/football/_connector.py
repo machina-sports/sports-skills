@@ -1,12 +1,15 @@
 from __future__ import annotations
 
+import contextlib
 import csv
 import functools
 import gzip
 import io
 import json
 import logging
+import os
 import re
+import tempfile
 import threading
 import time
 import urllib.error
@@ -825,6 +828,50 @@ def _estimate_current_season(slug, league):
     }
 
 
+# Each CLI call is a new process, so the in-memory cache never reaches the next tool
+# call. Detected seasons also go to disk, following the cricsheet/sleeper convention.
+_SEASON_DISK_TTL = 3600  # same lifetime as the in-memory entry
+
+
+def _season_cache_path(espn_slug):
+    base = os.environ.get("XDG_CACHE_HOME") or os.path.join(os.path.expanduser("~"), ".cache")
+    return os.path.join(base, "sports-skills", "football", f"season-{espn_slug}.json")
+
+
+def _read_disk_season(espn_slug):
+    """``(season, seconds_left)`` detected from ESPN within the TTL, or None.
+
+    Missing, unreadable, corrupt, future-dated and expired files are all misses.
+    """
+    try:
+        with open(_season_cache_path(espn_slug), encoding="utf-8") as f:
+            record = json.load(f)
+        age = time.time() - record["fetched_at"]
+        season = record["season"]
+    except (OSError, ValueError, KeyError, TypeError):
+        return None
+    if not isinstance(season, dict) or not 0 <= age < _SEASON_DISK_TTL:
+        return None
+    return season, _SEASON_DISK_TTL - age
+
+
+def _write_disk_season(espn_slug, season):
+    """Best effort: written to a temporary file and renamed, so readers never see a partial file."""
+    path = _season_cache_path(espn_slug)
+    tmp = None
+    try:
+        os.makedirs(os.path.dirname(path), exist_ok=True)
+        fd, tmp = tempfile.mkstemp(dir=os.path.dirname(path), prefix=".season.", suffix=".tmp")
+        with os.fdopen(fd, "w", encoding="utf-8") as f:
+            json.dump({"fetched_at": time.time(), "season": season}, f)
+        os.replace(tmp, path)
+    except OSError:
+        logger.debug("could not write season cache %s", path, exc_info=True)
+        if tmp is not None:
+            with contextlib.suppress(OSError):
+                os.remove(tmp)
+
+
 def _detect_current_season(slug, espn_slug):
     """Detect current season year/dates for a league using ESPN scoreboard.
 
@@ -837,6 +884,13 @@ def _detect_current_season(slug, espn_slug):
     cached = _cache_get(cache_key)
     if cached is not None:
         return cached if cached else None
+    use_disk = _replay.mode() == _replay.OFF
+    if use_disk:
+        on_disk = _read_disk_season(espn_slug)
+        if on_disk is not None:
+            season, seconds_left = on_disk
+            _cache_set(cache_key, season, ttl=seconds_left)
+            return season
 
     league = LEAGUES.get(slug) or {}
     data = _espn_request(espn_slug, "scoreboard")
@@ -868,6 +922,8 @@ def _detect_current_season(slug, espn_slug):
         "slug": slug,
     }
     _cache_set(cache_key, result, ttl=3600)
+    if use_disk:
+        _write_disk_season(espn_slug, result)
     return result
 
 
